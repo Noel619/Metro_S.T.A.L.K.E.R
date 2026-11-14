@@ -1,0 +1,12 @@
+{
+  "name": "tumansk-svg",
+  "private": true,
+  "description": "Generadores de ilustración 2D con aspecto dibujado a mano (rough.js).",
+  "type": "module",
+  "scripts": {
+    "generate": "node generate.mjs"
+  },
+  "dependencies": {
+    "roughjs": "4.6.6"
+  }
+}

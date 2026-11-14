@@ -1,0 +1,62 @@
+extends SceneTree
+## Hace capturas de una escena sin abrir el editor.
+##
+## Carga la escena, espera unos fotogramas para que la luz y los shaders se
+## asienten y guarda una imagen por cada cámara del grupo "capture_camera".
+## No se lanza a mano: lo hace tools/capture.sh.
+##
+## Argumentos (después de "--"):
+##   --scene=res://ruta/escena.tscn   escena que se captura
+##   --out=ruta/salida.png            imagen; con varias cámaras, se añade el nombre
+##   --frames=30                      fotogramas de espera antes de capturar
+
+const CAMERA_GROUP: StringName = &"capture_camera"
+
+var _scene_path: String = ""
+var _out_path: String = ""
+var _frames: int = 30
+
+
+func _initialize() -> void:
+	for arg: String in OS.get_cmdline_user_args():
+		var value: String = arg.get_slice("=", 1)
+		if arg.begins_with("--scene="):
+			_scene_path = value
+		elif arg.begins_with("--out="):
+			_out_path = value
+		elif arg.begins_with("--frames="):
+			_frames = maxi(1, value.to_int())
+	if _scene_path.is_empty() or _out_path.is_empty():
+		printerr("Uso: --scene=res://... --out=salida.png [--frames=30]")
+		quit(1)
+		return
+	_capture.call_deferred()
+
+
+func _capture() -> void:
+	var packed: PackedScene = load(_scene_path)
+	if packed == null:
+		printerr("No se pudo cargar %s" % _scene_path)
+		quit(1)
+		return
+	var scene: Node = packed.instantiate()
+	root.add_child(scene)
+	var cameras: Array[Node] = get_nodes_in_group(CAMERA_GROUP)
+	if cameras.is_empty():
+		cameras = [root.get_camera_3d()]
+	for camera: Node in cameras:
+		(camera as Camera3D).make_current()
+		for _i in _frames:
+			await process_frame
+		await RenderingServer.frame_post_draw
+		var path: String = _out_path
+		if cameras.size() > 1:
+			path = _out_path.get_basename() + "_" + String(camera.name).to_snake_case() + ".png"
+		var image: Image = root.get_texture().get_image()
+		var err: Error = image.save_png(path)
+		if err != OK:
+			printerr("No se pudo guardar %s (%s)" % [path, error_string(err)])
+			quit(1)
+			return
+		print("Captura: %s (%dx%d)" % [path, image.get_width(), image.get_height()])
+	quit(0)

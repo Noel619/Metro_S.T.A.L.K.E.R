@@ -1,0 +1,159 @@
+"""Genera las texturas del estilo entintado (papel, tramado, rampas, ruido).
+
+Uso: python3 tools/textures/generate_textures.py
+
+Todas son repetibles sin costuras (se pueden enlosar) y deterministas (semillas
+fijas). Se guardan en assets/textures/ y las usan los shaders de assets/shaders/.
+
+- papel.png      grano y fibras de papel; se multiplica sobre la imagen.
+- tramado.png    cuatro tonos de tramado a mano, uno por canal (R, G, B, A).
+                 Cada tono contiene los trazos del anterior, para que el paso de
+                 un tono a otro no "salte" (tonal art map).
+- rampas.png     rampas del sombreado por bandas: una fila por tipo de material.
+- ruido_trazo.png ruido suave en R y G para hacer temblar el contorno.
+- grano.png      grano fino de película.
+"""
+
+from __future__ import annotations
+
+import math
+from pathlib import Path
+
+import numpy as np
+from PIL import Image, ImageDraw
+
+ROOT = Path(__file__).resolve().parents[2]
+OUT_DIR = ROOT / "assets" / "textures"
+
+
+def fft_noise(size: int, beta: float, seed: int) -> np.ndarray:
+    """Ruido 1/f^beta sin costuras, normalizado a [0, 1]."""
+    rng = np.random.default_rng(seed)
+    spectrum = np.fft.fft2(rng.standard_normal((size, size)))
+    ky = np.fft.fftfreq(size)[:, None]
+    kx = np.fft.fftfreq(size)[None, :]
+    k = np.sqrt(kx * kx + ky * ky)
+    k[0, 0] = 1.0
+    noise = np.real(np.fft.ifft2(spectrum / k ** (beta / 2.0)))
+    noise -= noise.min()
+    return noise / noise.max()
+
+
+def wrapped_lines(draw: ImageDraw.ImageDraw, size: int, points: list[tuple[float, float]], width: float, fill: int) -> None:
+    """Dibuja una polilínea repitiéndola en las 9 posiciones del enlosado."""
+    for dx in (-size, 0, size):
+        for dy in (-size, 0, size):
+            shifted = [(x + dx, y + dy) for x, y in points]
+            draw.line(shifted, fill=fill, width=max(1, round(width)), joint="curve")
+
+
+def stroke_points(rng: np.random.Generator, size: int, angle: float, length: float, bend: float) -> list[tuple[float, float]]:
+    """Un trazo de lápiz: corto, algo curvado y con el ángulo un poco suelto."""
+    x0, y0 = rng.uniform(0, size, 2)
+    direction = np.array([math.cos(angle), math.sin(angle)])
+    normal = np.array([-direction[1], direction[0]])
+    points = []
+    for t in np.linspace(0.0, 1.0, 8):
+        offset = (t - 0.5) * length * direction + normal * bend * (4.0 * t * (1.0 - t))
+        points.append((x0 + offset[0], y0 + offset[1]))
+    return points
+
+
+def paper(size: int = 1024) -> Image.Image:
+    blotches = fft_noise(size, 2.6, seed=1)
+    grain = fft_noise(size, 0.6, seed=2)
+    base = 1.0 - 0.06 * blotches - 0.05 * grain
+    fibers = Image.new("L", (size, size), 0)
+    draw = ImageDraw.Draw(fibers)
+    rng = np.random.default_rng(3)
+    for _ in range(1400):
+        angle = rng.uniform(0, math.tau)
+        points = stroke_points(rng, size, angle, rng.uniform(10, 40), rng.uniform(-6, 6))
+        wrapped_lines(draw, size, points, 1, int(rng.integers(20, 60)))
+    base -= 0.05 * (np.asarray(fibers, dtype=np.float64) / 255.0)
+    return Image.fromarray(np.clip(base * 255.0, 0, 255).astype(np.uint8), "L")
+
+
+def hatching(size: int = 512) -> Image.Image:
+    """Cuatro tonos acumulativos de tramado, uno por canal."""
+    scale = 2
+    big = size * scale
+    layers = [
+        # (cantidad de trazos, ángulo, largo, grosor)
+        (220, math.radians(-50), 90, 2.4),
+        (260, math.radians(-46), 80, 2.4),
+        (240, math.radians(40), 85, 2.2),
+        (320, math.radians(-8), 70, 2.0),
+    ]
+    rng = np.random.default_rng(7)
+    canvas = Image.new("L", (big, big), 255)
+    draw = ImageDraw.Draw(canvas)
+    channels = []
+    for count, angle, length, width in layers:
+        for _ in range(count):
+            jitter = rng.normal(0.0, math.radians(4))
+            points = stroke_points(rng, big, angle + jitter, length * scale * rng.uniform(0.7, 1.3), rng.uniform(-5, 5))
+            wrapped_lines(draw, big, points, width * scale * rng.uniform(0.8, 1.2), int(rng.integers(0, 70)))
+        channels.append(canvas.resize((size, size), Image.Resampling.LANCZOS))
+    return Image.merge("RGBA", channels)
+
+
+def ramps(width: int = 256) -> Image.Image:
+    """Una fila por tipo de material: de sombra (izquierda) a luz (derecha).
+
+    Cada banda lleva su tinte: sombras frías, luces cálidas.
+    """
+    rows = {
+        # nombre: [(posición donde empieza la banda, color multiplicador)]
+        "neutro": [(0.00, (0.42, 0.42, 0.50)), (0.38, (0.74, 0.73, 0.76)), (0.66, (1.00, 0.98, 0.95))],
+        "deposito": [(0.00, (0.36, 0.33, 0.48)), (0.36, (0.70, 0.62, 0.62)), (0.64, (1.00, 0.95, 0.86))],
+        "superficie": [(0.00, (0.38, 0.43, 0.52)), (0.40, (0.66, 0.70, 0.74)), (0.70, (0.96, 0.97, 0.98))],
+        "piel": [(0.00, (0.55, 0.38, 0.40)), (0.30, (0.82, 0.66, 0.62)), (0.62, (1.00, 0.95, 0.90))],
+        "metal": [(0.00, (0.30, 0.32, 0.38)), (0.45, (0.62, 0.64, 0.68)), (0.85, (1.10, 1.08, 1.04))],
+    }
+    softness = 0.025
+    image = np.zeros((len(rows), width, 3), dtype=np.float64)
+    for row, bands in enumerate(rows.values()):
+        for x in range(width):
+            t = x / (width - 1)
+            color = np.array(bands[0][1])
+            for start, band_color in bands[1:]:
+                weight = np.clip((t - start) / softness + 0.5, 0.0, 1.0)
+                color = color * (1.0 - weight) + np.array(band_color) * weight
+            image[row, x] = color
+    # Los valores pueden superar 1 (brillo del metal): se guardan a la mitad.
+    return Image.fromarray(np.clip(image * 0.5 * 255.0, 0, 255).astype(np.uint8), "RGB")
+
+
+def boil_noise(size: int = 256) -> Image.Image:
+    red = fft_noise(size, 2.2, seed=11)
+    green = fft_noise(size, 2.2, seed=12)
+    blue = np.zeros_like(red)
+    rgb = np.stack([red, green, blue], axis=-1)
+    return Image.fromarray((rgb * 255.0).astype(np.uint8), "RGB")
+
+
+def grain(size: int = 256) -> Image.Image:
+    noise = fft_noise(size, 0.2, seed=21)
+    return Image.fromarray((noise * 255.0).astype(np.uint8), "L")
+
+
+def main() -> None:
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    outputs = {
+        "papel.png": paper,
+        "tramado.png": hatching,
+        "rampas.png": ramps,
+        "ruido_trazo.png": boil_noise,
+        "grano.png": grain,
+    }
+    for name, build in outputs.items():
+        image = build()
+        path = OUT_DIR / name
+        image.save(path, optimize=True)
+        print(f"  {path.relative_to(ROOT)}  {image.size[0]}x{image.size[1]} {image.mode}")
+    print(f"{len(outputs)} texturas generadas.")
+
+
+if __name__ == "__main__":
+    main()

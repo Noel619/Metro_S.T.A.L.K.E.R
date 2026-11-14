@@ -45,40 +45,45 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 
 | | |
 |---|---|
-| **Fase actual** | Preproducción: plan y preguntas abiertas |
-| **Motor** | Godot 4 (la versión estable exacta se fija en la Fase 0) |
+| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) en curso |
+| **Motor** | Godot 4.7.2 |
 | **Plataforma** | PC (Windows; la build de Linux sale casi gratis) |
 | **Idioma** | Solo español |
 | **Calidad objetivo** | Lista para publicarse, aunque por ahora no se publique |
-| **Equipo de referencia** | Ryzen 7 8700G |
-| **Siguiente hito** | H0 · *Hola, Tumansk* (Fase 0) |
+| **Equipo de referencia** | Ryzen 7 8700G con su gráfica integrada (Radeon 780M) |
+| **Siguiente hito** | H1 · *Prueba de Tinta* (Fase 1) |
+
+**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
 
 ### Decisiones tomadas
 
 | Tema | Decisión |
 |---|---|
+| Título | **Tumansk** (título de trabajo) |
 | Premisa | Subes a la superficie a **saquear**. Lo que encuentras lo limpias, lo reparas, lo guardas y lo vendes en tu **depósito**, dentro de una estación de metro |
+| Objetivo final | **Llegar a la zona más lejana y saber qué le pasó a tu padre.** Es muy difícil: exige el mejor equipo (máscaras, muchos filtros), conocer bien los caminos y llegar al final de la partida |
+| Clima | **Invierno largo, con nieve.** Las huellas son información: tú ves las de los demás y ellos ven las tuyas |
 | Mundo | Posapocalipsis tras una **guerra atómica**, en **Tumansk**, una gran ciudad soviética inspirada en Moscú. Sin año |
 | Historia | Mínima. No se nombra la estación ni hay facciones |
-| Protagonista | Hijo o hija de un stalker, de los que suben a buscar lo que queda. Demasiado joven para el oficio. Se llama como tú |
+| Protagonista | Hijo o hija de un stalker, de los que suben a buscar lo que queda. Demasiado joven para el oficio. Se llama como tú, y eliges si es chico o chica al firmar la escritura |
+| Tu padre | En la superficie hay pocos rastros suyos, y ambiguos. La respuesta está al final |
 | Estación | Siempre segura. Solo se recorre un trozo pequeño: el depósito, el pasillo de delante y la salida |
 | Moneda | **Rublos** |
-| Supervivencia | **Impuesto diario** suave por el local y **comer** cada día |
-| Muerte | **Permanente.** Si mueres, pierdes la partida |
+| Supervivencia | **Impuesto diario** suave por el local y **comer** cada día. El agua la da la estación |
+| Muerte | **Permanente.** Si mueres, pierdes la partida. En cooperativo, quien muere queda fuera y la partida sigue mientras quede alguien vivo |
 | Mapas | **No existen.** Los dibujas tú en tu cuaderno |
 | Rutas | **Siempre hay varias** para llegar a un mismo sitio |
 | Defensa | **Herramientas, no armas.** No se puede matar |
-| Enemigos | **Pocos y de gran calidad.** Los humanos son muy inteligentes, pero nunca saben nada que no hayan percibido |
+| Enemigos | **Pocos y de gran calidad.** Los humanos son muy inteligentes, pero nunca saben nada que no hayan percibido. Los saqueadores matan |
 | Cooperativo | **Arquitectura preparada desde el primer día**, de 2 a 4 jugadores |
-| Motor | **Godot 4** con GDScript tipado |
+| Motor | **Godot 4.7.2** con GDScript tipado |
 | Estilo visual | **Ilustración entintada** |
 | Producción 3D | **Modelos generados por código**: Blender 5 como módulo de Python, más generación dentro del motor |
 
 ### Próximos pasos
 
-1. Responder las [preguntas abiertas](#17-preguntas-abiertas).
-2. **Fase 0**: proyecto, red, pipelines de arte y verificación automática.
-3. **Fase 1**: la *Prueba de Tinta*, con las primeras capturas del estilo final para que las apruebes.
+1. **Fase 1**: la *Prueba de Tinta*, con las primeras capturas del estilo final para que las apruebes.
+2. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan.
 
 ---
 
@@ -332,7 +337,7 @@ No hay armas. No hay magia. Hay oficio.
 
 - **Radiación**: zonas calientes y objetos contaminados. El dosímetro cruje. La dosis se acumula y trae náuseas, debilidad y, al final, la muerte. Se combate con pastillas y con tiempo.
 - **Aire**: en algunas zonas hace falta la máscara. Los filtros duran poco, y con la máscara puesta ves menos, oyes menos y tu respiración se oye.
-- **Frío**: un invierno largo te quita aliento y te hace temblar *(propuesta: [pregunta 5](#17-preguntas-abiertas))*.
+- **Frío**: un invierno largo te quita aliento y te hace temblar.
 - **La noche**: más oscura, más fría y con más movimiento. Volver de noche casi nunca es buena idea.
 - **Estructuras**: suelos podridos, escaleras rotas, techos que ceden.
 
@@ -362,7 +367,16 @@ Las zonas se hacen **a mano**, sin generación procedural, con mucha densidad y 
 | 3 | **La Avenida y el Mercado** | 30–60 min | Avenida de ocho carriles, grandes almacenes, mercado cubierto, pasos subterráneos | Saqueadores, el Llamador, la Jauría | Ropa, comida, electrónica |
 | 4 | **La Zona Industrial** | 45–60 min | Fábrica, playa de vías, almacenes | Un campamento de saqueadores, radiación alta | Herramientas, combustible, componentes |
 | 5 | **El Hospital** | Unos 60 min | Un hospital de varias plantas | El Inquilino, el Llamador, saqueadores | Medicinas valiosas |
+| 6 | **La Zona Cero** *(nombre provisional)* | La gran expedición | La zona más lejana, donde cayó la bomba: radiación extrema y aire irrespirable. Aquí está la respuesta sobre tu padre | Todas, más el entorno | El final del juego |
 | — | **Los túneles** | Variable | Túneles hacia estaciones abandonadas: rutas alternativas para llegar a otras zonas | Oscuridad, agua, el Llamador | — |
+
+### 6.11 La gran expedición
+
+Llegar a la zona más lejana es el objetivo del juego y tiene que costar muchísimo. No se consigue en una salida improvisada, sino al final de la partida y tras mucha preparación:
+
+- **Equipo**: la mejor máscara, muchos filtros, ropa de abrigo, pastillas antirradiación y todo lo que hayas ido consiguiendo.
+- **Conocimiento**: tus mapas, las rutas que te sabes de memoria, los horarios de las patrullas y dónde viven las amenazas.
+- **Escondites** *(propuesta)*: en salidas anteriores puedes dejar provisiones escondidas a lo largo del camino (filtros, comida, vendas) para recogerlas durante la gran expedición. Los saqueadores también pueden encontrarlas.
 
 ---
 
@@ -420,7 +434,7 @@ Son pocas y de gran calidad. Cada una se trata como un pequeño proyecto propio:
   - En las fases avanzadas del desarrollo: tienden emboscadas en los pasos obligados, ponen cebos (una mochila a la vista), colocan trampas y aprenden tus rutas habituales.
 - **Señales.** Latas colgadas como alarma, hilos trampa, humo de campamento, voces, colillas, huellas de botas.
 - **Cómo sobrevivir.** Observar sus rutinas con los prismáticos y el reloj, escuchar lo que dicen, evitar sus trampas (la navaja corta los hilos), despistarlos con ruidos o con marcas de tiza falsas y tener siempre una vía de escape.
-- **Si te ven.** Disparan. A veces gritan antes, y entonces puedes huir o rendirte *(qué pasa si te rindes está pendiente: [pregunta 7](#17-preguntas-abiertas))*.
+- **Si te pillan, te matan.** No hay rendición posible.
 - **Por qué dan miedo.** Piensan como tú. Y tienen armas.
 
 ### 7.5 Cuando se cruzan
@@ -444,9 +458,9 @@ Son pocas y de gran calidad. Cada una se trata como un pequeño proyecto propio:
 - **Guerra atómica.** Sin año y sin explicaciones largas.
 - **Tumansk**: una ciudad soviética ficticia inspirada en Moscú, con avenidas anchas, microdistritos de bloques de paneles y un metro monumental y frío. Todo el texto del juego está en español, carteles incluidos, pero el diseño es soviético.
 - **Sin facciones** y **sin nombre de estación**.
-- **Tu padre**: era stalker, enfermó, subió una última vez y no volvió. No sabes nada de él.
+- **Tu padre**: era stalker, enfermó, subió una última vez y no volvió. No sabes nada de él. En la superficie hay pocos rastros suyos, y ambiguos.
 - **La historia se cuenta poco, y a través del entorno**: pisos abandonados, notas, fotos, objetos personales. No hay cinemáticas.
-- **Pendiente**: cuál es el objetivo final de una partida y si hay rastros de tu padre ([preguntas 2 y 3](#17-preguntas-abiertas)).
+- **El objetivo de la partida**: llegar a la zona más lejana y saber qué le pasó a tu padre (ver [6.11](#611-la-gran-expedición)).
 
 ---
 
@@ -606,7 +620,7 @@ Candidatas con licencia libre (OFL); se validan en la Fase 1.
 - **De 2 a 4 jugadores.** Comparten un único depósito (dinero, estanterías y encargos); cada uno tiene su mochila y su cuaderno.
 - **Compartir mapas**: se pueden copiar páginas del cuaderno de otro (lleva su tiempo) o pegarlas en el tablero de la pared.
 - **Más gente significa más ruido y más huellas**, así que la dificultad sube sola.
-- **Muerte**: pendiente ([pregunta 8](#17-preguntas-abiertas)).
+- **Muerte**: quien muere queda fuera. La partida sigue mientras quede alguien vivo; si mueren todos, se pierde.
 - **Voz**: por decidir. La voz por proximidad sería ideal para el terror, pero requiere trabajo extra.
 - **Técnica**: el juego funciona siempre con un anfitrión. En una partida de un jugador, el anfitrión simplemente no tiene invitados, así que todo se construye en red desde el primer día y nada hay que rehacer después. Conexión directa por IP o red local; para jugar por internet sin abrir puertos se valorará un servicio de relé.
 
@@ -706,7 +720,7 @@ Todo se genera por código y todo queda versionado.
 ### 13.7 Calidad
 
 - `gdlint` y `gdformat` (de gdtoolkit) en cada cambio.
-- Tests unitarios sin pantalla (GUT o gdUnit4; se decide en la Fase 0) para la lógica: economía, mochila, percepción, guardado.
+- Tests unitarios sin pantalla, con un ejecutor propio (`tests/run_tests.gd`, ver [D-002](docs/DECISIONES.md)) para la lógica: economía, mochila, percepción, guardado.
 - Pruebas de red automáticas: dos instancias conectadas ejecutan el mismo escenario y se comparan.
 - GitHub Actions: lint, tests y builds de Windows y Linux como artefactos descargables.
 
@@ -714,10 +728,10 @@ Todo se genera por código y todo queda versionado.
 
 | Equipo | Resolución | Objetivo |
 |---|---|---|
-| Ryzen 7 8700G con su gráfica integrada (Radeon 780M) | 1080p | 60 fps, con escalado FSR si hace falta |
+| Ryzen 7 8700G con su gráfica integrada (Radeon 780M), sin gráfica dedicada | 1080p | 60 fps, con escalado FSR 2 si hace falta |
 | PC con gráfica dedicada media | 1080p–1440p | 60 fps o más |
 
-Para conseguirlo: iluminación horneada en los interiores, nada de iluminación global en tiempo real, sombras dinámicas solo para el sol y la linterna, niebla ligera y un presupuesto de milisegundos fijo para cada efecto de post-proceso. *(Pendiente de confirmar si tienes gráfica dedicada: [pregunta 10](#17-preguntas-abiertas).)*
+La gráfica integrada es el objetivo principal. Para conseguirlo: iluminación horneada en los interiores, nada de iluminación global en tiempo real, sombras dinámicas solo para el sol y la linterna, niebla ligera y un presupuesto de milisegundos fijo para cada efecto de post-proceso. El escalado (nativo, FSR o FSR 2) ya está en los ajustes desde la Fase 0.
 
 ---
 
@@ -742,20 +756,21 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Objetivo**: un proyecto que arranca en red, pipelines que producen assets sin pasos manuales y verificación automática.
 
-- [ ] **F0-01** Instalar Godot 4 (versión estable fijada) en el entorno de desarrollo y en CI.
-- [ ] **F0-02** Crear el proyecto: Forward+, estructura de carpetas, capas de física y de render con nombre, mapa de controles (teclado y ratón, y mando).
-- [ ] **F0-03** Convenciones: `snake_case` para archivos, `PascalCase` para clases, tipado estático obligatorio, formato de commits y plantilla de PR con capturas.
-- [ ] **F0-04** Autoloads base, como esqueletos con tests: `EventBus`, `GameState`, `SaveSystem`, `SceneRouter` y `Settings`.
-- [ ] **F0-05** `NetSession`: el juego arranca siempre como anfitrión; escena de prueba con dos instancias conectadas por ENet.
-- [ ] **F0-06** Pipeline 3D: Blender 5 (`bpy`) y una receta de ejemplo → `.glb` → importación automática con materiales y colisión.
-- [ ] **F0-07** Pipeline 2D: generador SVG con rough.js (una etiqueta de ejemplo).
-- [ ] **F0-08** Pipeline de texturas: papel, tramado y rampa de ejemplo.
-- [ ] **F0-09** Capturas automáticas de escenas, renderizadas sin pantalla, para la revisión visual.
-- [ ] **F0-10** CI en GitHub Actions: lint, tests, prueba de red y builds de Windows y Linux.
-- [ ] **F0-11** Carpeta `docs/`: GDD vivo (este README se divide cuando crezca), guía de estilo y registro de decisiones.
+- [x] **F0-01** Instalar Godot 4.7.2 en el entorno de desarrollo y en CI.
+- [x] **F0-02** Crear el proyecto: Forward+, estructura de carpetas, capas de física y de render con nombre, mapa de controles (teclado y ratón, y mando).
+- [x] **F0-03** Convenciones: `snake_case` para archivos, `PascalCase` para clases, tipado estático obligatorio, formato de commits y plantilla de PR con capturas.
+- [x] **F0-04** Autoloads base, como esqueletos con tests: `EventBus`, `GameState`, `SaveSystem`, `SceneRouter` y `Settings`.
+- [x] **F0-05** `NetSession`: el juego arranca siempre como anfitrión; escena de prueba con dos instancias conectadas por ENet.
+- [x] **F0-06** Pipeline 3D: Blender 5 (`bpy`) y una receta de ejemplo → `.glb` → importación automática con materiales y colisión.
+- [x] **F0-07** Pipeline 2D: generador SVG con rough.js (una etiqueta de ejemplo).
+- [x] **F0-08** Pipeline de texturas: papel, tramado y rampa de ejemplo.
+- [x] **F0-09** Capturas automáticas de escenas, renderizadas sin pantalla, para la revisión visual.
+- [x] **F0-10** CI en GitHub Actions: lint, tests, prueba de red y builds de Windows y Linux.
+- [x] **F0-11** Carpeta `docs/`: GDD vivo (este README se divide cuando crezca), guía de estilo y registro de decisiones.
 
 **Entregable**: *Hola, Tumansk*: una caja generada por receta, importada sola, que dos instancias conectadas ven moverse a la vez.
 **Criterio de salida**: un asset va de la receta al juego sin tocar nada a mano; las dos instancias están sincronizadas; la CI está en verde.
+**Estado**: ✅ terminada. 14 tests y la prueba de red en verde. Captura: [docs/capturas/fase0_hola_tumansk.png](docs/capturas/fase0_hola_tumansk.png).
 
 ### Fase 1: La Prueba de Tinta (puerta de estilo) · tamaño M
 
@@ -857,7 +872,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F5-06** Unas 15 mejoras del depósito, más la personalización.
 - [ ] **F5-07** Unos 8 clientes con sus encargos.
 - [ ] **F5-08** Variación entre salidas: patrullas, desplazamientos de la Jauría, campamentos nuevos, botín.
-- [ ] **F5-09** El objetivo final de la partida (según la [pregunta 2](#17-preguntas-abiertas)).
+- [ ] **F5-09** La Zona Cero y la gran expedición: escondites, el final y qué le pasó a tu padre.
 
 **Entregable**: el juego, completable de principio a fin.
 **Criterio de salida**: todo el contenido está dentro, aunque falte pulido.
@@ -904,8 +919,8 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 | Hito | Fase | Entregable | Criterio de salida | Tamaño | Estado |
 |---|---|---|---|---|---|
-| **H0 · Hola, Tumansk** | 0 | Proyecto, red, pipelines y CI | Un asset va de la receta al juego sin pasos manuales; dos instancias sincronizadas | S | ⬜ |
-| **H1 · Prueba de Tinta** | 1 | 2 dioramas y guía de estilo | Estilo aprobado por ti | M | ⬜ |
+| **H0 · Hola, Tumansk** | 0 | Proyecto, red, pipelines y CI | Un asset va de la receta al juego sin pasos manuales; dos instancias sincronizadas | S | ✅ |
+| **H1 · Prueba de Tinta** | 1 | 2 dioramas y guía de estilo | Estilo aprobado por ti | M | 🟨 |
 | **H2 · El depósito abre** | 2 | Depósito jugable | Del depósito sucio a la primera venta, sin cajas de texto | L | ⬜ |
 | **H3 · Primera salida** | 3 | La Plaza, el cuaderno y la Jauría | Se planifica, se dibuja, se usan rutas distintas; muertes justas | L | ⬜ |
 | **H4 · Los primeros días** | 4 | Vertical slice | Bucle completo, 60 fps en tu PC, cooperativo de 2 | XL | ⬜ |
@@ -920,7 +935,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 | Elemento | Vertical slice (Fase 4) | Versión 1.0 |
 |---|---|---|
-| Zonas | 1 completa y 1 parcial | 5, más los túneles |
+| Zonas | 1 completa y 1 parcial | 6, más los túneles |
 | Amenazas | La Jauría y el Inquilino | La Jauría, el Inquilino, el Llamador y los Saqueadores |
 | Herramientas | 12 | Unas 25 |
 | Objetos de botín distintos | Unos 30 | Unos 100 |
@@ -976,17 +991,25 @@ Cada pregunta lleva una propuesta. Si te parece bien, basta con decir "ok".
 
 | # | Pregunta | Propuesta |
 |---|---|---|
-| 1 | **Título.** Ninguno de los anteriores te gustó. ¿Alguno de estos? *Tumansk*, *Herencia*, *Superficie*, *Lo que queda*, *La Compuerta* | *Tumansk* (es el título de trabajo) |
-| 2 | **¿Cuál es el objetivo de una partida?** **A**: sobrevivir sin final (cuántos días aguantas). **B**: una meta, como llegar a la zona más lejana y saber qué le pasó a tu padre. **C**: aguantar hasta que acabe el invierno | B, y después poder seguir jugando libremente |
-| 3 | ¿Puede haber rastros de tu padre en la superficie (objetos, notas), sin contar demasiado? | Sí, pocos y ambiguos |
-| 4 | ¿Tu personaje es chico o chica? En español afecta a los textos | Lo eliges al firmar la escritura |
-| 5 | ¿Un invierno largo, con nieve y huellas como información (las tuyas y las de los demás)? | Sí |
-| 6 | ¿Hace falta beber, además de comer? | Solo comer; el agua la da la estación |
-| 7 | Saqueadores: si te pillan, ¿te matan siempre, o a veces puedes rendirte y te quitan todo? | A veces puedes rendirte: pierdes la mochila, pero no la vida |
-| 8 | Cooperativo: si muere un jugador, ¿qué pasa? | Queda fuera; la partida sigue mientras quede alguien vivo |
-| 9 | ¿Te convencen la Jauría, el Inquilino, el Llamador y los Saqueadores? ¿Cambiarías alguno? | — |
-| 10 | Tu PC: ¿tienes tarjeta gráfica dedicada o usas la integrada del 8700G (Radeon 780M)? | Si es la integrada: 1080p a 60 fps con escalado |
-| 11 | ¿Convierto esta Hoja de Desarrollo en Issues y un Project de GitHub? | Sí |
+| 1 | ¿La zona más lejana es la **Zona Cero**, donde cayó la bomba? ¿O prefieres otro nombre? | Zona Cero |
+| 2 | ¿Te gustan los **escondites** para preparar la gran expedición (dejar provisiones por el camino en salidas anteriores)? | Sí |
+| 3 | ¿La gran expedición puede durar **más de 60 minutos**, con un refugio a mitad de camino? | Sí, con un único refugio intermedio |
+| 4 | ¿Convierto la Hoja de Desarrollo en **Issues de GitHub**? | Sí |
+
+### Respondidas
+
+| Tema | Respuesta |
+|---|---|
+| Título | *Tumansk*, como título de trabajo |
+| Objetivo de la partida | Llegar a la zona más lejana y saber qué le pasó a tu padre. Muy difícil, al final de la partida |
+| Rastros del padre | Pocos y ambiguos |
+| Chico o chica | Se elige al firmar la escritura |
+| Clima | Invierno largo, con nieve y huellas |
+| Beber | No hace falta: solo comer; el agua la da la estación |
+| Saqueadores | Matan |
+| Muerte en cooperativo | Quien muere queda fuera; la partida sigue mientras quede alguien vivo |
+| Amenazas | La Jauría, el Inquilino, el Llamador y los Saqueadores, por ahora |
+| Gráfica | Integrada (Radeon 780M): 1080p a 60 fps, con escalado si hace falta |
 
 ---
 

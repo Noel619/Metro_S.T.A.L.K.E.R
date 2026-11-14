@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      build:
+        description: "Generar los ejecutables de Windows y Linux"
+        type: boolean
+        default: true
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  lint:
+    name: Estilo del código
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "gdtoolkit==4.5.0"
+      - run: make lint
+
+  test:
+    name: Tests y prueba de red
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Godot
+        run: |
+          curl -sSL -o godot.zip "https://downloads.godotengine.org/?version=${GODOT_VERSION}&flavor=stable&slug=linux.x86_64.zip&platform=linux.64"
+          unzip -q godot.zip
+          sudo mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+      - run: make test
+      - run: make test-net
+
+  build:
+    name: Ejecutables
+    needs: [lint, test]
+    if: (github.event_name == 'workflow_dispatch' && inputs.build) || startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-24.04
+    env:
+      TEMPLATES_DIR: ~/.local/share/godot/export_templates/4.7.2.stable
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar Godot
+        run: |
+          curl -sSL -o godot.zip "https://downloads.godotengine.org/?version=${GODOT_VERSION}&flavor=stable&slug=linux.x86_64.zip&platform=linux.64"
+          unzip -q godot.zip
+          sudo mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+      - name: Caché de las plantillas de exportación
+        id: templates
+        uses: actions/cache@v4
+        with:
+          path: ~/.local/share/godot/export_templates/4.7.2.stable
+          key: godot-templates-4.7.2-desktop
+      - name: Descargar las plantillas de exportación
+        if: steps.templates.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL -o templates.tpz "https://downloads.godotengine.org/?version=${GODOT_VERSION}&flavor=stable&slug=export_templates.tpz&platform=templates"
+          mkdir -p ~/.local/share/godot/export_templates/4.7.2.stable
+          unzip -q -j templates.tpz "templates/linux_*" "templates/windows_*" "templates/version.txt" \
+            -d ~/.local/share/godot/export_templates/4.7.2.stable
+      - run: make import
+      - name: Exportar
+        run: |
+          mkdir -p build/windows build/linux
+          godot --headless --path . --export-release "Windows" build/windows/Tumansk.exe
+          godot --headless --path . --export-release "Linux" build/linux/Tumansk.x86_64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tumansk-windows
+          path: build/windows
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tumansk-linux
+          path: build/linux
