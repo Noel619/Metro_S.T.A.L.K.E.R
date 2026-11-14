@@ -1,18 +1,18 @@
 <div align="center">
 
-# RUTA DE TIZA
+# TUMANSK
 
-*Título provisional · repositorio de trabajo `Metro_S.T.A.L.K.E.R`*
+*Título de trabajo · repositorio `Metro_S.T.A.L.K.E.R`*
 
-**Un juego en primera persona sobre repartir paquetes en una ciudad que alguien borró.**
+**Supervivencia táctica en primera persona: sube a la superficie de una ciudad soviética arrasada, saquea lo que puedas y vuelve vivo a tu depósito.**
 
-Gestión acogedora en una estafeta bajo tierra · Exploración de terror en la superficie · 3D con estilo de ilustración entintada
+Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D con estilo de ilustración entintada
 
 </div>
 
-> No eres soldado. No eres un héroe. No tienes armas.
-> Tienes una mochila demasiado pequeña, una tiza, una cuerda y una lista de direcciones.
-> Y alguien, al otro lado de la niebla, lleva semanas esperando su paquete.
+> Tu padre subió una última vez y no volvió.
+> Lo único que heredaste es un depósito sucio en una estación de metro.
+> Arriba está todo lo que necesitas para sobrevivir. Y todo lo que puede matarte.
 
 ---
 
@@ -22,20 +22,22 @@ Gestión acogedora en una estafeta bajo tierra · Exploración de terror en la s
 1. [El concepto](#1-el-concepto)
 2. [Pilares de diseño](#2-pilares-de-diseño)
 3. [Dos mitades claramente divididas](#3-dos-mitades-claramente-divididas)
-4. [El bucle de juego: una jornada](#4-el-bucle-de-juego-una-jornada)
+4. [El bucle de juego: un día](#4-el-bucle-de-juego-un-día)
 5. [El Depósito: gestión](#5-el-depósito-gestión)
-6. [La Ciudad: exploración y terror](#6-la-ciudad-exploración-y-terror)
-7. [Mundo y narrativa](#7-mundo-y-narrativa)
-8. [Dirección de arte: ilustración entintada](#8-dirección-de-arte-ilustración-entintada)
-9. [Interfaz: sin cajas de texto](#9-interfaz-sin-cajas-de-texto)
-10. [Audio](#10-audio)
-11. [Arquitectura técnica (Godot 4)](#11-arquitectura-técnica-godot-4)
-12. [Plan por fases](#12-plan-por-fases)
-13. [Hoja de Desarrollo](#13-hoja-de-desarrollo)
-14. [Riesgos y mitigaciones](#14-riesgos-y-mitigaciones)
-15. [Preguntas abiertas](#15-preguntas-abiertas)
-16. [Propiedad intelectual](#16-propiedad-intelectual)
-17. [Glosario](#17-glosario)
+6. [La Superficie: táctica y terror](#6-la-superficie-táctica-y-terror)
+7. [Las amenazas](#7-las-amenazas)
+8. [Mundo y narrativa](#8-mundo-y-narrativa)
+9. [Dirección de arte: ilustración entintada](#9-dirección-de-arte-ilustración-entintada)
+10. [Interfaz: sin cajas de texto](#10-interfaz-sin-cajas-de-texto)
+11. [Audio](#11-audio)
+12. [Cooperativo](#12-cooperativo)
+13. [Arquitectura técnica (Godot 4)](#13-arquitectura-técnica-godot-4)
+14. [Plan por fases](#14-plan-por-fases)
+15. [Hoja de Desarrollo](#15-hoja-de-desarrollo)
+16. [Riesgos y mitigaciones](#16-riesgos-y-mitigaciones)
+17. [Preguntas abiertas](#17-preguntas-abiertas)
+18. [Propiedad intelectual](#18-propiedad-intelectual)
+19. [Glosario](#19-glosario)
 
 ---
 
@@ -45,24 +47,38 @@ Gestión acogedora en una estafeta bajo tierra · Exploración de terror en la s
 |---|---|
 | **Fase actual** | Preproducción: plan y preguntas abiertas |
 | **Motor** | Godot 4 (la versión estable exacta se fija en la Fase 0) |
-| **Plataforma objetivo** | PC (Windows y Linux), con Steam Deck como referencia de rendimiento |
-| **Siguiente hito** | H0 · *Hola, Tumánsk* (Fase 0) |
+| **Plataforma** | PC (Windows; la build de Linux sale casi gratis) |
+| **Idioma** | Solo español |
+| **Calidad objetivo** | Lista para publicarse, aunque por ahora no se publique |
+| **Equipo de referencia** | Ryzen 7 8700G |
+| **Siguiente hito** | H0 · *Hola, Tumansk* (Fase 0) |
 
 ### Decisiones tomadas
 
-| Tema | Decisión | Por qué |
-|---|---|---|
-| Motor | **Godot 4** con GDScript tipado | Libre y sin royalties. Escenas, scripts y datos son texto, así que todo el proyecto se puede escribir, revisar y versionar. El renderer Forward+ tiene lo necesario para un estilo no fotorrealista: shaders propios, post-proceso, niebla volumétrica y decals. |
-| Estilo visual | **Ilustración entintada** | Contornos de tinta, tramado y trazo vivo. El estilo puede reaccionar al miedo y a la tinta, así que deja de ser solo decoración y pasa a dar información al jugador. |
-| Defensa | **Herramientas, no armas. No se puede matar.** | Con un arma desaparece la sensación de peligro. Cada amenaza se resuelve con ingenio, preparación, sigilo o huida. |
-| Espacio | **Mochila pequeña en cuadrícula** | Cada salida obliga a decidir: más paquetes (dinero) o más herramientas (seguridad). Hay poco sitio y poco margen. |
-| Producción 3D | **Modelos generados por código** (Blender 5 como módulo de Python, más generación dentro del motor) | Calidad consistente y reproducible. Cada asset es una "receta" versionada que se puede retocar y regenerar. |
+| Tema | Decisión |
+|---|---|
+| Premisa | Subes a la superficie a **saquear**. Lo que encuentras lo limpias, lo reparas, lo guardas y lo vendes en tu **depósito**, dentro de una estación de metro |
+| Mundo | Posapocalipsis tras una **guerra atómica**, en **Tumansk**, una gran ciudad soviética inspirada en Moscú. Sin año |
+| Historia | Mínima. No se nombra la estación ni hay facciones |
+| Protagonista | Hijo o hija de un stalker, de los que suben a buscar lo que queda. Demasiado joven para el oficio. Se llama como tú |
+| Estación | Siempre segura. Solo se recorre un trozo pequeño: el depósito, el pasillo de delante y la salida |
+| Moneda | **Rublos** |
+| Supervivencia | **Impuesto diario** suave por el local y **comer** cada día |
+| Muerte | **Permanente.** Si mueres, pierdes la partida |
+| Mapas | **No existen.** Los dibujas tú en tu cuaderno |
+| Rutas | **Siempre hay varias** para llegar a un mismo sitio |
+| Defensa | **Herramientas, no armas.** No se puede matar |
+| Enemigos | **Pocos y de gran calidad.** Los humanos son muy inteligentes, pero nunca saben nada que no hayan percibido |
+| Cooperativo | **Arquitectura preparada desde el primer día**, de 2 a 4 jugadores |
+| Motor | **Godot 4** con GDScript tipado |
+| Estilo visual | **Ilustración entintada** |
+| Producción 3D | **Modelos generados por código**: Blender 5 como módulo de Python, más generación dentro del motor |
 
 ### Próximos pasos
 
-1. Responder las [preguntas abiertas](#15-preguntas-abiertas).
-2. **Fase 0**: proyecto, pipelines de arte y verificación automática.
-3. **Fase 1**: la *Prueba de Tinta*, con las primeras capturas del estilo final para aprobarlas.
+1. Responder las [preguntas abiertas](#17-preguntas-abiertas).
+2. **Fase 0**: proyecto, red, pipelines de arte y verificación automática.
+3. **Fase 1**: la *Prueba de Tinta*, con las primeras capturas del estilo final para que las apruebes.
 
 ---
 
@@ -70,431 +86,544 @@ Gestión acogedora en una estafeta bajo tierra · Exploración de terror en la s
 
 ### Premisa
 
-Han pasado nueve años desde **la Noche del Borrón**. Aquella noche, una niebla negra y espesa como la tinta subió desde los túneles del metro y cubrió **Tumánsk**, una ciudad de bloques de hormigón, tranvías y mosaicos. Quien quedó atrapado en ella no murió: quedó **tachado**.
+Después de la guerra, la gente de Tumansk se refugió en el metro. Arriba quedó una ciudad de avenidas anchas, bloques de hormigón y nieve sucia, donde el aire y la radiación matan despacio y lo que vive entre las ruinas mata rápido.
 
-Los supervivientes viven en enclaves aislados: un patio vecinal amurallado, un hospital, un mercado cubierto, estaciones de metro selladas. No hay teléfonos ni una radio fiable. Lo único que todavía los une es **el correo**.
+Algunos suben de todos modos. En la estación los llaman **stalkers**: buscan lo que queda (medicinas, comida, herramientas, piezas) y lo venden abajo. Tu padre era uno de ellos. Cuando enfermó tuvo que dejarlo, pero un día subió una última vez y no volvió. No sabes nada de él.
 
-Llegas a la **Estafeta Nº 9**, una oficina postal improvisada en el vestíbulo de una estación de metro abandonada. Buscas un techo y algo de comer. El antiguo cartero, **Ignat**, desapareció hace un mes en una de sus rutas. Dejó una montaña de paquetes que llega hasta el techo, clientes desesperados y un cuaderno lleno de símbolos de tiza que nadie entiende.
-
-Firmas el contrato como **Suplente**. A partir de ahora, el correo depende de ti.
+Lo único que heredas es un **depósito** en la estación: un local que él compró y nunca llegó a usar. Está sucio, lleno de telarañas y de cajas desordenadas. Eres demasiado joven para el oficio. Pero el impuesto hay que pagarlo, y hay que comer.
 
 ### En una frase
 
-*Una estafeta acogedora bajo tierra y una ciudad de pesadilla en la superficie: organiza el correo de día y atraviesa la niebla para entregar cada paquete.*
+*Un depósito que levantar bajo tierra y una ciudad muerta que saquear arriba: planifica cada salida, dibuja tus propios mapas y vuelve vivo.*
 
 ### Qué hace el jugador
 
-- **En el Depósito**: descarga la vagoneta que llega por el túnel; pesa, embala, etiqueta, sella y clasifica; atiende la ventanilla; elige encargos; restaura y decora la estafeta.
-- **En la Ciudad**: prepara la mochila, sube por la escalera mecánica muerta, cruza la niebla, entrega, recoge historias y vuelve. Si puede.
+- **En el Depósito**: limpia y restaura el local; procesa el botín (mide la radiación, descontamina, repara, pesa, etiqueta y ordena); atiende el mostrador; acepta encargos; paga el impuesto y come.
+- **En la Superficie**: observa, planifica, se mueve sin ser visto, saquea, dibuja su mapa y vuelve antes de que se acaben la luz, el aire o la suerte.
 
 ---
 
 ## 2. Pilares de diseño
 
-1. **Dos mundos, un mismo trazo.** El depósito es el hogar: luz ámbar, líneas limpias, colores cálidos. La ciudad es lo desconocido: frío, niebla, líneas que tiemblan. El lenguaje visual es el mismo; las emociones, opuestas.
-2. **Eres frágil.** No hay armas y no se mata. Hay preparación, ingenio, sigilo y huida. Todo obstáculo tiene más de una solución.
-3. **Prepararse también es jugar.** La mochila es pequeña. Elegir qué llevar, y qué dejar, es la decisión más importante de cada salida.
-4. **Cada paquete cuenta una historia.** Los paquetes son objetos físicos, personales y a veces extraños. El correo atrasado esconde la historia de la estafeta.
-5. **El dibujo está vivo.** El estilo es información: el trazo tiembla con el miedo, la tinta mancha la imagen y la luz "redibuja" el mundo.
-6. **Sin cajas de texto.** Toda la interfaz es un objeto del mundo: papel, cartón, tiza, sellos, cuerda o tu propio cuerpo.
+1. **Dos mundos, un mismo trazo.** El depósito es el hogar: luz ámbar, líneas limpias, colores cálidos. La superficie es hostil: frío, ceniza, líneas que tiemblan.
+2. **Tajante.** La muerte es definitiva. Cada salida a una zona nueva exige un plan; ir de frente se paga con la partida.
+3. **Tu mapa lo dibujas tú.** No hay mapas, ni minimapa, ni marcadores. Lo que sabes de la ciudad está en tu cuaderno, dibujado por ti.
+4. **Siempre hay otra ruta.** A cada objetivo se llega de varias formas: por la calle, por dentro de los edificios, por los tejados o por debajo.
+5. **Eres frágil.** No hay armas y no se mata. Hay información, preparación, sigilo y huida.
+6. **Enemigos justos.** Pocos, de gran calidad, y nunca hacen trampa: solo saben lo que ven, oyen o huelen.
+7. **Pequeño pero impecable.** Poco espacio, muy bien hecho. Calidad antes que cantidad, en todo.
+8. **Sin cajas de texto.** Toda la interfaz es un objeto del mundo.
 
 ---
 
 ## 3. Dos mitades claramente divididas
 
-| | **El Depósito** (gestión) | **La Ciudad** (exploración) |
+| | **El Depósito** (gestión) | **La Superficie** (exploración) |
 |---|---|---|
 | Emoción | Calma, rutina, satisfacción, hogar | Miedo, incertidumbre, vulnerabilidad |
-| Ritmo | Sin tiempos ni penalizaciones durante el turno | Tensión con picos; el reloj de la Crecida |
-| Luz | Ámbar, lámparas colgantes, resplandor suave | Tu linterna, farolas de sodio que parpadean, oscuridad |
-| Trazo | Contorno firme, temblor casi imperceptible | Contorno nervioso, tramado denso, manchas |
-| Color | Cálido y saturado | Frío y desaturado, con acentos de sodio |
-| Sonido | Radio, generador, palomas, papel | Viento, goteo, susurros, tu respiración |
-| Interfaz | Objetos sobre la mesa: libro, tablón, mapa | Casi nada: tus manos, tu reloj, tu mapa de papel |
-| Verbos | Pesar, etiquetar, sellar, ordenar, decorar | Marcar, escuchar, esconderse, trepar, abrir, huir |
+| Ritmo | Sin prisa durante el día de trabajo | Tensión constante: la luz del día y los filtros se acaban |
+| Luz | Lámparas de taller, bombillas desnudas, calor | Cielo gris, nieve, tu linterna, oscuridad |
+| Trazo | Contorno firme, temblor casi imperceptible | Contorno nervioso, tramado denso |
+| Color | Cálido y saturado | Frío y desaturado: ceniza, óxido, hormigón |
+| Sonido | La radio, el murmullo de la estación, herramientas | Viento, nieve que cruje, el dosímetro, tu respiración dentro de la máscara |
+| Interfaz | Objetos sobre la mesa: cuaderno, libro de cuentas, tablón | Casi nada: tus manos, tu reloj, tu dosímetro, tu cuaderno |
+| Verbos | Limpiar, reparar, etiquetar, ordenar, vender | Observar, dibujar, escuchar, esconderse, trepar, abrir, huir |
 
-**La frontera es física**: una puerta estanca y **la escalera mecánica muerta** que sube a la superficie. Mientras la subes, la imagen cambia poco a poco: el color se enfría, el trazo empieza a temblar y la música del depósito se apaga. Bajarla de vuelta es el momento de alivio.
+**La frontera es física**: la **escalera mecánica parada** y la **compuerta hermética** de la estación. Mientras subes, la imagen cambia poco a poco: el color se enfría, el trazo empieza a temblar y la radio del depósito se apaga a tu espalda. Bajar de vuelta es el momento de alivio.
 
 ---
 
-## 4. El bucle de juego: una jornada
+## 4. El bucle de juego: un día
 
 ```mermaid
 flowchart LR
-    A["Amanecer<br/>llega la vagoneta"] --> B["Turno<br/>pesar · etiquetar · sellar · clasificar"]
-    B --> C["Encargos<br/>tablón de corcho"]
-    C --> D["Preparación<br/>mapa · mochila"]
-    D --> E["La subida<br/>escalera mecánica muerta"]
-    E --> F["La salida<br/>entregar · explorar · sobrevivir"]
-    F --> G["El regreso<br/>cobrar · daños · devoluciones"]
-    G --> H["La noche<br/>paquetes raros · cartas de Ignat"]
-    H --> I["Dormir<br/>firmar el libro · cuota"]
-    I --> A
+    A["Mañana<br/>clientes · encargos"] --> B["Planificar<br/>cuaderno · mochila"]
+    B --> C["La subida<br/>escalera · compuerta"]
+    C --> D["La superficie<br/>observar · saquear · dibujar"]
+    D --> E["El regreso"]
+    D -.->|mueres| X["Fin de la partida"]
+    E --> F["Procesar el botín<br/>dosímetro · limpiar · reparar · etiquetar"]
+    F --> G["Vender<br/>mostrador · encargos"]
+    G --> H["Noche<br/>impuesto · comer · dormir"]
+    H --> A
 ```
 
-1. **Amanecer.** La vagoneta del correo llega por el túnel con sacas de otras estaciones. La descargas.
-2. **Turno.** Pesas, embalas, etiquetas, sellas y clasificas. Atiendes la ventanilla. Sin prisa: en el depósito el tiempo no corre.
-3. **Encargos.** Eliges en el tablón qué vas a entregar a pie. Cuantas más gotas de tinta tiene un encargo, más paga… y más cuesta volver.
-4. **Preparación.** Trazas la ruta en el mapa de pared y llenas la mochila. Cada hueco cuenta.
-5. **La subida.** Cruzas la puerta estanca y subes la escalera. El mundo cambia.
-6. **La salida.** Entregas, exploras, recoges lo que encuentras y evitas lo que vive en la niebla. Vigila el reloj: se acercan la Crecida y la noche.
-7. **El regreso.** Cobras, revisas daños, procesas devoluciones y anotas en el mapa lo que has aprendido.
-8. **La noche.** Examinas los paquetes raros en el cuarto oscuro, lees las cartas de Ignat, decoras y mejoras la estafeta.
-9. **Dormir.** Firmas el libro de registro (se guarda la partida) y pagas la cuota. Mañana llega otra vagoneta.
+1. **Mañana.** Subes la persiana metálica del depósito. Los clientes compran, te venden cosas y dejan **encargos**.
+2. **Planificar.** Sobre la mesa repasas tus mapas, eliges objetivo, ruta y una alternativa, y preparas la mochila. Cada hueco que ocupa una herramienta es un hueco menos para el botín.
+3. **La subida.** Escalera mecánica, compuerta. El mundo cambia.
+4. **La superficie.** Observas, te mueves, saqueas, dibujas lo que descubres y evitas lo que no puedes vencer. Mientras tanto, se acaban la luz del día y los filtros.
+5. **El regreso.** Si vuelves.
+6. **Procesar el botín.** Dosímetro, descontaminación, reparación, peso, etiqueta, estantería.
+7. **Vender.** Cumples encargos, vendes y cobras.
+8. **Noche.** Pagas el impuesto, comes y duermes. Al dormir se guarda la partida.
 
-### Peligro de los encargos
+### Duración de las salidas
 
-El peligro se marca con **1 a 5 gotas de tinta** dibujadas en la ficha. Más gotas significan más paga, más rarezas y más historia. *(Valores iniciales; se equilibran en la Fase 6.)*
+| Etapa | Duración típica |
+|---|---|
+| Primeras salidas | 10–20 minutos |
+| Salidas planificadas | 30–60 minutos |
+| Zonas avanzadas | Unos 60 minutos |
 
-| Gotas | Ejemplo | Paga relativa |
+### Encargos y peligro
+
+Cuanto más peligroso es un encargo, más paga y más difícil es volver. *(Valores iniciales; se equilibran en la Fase 7.)*
+
+| Peligro | Ejemplo | Paga relativa |
 |---|---|---|
-| ● | Un sobre a Los Bloques, de día | ×1 |
-| ●● | Una caja al Mercado Cubierto, de día | ×2 |
-| ●●● | Un paquete frágil al Río, al atardecer | ×3,5 |
-| ●●●● | Medicinas al Hospital Nº 3, de noche | ×6 |
-| ●●●●● | Un paquete raro a la Imprenta, entrega en mano | ×10 |
+| ● | Latas de conserva de los quioscos de la plaza | ×1 |
+| ●● | Una radio de un piso de Los Bloques | ×2 |
+| ●●● | Antibióticos de la farmacia de un bloque con Inquilino | ×3,5 |
+| ●●●● | Piezas de los grandes almacenes de la avenida, territorio de saqueadores | ×6 |
+| ●●●●● | Insulina del hospital | ×10 |
 
 ---
 
 ## 5. El Depósito: gestión
 
-### 5.1 La Estafeta Nº 9
+### 5.1 El espacio
 
-El depósito empieza **abandonado**: polvo, cajas hasta el techo, bombillas fundidas. Cada mejora lo llena de vida: luz, calor, plantas, carteles y objetos que traes de la ciudad.
+Pequeño a propósito: pocos metros cuadrados, cuidados al milímetro.
 
-| Espacio | Función | Disponible |
-|---|---|---|
-| Vestíbulo y ventanilla | Clientes, mapa de pared, tablón de encargos | Desde el inicio |
-| Andén | La vagoneta del correo llega con sacas y sale con paquetes clasificados | Desde el inicio |
-| Almacén | Estanterías y casilleros; **la Montaña**, el correo atrasado de Ignat | Desde el inicio |
-| Cuarto de Ignat | Tu cama (dormir y guardar), su cuaderno, sus cosas | Desde el inicio |
-| Taller | Fabricar y reparar herramientas | Mejora |
-| Cuarto oscuro | Examinar paquetes raros por la noche | Mejora |
-| Sala del generador | Luz y calor; consume combustible | Mejora (hay que repararla) |
-| Palomar | Palomas mensajeras para cartas cortas a enclaves cercanos | Mejora |
-| Líneas de vagoneta | Nuevos destinos sin ir a pie (reparando vías) | Mejoras |
+| Rincón | Qué hay |
+|---|---|
+| Mostrador | La persiana metálica que se sube cada mañana, el mostrador, la vitrina, la caja de los rublos |
+| Almacén | Estanterías, cajas, ganchos y redes. El espacio es limitado: ordenarlo bien es parte del juego |
+| Banco de trabajo | Reparaciones, piezas, herramientas |
+| Descontaminación | Pila, cepillos, bolsas, el dosímetro |
+| Para dormir | Un catre, una estufa, tus cosas |
+| Mesa de planificación | Tu cuaderno y el tablero de la pared, con tus páginas y el hilo de las rutas |
 
-### 5.2 Trabajar un paquete
+**La estación**, de la que solo se recorre un trozo: el pasillo frente al depósito, el puesto de comida de al lado, el tablón de avisos, la escalera mecánica y la compuerta. El resto (gente, humo, luces) se ve y se oye, pero no se recorre.
 
-Cada paquete es un objeto físico con **peso, tamaño, fragilidad, destino, contenido y estado**, y a veces con **rarezas**.
+### 5.2 El primer día: limpiar
 
-1. **Recibir.** Llega de la vagoneta o de la ventanilla, con un **formulario de envío** rellenado a mano por el cliente.
-2. **Pesar.** En la báscula de aguja. El peso fija el franqueo.
-3. **Embalar.** Caja acolchada, papel, cinta (se arrastra), cordel (se ata), lacre.
-4. **Etiquetar.** Etiqueta de destino con el emblema y el color del enclave. Cada enclave tiene además una forma, para que se distinga también sin color. Marcas **FRÁGIL**, **PESADO**, **NO ABRIR DE NOCHE**.
-5. **Sellar y decorar.** Sellos de franqueo y pegatinas, colocados donde quieras. No hay una forma correcta. A los clientes les gustan los paquetes bonitos: dan propinas y mejoran tu reputación.
-6. **Clasificar.** En los casilleros por destino, en la vagoneta o en tu mochila si la entrega es a pie.
+Funciona como tutorial y, como en Cat Mail Co., tiene que dar gusto:
 
-Si un paquete llega dañado, mojado o manchado de tinta, puede volver **devuelto**, con la queja del cliente escrita en la caja.
+- Quitar telarañas, barrer, fregar, sacar la basura.
+- Vaciar las cajas desordenadas del antiguo dueño. Entre los trastos aparecen tus primeras herramientas y algo de mercancía.
+- Cambiar una bombilla, desatascar la persiana con una palanca, encender la estufa.
+- Al acabar, el depósito ha pasado del abandono a ser un negocio. Ver el antes y el después es parte de la recompensa.
 
-### 5.3 La ventanilla y los clientes
+### 5.3 Procesar el botín
 
-- Los clientes hablan a través del cristal. Su voz llega amortiguada (un murmullo, sin voces grabadas) y lo que dicen aparece en **papelitos escritos a mano**.
-- El **formulario de envío** es el diálogo principal. Cada cliente tiene su letra, sus faltas de ortografía, sus tachones y sus dibujos. Lo que escriben, y lo que tachan, cuenta su historia.
-- Clientes recurrentes con pequeños arcos. Ejemplos para el vertical slice:
-  - **Doña Zina**: teje calcetines para un nieto al que no ve desde hace años. Paga con té, que te ayuda a recuperar la calma.
-  - **Lev, el relojero**: envía mecanismos delicadísimos. Su arco desbloquea un reloj de bolsillo mejorado.
-  - **Olia**: una niña que escribe cartas a su madre, ingresada en el Hospital Nº 3. Su arco lleva a una de las entregas más duras del juego.
-  - **El señor del abrigo gris**: paga demasiado por enviar paquetes sellados a la Imprenta. Nunca se le ve la cara.
+Lo que en Cat Mail Co. es pesar, sellar y etiquetar paquetes, aquí es preparar lo que traes de arriba:
 
-### 5.4 Encargos, economía y reputación
+1. **Vaciar la mochila** sobre la mesa.
+2. **Inspeccionar**: girar el objeto, leer sus etiquetas, ver en qué estado está.
+3. **Medir la radiación** con el dosímetro. Lo contaminado se **descontamina** (lavar, cepillar, embolsar) o se aparta: vale menos y es peligroso tenerlo cerca.
+4. **Reparar** en el banco, con minijuegos táctiles: atornillar, limpiar contactos, coser, cambiar piezas aprovechando las de otros objetos rotos.
+5. **Pesar**: la chatarra y los metales se venden al peso.
+6. **Etiquetar**: escribes el precio a mano en una etiqueta de cartón y la atas con cordel. Las cajas llevan el icono de su categoría.
+7. **Ordenar** en las estanterías: medicinas, comida, herramientas, electrónica, ropa, chatarra.
 
-- **Tablón de corcho**: fichas de encargo clavadas con chinchetas. Indican destino, gotas de peligro, paga, plazo en días y condiciones especiales ("entrega en mano", "solo de noche", "no exponer a la luz").
-- **Moneda**: **fichas**, las viejas fichas de bronce del metro.
-- **Cuota diaria**: raciones y combustible para el generador. Las deudas no provocan "game over": si no pagas, la estafeta se enfría y se apaga (vienen menos clientes y por la noche no recuperas la calma) hasta que te pongas al día. *(Pendiente de confirmar: [pregunta 6](#15-preguntas-abiertas).)*
-- **Reputación por enclave**: desbloquea mejores encargos, herramientas (el Hospital da vendas; el Mercado vende tizas de colores) y rutas.
+### 5.4 El mostrador y los clientes
 
-### 5.5 Mejoras y restauración
+- Pocos clientes, todos de la estación, que vuelven una y otra vez: compran, te venden, regatean y dejan encargos.
+- Hablan poco y con la voz amortiguada; lo que dicen aparece en notas y papelitos escritos a mano.
+- Algunos ejemplos: un relojero que busca piezas, una madre que necesita antibióticos para su hijo, un anciano que te pide la foto que dejó en su antiguo piso.
 
-Como en Cat Mail Co., cada mejora desbloquea **destinos, herramientas o habilidades del oficio**: reparar una línea de vagoneta (un destino seguro nuevo), una báscula de precisión, una máquina de etiquetas, una cinta transportadora entre el andén y el almacén, una estufa, la radio, el palomar, el cuarto oscuro, el taller…
+### 5.5 Encargos
 
-Y **decoración libre**: carteles, plantas bajo una lámpara, objetos que traes de la ciudad como recuerdo. La estafeta se organiza como quieras.
+- Se cuelgan como fichas en un tablón de corcho: qué quieren, cuánto pagan, el plazo y **pistas, no mapas**. Por ejemplo: "Bloque 7, cuarto piso, la puerta con un gato pintado". Encontrarlo es cosa tuya.
+- Cuanto más peligrosa es la zona, mejor pagan.
 
-### 5.6 La noche en la estafeta: los paquetes raros
+### 5.6 Economía
 
-En Cat Mail Co. la luna revela secretos. Aquí, la noche despierta a los **paquetes raros**, objetos que ha tocado la tinta.
+- **Rublos.**
+- **Impuesto diario** a la estación por el local. Es suave, pero si la deuda se acumula, la estación precinta el depósito (no puedes vender) hasta que pagues.
+- **Comida**: hay que comer cada día, lo que compres en el puesto de al lado o lo que encuentres arriba. Sin comer te debilitas: menos aliento y más temblor. Varios días sin comer, y mueres.
+- **Precios**: dependen del estado del objeto, de su contaminación y de la demanda. Los encargos pagan más que la venta suelta.
 
-- Algunos **susurran** (y atraen a lo que vive en la niebla). Otros **pesan más de noche**, **se mueven**, **escarchan** lo que tienen al lado o **manchan** de tinta a los demás paquetes si les da la luz.
-- En el **cuarto oscuro** los examinas con un **estetoscopio** (para escuchar el interior), una **lámpara** (para ver cómo reaccionan a la luz) y la **báscula** (para comparar su peso de día y de noche).
-- Lo que descubres decide cómo manipularlos: caja de plomo, papel negro, atado con cordel, lejos de los demás…
-- En la ciudad tienen consecuencias. Uno que susurra atrae a los Tachados. Otro, en cambio, apunta siempre hacia su destinatario, como una brújula.
+### 5.7 Mejoras
 
-### 5.7 La Montaña: el correo atrasado de Ignat
-
-El correo retrasado esconde la historia. A medida que despejas **la Montaña** aparecen cartas sin entregar, notas de Ignat, objetos personales y páginas de su cuaderno con **el código de tiza** que usaba para marcar la ciudad. Algunas cartas abren **encargos de historia**.
+- Más estanterías, ganchos y redes: más capacidad en el mismo local.
+- Herramientas para el banco, que permiten más reparaciones.
+- Una pila de descontaminación mejor, la estufa, la radio, mejor luz, una vitrina en el mostrador.
+- Equipo: una mochila más grande (se cose en el banco), ropa de abrigo, una máscara mejor.
+- Personalización: carteles, una planta bajo la lámpara, objetos que traes de arriba. El depósito es tu sitio.
 
 ---
 
-## 6. La Ciudad: exploración y terror
+## 6. La Superficie: táctica y terror
 
-### 6.1 Principios del terror
+### 6.1 Principios
 
-- **Incertidumbre antes que sustos.** No hay minimapa, ni marcadores de enemigos, ni barras de vida. La información llega por el sonido, por la luz y por lo que has dibujado tú.
-- **Mostrar poco.** Las criaturas se intuyen: siluetas, garabatos, manchas, ruidos. El estilo entintado permite sugerir en lugar de enseñar.
-- **Tensión y alivio.** Los **refugios** marcan el ritmo: pequeñas habitaciones selladas donde enciendes una vela, respiras y escribes en tu cuaderno.
-- **La ciudad recuerda.** Tus marcas de tiza, tus cuerdas, tus escaleras y las puertas que forzaste siguen ahí la próxima vez. La lluvia borra la tiza poco a poco. La Crecida lo cambia todo.
-- **Siempre hay otra forma.** Una puerta cerrada se abre con ganzúas (silencio, pero lleva tiempo), con la palanca (ruido), con una llave encontrada, subiendo con una cuerda hasta la ventana de arriba o yendo por otra ruta.
+- **Planificar o morir.** Antes de entrar en una zona nueva hay que observarla desde lejos y desde arriba.
+- **Incertidumbre.** Sin minimapa, sin marcadores, sin barras de vida. La información llega por la vista, el oído y tu cuaderno.
+- **Mostrar poco.** Las amenazas se intuyen antes de verse: huellas, ruidos, restos.
+- **Tensión y alivio.** Hay pocos sitios donde respirar y dibujar: un piso que cierras con llave, una azotea sin accesos.
+- **La ciudad cambia entre salidas.** El mapa base es fijo, pero lo que hay en él no: clima, hora, patrullas, la jauría que se desplaza, campamentos nuevos.
 
-### 6.2 La mochila: no hay sitio para todo
+### 6.2 Tu mapa lo dibujas tú
 
-- **Cuadrícula** (6×5 al principio, ampliable) donde encajan paquetes y herramientas según su forma. Se prepara con calma en la mesa del depósito.
-- **Cinturón** con 3 huecos de acceso inmediato. Para todo lo demás hay que **arrodillarse y abrir la mochila**, que es lento, hace ruido y te deja expuesto.
-- **Peso**: cuanta más carga, más lento vas, más ruido haces y antes te quedas sin aliento. **Fragilidad**: correr, saltar o caerse daña lo frágil.
-- Lo voluminoso (la escalera plegable, los tablones) va **atado por fuera**: ocupa menos cuadrícula, pero hace ruido y se engancha.
+- **No hay mapas en el juego.** Ni encontrados, ni comprados, ni en pantalla.
+- **El cuaderno** tiene páginas cuadriculadas. Dibujas con lápiz, goma, regla y lápices de colores, y puedes añadir pequeños símbolos (peligro, entrada, botín, radiación, refugio, "visto a las 14:20") y notas escritas.
+- **Instrumentos que ayudan**: la **brújula** (para orientar el mapa), el **podómetro** (para medir distancias en pasos), el **reloj** (para anotar los horarios de las patrullas) y los **prismáticos** (para observar desde las alturas).
+- **Dónde se dibuja**: en el depósito, con calma; en la superficie, solo en un sitio seguro, porque abrir el cuaderno lleva tiempo y hace falta luz. El miedo hace temblar el trazo.
+- **Planificar**: en el depósito pegas páginas en el tablero de la pared y marcas las rutas con hilo. Siempre una ruta principal y otra de escape.
+- **Si mueres, el cuaderno se pierde contigo.** Lo que aprendiste solo queda en tu cabeza.
 
-### 6.3 Herramientas: el catálogo inicial
+### 6.3 Siempre hay otra ruta
 
-No hay armas. Hay oficio.
+Reglas de diseño de niveles:
+
+- Cada objetivo tiene al menos tres accesos: por la calle, por el interior de los edificios, por los tejados o por el subsuelo.
+- Cada ruta tiene su perfil: rápida y expuesta, lenta y segura, ruidosa, o que exige una herramienta (cuerda, tablón, cizalla, ganzúas).
+- Hay puntos altos desde los que observar antes de entrar.
+- Hay pocos pasos obligados, y son peligrosos: los saqueadores también los conocen.
+- Puedes crear tus propios atajos (una cuerda que dejas colgada, un tablón entre azoteas, una puerta forzada)… y otros también pueden usarlos.
+
+### 6.4 Sigilo: qué te delata
+
+| Factor | Ejemplos |
+|---|---|
+| Ruido | Correr, nieve que cruje, cristales, escaleras metálicas, agua, lo que llevas suelto en la mochila |
+| Luz | Tu linterna se ve desde muy lejos |
+| Silueta | En un tejado, recortado contra el cielo, se te ve desde toda la avenida |
+| Rastro | Huellas en la nieve, tu olor si el viento sopla hacia ellos, sangre |
+| Clima | El viento y la lluvia tapan ruidos; la nieve que cae borra huellas; la ventisca esconde a todos |
+
+### 6.5 La mochila
+
+- Es una **cuadrícula** (6×5 al empezar, ampliable) donde encajan herramientas y botín según su forma.
+- El **cinturón** tiene 3 huecos de acceso rápido. Para todo lo demás hay que arrodillarse y abrir la mochila, que es lento y te deja expuesto.
+- **Peso**: cuanta más carga, más lento vas, más ruido haces y antes te quedas sin aliento. Lo frágil (cristal, electrónica) se rompe si corres o te caes.
+- Lo que va mal guardado suena: latas, herramientas sueltas. Empaquetar bien también es sigilo.
+
+### 6.6 Herramientas
+
+No hay armas. No hay magia. Hay oficio.
 
 | Categoría | Herramienta | Para qué sirve | Coste o riesgo |
 |---|---|---|---|
-| Orientación | **Tiza** (blanca; después, de colores) | Flechas, símbolos y trazo libre en paredes y suelos. Las marcas se quedan entre salidas | Se gasta; la lluvia la borra |
-| | **Polvo de tiza** | Lanzado al aire, dibuja el contorno de lo invisible | Pocas cargas |
-| | **Carrete de hilo** | Hilo guía para volver por niebla cerrada o por zonas en blanco | Longitud limitada |
-| | **Brújula** | Orientarse. Enloquece cerca de las Erratas, así que también sirve para detectarlas | — |
-| | **Mapa de papel** | Se dibuja solo a medida que exploras. Hace falta luz para leerlo | — |
-| | **Reloj de bolsillo** | La hora y el aviso de la Crecida | — |
-| Luz | **Linterna de pilas** | Silenciosa | Pilas escasas |
-| | **Linterna de dinamo** | Nunca se agota | Darle a la manivela hace ruido |
-| | **Farol de aceite** | Luz amplia que mantiene a raya la tinta; se puede colgar | Se ve desde lejos |
-| | **Velas y cerillas** | Puntos de luz fijos, refugios, caminos marcados | Se consumen |
+| Información | **Cuaderno y lápices** | Tus mapas, tus notas, tus planes | Hacen falta luz y un sitio seguro |
+| | **Brújula** | Orientar el mapa, y orientarte tú | — |
+| | **Podómetro** | Contar pasos para dibujar a escala | — |
+| | **Reloj de pulsera** | La hora, la luz que queda, los horarios de las patrullas | — |
+| | **Prismáticos** | Observar desde lejos y desde las alturas | El reflejo del cristal puede delatarte |
+| | **Estetoscopio** | Escuchar a través de paredes y puertas | Te obliga a quedarte quieto |
+| | **Dosímetro** | Medir la radiación del entorno y de los objetos | Sus chasquidos se oyen |
+| | **Tiza** | Marcar rutas y peligros en las paredes | Los saqueadores también ven tus marcas |
+| Luz | **Linterna de pilas** | Luz silenciosa | Pilas escasas; se ve desde muy lejos |
+| | **Linterna de dinamo** | Luz que nunca se agota | Darle a la manivela hace ruido |
+| | **Velas y cerillas** | Luz fija para dibujar o trabajar | Se consumen y delatan |
 | Acceso | **Ganzúas** | Abrir cerraduras en silencio (minijuego táctil) | Se rompen; el miedo hace temblar las manos |
 | | **Palanca** | Forzar puertas y cajas. No es un arma: no se puede golpear con ella | Mucho ruido |
 | | **Cizalla** | Cortar cadenas y alambradas | Pesa |
-| | **Cuerda** | Bajar por huecos, atar puertas para bloquearlas, tender pasos | Se puede dejar como atajo permanente |
-| | **Escalera plegable** | Ventanas altas y balcones; se puede dejar puesta | Enorme y ruidosa |
+| | **Cuerda** | Bajar por huecos y fachadas, atar puertas | Se puede dejar puesta como atajo |
 | | **Tablón** | Puentes entre azoteas y sobre suelos hundidos | Voluminoso |
-| | **Martillo y clavos** | Cerrar puertas y ventanas, reparar escalones | Ruido |
+| | **Martillo y clavos** | Condenar trampillas y puertas, reparar escalones | Ruido |
+| | **Navaja** | Cortar hilos trampa, cuerdas y telas. No sirve para atacar | — |
 | Sigilo | **Lanzables** (latas, botellas, piedras) | Distraer con ruido | — |
 | | **Despertador de cuerda** | Lo dejas, te alejas… y suena donde tú ya no estás | Ocupa sitio |
-| | **Campanillas con hilo** | Alarma: las cuelgas en un pasillo y sabrás si algo pasa | — |
+| | **Campanillas con hilo** | Alarma: sabrás si algo pasa por tu ruta de escape | — |
 | | **Espejo de bolsillo** | Mirar tras las esquinas y bajo las puertas | — |
-| | **Zapatos de suela de goma** | Pasos más silenciosos | Es equipo, no una estadística |
-| Cuerpo | **Vendas** | Cortes y sangrado | — |
-| | **Agua limpia** | Lavar la tinta de las manos | Pesa |
-| | **Termo de té** | Recuperar la calma | Un uso por salida |
-| | **Foto de familia** | Mirarla te calma, y cuenta quién eras | — |
-| Paquetes | **Caja acolchada, caja de plomo, papel negro, arnés** | Proteger lo frágil, aislar lo raro, cargar lo enorme | Sitio y peso |
+| | **Cebo** (carne) | Distraer a la Jauría | Es tu comida |
+| Supervivencia | **Máscara y filtros** | Respirar donde el aire está contaminado | Ves y oyes menos; los filtros se acaban |
+| | **Vendas y botiquín** | Cortes, mordeduras, sangrado | — |
+| | **Pastillas antirradiación** | Reducir la dosis acumulada | Escasas y caras |
+| | **Ropa de abrigo** | Aguantar el frío | Abulta |
+| Carga | **Bolsas y cajas acolchadas** | Aislar lo contaminado y proteger lo frágil | Ocupan sitio |
 
-**Se progresa con equipo y conocimiento, no con estadísticas.** No subes de nivel. Mejoras porque tienes mejores herramientas, conoces la ciudad, entiendes a las criaturas y sabes leer el código de Ignat.
+**Se progresa con equipo y conocimiento, no con estadísticas.** No subes de nivel: mejoras porque tienes mejores herramientas, conoces mejor la ciudad y entiendes mejor lo que vive en ella.
 
-### 6.4 Lo que vive en la niebla
+### 6.7 Peligros del entorno
 
-Ninguna criatura se puede matar. Todas se pueden entender.
+- **Radiación**: zonas calientes y objetos contaminados. El dosímetro cruje. La dosis se acumula y trae náuseas, debilidad y, al final, la muerte. Se combate con pastillas y con tiempo.
+- **Aire**: en algunas zonas hace falta la máscara. Los filtros duran poco, y con la máscara puesta ves menos, oyes menos y tu respiración se oye.
+- **Frío**: un invierno largo te quita aliento y te hace temblar *(propuesta: [pregunta 5](#17-preguntas-abiertas))*.
+- **La noche**: más oscura, más fría y con más movimiento. Volver de noche casi nunca es buena idea.
+- **Estructuras**: suelos podridos, escaleras rotas, techos que ceden.
 
-| Criatura | Cómo es | Qué la atrae | Cómo sobrevivir |
-|---|---|---|---|
-| **Tachados** | Personas que la tinta cubrió de garabatos. Son ciegos | El sonido | Moverse despacio, distraer, esconderse, cerrar puertas |
-| **Borrones** | Invisibles; solo se ven sus goteos. Apagan las luces cercanas | La luz | Polvo de tiza para verlos; apagar la linterna (y quedarte a oscuras…) |
-| **Garabatos** | Enjambres pequeños en los sitios oscuros. Emborronan tus marcas de tiza | La oscuridad | Luz fija: farol, velas |
-| **Goteras** | Cuelgan del techo de escaleras y túneles como tinta a punto de caer | El ruido justo debajo | Mirar arriba; lanzar algo para que caigan antes |
-| **Mirones** | Siluetas inmóviles en ventanas lejanas. Si te ven, despiertan a todas las criaturas durante un rato | Tu luz en su línea de visión | Luces apagadas, espejo, rutas a cubierto |
-| **El Cartero** | Una figura con una saca al hombro que recorre tus rutas. ¿Es Ignat? | — | Es parte de la historia. No se explica aquí |
+### 6.8 Tu cuerpo es la interfaz
 
-### 6.5 Las Erratas
+- **Miedo**: no hay barra. Se nota en las manos, que tiemblan (la linterna, la ganzúa, el lápiz); en la respiración, que se oye; en el sonido, que se apaga; y en el propio dibujo, porque el trazo tiembla y el tramado invade los bordes de la imagen.
+- **Heridas**: cortes, mordeduras y torceduras, que se tratan con vendas y botiquín. La sangre deja rastro.
+- **Hambre**: el estómago suena y las manos tiemblan.
+- **Radiación**: los chasquidos del dosímetro y, si te pasas, las náuseas.
+- **Aire**: la máscara se empaña y se agrieta, y la respiración se ahoga cuando el filtro se agota.
 
-Son lugares donde el dibujo del mundo está mal hecho. Funcionan a la vez como puzles ambientales y como peligros.
+### 6.9 La muerte
 
-- **Bucle**: un pasillo o una escalera que se repite. La tiza te dice que ya pasaste por ahí. A veces, para salir, hay que caminar con los ojos cerrados y guiarse solo por el sonido.
-- **Puerta dibujada**: algunas puertas son solo dibujos; algunos dibujos son puertas.
-- **Página en blanco**: zonas borradas hasta quedar en papel blanco, sin líneas ni color. Solo se ven tu tiza y tu hilo.
-- **Eco**: tus pasos se repiten unos segundos después, donde ya no estás.
-- **Charco de tinta**: te frena, te mancha y esconde cosas.
-- **Calco**: dos habitaciones idénticas… casi. Hay que encontrar la diferencia para dar con la salida.
-- **Corrección con tiza**: en algunas Erratas, la tiza puede **corregir el dibujo**: cerrar una grieta, completar una puerta, unir una escalera. Es lo más parecido a un poder que vas a tener.
+- Hay **un solo guardado**, que se hace al dormir. Si sales del juego en mitad de una salida, la partida se guarda en ese punto y no se puede volver atrás.
+- **Si mueres, la partida se borra.**
+- La última imagen es el depósito cerrado, con un cartel escrito a mano por alguien de la estación.
 
-### 6.6 La Crecida
+### 6.10 Las zonas de Tumansk
 
-Cada cierto tiempo, la tinta sube. Hay avisos: suenan las campanas de la ciudad, se oye un rumor de papeles, las palomas huyen. Tienes unos minutos para **subir** (a pisos altos o azoteas) o para **encerrarte** en un refugio. Cuando la tinta baja, la ciudad ha cambiado: hay Erratas nuevas, las criaturas están en otros sitios y la tiza de las zonas bajas está emborronada.
+Las zonas se hacen **a mano**, sin generación procedural, con mucha densidad y varias rutas. Están ordenadas por distancia a la estación: cuanto más lejos, más peligro y más valor.
 
-### 6.7 Tu cuerpo es la interfaz
-
-- **Miedo**: no hay barra. Se nota en las manos, que tiemblan (la linterna, la ganzúa, el trazo de la tiza); en la respiración, que se oye; en el sonido, que se apaga; y **en el propio dibujo**, porque el trazo tiembla más y el tramado invade los bordes de la imagen. Se recupera con luz, en los refugios, con el té y con la foto.
-- **Mancha**: la tinta se acumula **en tus manos**. Mírate las manos para saber cuánta llevas: primero en los dedos, luego en las muñecas, luego por los brazos. Con mucha mancha oyes cosas que no están y ves cosas que no existen. Se lava con agua limpia.
-- **Heridas**: cortes (se tratan con vendas) y torceduras (cojeas). Se ven en el cuerpo y en el movimiento de la cámara.
-- **Si te atrapan**: la tinta llena la pantalla y despiertas en el depósito, porque alguien te encontró. Tu mochila se queda donde caíste y puedes volver a por ella. Una pequeña mancha de tinta ya no se va de tu mano. *(El modelo de muerte está pendiente de confirmar: [pregunta 5](#15-preguntas-abiertas).)*
-
-### 6.8 Distritos de Tumánsk
-
-| # | Distrito | Peligro | Qué lo hace especial | Enclave |
-|---|---|---|---|---|
-| 0 | **Andén 9** | — | La estafeta. Bajo tierra, cálida, segura | Estafeta Nº 9 |
-| 1 | **Los Bloques** | ●–●● | Patios, escaleras con buzones, columpios oxidados, tendederos, azoteas conectadas | Patio 14 |
-| 2 | **El Mercado Cubierto** | ●● | Un laberinto de puestos y lonas | Los Feriantes |
-| 3 | **El Río y los Puentes** | ●●● | La niebla se acumula en lo bajo; pasarelas y barcas | La Esclusa |
-| 4 | **Los Túneles** | ●●●–●●●● | Vías, galerías inundadas, otras estaciones | Andén 4 |
-| 5 | **Hospital Nº 3** | ●●●● | Pasillos interminables; Borrones | Las Enfermeras |
-| 6 | **La Imprenta Estatal** | ●●●●● | Rotativas, bobinas de papel, cubas de tinta. ¿El origen? | — |
-| 7 | **La Torre de Radio** | ●●●●● | Por encima de la niebla. El final | — |
-
-Los distritos se construyen **a mano** (no de forma procedural) para cuidar cada rincón, pero tienen elementos dinámicos: Erratas que se desplazan, criaturas que cambian de zona, y puertas y atajos que persisten.
+| # | Zona | Salida típica | Qué hay | Amenazas | Botín |
+|---|---|---|---|---|---|
+| 0 | **La Estación** | — | Tu depósito, el pasillo, la escalera, la compuerta | Ninguna: es segura | — |
+| 1 | **La Plaza** | 10–20 min | La salida del metro, quioscos, un paso subterráneo, el primer patio | La Jauría (a veces), radiación leve | Latas, ropa, chatarra |
+| 2 | **Los Bloques** | 20–40 min | Un microdistrito de bloques de paneles, una escuela, una farmacia de barrio | El Inquilino, la Jauría | Medicinas básicas, herramientas, objetos personales |
+| 3 | **La Avenida y el Mercado** | 30–60 min | Avenida de ocho carriles, grandes almacenes, mercado cubierto, pasos subterráneos | Saqueadores, el Llamador, la Jauría | Ropa, comida, electrónica |
+| 4 | **La Zona Industrial** | 45–60 min | Fábrica, playa de vías, almacenes | Un campamento de saqueadores, radiación alta | Herramientas, combustible, componentes |
+| 5 | **El Hospital** | Unos 60 min | Un hospital de varias plantas | El Inquilino, el Llamador, saqueadores | Medicinas valiosas |
+| — | **Los túneles** | Variable | Túneles hacia estaciones abandonadas: rutas alternativas para llegar a otras zonas | Oscuridad, agua, el Llamador | — |
 
 ---
 
-## 7. Mundo y narrativa
+## 7. Las amenazas
 
-- **El misterio central**: qué fue la Noche del Borrón y qué le pasó a Ignat. Circulan rumores: la Imprenta Estatal, los niveles profundos del metro, una emisión de radio que nadie llegó a escuchar entera.
-- **Cómo se cuenta**: sin cinemáticas largas. A través del correo atrasado (cartas, paquetes, notas), de los formularios y papelitos de los clientes, del entorno (casas vacías, buzones, carteles) y del **rastro de tiza de Ignat** por la ciudad, que aprendes a leer con su cuaderno.
-- **Tono**: melancolía y ternura en el depósito; terror y pérdida fuera. La gente sigue enviando calcetines, cartas de amor y medicinas. Por eso vale la pena salir.
-- **Finales**: 2 o 3, según qué entregas y qué paquetes decides abrir (o no abrir). *(Por ahora es un esbozo; se detalla en la Fase 5.)*
+Son pocas y de gran calidad. Cada una se trata como un pequeño proyecto propio: biología, sentidos, comportamiento, las señales que deja para que las anotes en tu cuaderno, y su propia animación y su propio sonido.
+
+**Reglas:**
+
+1. Ninguna sabe dónde estás si no te ha percibido.
+2. Todas dejan señales antes de dejarse ver.
+3. Ninguna se puede matar; todas se pueden entender.
+4. También se enfrentan entre ellas, y eso se puede aprovechar.
+
+### 7.1 La Jauría
+
+- **Qué es.** Perros asilvestrados que la radiación ha deformado: más grandes de lo que deberían, con calvas y bultos. Cazan en manada, guiados por una hembra.
+- **Dónde.** Avenidas, parques, descampados y patios grandes. De día y al atardecer.
+- **Cómo perciben.** Sobre todo por el olfato, así que el viento decide. También por la vista (detectan el movimiento) y el oído.
+- **Cómo cazan.** Te tantean desde lejos, te rodean y te cortan la huida. Si corres, te persiguen. Un rastro de sangre lo siguen sin descanso.
+- **Señales.** Huellas y excrementos, huesos roídos, aullidos al atardecer, cuervos sobre un cadáver.
+- **Cómo sobrevivir.** Avanzar con el viento de cara, no correr nunca delante de ellos, subir a un piso alto y cerrar la puerta, cruzar agua para cortar el rastro, sacrificar comida como cebo.
+- **Por qué da miedo.** Nunca está sola. Cuando ves un perro, los demás ya te están rodeando.
+
+### 7.2 El Inquilino
+
+- **Qué es.** Algo alto y delgadísimo, de articulaciones largas y piel pálida, casi ciego. Ocupa un edificio entero y lo convierte en su territorio. En la estación se dice que "ese bloque tiene inquilino".
+- **Dónde.** Grandes bloques de viviendas, y también otros edificios grandes, como el hospital.
+- **Cómo percibe.** Por las vibraciones que viajan por la estructura (pisadas, golpes, objetos que caen) y por el oído.
+- **Cómo caza.** Se mueve por las tripas del edificio: el hueco del ascensor, los bajantes de basura, los conductos y las cámaras entre muros. Sale cerca de donde te ha sentido y espera.
+- **Señales.** Arañazos dentro de las paredes, trampillas del bajante arrancadas, despensas vaciadas, polvo removido en las escaleras, un silencio repentino.
+- **Cómo sobrevivir.** Escuchar las paredes con el estetoscopio, pisar suave, condenar trampillas con martillo y clavos, provocar vibraciones en otra planta (dejar caer algo pesado, dejar un despertador), entrar y salir por la fachada y los balcones con una cuerda.
+- **Por qué da miedo.** No está en la habitación: está en las paredes. Y oye cada paso que das en su edificio.
+
+### 7.3 El Llamador
+
+- **Qué es.** Del tamaño de un hombre, se mueve a cuatro patas, tiene la piel desnuda y gris y una garganta hinchada con la que imita sonidos que ha oído: alguien que pide ayuda, un bebé que llora, una tos, una radio mal sintonizada.
+- **Dónde.** Pasos subterráneos, accesos al metro, sótanos y patios con eco. Sobre todo al anochecer.
+- **Cómo percibe.** Por el oído, que tiene finísimo.
+- **Cómo caza.** Atrae a sus presas hacia un sitio cerrado y espera a que entren. Aprende: imita también los sonidos de sus presas, incluidos los tuyos y las voces de los saqueadores.
+- **Señales.** La llamada se repite idéntica, como una grabación. No hay huellas de personas, solo las suyas. Los restos se acumulan siempre en el mismo punto.
+- **Cómo sobrevivir.** Reconocer la repetición, no acudir nunca, rodear su zona y lanzar algo para que se delate al moverse.
+- **Por qué da miedo.** Lo que oyes no siempre es lo que parece. La próxima vez que alguien pida ayuda de verdad, dudarás.
+
+### 7.4 Los Saqueadores
+
+- **Qué son.** Personas armadas, organizadas y con tanto miedo como tú. No tienen bandera ni nombre: viven de lo que encuentran y de lo que les quitan a otros.
+- **Dónde.** Rutas de paso, farmacias, almacenes y campamentos en edificios fortificados.
+- **Qué saben.** Solo lo que ven, lo que oyen o lo que un compañero les dice en voz alta. Y tú también puedes oírlo.
+- **Cómo actúan.**
+  - Patrullan y ponen vigías con prismáticos.
+  - Investigan ruidos y cosas fuera de sitio: una puerta abierta, una marca de tiza, huellas recientes.
+  - Buscan en grupo y cubren las salidas.
+  - Recuerdan dónde te vieron y qué ha cambiado.
+  - En las fases avanzadas del desarrollo: tienden emboscadas en los pasos obligados, ponen cebos (una mochila a la vista), colocan trampas y aprenden tus rutas habituales.
+- **Señales.** Latas colgadas como alarma, hilos trampa, humo de campamento, voces, colillas, huellas de botas.
+- **Cómo sobrevivir.** Observar sus rutinas con los prismáticos y el reloj, escuchar lo que dicen, evitar sus trampas (la navaja corta los hilos), despistarlos con ruidos o con marcas de tiza falsas y tener siempre una vía de escape.
+- **Si te ven.** Disparan. A veces gritan antes, y entonces puedes huir o rendirte *(qué pasa si te rindes está pendiente: [pregunta 7](#17-preguntas-abiertas))*.
+- **Por qué dan miedo.** Piensan como tú. Y tienen armas.
+
+### 7.5 Cuando se cruzan
+
+- La Jauría ataca a los saqueadores: llevarla hacia un campamento puede abrirte paso… o cerrártelo.
+- El Llamador imita las voces de los saqueadores, y también los atrae a ellos.
+- El Inquilino no sale de su edificio. Es una frontera que ni los saqueadores se atreven a cruzar.
+
+### 7.6 Cómo se construye cada amenaza
+
+1. **Ficha de diseño**: biología, sentidos, comportamiento y señales.
+2. **Animación propia**: ciclos generados por código con movimiento "a saltos", como en el dibujo animado, más ajustes procedurales (pies que se apoyan en el suelo, cabeza que sigue el sonido).
+3. **Sonido propio**: cada amenaza tiene una firma sonora reconocible.
+4. **Tres escenarios de prueba** para cada una.
+5. **Herramienta de depuración** que muestra lo que percibe y lo que sabe en cada momento.
 
 ---
 
-## 8. Dirección de arte: ilustración entintada
+## 8. Mundo y narrativa
 
-### 8.1 ¿Qué estilo usa Cat Mail Co.?
+- **Guerra atómica.** Sin año y sin explicaciones largas.
+- **Tumansk**: una ciudad soviética ficticia inspirada en Moscú, con avenidas anchas, microdistritos de bloques de paneles y un metro monumental y frío. Todo el texto del juego está en español, carteles incluidos, pero el diseño es soviético.
+- **Sin facciones** y **sin nombre de estación**.
+- **Tu padre**: era stalker, enfermó, subió una última vez y no volvió. No sabes nada de él.
+- **La historia se cuenta poco, y a través del entorno**: pisos abandonados, notas, fotos, objetos personales. No hay cinemáticas.
+- **Pendiente**: cuál es el objetivo final de una partida y si hay rastros de tu padre ([preguntas 2 y 3](#17-preguntas-abiertas)).
+
+---
+
+## 9. Dirección de arte: ilustración entintada
+
+### 9.1 ¿Qué estilo usa Cat Mail Co.?
 
 Pertenece al **3D estilizado** (*stylized* en inglés), una rama del **renderizado no fotorrealista** (NPR). En sus capturas se ve lo siguiente:
 
 - Formas **robustas y algo exageradas**: estanterías gruesas, cajas con los bordes suavizados.
 - **Colores planos con degradados suaves** y texturas sencillas, casi pintadas a mano, sin contornos marcados.
-- **Ilustraciones 2D sobre objetos 3D**: sellos, etiquetas, pegatinas y mapas. Buena parte del encanto sale de ahí.
+- **Ilustraciones 2D sobre objetos 3D**: sellos, etiquetas, pegatinas y mapas.
 - **Luz cálida** de lámparas, con resplandor y sombras suaves.
 
-### 8.2 Nuestro estilo
+### 9.2 Nuestro estilo
 
-Partimos de esa base (formas robustas, calidez, ilustraciones sobre objetos) y le añadimos **tinta**.
+Partimos de esa base (formas robustas, calidez, ilustraciones sobre objetos) y le añadimos **tinta**, con un tono más adulto.
 
 | Capa | Qué es | Cómo se hace en Godot 4 |
 |---|---|---|
 | Sombreado por bandas (*cel shading*) | 2 o 3 tonos por material, con rampas de color. Luz cálida, sombra fría | Shader `spatial` propio con función `light()` y una textura de rampa |
 | Contorno de tinta | Líneas en siluetas y pliegues, de grosor variable y trazo irregular | Post-proceso a partir de profundidad y normales (`CompositorEffect`), más casco invertido en personajes y objetos clave |
 | Tramado | Sombras hechas con rayas, como un grabado. Más densas cuanto más oscuro y cuanto más miedo | Texturas de tramado (*tonal art maps*) mezcladas según la iluminación |
-| Trazo vivo (*line boil*) | El contorno tiembla como en una animación dibujada a mano | Ruido animado a 8–12 fps, a saltos y no de forma continua |
-| Papel | Grano de papel sutil sobre toda la imagen y viñeta de tinta en los bordes | Post-proceso final |
+| Trazo vivo (*line boil*) | El contorno tiembla como en una animación dibujada a mano | Ruido animado a 4–12 fps, a saltos y no de forma continua |
+| Papel y grano | Grano de papel sutil sobre toda la imagen y viñeta en los bordes; con mucha radiación, el grano se intensifica | Post-proceso final |
 | Color por zona | Paletas limitadas y gradación propia de cada zona | LUT por zona, mezcladas en las transiciones |
-| Niebla pintada | Niebla volumétrica posterizada, con manchas animadas | `FogVolume` + shader `fog` |
-| Ilustraciones sobre objetos | Etiquetas, sellos, carteles, mosaicos | Nodos `Decal` + texturas generadas por código (SVG) |
+| Nieve y huellas | La nieve se acumula en lo que mira hacia arriba; las huellas quedan marcadas y la nieve que cae las borra | Shader según la orientación de la superficie, más decals de huellas, que también son datos para la IA |
+| Niebla y ventisca | Niebla posterizada y nieve que cruza el aire | Niebla ligera, partículas y shader propio |
+| Ilustraciones sobre objetos | Etiquetas, carteles, rótulos, envases | Nodos `Decal` y texturas generadas por código (SVG) |
 
-### 8.3 Lenguaje de formas
+### 9.3 Lenguaje de formas
 
 - **Nada es perfectamente recto.** Las recetas de modelado añaden imperfección controlada: bordes un poco torcidos y grosores exagerados.
 - **Biseles generosos** y normales suavizadas, para que el sombreado por bandas quede limpio.
 - **Siluetas legibles**: cada objeto se reconoce por su sombra.
-- **Arquitectura de paneles** (bloques prefabricados, brutalismo) y **mosaicos de metro** propios. La arquitectura post-soviética es modular por naturaleza, ideal para generarla por código.
-- **Personajes**: proporciones robustas, cabezas algo grandes, ropa por capas (bufandas, gorros, gafas) y **rostros 2D** sobre modelos 3D, para que las expresiones sean claras y fáciles de animar.
+- **Arquitectura soviética**: bloques de paneles prefabricados, brutalismo y una estación de metro con mármol, columnas y lámparas de araña (de diseño propio). Es modular por naturaleza, ideal para generarla por código.
+- **Personas**: proporciones robustas, ropa por capas (abrigos, bufandas, gorros de piel) y rostros 2D sobre modelos 3D, para que las expresiones sean claras y fáciles de animar.
+- **Criaturas**: siluetas muy reconocibles, negros masivos y detalles que se descubren poco a poco.
 
-### 8.4 Escenarios: reglas de construcción
+### 9.4 Escenarios: reglas de construcción
 
 - **Cada espacio tiene una historia visible**: quién vivía ahí y qué pasó.
-- **Hitos para orientarse en la niebla**: la Torre de Radio iluminada, un tranvía rojo volcado, el mosaico de la estación, la chimenea de la Imprenta.
-- **Detalle de ilustración**: muchos objetos pequeños con carácter (tendederos, macetas, buzones, carteles) en lugar de texturas complejas.
+- **Hitos para orientarse**, imprescindibles para dibujar tus mapas: una torre de radio, un tranvía volcado, la cúpula del mercado, las chimeneas de la fábrica.
+- **Detalle de ilustración**: muchos objetos pequeños con carácter (tendederos, buzones, carteles, macetas secas) en lugar de texturas complejas.
 - **Composición por planos**, como una ilustración: primer plano oscuro, plano medio iluminado y fondo perdido en la niebla.
 - **La luz guía**: la luz cálida atrae; la luz fría, o la ausencia de luz, avisa de peligro.
-- **Verticalidad**: azoteas, escaleras y sótanos. La Crecida empuja hacia arriba.
+- **Verticalidad**: azoteas, escaleras y sótanos que abren rutas distintas.
 - **Un depósito que crece**: del abandono a la vida, mejora a mejora.
 
-### 8.5 Paletas
+### 9.5 Paletas
 
-**Depósito: "Ámbar y azulejo"**
+**Depósito: "Ámbar y madera"**
 
 | Uso | Color | Hex |
 |---|---|---|
-| Papel | Crema | `#F2E6CF` |
+| Papel y cartón | Crema | `#F2E6CF` |
 | Tinta | Negro violáceo | `#1B1A22` |
-| Lámpara | Ámbar | `#E8A33D` |
-| Cartón | Terracota | `#C2603F` |
+| Bombilla | Ámbar | `#E8A33D` |
+| Cajas | Terracota | `#C2603F` |
 | Madera | Nogal | `#8A5A3B` |
-| Azulejo de metro | Verde azulado | `#2F6F73` |
-| Sello | Rojo | `#C8323C` |
+| Azulejo de la estación | Verde azulado | `#2F6F73` |
+| Lo importante | Rojo | `#C8323C` |
 | Señalética | Cobalto | `#2D4A8A` |
 
-**Ciudad: "Niebla y sodio"**
+**Superficie: "Ceniza y óxido"**
 
 | Uso | Color | Hex |
 |---|---|---|
-| Niebla | Gris verdoso | `#9AA7A6` |
+| Nieve sucia | Blanco hueso | `#D9D6CC` |
+| Ceniza | Gris | `#9A9A94` |
 | Hormigón | Gris cálido | `#7D7F7A` |
+| Óxido | Marrón rojizo | `#8E4A2F` |
+| Cielo | Gris azulado | `#A7B1B4` |
 | Sombra | Azul pizarra | `#2A3440` |
-| Farola | Sodio | `#F0A04B` |
-| Vegetación | Musgo | `#5E6B4A` |
-| Tinta viva | Negro con brillo violeta | `#0E0D14` / `#4B3A7A` |
-| Tiza | Blanco hueso | `#EDEDE6` |
+| Vegetación muerta | Oliva apagado | `#6B6A4A` |
+| Señales de peligro | Amarillo | `#D9A623` |
 
-Regla: **el rojo sello** se reserva para lo importante: peligro, confirmaciones, la etiqueta de un paquete urgente.
+Regla: **el rojo** se reserva para lo importante (peligro, confirmaciones, lo urgente).
 
-### 8.6 Parámetros por estado (punto de partida para la Fase 1)
+### 9.6 Parámetros por estado (punto de partida para la Fase 1)
 
-| Parámetro | Depósito | Ciudad | Pánico o Errata |
+| Parámetro | Depósito | Superficie | Pánico |
 |---|---|---|---|
 | Trazo vivo | 4 fps, muy sutil | 8 fps | 12 fps, amplio |
 | Grosor del contorno (a 1080p) | 1,5–2 px | 2–3 px | 3–5 px, roto |
 | Tramado | Solo en sombras profundas | En sombras medias | Invade la imagen desde los bordes |
-| Saturación | 100 % | 60 % | 30 % |
-| Papel | Sutil | Visible | Manchas de tinta |
+| Saturación | 100 % | 55 % | 30 % |
+| Grano | Sutil | Visible | Intenso |
 
-### 8.7 Referencias (inspiración, no copia)
+### 9.7 Referencias (inspiración, no copia)
 
-- **Cat Mail Co.**: calidez, tactilidad, pegatinas, mobiliario robusto.
-- **Yuri Norstein, *El erizo en la niebla* (1975)**: la niebla como misterio y como miedo.
-- **Ilustración infantil de Europa del Este (años 60 y 70)**: tramados, texturas, color limitado.
+- **Cat Mail Co.**: calidez, tactilidad, ilustraciones sobre objetos, mobiliario robusto.
+- **Andréi Tarkovski, *Stalker* (1979)**: la quietud, el silencio y la amenaza que no se ve.
+- **Fotografía de Prípiat y de los microdistritos soviéticos**: interiores abandonados, escala, materiales.
+- **Estaciones del metro de Moscú**: mármol, columnas, lámparas de araña, mosaicos.
+- **Carteles y diseño gráfico soviético**: señalética, tipografía, composición de la interfaz.
 - **Grabado y xilografía**: sombras hechas de líneas.
-- **Carteles constructivistas**: señalética, tipografía, composición de la interfaz.
 - **Mike Mignola**: negros masivos y siluetas para el terror.
-- **Arquitectura de paneles y estaciones de metro con mosaicos**: escenarios.
 
 ---
 
-## 9. Interfaz: sin cajas de texto
+## 10. Interfaz: sin cajas de texto
 
-### 9.1 Reglas
+### 10.1 Reglas
 
-1. **Todo es un objeto.** Si algo hay que mostrarlo, es papel, cartón, tiza, un sello, un hilo o una parte de tu cuerpo.
+1. **Todo es un objeto.** Si algo hay que mostrarlo, es papel, cartón, un instrumento o una parte de tu cuerpo.
 2. **Nunca un rectángulo con texto encima.** El texto vive en papeles con textura, escrito a mano o a máquina.
 3. **Iconos dibujados**, con el mismo grosor de trazo que el mundo 3D.
-4. **Animación con peso**: los papeles se deslizan, rebotan y se asientan; los sellos golpean; las hojas pasan.
-5. **Accesible sin romper la estética**: tamaño de texto ajustable, texto "limpio" para dislexia, subtítulos en tiras de papel, trazo vivo reducible y colores siempre acompañados de forma.
+4. **Animación con peso**: los papeles se deslizan y se asientan, las hojas pasan, los sellos golpean.
+5. **El tiempo no se detiene**: abrir el cuaderno o la mochila en la superficie lleva su tiempo. Solo el menú de opciones pausa el juego, y únicamente en partidas de un jugador.
+6. **Accesible sin romper la estética**: tamaño de texto ajustable, texto "limpio" para dislexia, subtítulos en tiras de papel, trazo vivo reducible y colores siempre acompañados de forma.
 
-### 9.2 Qué es cada cosa
+### 10.2 Qué es cada cosa
 
 | Función | Objeto |
 |---|---|
-| Menú principal | La ventanilla al amanecer, con el libro de registro abierto sobre el mostrador. Apagar la lámpara es salir del juego |
-| Nueva partida | Firmar el contrato de Suplente |
-| Guardar | Firmar el libro de registro antes de dormir |
-| Opciones | La radio: diales para el volumen, el brillo y la sensibilidad |
-| Pausa, diario y bestiario | Tu cuaderno de bolsillo, con bocetos y notas a mano |
+| Menú principal | El depósito de noche, con la lámpara encendida y tu cuaderno sobre la mesa. Apagar la lámpara es salir del juego |
+| Nueva partida | Firmar con tu nombre la escritura del depósito |
+| Guardar | Automático al dormir |
+| Opciones | La radio del depósito: diales para el volumen, el brillo y la sensibilidad |
+| Mapas, notas y planes | Tu cuaderno. No hay otro mapa |
+| Planificar | El tablero de la pared: páginas, chinchetas e hilo |
 | Encargos | Fichas en el tablón de corcho |
-| Planificar la ruta | El mapa de pared, con chinchetas e hilo rojo |
-| Cuentas y reputación | El libro de registro |
-| Inventario | La mochila abierta, en 3D, sobre la mesa o en el suelo |
-| Avisos | Una postal que asoma por la esquina de la pantalla |
-| Confirmar | Un sello de goma: **APROBADO** |
-| Hora y Crecida | El reloj de bolsillo |
-| Salud, miedo y tinta | Tus manos |
-| Interactuar | Un punto de tiza que se convierte en un pequeño icono dibujado (mano, lupa, tiza, ganzúa) |
-| Pantallas de carga | Postales ilustradas de los distritos, con notas de Ignat |
+| Cuentas e impuesto | El libro de cuentas y los recibos con el sello **PAGADO** |
+| Precios | Etiquetas de cartón atadas con cordel |
+| Inventario | La mochila abierta, en 3D |
+| Hora | El reloj de pulsera |
+| Radiación | El dosímetro: la aguja y los chasquidos |
+| Aire | La máscara: se empaña, se agrieta, la respiración cambia |
+| Salud, miedo y hambre | Tus manos, tu respiración, tu estómago |
+| Avisos de la estación | Una nota que alguien desliza bajo la persiana |
+| Interactuar | Un punto de lápiz que se convierte en un pequeño icono dibujado (mano, lupa, ganzúa) |
+| Fin de la partida | El depósito cerrado, con un cartel escrito a mano |
 
-### 9.3 Tipografía
+### 10.3 Tipografía
 
 Candidatas con licencia libre (OFL); se validan en la Fase 1.
 
-- **Manuscrita** (notas y formularios): una familia del tipo *Caveat* o *Kalam*, con una "letra" distinta para cada cliente.
-- **Máquina de escribir** (documentos oficiales): del tipo *Courier Prime*.
-- **Rotulación** (carteles y sellos): condensada y geométrica, de inspiración constructivista, del tipo *Oswald*.
-- Requisito: soporte para cirílico en la rotulación del mundo.
+- **Manuscrita** (notas, etiquetas, tu cuaderno): una familia del tipo *Caveat* o *Kalam*, con una letra distinta para cada cliente.
+- **Máquina de escribir** (documentos oficiales, recibos): del tipo *Courier Prime*.
+- **Rotulación** (carteles de la ciudad y de la estación): condensada y geométrica, de estilo soviético, del tipo *Oswald*, pero siempre en español.
 
 ---
 
-## 10. Audio
+## 11. Audio
 
-- **Depósito**: la radio (música propia, de época), el zumbido del generador, las palomas, la tetera, el papel, el cartón, la cinta adhesiva, el golpe del sello.
-- **Ciudad**: el viento entre ventanas rotas, goteos, crujidos, el rumor de papeles (señal de tinta), susurros, tus pasos según el suelo, tu respiración y tu corazón. **El silencio también es una herramienta.**
-- **Técnica**: sonido 3D con oclusión (filtro paso bajo calculado con raycasts), reverberación según el tipo de espacio (escalera, túnel, nave), mezcla dinámica según el miedo y ambiente por capas.
-- **Fuentes**: librerías libres de derechos (los paquetes de Sonniss para la GDC, Freesound CC0), foley grabado por nosotros (papel, cartón y cinta se graban bien con un móvil) y música por encargo o propia. *(Ver la [pregunta 15](#15-preguntas-abiertas).)*
+- **Depósito**: la radio, el murmullo de la estación, la estufa, herramientas, papel, cartón, cordel.
+- **Superficie**: viento, nieve que cruje, estructuras que gimen, el dosímetro, tu respiración dentro de la máscara, perros a lo lejos. **El silencio también es una herramienta.**
+- **Amenazas**: cada una tiene su firma sonora. El Llamador, en concreto, es puro diseño de sonido.
+- **Técnica**: sonido 3D con oclusión, reverberación según el tipo de espacio y propagación del sonido por la ciudad. Lo que tú oyes, ellos también lo oyen: el mismo sistema alimenta a la IA. La mezcla cambia según el miedo.
+- **Música y fuentes**: está por decidir. El criterio es lo que dé más calidad y encaje mejor con el juego: un compositor por encargo, librerías profesionales libres de derechos, foley grabado por nosotros, o una combinación.
 
 ---
 
-## 11. Arquitectura técnica (Godot 4)
+## 12. Cooperativo
 
-### 11.1 Decisiones técnicas
+- **De 2 a 4 jugadores.** Comparten un único depósito (dinero, estanterías y encargos); cada uno tiene su mochila y su cuaderno.
+- **Compartir mapas**: se pueden copiar páginas del cuaderno de otro (lleva su tiempo) o pegarlas en el tablero de la pared.
+- **Más gente significa más ruido y más huellas**, así que la dificultad sube sola.
+- **Muerte**: pendiente ([pregunta 8](#17-preguntas-abiertas)).
+- **Voz**: por decidir. La voz por proximidad sería ideal para el terror, pero requiere trabajo extra.
+- **Técnica**: el juego funciona siempre con un anfitrión. En una partida de un jugador, el anfitrión simplemente no tiene invitados, así que todo se construye en red desde el primer día y nada hay que rehacer después. Conexión directa por IP o red local; para jugar por internet sin abrir puertos se valorará un servicio de relé.
+
+---
+
+## 13. Arquitectura técnica (Godot 4)
+
+### 13.1 Decisiones técnicas
 
 - **Godot 4** con el renderer **Forward+** (Vulkan). La versión exacta se fija en la Fase 0 y no se cambia sin motivo.
 - **GDScript con tipado estático** obligatorio. C++ (GDExtension) solo si algún sistema lo necesita por rendimiento.
-- **Los datos son recursos** (`Resource` guardados como `.tres`): paquetes, encargos, clientes, herramientas, criaturas, Erratas y cartas. Se crean y se editan como texto.
-- **Escenas pequeñas y componibles**, que se comunican mediante señales y un `EventBus`.
+- **Red desde el primer día**: la API multijugador de Godot sobre ENet. El anfitrión tiene la autoridad sobre el mundo (IA, objetos, puertas, inventarios) y cada jugador controla su propio movimiento, para que no haya retraso.
+- **Todo lo que existe en el mundo tiene un identificador**, se puede guardar y se puede replicar.
+- **Los datos son recursos** (`Resource` guardados como `.tres`): objetos, encargos, clientes, herramientas y amenazas. Se crean y se editan como texto.
+- **Muerte permanente**: un solo archivo de partida, que se borra al morir.
 
-### 11.2 Estructura del repositorio
+### 13.2 Estructura del repositorio
 
 ```text
 /
@@ -503,17 +632,19 @@ Candidatas con licencia libre (OFL); se validan en la Fase 1.
 ├── assets/
 │   ├── models/              # .glb generados (no se editan a mano)
 │   ├── textures/            # rampas, tramados, papel, ruido
-│   ├── shaders/             # toon, contorno, tramado, niebla, tinta, papel
+│   ├── shaders/             # toon, contorno, tramado, nieve, niebla, papel
 │   ├── materials/
 │   ├── ui/                  # SVG y PNG generados
 │   ├── fonts/
 │   └── audio/               # music/, ambience/, sfx/, ui/
 ├── data/                    # recursos .tres: el contenido del juego
-├── scenes/                  # depot/, city/, ui/, characters/, props/, debug/
+├── scenes/                  # depot/, station/, surface/, ui/, actors/, props/, debug/
 ├── scripts/
 │   ├── core/                # autoloads y utilidades
-│   ├── depot/               # paquetes, báscula, etiquetado, clientes, economía
-│   ├── city/                # jugador, herramientas, IA, Erratas, Crecida
+│   ├── net/                 # sesión, anfitrión, replicación
+│   ├── depot/               # objetos, banco, descontaminación, tienda, economía
+│   ├── surface/             # jugador, herramientas, cuaderno, sigilo, supervivencia
+│   ├── ai/                  # percepción, conocimiento, criaturas, humanos
 │   └── ui/
 ├── tools/
 │   ├── blender/             # recetas de modelos (bpy) → .glb
@@ -524,84 +655,107 @@ Candidatas con licencia libre (OFL); se validan en la Fase 1.
 └── docs/                    # GDD vivo, guía de estilo, registro de decisiones
 ```
 
-### 11.3 Sistemas principales
+### 13.3 Sistemas principales
 
 | Sistema | Responsabilidad |
 |---|---|
-| `EventBus` | Señales globales: paquete entregado, Crecida, miedo… |
-| `GameState` | Día, fichas, reputación, banderas de historia |
-| `SaveSystem` | Guardado versionado, incluido el estado del mundo (tiza, cuerdas, puertas, mochilas perdidas) |
-| `SceneRouter` | Cambios de escena con transición de tinta |
-| `StyleDirector` | Parámetros del estilo en tiempo real (trazo, tramado, paleta) según la zona, el miedo y la tinta |
-| `AudioDirector` | Capas de ambiente, música, mezcla dinámica y oclusión |
-| `TimeOfDay` | La jornada, la noche y el ciclo de la Crecida |
-| `Interaction` | Raycast, componentes `Interactable`, coger y soltar objetos físicos |
-| `PackageSystem` | Datos y estado de los paquetes, daños, decoraciones |
-| `JobBoard` | Generación de encargos: peligro, paga, plazos |
+| `EventBus` | Señales globales |
+| `GameState` | Día, rublos, deuda, encargos, banderas |
+| `SaveSystem` | Guardado único con muerte permanente, incluido el estado del mundo (atajos, puertas, marcas de tiza, huellas recientes) |
+| `NetSession` | Anfitrión e invitados, replicación, autoridad |
+| `SceneRouter` | Cambios de escena con transición dibujada |
+| `StyleDirector` | Parámetros del estilo en tiempo real (trazo, tramado, paleta, grano) según la zona, el miedo y la radiación |
+| `AudioDirector` | Ambiente, música, mezcla dinámica, oclusión y propagación |
+| `TimeAndWeather` | Hora del día, luz, nieve, viento, ventisca |
+| `Interaction` | Raycast, componentes `Interactable`, coger e inspeccionar objetos físicos |
+| `ItemSystem` | Objetos: categoría, peso, forma en la cuadrícula, estado, contaminación, valor |
+| `Shop` | Mostrador, clientes, precios, encargos, impuesto |
 | `Backpack` | Cuadrícula, peso, ruido, fragilidad |
-| `Perception` | El ruido y la luz que emite el jugador, y cómo los perciben las criaturas |
-| `CreatureAI` | Máquinas de estados y navegación |
-| `Errata` | Componentes de anomalía reutilizables |
-| `FearSystem` / `InkSystem` | Miedo y mancha, y su efecto en las manos, la cámara, el estilo y el audio |
+| `Notebook` | Páginas, trazos vectoriales, símbolos, notas; copiar y compartir |
+| `Perception` | Vista, oído, olfato con viento y vibración por la estructura |
+| `Knowledge` | Memoria de cada agente y comunicación entre agentes (siempre audible) |
+| `CreatureAI` | Comportamiento de la Jauría, el Inquilino y el Llamador |
+| `HumanAI` | Saqueadores: patrullas, investigación, búsqueda en grupo y, más adelante, planificación |
+| `Tracks` | Huellas, rastros de olor y de sangre |
+| `Survival` | Hambre, heridas, radiación, aire, frío, miedo |
 
-### 11.4 Pipelines de producción de arte
+### 13.4 Inteligencia artificial
+
+- **Percepción → conocimiento → decisión.** Nadie decide nada a partir de información que no haya percibido o que no le hayan comunicado.
+- **Criaturas**: máquinas de estados con sentidos propios (olfato con viento para la Jauría, vibración por la estructura del edificio para el Inquilino, oído para el Llamador).
+- **Humanos**: IA por utilidad para las decisiones del momento y un planificador (GOAP o HTN, se decide en la Fase 6) para emboscadas, cebos y trampas.
+- **Puntos tácticos** marcados en los niveles: coberturas, miradores, pasos obligados, lugares de emboscada.
+- **Prueba de justicia automática**: cualquier decisión de la IA que tenga que ver con tu posición debe poder rastrearse hasta un estímulo percibido. Si no se puede, el test falla.
+- **Visualización de depuración**: lo que ve, oye, huele y sabe cada agente, en tiempo real.
+
+### 13.5 El cuaderno
+
+- Los trazos se guardan como **vectores** (listas de puntos suavizados): ocupan poco, se guardan en la partida y se envían por red al copiar páginas.
+- Se dibujan sobre la textura de la página del cuaderno 3D, con un shader de grafito.
+- Los símbolos funcionan como pequeños sellos; las notas usan la tipografía manuscrita.
+
+### 13.6 Pipelines de producción de arte
 
 Todo se genera por código y todo queda versionado.
 
-- **3D**: recetas en Python ejecutadas con **Blender 5 como módulo** (`bpy`, se instala con pip). Producen geometría con biseles e imperfección controlada, colores por vértice, UVs, colisiones y LODs, y la exportan a `.glb`. Godot la importa sola: un script post-importación asigna los materiales NPR y las colisiones según el sufijo del nombre. Hay recetas de props (cajas, estanterías, lámparas, báscula…), un **kit modular de arquitectura** (paneles, ventanas, balcones, escaleras, túneles), personajes de medio cuerpo y criaturas (formas base con rasgos dibujados).
-- **2D**: generadores SVG en Node con **rough.js**, que da un aspecto dibujado a mano. Producen etiquetas, sellos, pegatinas, iconos, carteles, mapas y marcos de papel. Godot importa SVG directamente; se usa PNG cuando haga falta.
-- **Texturas**: scripts de Python (numpy y Pillow) para el grano de papel, los tramados, las rampas y el ruido de pincel. Además, horneado en Blender (oclusión y curvatura) para conseguir bordes gastados con aspecto pintado.
+- **3D**: recetas en Python ejecutadas con **Blender 5 como módulo** (`bpy`, que se instala con pip). Producen geometría con biseles e imperfección controlada, colores por vértice, UVs, colisiones y LODs, y la exportan a `.glb`. Godot la importa sola: un script post-importación asigna los materiales y las colisiones según el sufijo del nombre. Hay recetas de props (cajas, estanterías, herramientas, botín), un **kit modular de arquitectura soviética** (paneles, ventanas, balcones, escaleras, huecos de ascensor, bajantes, túneles), personas y criaturas.
+- **2D**: generadores SVG en Node con **rough.js**, que da un aspecto dibujado a mano. Producen etiquetas, envases, carteles, iconos y papeles. Godot importa SVG directamente; se usa PNG cuando haga falta.
+- **Texturas**: scripts de Python (numpy y Pillow) para el grano de papel, los tramados, las rampas y el ruido. Además, horneado en Blender (oclusión y curvatura) para conseguir bordes gastados con aspecto pintado.
 - **Revisión visual**: cada cambio visual viene acompañado de **capturas automáticas** de escenas de prueba, para que puedas revisar el aspecto sin abrir el motor.
 
-### 11.5 Calidad
+### 13.7 Calidad
 
 - `gdlint` y `gdformat` (de gdtoolkit) en cada cambio.
-- Tests unitarios sin pantalla (GUT o gdUnit4; se decide en la Fase 0) para la lógica: economía, mochila, encargos, guardado.
+- Tests unitarios sin pantalla (GUT o gdUnit4; se decide en la Fase 0) para la lógica: economía, mochila, percepción, guardado.
+- Pruebas de red automáticas: dos instancias conectadas ejecutan el mismo escenario y se comparan.
 - GitHub Actions: lint, tests y builds de Windows y Linux como artefactos descargables.
 
-### 11.6 Rendimiento objetivo
+### 13.8 Rendimiento objetivo
 
-| Plataforma | Resolución | Objetivo |
+| Equipo | Resolución | Objetivo |
 |---|---|---|
-| PC media (GTX 1060 / RX 580) | 1080p | 60 fps |
-| Steam Deck | 800p | 40–60 fps |
-| PC baja | 720p | 30 fps en calidad baja |
+| Ryzen 7 8700G con su gráfica integrada (Radeon 780M) | 1080p | 60 fps, con escalado FSR si hace falta |
+| PC con gráfica dedicada media | 1080p–1440p | 60 fps o más |
+
+Para conseguirlo: iluminación horneada en los interiores, nada de iluminación global en tiempo real, sombras dinámicas solo para el sol y la linterna, niebla ligera y un presupuesto de milisegundos fijo para cada efecto de post-proceso. *(Pendiente de confirmar si tienes gráfica dedicada: [pregunta 10](#17-preguntas-abiertas).)*
 
 ---
 
-## 12. Plan por fases
+## 14. Plan por fases
 
 ```mermaid
 flowchart LR
     F0["Fase 0<br/>Cimientos"] --> F1["Fase 1<br/>Prueba de Tinta"]
-    F1 -- "estilo aprobado" --> F2["Fase 2<br/>Depósito jugable"]
-    F1 -- "estilo aprobado" --> F3["Fase 3<br/>Ciudad jugable"]
-    F2 --> F4["Fase 4<br/>Primera Jornada<br/>(vertical slice)"]
+    F1 -->|estilo aprobado| F2["Fase 2<br/>Depósito jugable"]
+    F1 -->|estilo aprobado| F3["Fase 3<br/>Superficie jugable"]
+    F2 --> F4["Fase 4<br/>Los primeros días<br/>(vertical slice)"]
     F3 --> F4
     F4 --> F5["Fase 5<br/>Producción (alfa)"]
-    F5 --> F6["Fase 6<br/>Pulido (beta)"]
-    F6 --> F7["Fase 7<br/>Lanzamiento"]
+    F5 --> F6["Fase 6<br/>Saqueadores tácticos"]
+    F6 --> F7["Fase 7<br/>Pulido (beta)"]
+    F7 --> F8["Fase 8<br/>Versión 1.0"]
 ```
 
-Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la [Hoja de Desarrollo](#13-hoja-de-desarrollo)), un **entregable** y un **criterio de salida**. No se pasa a la fase siguiente sin cumplir el criterio.
+Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la [Hoja de Desarrollo](#15-hoja-de-desarrollo)), un **entregable** y un **criterio de salida**. No se pasa a la fase siguiente sin cumplir el criterio. **Todo se construye en red desde la Fase 0**, aunque se juegue en solitario.
 
 ### Fase 0: Cimientos · tamaño S
 
-**Objetivo**: un proyecto que arranca, pipelines que producen assets sin pasos manuales y verificación automática.
+**Objetivo**: un proyecto que arranca en red, pipelines que producen assets sin pasos manuales y verificación automática.
 
 - [ ] **F0-01** Instalar Godot 4 (versión estable fijada) en el entorno de desarrollo y en CI.
 - [ ] **F0-02** Crear el proyecto: Forward+, estructura de carpetas, capas de física y de render con nombre, mapa de controles (teclado y ratón, y mando).
 - [ ] **F0-03** Convenciones: `snake_case` para archivos, `PascalCase` para clases, tipado estático obligatorio, formato de commits y plantilla de PR con capturas.
 - [ ] **F0-04** Autoloads base, como esqueletos con tests: `EventBus`, `GameState`, `SaveSystem`, `SceneRouter` y `Settings`.
-- [ ] **F0-05** Pipeline 3D: Blender 5 (`bpy`) y una receta de ejemplo → `.glb` → importación automática con materiales y colisión.
-- [ ] **F0-06** Pipeline 2D: generador SVG con rough.js (una etiqueta de ejemplo).
-- [ ] **F0-07** Pipeline de texturas: papel, tramado y rampa de ejemplo.
-- [ ] **F0-08** Capturas automáticas de escenas, renderizadas sin pantalla, para la revisión visual.
-- [ ] **F0-09** CI en GitHub Actions: lint, tests y builds de Windows y Linux.
-- [ ] **F0-10** Carpeta `docs/`: GDD vivo (este README se divide cuando crezca), guía de estilo y registro de decisiones.
+- [ ] **F0-05** `NetSession`: el juego arranca siempre como anfitrión; escena de prueba con dos instancias conectadas por ENet.
+- [ ] **F0-06** Pipeline 3D: Blender 5 (`bpy`) y una receta de ejemplo → `.glb` → importación automática con materiales y colisión.
+- [ ] **F0-07** Pipeline 2D: generador SVG con rough.js (una etiqueta de ejemplo).
+- [ ] **F0-08** Pipeline de texturas: papel, tramado y rampa de ejemplo.
+- [ ] **F0-09** Capturas automáticas de escenas, renderizadas sin pantalla, para la revisión visual.
+- [ ] **F0-10** CI en GitHub Actions: lint, tests, prueba de red y builds de Windows y Linux.
+- [ ] **F0-11** Carpeta `docs/`: GDD vivo (este README se divide cuando crezca), guía de estilo y registro de decisiones.
 
-**Entregable**: *Hola, Tumánsk*: una escena con una caja de cartón generada por receta, importada sola, con su captura y un test en verde.
-**Criterio de salida**: un asset va de la receta al juego sin tocar nada a mano; la CI está en verde; las capturas son reproducibles.
+**Entregable**: *Hola, Tumansk*: una caja generada por receta, importada sola, que dos instancias conectadas ven moverse a la vez.
+**Criterio de salida**: un asset va de la receta al juego sin tocar nada a mano; las dos instancias están sincronizadas; la CI está en verde.
 
 ### Fase 1: La Prueba de Tinta (puerta de estilo) · tamaño M
 
@@ -609,16 +763,16 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 - [ ] **F1-01** Shader de sombreado por bandas con rampas por material: luz cálida, sombra fría y luz de borde.
 - [ ] **F1-02** Contorno por post-proceso (profundidad y normales), con grosor variable y trazo irregular.
-- [ ] **F1-03** Contorno por casco invertido para objetos clave y personajes.
+- [ ] **F1-03** Contorno por casco invertido para objetos clave, personas y criaturas.
 - [ ] **F1-04** Tramado en las sombras (*tonal art maps*), con densidad controlable.
 - [ ] **F1-05** Trazo vivo a saltos (4, 8 y 12 fps), controlado por `StyleDirector`.
-- [ ] **F1-06** Papel, viñeta de tinta y gradación de color por zona (LUT).
-- [ ] **F1-07** Niebla pintada (`FogVolume` + shader) y material de "tinta viva".
-- [ ] **F1-08** Kit inicial de props por receta: cajas (3 tamaños), estantería, casilleros, mostrador, lámpara colgante, báscula, farola, banco, puerta y un módulo de fachada de paneles.
-- [ ] **F1-09** Diorama A: *La ventanilla al amanecer* (depósito).
-- [ ] **F1-10** Diorama B: *El patio en la niebla* (ciudad).
-- [ ] **F1-11** Panel de depuración para cambiar en vivo el miedo, la mancha, la hora y la zona, y ver cómo reacciona el estilo.
-- [ ] **F1-12** Primeras piezas de interfaz en el estilo final: etiqueta de destino, sello, ficha de encargo y postal.
+- [ ] **F1-06** Papel, grano, viñeta y gradación de color por zona (LUT).
+- [ ] **F1-07** Nieve acumulada, huellas, niebla y ventisca.
+- [ ] **F1-08** Kit inicial de props por receta: cajas de cartón y de madera, estantería metálica, banco de trabajo, lámpara de taller, báscula, telarañas, máscara, dosímetro y linterna; y en el exterior, un módulo de bloque de paneles, una farola apagada, un coche oxidado, un quiosco y un banco.
+- [ ] **F1-09** Diorama A: *El depósito*, en dos estados (abandonado y limpio).
+- [ ] **F1-10** Diorama B: *Un patio de Los Bloques bajo la nieve*.
+- [ ] **F1-11** Panel de depuración para cambiar en vivo el miedo, la radiación, la hora y el clima, y ver cómo reacciona el estilo.
+- [ ] **F1-12** Primeras piezas de interfaz en el estilo final: una página de cuaderno con un mapa dibujado, una etiqueta de precio, un recibo con sello y una ficha de encargo.
 - [ ] **F1-13** Selección de tipografías y prueba de legibilidad.
 - [ ] **F1-14** Guía de estilo con los parámetros definitivos, más capturas y un vídeo corto.
 
@@ -627,151 +781,166 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 ### Fase 2: El Depósito jugable · tamaño L
 
-**Objetivo**: que procesar un paquete sea un placer táctil.
+**Objetivo**: que trabajar en el depósito sea un placer táctil, de principio a fin.
 
 - [ ] **F2-01** Controlador en primera persona, versión depósito: tranquila y sin estamina.
-- [ ] **F2-02** Interacción: raycast, componentes `Interactable` y resaltado con contorno de tiza.
-- [ ] **F2-03** Física de objetos: coger, soltar, girar y lanzar. El peso se nota.
-- [ ] **F2-04** Modelo de datos del paquete: peso, tamaño, fragilidad, destino, contenido, estado, rarezas y decoraciones.
-- [ ] **F2-05** Báscula de aguja y tabla de franqueo.
-- [ ] **F2-06** Etiquetado: destino (emblema, color y forma) y marcas FRÁGIL, PESADO y NO ABRIR DE NOCHE.
-- [ ] **F2-07** Sellos y pegatinas con colocación libre (proyectados con decals).
-- [ ] **F2-08** Embalaje: cinta (arrastrar), cordel (atar), papel y caja acolchada.
-- [ ] **F2-09** Estanterías y casilleros; clasificación libre.
-- [ ] **F2-10** Vagoneta del andén: llegada, descarga, carga y salida.
-- [ ] **F2-11** Ventanilla: un cliente, con su formulario de envío manuscrito y papelitos de diálogo.
-- [ ] **F2-12** Tablón de corcho y libro de registro, diegéticos.
-- [ ] **F2-13** Respuesta táctil: sonidos de papel y cartón, golpe del sello, polvo y microanimaciones.
+- [ ] **F2-02** Interacción: raycast, componentes `Interactable` y resaltado dibujado.
+- [ ] **F2-03** Física de objetos: coger, girar, inspeccionar, soltar. El peso se nota.
+- [ ] **F2-04** Modelo de datos de los objetos: categoría, peso, forma en la cuadrícula, estado, contaminación, fragilidad y valor.
+- [ ] **F2-05** El primer día: telarañas, barrer, fregar, basura, cajas del antiguo dueño, bombilla, persiana atascada.
+- [ ] **F2-06** Dosímetro y descontaminación: lavar, cepillar, embolsar.
+- [ ] **F2-07** Banco de trabajo con reparaciones sencillas (minijuegos táctiles).
+- [ ] **F2-08** Báscula, etiquetas de precio (escribir y atar) y clasificación en estanterías.
+- [ ] **F2-09** Mostrador: un cliente; compra, venta y regateo sencillo.
+- [ ] **F2-10** Tablón de encargos y libro de cuentas.
+- [ ] **F2-11** Impuesto diario y comida (el puesto de al lado).
+- [ ] **F2-12** El trozo de estación que se recorre: pasillo, puesto vecino, tablón de avisos y escalera mecánica.
+- [ ] **F2-13** Respuesta táctil: sonidos, polvo y microanimaciones.
+- [ ] **F2-14** Todo sincronizado: dos jugadores pueden trabajar a la vez en el depósito.
 
-**Entregable**: el depósito con geometría provisional pero ya con el estilo aplicado, y un paquete que recorre todo el proceso.
-**Criterio de salida**: 5 paquetes procesados de principio a fin sin una sola caja de texto, y una prueba con 2 o 3 personas: "¿da gusto?".
+**Entregable**: el depósito, del primer día sucio a la primera venta.
+**Criterio de salida**: se juega todo el recorrido sin una sola caja de texto, y lo prueban 2 o 3 personas: "¿da gusto?".
 
-### Fase 3: La Ciudad jugable · tamaño L
+### Fase 3: La Superficie jugable · tamaño L
 
-**Objetivo**: una ruta corta que dé miedo de verdad.
+**Objetivo**: una salida corta en la que planificar sirva y la Jauría dé miedo de verdad.
 
-- [ ] **F3-01** Controlador de ciudad: agacharse, asomarse, correr con aliento y hacer ruido según el suelo, la velocidad y el peso.
-- [ ] **F3-02** Luz: linternas de pilas y de dinamo. La luz afecta a la tinta y a las criaturas.
-- [ ] **F3-03** Tiza: símbolos y trazo libre sobre superficies; las marcas persisten y la lluvia las borra.
-- [ ] **F3-04** Mochila en cuadrícula y cinturón de 3 huecos. Abrirla en la ciudad es lento.
-- [ ] **F3-05** Cuerda, ganzúas (minijuego táctil) y palanca (ruidosa).
-- [ ] **F3-06** Lanzables y despertador de cuerda (distracción por sonido).
-- [ ] **F3-07** IA del Tachado: oído con oclusión, estados (deambular, investigar, cazar, buscar) y navegación.
-- [ ] **F3-08** Erratas de prueba: Bucle y Página en blanco.
-- [ ] **F3-09** Miedo: manos, linterna y trazo que tiemblan; respiración; estilo que reacciona.
-- [ ] **F3-10** Mancha en las manos y lavado.
-- [ ] **F3-11** Audio de terror: oclusión, reverberación por espacio y ambiente dinámico.
-- [ ] **F3-12** Distrito *Los Bloques*, parcial: un patio, una escalera de 5 pisos con buzones, 3 viviendas y una azotea.
+- [ ] **F3-01** Controlador de superficie: agacharse, asomarse, correr con aliento; ruido según el suelo, la postura y el peso.
+- [ ] **F3-02** Visibilidad: luz, sombra, silueta y movimiento determinan cuánto se te ve.
+- [ ] **F3-03** Mochila en cuadrícula y cinturón de 3 huecos. Abrirla en la superficie es lento.
+- [ ] **F3-04** **El cuaderno**: dibujar a mano (lápiz, goma, regla, colores, símbolos, notas), con trazos vectoriales que se guardan.
+- [ ] **F3-05** Instrumentos: brújula, podómetro, reloj y prismáticos.
+- [ ] **F3-06** Herramientas de acceso: ganzúas, palanca, cuerda y cizalla.
+- [ ] **F3-07** Distracciones: lanzables y despertador.
+- [ ] **F3-08** Tiza: marcas persistentes.
+- [ ] **F3-09** Percepción común (vista, oído, olfato con viento) con su herramienta de depuración.
+- [ ] **F3-10** **La Jauría**, completa: manada, líder, tanteo, rodeo, persecución, rastro de olor y de sangre, cebo.
+- [ ] **F3-11** Miedo: manos, linterna y trazo que tiemblan; respiración; estilo que reacciona.
+- [ ] **F3-12** Heridas básicas: mordeduras y sangrado.
+- [ ] **F3-13** Audio: oclusión, reverberación, ambiente dinámico, nieve.
+- [ ] **F3-14** **Zona 1, La Plaza**: primero con geometría provisional y después estilizada, con al menos 3 rutas a cada objetivo.
 
-**Entregable**: una ruta de entrega de 10 a 15 minutos.
-**Criterio de salida**: en las pruebas, la gente se mueve despacio y duda antes de apagar la linterna, y una misma puerta cerrada se resuelve de al menos 3 formas.
+**Entregable**: una salida de 10 a 20 minutos: subir por la escalera, llegar a un objetivo y volver.
+**Criterio de salida**: en las pruebas, los jugadores planifican antes de salir, dibujan su mapa, usan al menos dos rutas distintas y ninguna muerte se siente injusta.
 
-### Fase 4: Primera Jornada (vertical slice) · tamaño XL
+### Fase 4: Los primeros días (vertical slice) · tamaño XL
 
-**Objetivo**: el juego completo en miniatura, a calidad final. Sirve como demo pública.
+**Objetivo**: el juego completo en miniatura, a calidad final.
 
-- [ ] **F4-01** Ciclo de jornada: amanecer → turno → preparación → subida → salida → regreso → noche → dormir.
-- [ ] **F4-02** Economía: fichas, cuota diaria y reputación por enclave.
-- [ ] **F4-03** Generador de encargos: gotas de peligro, paga, plazos y condiciones.
-- [ ] **F4-04** Paquetes raros y cuarto oscuro: estetoscopio, lámpara y báscula nocturna.
-- [ ] **F4-05** Guardado y carga con el estado del mundo: tiza, cuerdas, puertas, escaleras y mochilas perdidas.
-- [ ] **F4-06** La escalera mecánica muerta: transición gradual del estilo, el sonido y la música.
-- [ ] **F4-07** Menú principal diegético, opciones en la radio y pausa en el cuaderno.
-- [ ] **F4-08** Mapa de pared (chinchetas e hilo rojo) y mapa de bolsillo que se dibuja solo.
-- [ ] **F4-09** Segunda criatura (Borrón) con el polvo de tiza, y primera versión de la Crecida.
-- [ ] **F4-10** Narrativa: la llegada y el contrato, las cartas 1 a 5 de Ignat y la primera marca de su rastro de tiza.
-- [ ] **F4-11** Personajes de la ventanilla: 3 clientes de medio cuerpo con rostros 2D expresivos.
-- [ ] **F4-12** Rendimiento, accesibilidad básica y textos en español (con el inglés preparado).
+- [ ] **F4-01** El día completo: depósito → planificación → subida → salida → regreso → procesar → vender → impuesto, comida y sueño.
+- [ ] **F4-02** Muerte permanente y guardado único (al dormir; salir del juego a mitad de una salida guarda en ese punto; morir borra la partida).
+- [ ] **F4-03** Radiación (dosis, enfermedad, pastillas) y aire (máscara, filtros, empañado).
+- [ ] **F4-04** **El Inquilino**, completo: territorio, vibraciones por la estructura, huecos y bajantes, señales.
+- [ ] **F4-05** Estetoscopio, martillo y clavos (para condenar trampillas) y cuerda por fachada.
+- [ ] **F4-06** **Zona 2, Los Bloques**, parcial: dos bloques, la farmacia y la escuela.
+- [ ] **F4-07** Encargos con pistas, 3 clientes y una reputación sencilla.
+- [ ] **F4-08** Tablero de planificación en el depósito (páginas e hilo).
+- [ ] **F4-09** Clima (nieve, viento, ventisca) y luz del día.
+- [ ] **F4-10** La escalera mecánica: transición gradual del estilo, el sonido y la música.
+- [ ] **F4-11** Menú principal, firma de la escritura, opciones en la radio y pantalla final.
+- [ ] **F4-12** **Cooperativo de prueba**: dos jugadores, por red local o IP, durante todo el bucle.
+- [ ] **F4-13** Rendimiento en tu Ryzen 7 8700G y accesibilidad básica.
 
-**Contenido**: el depósito (vestíbulo, andén, almacén y cuarto de Ignat), Los Bloques completo, 8 herramientas, 2 criaturas, 3 Erratas, 3 clientes y 1 enclave.
-**Entregable**: una demo de 45 a 60 minutos.
-**Criterio de salida**: se puede completar sin errores bloqueantes, cumple el rendimiento objetivo y la juegan al menos 5 personas externas, cuyas opiniones se recogen.
+**Contenido**: la estación (depósito, pasillo y escalera), las zonas 1 y 2 (esta parcial), la Jauría y el Inquilino, 12 herramientas, unos 30 objetos de botín y 3 clientes.
+**Entregable**: una demo de 60 a 90 minutos, con varias salidas.
+**Criterio de salida**: se puede completar sin errores bloqueantes, va a 60 fps en tu PC, la prueban de 3 a 5 personas y las muertes se sienten justas.
 
 ### Fase 5: Producción (alfa) · tamaño XXL
 
 **Objetivo**: todo el contenido dentro del juego.
 
-- [ ] **F5-01** Distritos: Mercado, Río, Túneles, Hospital, Imprenta y Torre.
-- [ ] **F5-02** Enclaves (5, más el Andén 9) y unos 20 clientes recurrentes con sus arcos.
-- [ ] **F5-03** Catálogo completo de herramientas (unas 25) y taller para fabricar y reparar.
-- [ ] **F5-04** Criaturas restantes (Garabatos, Goteras, Mirones) y El Cartero.
-- [ ] **F5-05** Todas las Erratas (unas 12) y la corrección con tiza.
-- [ ] **F5-06** Mejoras del depósito (unas 20): salas, líneas de vagoneta, palomar, cuarto oscuro y decoración libre.
-- [ ] **F5-07** Sellos y pegatinas coleccionables (unos 40). Opcional: diseñar tus propios sellos.
-- [ ] **F5-08** Historia completa: unas 60 cartas, el rastro de Ignat y 2 o 3 finales.
-- [ ] **F5-09** Clima, Crecida completa y eventos especiales.
+- [ ] **F5-01** Zonas: Los Bloques completa, La Avenida y el Mercado, La Zona Industrial y El Hospital.
+- [ ] **F5-02** Los túneles como rutas alternativas.
+- [ ] **F5-03** **El Llamador**, completo.
+- [ ] **F5-04** **Los Saqueadores**, primera versión: patrullas, vigías, investigación, búsqueda en grupo, comunicación audible y memoria.
+- [ ] **F5-05** Catálogo completo: unas 25 herramientas y unos 100 objetos de botín.
+- [ ] **F5-06** Unas 15 mejoras del depósito, más la personalización.
+- [ ] **F5-07** Unos 8 clientes con sus encargos.
+- [ ] **F5-08** Variación entre salidas: patrullas, desplazamientos de la Jauría, campamentos nuevos, botín.
+- [ ] **F5-09** El objetivo final de la partida (según la [pregunta 2](#17-preguntas-abiertas)).
 
 **Entregable**: el juego, completable de principio a fin.
 **Criterio de salida**: todo el contenido está dentro, aunque falte pulido.
 
-### Fase 6: Pulido (beta) · tamaño L
+### Fase 6: Saqueadores tácticos · tamaño L
 
-- [ ] **F6-01** Equilibrio de la economía y de la curva de peligro.
-- [ ] **F6-02** Rendimiento (Steam Deck) y opciones gráficas.
-- [ ] **F6-03** Accesibilidad completa.
-- [ ] **F6-04** Traducción al inglés.
-- [ ] **F6-05** Mezcla final de audio.
-- [ ] **F6-06** Tutorial integrado en el mundo: notas de Ignat y primeras jornadas guiadas.
-- [ ] **F6-07** Pruebas externas y corrección de errores.
-- [ ] **F6-08** Logros.
+**Objetivo**: humanos que piensan, planifican y tienden emboscadas, sin hacer trampa nunca.
 
-**Criterio de salida**: sin errores graves conocidos y con el rendimiento objetivo en todas las plataformas.
+- [ ] **F6-01** Razonamiento sobre evidencias: huellas, puertas abiertas, marcas de tiza, objetos que faltan.
+- [ ] **F6-02** Planificador (GOAP o HTN): emboscadas en pasos obligados, cebos y trampas.
+- [ ] **F6-03** Coordinación de grupo: cerrar salidas, rodear, relevos.
+- [ ] **F6-04** Memoria a largo plazo: aprenden tus rutas habituales.
+- [ ] **F6-05** Comportamiento humano: miedo, cansancio, discusiones, retirada.
+- [ ] **F6-06** Validación: la prueba de justicia automática cubre todas sus decisiones.
 
-### Fase 7: Lanzamiento y después · tamaño M
+**Criterio de salida**: en las pruebas, los jugadores caen en emboscadas y, al revisarlas, las entienden y las consideran justas.
 
-- [ ] **F7-01** Página de Steam: cápsulas ilustradas, capturas y tráiler.
-- [ ] **F7-02** Demo pública (el vertical slice pulido).
-- [ ] **F7-03** Lanzamiento de la 1.0 y parches.
-- [ ] **F7-04** Después del lanzamiento: modo foto, distritos nuevos y, quizá, cooperativo.
+### Fase 7: Pulido (beta) · tamaño L
+
+- [ ] **F7-01** Equilibrio: economía, impuesto, hambre, peligro y duración de las salidas.
+- [ ] **F7-02** Rendimiento y opciones gráficas.
+- [ ] **F7-03** Accesibilidad completa.
+- [ ] **F7-04** Mezcla final de audio y música.
+- [ ] **F7-05** Cooperativo de hasta 4 jugadores, pulido.
+- [ ] **F7-06** Introducción integrada: el primer día de limpieza como tutorial.
+- [ ] **F7-07** Pruebas externas y corrección de errores.
+
+**Criterio de salida**: sin errores graves conocidos y con el rendimiento objetivo.
+
+### Fase 8: Versión 1.0 · tamaño M
+
+- [ ] **F8-01** Ejecutables e instalador para Windows (y Linux).
+- [ ] **F8-02** Última ronda de control de calidad.
+- [ ] **F8-03** Material de presentación (arte, capturas, tráiler) por si algún día se publica.
+- [ ] **F8-04** Documentación final del proyecto.
+
+**Criterio de salida**: el juego está listo para publicarse, aunque no se publique.
 
 ---
 
-## 13. Hoja de Desarrollo
+## 15. Hoja de Desarrollo
 
-### 13.1 Hitos
+### 15.1 Hitos
 
 | Hito | Fase | Entregable | Criterio de salida | Tamaño | Estado |
 |---|---|---|---|---|---|
-| **H0 · Hola, Tumánsk** | 0 | Proyecto, pipelines y CI | Un asset va de la receta al juego sin pasos manuales | S | ⬜ |
+| **H0 · Hola, Tumansk** | 0 | Proyecto, red, pipelines y CI | Un asset va de la receta al juego sin pasos manuales; dos instancias sincronizadas | S | ⬜ |
 | **H1 · Prueba de Tinta** | 1 | 2 dioramas y guía de estilo | Estilo aprobado por ti | M | ⬜ |
-| **H2 · Primer paquete** | 2 | Depósito jugable | 5 paquetes procesados sin cajas de texto | L | ⬜ |
-| **H3 · Primera ruta** | 3 | Ruta de 10 a 15 minutos | Da miedo; 3 soluciones por obstáculo | L | ⬜ |
-| **H4 · Primera Jornada** | 4 | Vertical slice de 45 a 60 minutos | 5 o más testers externos; rendimiento objetivo | XL | ⬜ |
+| **H2 · El depósito abre** | 2 | Depósito jugable | Del depósito sucio a la primera venta, sin cajas de texto | L | ⬜ |
+| **H3 · Primera salida** | 3 | La Plaza, el cuaderno y la Jauría | Se planifica, se dibuja, se usan rutas distintas; muertes justas | L | ⬜ |
+| **H4 · Los primeros días** | 4 | Vertical slice | Bucle completo, 60 fps en tu PC, cooperativo de 2 | XL | ⬜ |
 | **H5 · Alfa** | 5 | Contenido completo | Completable de principio a fin | XXL | ⬜ |
-| **H6 · Beta** | 6 | Juego pulido | Sin errores graves | L | ⬜ |
-| **H7 · 1.0** | 7 | Lanzamiento | Publicado | M | ⬜ |
+| **H6 · Saqueadores tácticos** | 6 | IA humana avanzada | Emboscadas que se entienden y se sienten justas | L | ⬜ |
+| **H7 · Beta** | 7 | Juego pulido | Sin errores graves; cooperativo de 4 | L | ⬜ |
+| **H8 · 1.0** | 8 | Versión final | Lista para publicarse | M | ⬜ |
 
 **Leyenda.** Estado: ⬜ pendiente · 🟨 en curso · ✅ hecho · ⛔ bloqueado. El tamaño es relativo (S, M, L, XL, XXL); se convertirá a semanas cuando hayamos medido el ritmo real en las Fases 0 y 1.
 
-### 13.2 Contenido objetivo
+### 15.2 Contenido objetivo
 
 | Elemento | Vertical slice (Fase 4) | Versión 1.0 |
 |---|---|---|
-| Distritos | 1 (Los Bloques) | 7, más el depósito |
-| Enclaves | 1, más el Andén 9 | 5, más el Andén 9 |
-| Clientes recurrentes | 3 | Unos 20 |
-| Herramientas | 8 | Unas 25 |
-| Criaturas | 2 | 5, más El Cartero |
-| Erratas | 3 | Unas 12 |
-| Mejoras del depósito | 3 | Unas 20 |
-| Sellos y pegatinas | 10 | Unos 40 |
-| Cartas de historia | 5 | Unas 60 |
-| Duración | 45–60 minutos | 10–15 horas |
+| Zonas | 1 completa y 1 parcial | 5, más los túneles |
+| Amenazas | La Jauría y el Inquilino | La Jauría, el Inquilino, el Llamador y los Saqueadores |
+| Herramientas | 12 | Unas 25 |
+| Objetos de botín distintos | Unos 30 | Unos 100 |
+| Clientes | 3 | Unos 8 |
+| Mejoras del depósito | 4 | Unas 15 |
+| Jugadores | 1–2 | 1–4 |
 
-### 13.3 Lista de recortes
+### 15.3 Lista de recortes
 
 Si hay que reducir el alcance, se recorta en este orden:
 
-1. El diseñador de sellos propios.
-2. El palomar.
-3. La Torre de Radio como distrito completo (el final pasaría a una sola escena).
-4. Las Erratas avanzadas (Calco, Eco).
-5. El clima variable (se quedaría solo la lluvia).
-6. Un enclave (La Esclusa se fusionaría con el Mercado).
+1. Los túneles como rutas alternativas.
+2. La Zona Industrial.
+3. La personalización avanzada del depósito.
+4. El cooperativo de 4 (se quedaría en 2).
+5. El clima variable (se quedaría solo la nieve).
 
-**No se recortan nunca**: el estilo, la mochila, la tiza, la tactilidad del depósito y el diseño de sonido.
+**No se recortan nunca**: el estilo, el cuaderno, la calidad de cada amenaza, la muerte permanente, la tactilidad del depósito y el sonido.
 
-### 13.4 Cómo trabajamos
+### 15.4 Cómo trabajamos
 
 1. Cada sesión parte de una tarea de esta hoja, identificada por su ID.
 2. La implemento en una rama, con tests y capturas.
@@ -783,82 +952,67 @@ Si hay que reducir el alcance, se recorta en este orden:
 
 ---
 
-## 14. Riesgos y mitigaciones
+## 16. Riesgos y mitigaciones
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
-| Que el arte generado por código no alcance la calidad buscada | Alto | Puerta de estilo en la Fase 1. El shader hace buena parte del trabajo. Iteración a base de capturas y recetas reutilizables. Si un asset clave no llega al nivel, se modela a mano en Blender o se encarga |
-| Animar personajes y criaturas | Alto | Clientes de medio cuerpo tras la ventanilla. Animación "a saltos", como en el dibujo animado, que disimula imperfecciones. Criaturas que casi no se ven |
-| Dos juegos en uno (alcance) | Alto | El vertical slice como prueba, la lista de recortes y sistemas compartidos entre las dos mitades |
-| Choque entre el tono acogedor y el terror | Medio | Una frontera física (la escalera) y una regla clara: el hogar es sagrado. Pruebas tempranas |
-| Coste del post-proceso en rendimiento | Medio | Presupuesto por efecto, calidad escalable y pruebas en Steam Deck desde la Fase 4 |
+| IA humana creíble, inteligente y justa | Alto | Una fase dedicada, construcción por capas, la prueba de justicia automática y herramientas de depuración |
+| Que el arte generado por código no alcance la calidad buscada | Alto | Puerta de estilo en la Fase 1. El shader hace buena parte del trabajo. Iteración a base de capturas. Si un asset clave no llega al nivel, se modela a mano en Blender o se encarga |
+| Animar criaturas (sobre todo cuadrúpedos) | Alto | Pocas amenazas, así que cada una recibe tiempo de sobra; animación "a saltos", que perdona imperfecciones; ajustes procedurales |
+| Cooperativo | Alto | Red desde la Fase 0 y pruebas con dos instancias en cada fase |
+| Alcance | Alto | Estación pequeña, 5 zonas, 4 amenazas, la lista de recortes |
+| Que dibujar mapas en primera persona resulte incómodo | Medio | Prototipo temprano (Fase 3), trazo suavizado, regla, símbolos y pruebas con jugadores |
+| Que la muerte permanente frustre | Medio | Amenazas que avisan, herramientas de información, ninguna muerte sin señales previas |
+| Rendimiento con gráfica integrada | Medio | Iluminación horneada, presupuesto por efecto, escalado FSR |
 | El entorno de desarrollo en la nube no tiene GPU | Medio | Render por software para las capturas; pruebas en tiempo real en tu PC |
-| Audio | Medio | Librerías libres, foley propio y música por encargo |
-| Propiedad intelectual | Alto si se publica | Nombre, mundo, criaturas y arte propios (ver la [sección 16](#16-propiedad-intelectual)) |
+| Audio y música | Medio | Se decide más adelante con un único criterio: la mejor calidad posible |
+| Propiedad intelectual | Bajo mientras no se publique | Nombre, ciudad, criaturas y arte propios (ver la [sección 18](#18-propiedad-intelectual)) |
 
 ---
 
-## 15. Preguntas abiertas
+## 17. Preguntas abiertas
 
-Cada pregunta lleva una propuesta por defecto. Si te parece bien, basta con decir "ok".
-
-### Identidad y mundo
+Cada pregunta lleva una propuesta. Si te parece bien, basta con decir "ok".
 
 | # | Pregunta | Propuesta |
 |---|---|---|
-| 1 | ¿Te gusta el título provisional *Ruta de Tiza*? Alternativas: *Sin Remitente*, *Estafeta Nº 9*, *Último Envío* | *Ruta de Tiza* |
-| 2 | La catástrofe es **la Tinta**, algo sobrenatural ligado al estilo de dibujo. ¿O prefieres algo más "realista" (radiación, química), más cerca de Metro o S.T.A.L.K.E.R.? | La Tinta: une el arte, las mecánicas y la historia |
-| 3 | Ciudad ficticia post-soviética (Tumánsk). ¿Rótulos en cirílico decorativo o todo en español? | Cirílico decorativo; todo lo importante, legible en tu idioma |
-| 4 | Protagonista: ¿anónimo (el Suplente, que firma con su nombre) o un personaje con nombre y voz propios? | Anónimo, con el nombre que firmas en el contrato |
-
-### Jugabilidad
-
-| # | Pregunta | Propuesta |
-|---|---|---|
-| 5 | ¿Qué pasa al morir? **A**: despiertas en el depósito, tu mochila queda en la ciudad y te queda una mancha permanente en la mano. **B**: *Legado*: otro Suplente ocupa tu puesto. **C**: A por defecto y B como modo difícil | C |
-| 6 | El depósito, ¿100 % relajado como Cat Mail Co., o con una cuota diaria suave (comida y combustible) sin "game over"? | Cuota suave |
-| 7 | ¿Hay humanos hostiles (saqueadores) o solo amenazas sobrenaturales? | Solo sobrenaturales en la 1.0; humanos neutrales con los que se puede negociar |
-| 8 | ¿Cuánto dura una salida típica: 10–20 minutos o 30–60? | 15–25 minutos |
-| 9 | ¿Puede el terror entrar alguna vez en el depósito? | No durante el juego normal (el hogar es sagrado); sí en un único momento clave de la historia |
-| 10 | Cooperativo (Cat Mail Co. admite hasta 4 jugadores): ¿lo quieres? | No en la 1.0. Si lo quieres, hay que decidirlo ahora, porque cambia la arquitectura |
-| 11 | ¿Te gusta poder "corregir" las Erratas con tiza, lo único mágico que tendrás? | Sí, limitado a las Erratas |
-
-### Producción
-
-| # | Pregunta | Propuesta |
-|---|---|---|
-| 12 | ¿El objetivo es publicarlo en Steam o es un proyecto personal o de portfolio? | Steam, con el vertical slice como demo pública |
-| 13 | Plataformas: ¿bastan PC (Windows y Linux) y Steam Deck, o quieres consolas? | PC y Steam Deck |
-| 14 | Idiomas: ¿primero español y después inglés? | Sí |
-| 15 | Música y sonido: ¿tienes a alguien, o prefieres librerías libres y música por encargo? | Librerías libres y música por encargo a partir del vertical slice |
-| 16 | ¿Qué PC tienes? Sirve para fijar el rendimiento objetivo, ya que tú probarás las builds | — |
-| 17 | ¿Convierto esta Hoja de Desarrollo en Issues y un Project de GitHub? | Sí |
+| 1 | **Título.** Ninguno de los anteriores te gustó. ¿Alguno de estos? *Tumansk*, *Herencia*, *Superficie*, *Lo que queda*, *La Compuerta* | *Tumansk* (es el título de trabajo) |
+| 2 | **¿Cuál es el objetivo de una partida?** **A**: sobrevivir sin final (cuántos días aguantas). **B**: una meta, como llegar a la zona más lejana y saber qué le pasó a tu padre. **C**: aguantar hasta que acabe el invierno | B, y después poder seguir jugando libremente |
+| 3 | ¿Puede haber rastros de tu padre en la superficie (objetos, notas), sin contar demasiado? | Sí, pocos y ambiguos |
+| 4 | ¿Tu personaje es chico o chica? En español afecta a los textos | Lo eliges al firmar la escritura |
+| 5 | ¿Un invierno largo, con nieve y huellas como información (las tuyas y las de los demás)? | Sí |
+| 6 | ¿Hace falta beber, además de comer? | Solo comer; el agua la da la estación |
+| 7 | Saqueadores: si te pillan, ¿te matan siempre, o a veces puedes rendirte y te quitan todo? | A veces puedes rendirte: pierdes la mochila, pero no la vida |
+| 8 | Cooperativo: si muere un jugador, ¿qué pasa? | Queda fuera; la partida sigue mientras quede alguien vivo |
+| 9 | ¿Te convencen la Jauría, el Inquilino, el Llamador y los Saqueadores? ¿Cambiarías alguno? | — |
+| 10 | Tu PC: ¿tienes tarjeta gráfica dedicada o usas la integrada del 8700G (Radeon 780M)? | Si es la integrada: 1080p a 60 fps con escalado |
+| 11 | ¿Convierto esta Hoja de Desarrollo en Issues y un Project de GitHub? | Sí |
 
 ---
 
-## 16. Propiedad intelectual
+## 18. Propiedad intelectual
 
-*Metro* y *S.T.A.L.K.E.R.* son marcas registradas de sus propietarios, y *Cat Mail Co.* es obra de sus autores. Aquí funcionan como inspiración de tono, mecánicas y ambiente. Este juego tiene nombre, mundo, personajes, criaturas, arte y música propios: no usa sus nombres, personajes, logotipos, música, mapas ni assets. El nombre del repositorio puede quedarse como nombre de trabajo interno, pero el juego se publicará con su propio título.
+*Metro 2033*, *S.T.A.L.K.E.R.* y *Fallout* son marcas registradas de sus propietarios, y *Cat Mail Co.* es obra de sus autores. Aquí funcionan como referencias de tono, mecánicas y estilo. Este juego tiene nombre, ciudad, personajes, criaturas, arte y música propios: no usa sus nombres, personajes, criaturas, logotipos, música, mapas ni assets. "Stalker" se usa como nombre común del oficio, no como marca. El nombre del repositorio puede quedarse como nombre de trabajo interno.
 
 ---
 
-## 17. Glosario
+## 19. Glosario
 
 | Término | Significado |
 |---|---|
-| **Suplente** | Tú. El sustituto del cartero desaparecido |
-| **Estafeta Nº 9** | La oficina postal en el vestíbulo de la estación Andén 9. Tu hogar |
-| **Tumánsk** | La ciudad |
-| **Noche del Borrón** | La catástrofe de hace nueve años |
-| **Tinta** | La niebla negra que lo cubre todo |
-| **Mancha** | La tinta que se acumula en tus manos |
-| **Tachados, Borrones, Garabatos, Goteras, Mirones** | Lo que vive en la niebla |
-| **El Cartero** | Una figura con una saca. ¿Ignat? |
-| **Errata** | Lugar donde el dibujo del mundo está mal hecho |
-| **Crecida** | La subida periódica de la tinta |
-| **Enclave** | Comunidad de supervivientes y destino de los envíos |
-| **Refugio** | Habitación sellada y segura en la ciudad |
-| **Vagoneta** | El vehículo que trae y lleva el correo por los túneles |
-| **La Montaña** | La pila de correo atrasado que dejó Ignat |
-| **Fichas** | La moneda: viejas fichas de bronce del metro |
-| **Gotas** | La escala de peligro de los encargos, de 1 a 5 |
+| **Tumansk** | La ciudad |
+| **La estación** | Tu refugio bajo tierra. Siempre segura |
+| **El depósito** | Tu local en la estación: almacén, taller y tienda |
+| **Stalker** | Quien sube a la superficie a buscar lo que queda |
+| **La superficie** | La ciudad, arriba |
+| **La compuerta** | La puerta hermética entre la estación y la superficie |
+| **Rublos** | La moneda |
+| **Impuesto** | Lo que pagas cada día a la estación por el local |
+| **Encargo** | El pedido de un cliente: algo que hay que encontrar arriba |
+| **La Jauría** | Perros asilvestrados y deformados que cazan en manada |
+| **El Inquilino** | La criatura que vive dentro de un edificio |
+| **El Llamador** | La criatura que imita sonidos y voces |
+| **Los Saqueadores** | Personas armadas que viven de lo que encuentran y de lo que roban |
+| **El cuaderno** | Tus mapas, tus notas y tus planes. El único mapa que existe |
+| **Dosímetro** | El aparato que mide la radiación |
+| **Filtros** | Lo que hace respirable el aire dentro de la máscara. Se gastan |
