@@ -25,7 +25,9 @@ extends RefCounted
 ## altos llevan plaqueta en vez de hormigón pintado.
 
 const LIBRARIES: PackedStringArray = [
-	"res://assets/models/kit_paneles.glb", "res://assets/models/kit_estalinka.glb"
+	"res://assets/models/kit_paneles.glb",
+	"res://assets/models/kit_estalinka.glb",
+	"res://assets/models/kit_ladrillo.glb",
 ]
 const MATERIALS_DIR: String = "res://assets/materials/"
 ## La familia de reglas que monta cada tipo del plano.
@@ -35,6 +37,7 @@ const FAMILIES: Dictionary = {
 	"torre16": "paneles",
 	"estalinka": "mamposteria",
 	"estalinka_baja": "mamposteria",
+	"prerrevolucion": "mamposteria",
 }
 ## Los materiales que cambia cada tipo.
 const SKINS: Dictionary = {

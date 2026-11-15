@@ -50,13 +50,13 @@ func test_masonry_houses_follow_any_footprint() -> void:
 		),
 	}
 	for shape: String in shapes:
-		for kind: String in ["estalinka", "estalinka_baja"]:
+		for kind: String in ["estalinka", "estalinka_baja", "prerrevolucion"]:
 			for damage: int in range(1, 5):
 				var spec: Dictionary = {
 					"tipo": kind,
 					"clave": "PRUEBA-%s-%s-%d" % [shape, kind, damage],
 					"huella": shapes[shape],
-					"pisos": 7 if kind == "estalinka" else 3,
+					"pisos": {"estalinka": 7, "estalinka_baja": 3, "prerrevolucion": 3}[kind],
 					"dano": damage,
 					"incendio": "parcial",
 					"patios": PackedVector2Array([Vector2(30, 40)]),
@@ -156,7 +156,7 @@ func test_plan_buildings_are_built() -> void:
 		assert_true(missing.is_empty(), "%s: faltan %s" % [building["id"], ", ".join(missing)])
 		node.free()
 		built += 1
-	assert_eq(built, 86, "los bloques de paneles y las casas estalinistas del plano")
+	assert_eq(built, 110, "los bloques de paneles y las casas de muros de carga del plano")
 
 
 func _spec(kind: String, damage: int, fire: String) -> Dictionary:

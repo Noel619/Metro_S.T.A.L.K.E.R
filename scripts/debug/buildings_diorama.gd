@@ -105,6 +105,25 @@ func specs() -> Array[Dictionary]:
 			"incendio": "total",
 			"entrada": 0,
 		},
+		# Las casas de muros de carga, enteras: la de los mercaderes y la obrera.
+		{
+			"tipo": "prerrevolucion",
+			"clave": "DIO-P1",
+			"huella": _rect(-40.0, -2.0, -6.0, 10.0),
+			"pisos": 2,
+			"dano": 1,
+			"incendio": "no",
+			"patios": PackedVector2Array([Vector2(-23.0, 40.0)]),
+		},
+		{
+			"tipo": "estalinka_baja",
+			"clave": "DIO-O1",
+			"huella": _rect(-84.0, -2.0, -50.0, 10.0),
+			"pisos": 3,
+			"dano": 1,
+			"incendio": "no",
+			"patios": PackedVector2Array([Vector2(-67.0, 40.0)]),
+		},
 		{
 			"tipo": "torre16",
 			"clave": "DIO-T1",
@@ -170,6 +189,11 @@ func _build() -> void:
 
 
 func _ground() -> void:
+	var heights: Array[float] = []
+	for building: Node in _built.get_children():
+		heights.append((building as Node3D).position.y)
+	heights.sort()
+	var level: float = heights[int(heights.size() / 2.0)] if not heights.is_empty() else 0.0
 	var plane: PlaneMesh = PlaneMesh.new()
 	plane.size = Vector2(600.0, 600.0)
 	plane.subdivide_width = 60
@@ -180,7 +204,7 @@ func _ground() -> void:
 	ground.name = "Suelo"
 	ground.mesh = plane
 	ground.material_override = material
-	ground.position = Vector3(60.0, 0.0, -20.0)
+	ground.position = Vector3(60.0 if escena == "bloques" else 0.0, level, -20.0)
 	_built.add_child(ground)
 
 

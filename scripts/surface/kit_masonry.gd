@@ -51,6 +51,51 @@ const SOOT_SOURCES: Dictionary = {
 const RUBBLE_MODELS: PackedStringArray = [
 	"res://assets/models/escombros.glb", "res://assets/models/escombros_grande.glb"
 ]
+## Lo que cambia de un tipo a otro: la pieza que hace cada papel (si no está, la de la
+## estalinka), si lleva imposta en cada forjado y si tiene balcones. Las carpinterías, los
+## interiores, los cortes y la cubierta son los mismos (con la altura de cada planta).
+const STYLES: Dictionary = {
+	"prerrevolucion":
+	{
+		"bajo_escaparate": "ladrillo_bajo_escaparate",
+		"bajo_portal": "ladrillo_bajo_portal",
+		"bajo_ventana": "ladrillo_bajo_ventana",
+		"bajo_ciego": "ladrillo_bajo_ciego",
+		"bajo_arco": "ladrillo_bajo_arco",
+		"imposta": "ladrillo_imposta",
+		"imposta_esquina": "ladrillo_imposta_esquina",
+		"estuco_ventana": "ladrillo_ventana",
+		"estuco_ventana_cornisa": "ladrillo_ventana_frontoncillo",
+		"estuco_ventana_fronton": "ladrillo_ventana_frontoncillo",
+		"estuco_balcon": "ladrillo_ventana",
+		"estuco_ciego": "ladrillo_ciego",
+		"estuco_hueco": "ladrillo_hueco",
+		"estuco_roto_": "ladrillo_roto_",
+		"patio_ventana": "ladrillo_patio_ventana",
+		"patio_ciego": "ladrillo_patio_ciego",
+		"patio_escalera": "ladrillo_patio_escalera",
+		"patio_remate": "ladrillo_patio_remate",
+		"patio_puerta": "ladrillo_patio_puerta",
+		"cornisa": "ladrillo_cornisa",
+		"cornisa_esquina": "ladrillo_cornisa_esquina",
+		"alero": "ladrillo_cornisa",
+		"alero_esquina": "ladrillo_cornisa_esquina",
+		"pilastra": "ladrillo_lesena",
+		"pilastra_basa": "ladrillo_lesena",
+		"pilastra_capitel": "ladrillo_lesena",
+		"esquina_bajos": "ladrillo_esquina_bajos",
+		"esquina_planta": "ladrillo_esquina",
+		"imposta_cada_planta": true,
+		"balcones": false,
+		"tintes":
+		[
+			Color(1.0, 1.0, 1.0),
+			Color(0.94, 0.96, 1.0),
+			Color(1.0, 0.94, 0.88),
+			Color(0.88, 0.86, 0.85),
+		],
+	},
+}
 
 var _storey: float
 var _worker: bool
@@ -64,9 +109,11 @@ var _tint: Color
 var _roof_color: Color
 var _fire: Vector3 = Vector3(-1.0, -1.0, 0.0)
 var _fire_chance: float = 0.0
+var _style: Dictionary = {}
 
 
 func build(parent: Node3D) -> void:
+	_style = STYLES.get(kind, {})
 	_setup()
 	_damage_chunks()
 	_plan_edges()
@@ -85,14 +132,16 @@ func build(parent: Node3D) -> void:
 func _setup() -> void:
 	_worker = kind == "estalinka_baja"
 	floors = int(spec.get("pisos", 3 if _worker else 7))
-	_storey = float(spec.get("planta", 3.2 if _worker else STOREY))
+	var storey: float = {"estalinka_baja": 3.2, "prerrevolucion": 3.8}.get(kind, STOREY)
+	_storey = float(spec.get("planta", storey))
 	var cleaned: PackedVector2Array = CityGeometry.clean(spec["huella"])
 	_axis = CityGeometry.long_axis(cleaned)
 	_span = CityGeometry.extent(cleaned, _axis)
 	cleaned.reverse()
 	_outline = _merge_short(cleaned, 1.0)
 	_origin = spec.get("origen", CityGeometry.centroid(_outline))
-	_tint = TINTS[_rng.randi() % TINTS.size()]
+	var tints: Array = _style.get("tintes", TINTS)
+	_tint = tints[_rng.randi() % tints.size()]
 	_roof_color = ROOF_COLORS[_rng.randi() % ROOF_COLORS.size()]
 	_wear = clampf(0.2 + 0.2 * damage + _rng.randf_range(-0.1, 0.1), 0.0, 1.0)
 	var fire: String = spec.get("incendio", "no")
@@ -253,7 +302,7 @@ func _facade(edge: Dictionary) -> void:
 	var bays: int = edge["bays"]
 	var role: String = edge["role"]
 	var balcony_bays: Dictionary = {}
-	if role == "calle" and bays >= 3:
+	if role == "calle" and bays >= 3 and bool(_style.get("balcones", true)):
 		balcony_bays[int(bays / 2.0)] = true
 		if bays >= 9:
 			balcony_bays[int(bays / 4.0)] = true
@@ -275,6 +324,8 @@ func _facade(edge: Dictionary) -> void:
 		var below: Color = _ground_cell(face, program, edge)
 		for f: int in range(1, kept):
 			below = _upper_cell(face, f, below, edge, balcony_bays.has(bay), bay)
+			if f > 1 and role == "calle" and bool(_style.get("imposta_cada_planta", false)):
+				assembly.put(_p("imposta"), _frame(face, PLINTH + f * _storey), _tint)
 		_top(face, kept, bool(chunk[3]), below, edge)
 		if role == "calle" and bay > 0 and bay % 2 == 0 and bays >= 4:
 			_pilasters(face, kept)
@@ -283,12 +334,12 @@ func _facade(edge: Dictionary) -> void:
 ## Los bajos de un vano. Devuelve el hollín que deja en la planta de encima.
 func _ground_cell(face: Dictionary, program: String, edge: Dictionary) -> Color:
 	var role: String = edge["role"]
-	var base: Transform3D = _frame(face, 0.0)
+	var base: Transform3D = _frame(_ground_face(face), 0.0)
 	if role == "calle":
-		assembly.put("imposta", _frame(face, GROUND), _tint)
+		assembly.put(_p("imposta"), _frame(face, PLINTH + _storey), _tint)
 	if role != "calle":
 		# Patio y casa obrera: zócalo liso y una planta como las demás.
-		assembly.put("zocalo_patio", base, _tint)
+		assembly.put(_p("zocalo_patio"), base, _tint)
 		var piece: String = "patio_ventana" if role == "patio" else "estuco_ventana"
 		if program == "ciego":
 			piece = "patio_ciego" if role == "patio" else "estuco_ciego"
@@ -296,10 +347,10 @@ func _ground_cell(face: Dictionary, program: String, edge: Dictionary) -> Color:
 	var tone: Color = _wall_tone()
 	match program:
 		"portal":
-			assembly.put("bajo_portal", base, tone, Color(_wear, 0.0, 0.0, 0.0))
+			assembly.put(_p("bajo_portal"), base, tone, Color(_wear, 0.0, 0.0, 0.0))
 			assembly.put("puerta_e_" + _door_state(), base)
 		"arco":
-			assembly.put("bajo_arco", base, tone, Color(_wear, 0.0, 0.0, 0.0))
+			assembly.put(_p("bajo_arco"), base, tone, Color(_wear, 0.0, 0.0, 0.0))
 			assembly.put("reja_arco_abierta" if _rng.randf() < 0.5 else "reja_arco", base)
 		"escaparate":
 			var burnt: bool = _burnt(0)
@@ -307,7 +358,7 @@ func _ground_cell(face: Dictionary, program: String, edge: Dictionary) -> Color:
 			var data: Color = Color(_wear, 0.0, 0.0, 0.0)
 			if burnt:
 				data = Color(_wear, 0.9, 1.6, 3.55)
-			assembly.put("bajo_escaparate", base, tone, data)
+			assembly.put(_p("bajo_escaparate"), base, tone, data)
 			assembly.put("escaparate_" + state, base)
 			assembly.put("tienda_interior", base)
 			return Color(_wear, 0.75, 1.6, 3.55 - PLINTH) if burnt else Color(_wear, 0.0, 0.0, 0.0)
@@ -315,12 +366,12 @@ func _ground_cell(face: Dictionary, program: String, edge: Dictionary) -> Color:
 			var burnt: bool = _burnt(0)
 			var state: String = "quemada" if burnt else _window_state(0, edge["facing"])
 			var data: Color = Color(_wear, 0.9, 1.6, 3.45) if burnt else Color(_wear, 0.0, 0.0, 0.0)
-			assembly.put("bajo_ventana", base, tone, data)
+			assembly.put(_p("bajo_ventana"), base, tone, data)
 			assembly.put("ventana_baja_" + _short_state(state), base)
 			assembly.put(_room(burnt), _frame(face, PLINTH))
 			return Color(_wear, 0.75, 1.6, 3.45 - PLINTH) if burnt else Color(_wear, 0.0, 0.0, 0.0)
 		_:
-			assembly.put("bajo_ciego", base, tone, Color(_wear, 0.0, 0.0, 0.0))
+			assembly.put(_p("bajo_ciego"), base, tone, Color(_wear, 0.0, 0.0, 0.0))
 	return Color(_wear, 0.0, 0.0, 0.0)
 
 
@@ -348,10 +399,10 @@ func _window_cell(face: Dictionary, f: int, below: Color, piece: String, edge: D
 	var data: Color = _from_below(below, _storey)
 	var tone: Color = _wall_tone()
 	if piece.ends_with("ciego"):
-		assembly.put(piece, placement, tone, data)
+		assembly.put(_p(piece), placement, tone, data)
 		return Color(_wear, 0.0, 0.0, 0.0)
 	if f > 0 and _rng.randf() < [0.0, 0.006, 0.02, 0.08, 0.12][damage]:
-		assembly.put("estuco_hueco", placement, tone, data)
+		assembly.put(_p("estuco_hueco"), placement, tone, data)
 		return Color(_wear, 0.0, 0.0, 0.0)
 	var burnt: bool = _burnt(f)
 	var opening: String = "balcon" if piece == "estuco_balcon" else "ventana"
@@ -360,7 +411,7 @@ func _window_cell(face: Dictionary, f: int, below: Color, piece: String, edge: D
 	var source: Vector2 = SOOT_SOURCES[opening]
 	if burnt:
 		data = Color(_wear, 0.9, source.x, source.y)
-	assembly.put(piece, placement, tone, data)
+	assembly.put(_p(piece), placement, tone, data)
 	var state: String = "quemada" if burnt else _window_state(f, edge["facing"])
 	match opening:
 		"balcon":
@@ -383,7 +434,7 @@ func _top(face: Dictionary, kept: int, broken: bool, below: Color, edge: Diction
 	var top: float = PLINTH + kept * _storey
 	var data: Color = _from_below(below, _storey)
 	if broken:
-		var stub: String = "estuco_roto_" + _pick(["a", "b", "c", "d"])
+		var stub: String = _p("estuco_roto_") + _pick(["a", "b", "c", "d"])
 		assembly.put(stub, _frame(face, top), _wall_tone(), data)
 		return
 	if kept < floors:
@@ -391,7 +442,7 @@ func _top(face: Dictionary, kept: int, broken: bool, below: Color, edge: Diction
 	var cornice: String = "cornisa" if edge["role"] == "calle" else "alero"
 	var flat: Dictionary = face.duplicate()
 	flat["scale_y"] = 1.0
-	assembly.put(cornice, _frame(flat, top), _tint, data)
+	assembly.put(_p(cornice), _frame(flat, top), _tint, data)
 
 
 ## La escalera de servicio del patio: la puerta abajo, las ventanas desfasadas media planta
@@ -402,7 +453,7 @@ func _back_stairs(face: Dictionary, kept: int, broken: bool, edge: Dictionary) -
 	var door: Dictionary = face.duplicate()
 	door["scale_y"] = landing / BACK_HEIGHT
 	var base: Transform3D = _frame(door, 0.0)
-	assembly.put("patio_puerta", base, _tint)
+	assembly.put(_p("patio_puerta"), base, _tint)
 	assembly.put("puerta_patio_" + _pick(["cerrada", "tapiada", "arrancada"]), base)
 	var below: Color = Color(_wear, 0.0, 0.0, 0.0)
 	var source: Vector2 = SOOT_SOURCES["escalera"]
@@ -412,7 +463,7 @@ func _back_stairs(face: Dictionary, kept: int, broken: bool, edge: Dictionary) -
 		var data: Color = _from_below(below, _storey)
 		if burnt:
 			data = Color(_wear, 0.8, source.x, source.y)
-		assembly.put("patio_escalera", placement, _wall_tone(), data)
+		assembly.put(_p("patio_escalera"), placement, _wall_tone(), data)
 		var state: String = "quemada" if burnt else _window_state(k + 1, edge["facing"])
 		assembly.put("escalera_e_" + _stair_state(state), placement)
 		assembly.put("escalera_e_interior", placement)
@@ -420,7 +471,7 @@ func _back_stairs(face: Dictionary, kept: int, broken: bool, edge: Dictionary) -
 	var top: float = PLINTH + kept * _storey
 	if kept >= 1:
 		var half: Dictionary = face.duplicate()
-		assembly.put("patio_remate", _frame(half, top - _storey * 0.5), _tint)
+		assembly.put(_p("patio_remate"), _frame(half, top - _storey * 0.5), _tint)
 	below.a -= _storey * 0.5
 	_top(face, kept, broken, below, edge)
 
@@ -436,7 +487,7 @@ func _pilasters(face: Dictionary, kept: int) -> void:
 			piece = "pilastra_capitel"
 		var upright: Dictionary = face.duplicate()
 		upright["scale"] = 1.0
-		assembly.put(piece, _frame(upright, PLINTH + f * _storey), _tint)
+		assembly.put(_p(piece), _frame(upright, PLINTH + f * _storey), _tint)
 
 
 ## Las esquinas que sobresalen: sillares, la esquina de la imposta y la de la cornisa.
@@ -459,15 +510,15 @@ func _corners_pieces() -> void:
 		var kept: int = chunk[2]
 		var street: bool = edge["role"] == "calle" or previous["role"] == "calle"
 		if street:
-			assembly.put("esquina_bajos", _frame(face, 0.0), _tint)
-			assembly.put("imposta_esquina", _frame(face, GROUND), _tint)
+			assembly.put(_p("esquina_bajos"), _frame(_ground_face(face), 0.0), _tint)
+			assembly.put(_p("imposta_esquina"), _frame(face, PLINTH + _storey), _tint)
 			for f: int in range(1, kept):
-				assembly.put("esquina_planta", _frame(face, PLINTH + f * _storey), _tint)
+				assembly.put(_p("esquina_planta"), _frame(face, PLINTH + f * _storey), _tint)
 		if not bool(chunk[3]) and kept == floors:
 			var flat: Dictionary = face.duplicate()
 			flat["scale_y"] = 1.0
 			var cap: String = "cornisa_esquina" if street and not _worker else "alero_esquina"
-			assembly.put(cap, _frame(flat, PLINTH + floors * _storey), _tint)
+			assembly.put(_p(cap), _frame(flat, PLINTH + floors * _storey), _tint)
 
 
 ## Donde un trozo alto mira a uno más bajo, el corte con los forjados y las habitaciones.
@@ -531,6 +582,18 @@ func _room(burnt: bool) -> String:
 	if burnt:
 		return "habitacion_e_quemada"
 	return "habitacion_e_" + _pick(["a", "b", "c"])
+
+
+## La pieza que hace un papel en este tipo de casa.
+func _p(role: String) -> String:
+	return _style.get(role, role)
+
+
+## Los bajos van del suelo a la primera planta: se estiran o encogen con la planta.
+func _ground_face(face: Dictionary) -> Dictionary:
+	var ground: Dictionary = face.duplicate()
+	ground["scale_y"] = (PLINTH + _storey) / GROUND
+	return ground
 
 
 func _wall_tone() -> Color:
