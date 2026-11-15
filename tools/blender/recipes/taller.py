@@ -56,7 +56,7 @@ def build_scale() -> bpy.types.Object:
 
     mb = tb.MeshBuilder(seed=61)
     # Cuerpo de fundición esmaltada, sobre cuatro patas roscadas.
-    mb.box((width, depth, base_h - 0.02), (0.0, 0.0, 0.02 + (base_h - 0.02) / 2.0), ENAMEL_BLUE, bevel=0.022, segments=3)
+    mb.box((width, depth, base_h - 0.02), (0.0, 0.0, 0.02 + (base_h - 0.02) / 2.0), ENAMEL_BLUE, bevel=0.022, segments=3, cuts=6)
     mb.box((width - 0.07, depth - 0.06, 0.02), (0.0, 0.0, base_h + 0.006), ENAMEL_DARK, bevel=0.008, segments=2)
     for x in (-width / 2.0 + 0.05, width / 2.0 - 0.05):
         for y in (-depth / 2.0 + 0.045, depth / 2.0 - 0.045):

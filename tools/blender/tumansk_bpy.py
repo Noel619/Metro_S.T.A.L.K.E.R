@@ -101,7 +101,10 @@ def _sort_geometry(bm: bmesh.types.BMesh) -> None:
         sequence.sort(key=rank.__getitem__)
         sequence.index_update()
 
-    reorder(bm.verts, lambda v: (round(v.co.x, 6), round(v.co.y, 6), round(v.co.z, 6)))
+    # El biselado también deja un ruido de milmillonésimas de metro: se redondea a 0,01 mm.
+    for vert in bm.verts:
+        vert.co = Vector(round(c, 5) for c in vert.co)
+    reorder(bm.verts, lambda v: tuple(v.co))
     # Cada cara empieza por su vértice de menor índice: así se triangula siempre igual.
     colors = [*bm.loops.layers.color.values(), *bm.loops.layers.float_color.values()]
     uvs = list(bm.loops.layers.uv.values())
@@ -263,16 +266,30 @@ class MeshBuilder:
         bevel: float = 0.0,
         segments: int = 1,
         jitter: float = 0.0,
+        cuts: int = 0,
     ) -> list:
-        """Caja; ``rotation`` en grados (X, Y, Z) y ``jitter`` varía el color."""
+        """Caja; ``rotation`` en grados (X, Y, Z) y ``jitter`` varía el color.
+
+        ``cuts`` subdivide las caras: las manchas y las abolladuras se pintan
+        por vértice, así que una cara grande sin subdividir no las recoge.
+        """
         before = set(self.bm.faces)
         matrix = Matrix.LocRotScale(
             Vector(center), Euler([math.radians(a) for a in rotation]).to_quaternion(), Vector(size)
         )
         result = bmesh.ops.create_cube(self.bm, size=1.0, matrix=matrix, calc_uvs=True)
+        # Sin conjuntos: su orden cambia de una ejecución a otra y el modelo dejaría de ser idéntico.
+        edges = list(dict.fromkeys(edge for vert in result["verts"] for edge in vert.link_edges))
+        if cuts > 0:
+            bmesh.ops.subdivide_edges(self.bm, edges=edges, cuts=cuts, use_grid_fill=True)
+            self.bm.normal_update()
+            faces = [f for f in self.bm.faces if f not in before]
+            edges = [
+                edge
+                for edge in dict.fromkeys(edge for face in faces for edge in face.edges)
+                if len(edge.link_faces) == 2 and edge.calc_face_angle(0.0) > 0.5
+            ]
         if bevel > 0.0:
-            # Sin conjuntos: su orden cambia de una ejecución a otra y el modelo dejaría de ser idéntico.
-            edges = list(dict.fromkeys(edge for vert in result["verts"] for edge in vert.link_edges))
             bmesh.ops.bevel(
                 self.bm, geom=edges, offset=bevel, segments=segments, profile=0.5,
                 affect="EDGES", clamp_overlap=True,
