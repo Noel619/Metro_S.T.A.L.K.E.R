@@ -77,3 +77,27 @@ Antes de construir nada se fija el plano entero ([docs/CIUDAD.md](CIUDAD.md)). L
 ## D-019 · Los daños se calculan, no se reparten al azar
 
 El nivel de daño de cada edificio sale de su distancia a la Zona Cero (cuatro anillos), con una variación fija por edificio y excepciones a mano. Los escombros caen del lado contrario a la bomba y los árboles tumbados apuntan lejos de ella, así que la destrucción tiene dirección y sirve para orientarse. La lluvia radiactiva cae en una franja hacia el sureste.
+
+## D-020 · Personajes por receta, con el esqueleto humanoide de Godot
+
+Las personas se generan igual que el resto de los modelos (`tools/blender/personaje_bpy.py`): piezas blandas hechas de anillos, con su color y sus pesos de hueso, suavizadas con una subdivisión. Los huesos llevan los nombres del perfil humanoide de Godot (`Hips`, `Spine`, `LeftUpperArm`…): así las animaciones se podrán compartir entre los protagonistas, los clientes y los saqueadores. Es la excepción a la regla de nombrar el contenido en español; los huesos propios de un personaje (`Bufanda1`, `Trenza2`) sí van en español.
+
+## D-021 · Animaciones como funciones, a saltos al reproducirlas
+
+Cada animación es una función del tiempo que devuelve una pose (`tools/blender/personaje_anim.py`). Las piernas se resuelven con cinemática inversa, así que los pies no patinan: basta con reproducir el ciclo a la velocidad a la que anda el personaje. Se guardan suaves; el aspecto de dibujo animado lo pone el juego, que solo avanza la animación 12 veces por segundo (`PlayerAvatar.animation_fps`). La mirada, la bufanda y la trenza van por encima, con suavidad.
+
+## D-022 · Caras dibujadas sobre una cabeza con relieve
+
+El rostro es una lámina 2D de 8 expresiones pegada sobre la cabeza (README 9.3), pero la cabeza no es una bola: tiene cejas, cuencas, pómulos y nariz. Con la luz de arriba, los ojos quedan en sombra y la tinta hace el resto.
+
+## D-023 · El tono de los personajes: nada de juguetes
+
+Revisión de la primera pasada de los protagonistas: eran cabezones, con colorete y ropa limpia, y el mundo no puede ser tan amable. Regla para todas las personas del juego: proporciones reales (unas siete cabezas), caras cansadas y sucias, ropa heredada, remendada y manchada, y equipo que cuente el oficio (mascarilla, gafas, cuerda, palanca). Los personajes se revisan siempre dentro de los dioramas, con la luz de la superficie y la del depósito, nunca sobre un fondo neutro.
+
+## D-024 · Coger cosas: lo pide el jugador, lo mueve el anfitrión
+
+Cada jugador manda sobre su movimiento y su mirada; el anfitrión, sobre la física de los objetos. Quien quiere coger algo se lo pide al anfitrión, que lleva el objeto hacia sus manos con velocidades (no lo teletransporta): así choca con lo que hay por medio y el peso se nota. En los invitados los objetos están congelados y solo siguen la posición replicada.
+
+## D-025 · Los guiones que se lanzan con `-s` no nombran clases del juego
+
+Un guion lanzado con `godot -s` se compila antes de que existan las autocargas. Si nombra una clase que las usa (`Player` usa `Settings`), falla al compilar y, como no llega a llamar a `quit()`, el proceso se queda colgado. Por eso las pruebas de red (`tests/net/`) acceden a los nodos sin tipos; los tests unitarios sí pueden, porque el ejecutor los carga más tarde.

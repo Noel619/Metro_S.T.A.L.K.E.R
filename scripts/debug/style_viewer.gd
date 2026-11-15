@@ -10,6 +10,8 @@ const SCENES: PackedStringArray = [
 	"res://scenes/style/diorama_patio_dia.tscn",
 	"res://scenes/style/diorama_patio_anochecer.tscn",
 	"res://scenes/style/diorama_patio_noche.tscn",
+	"res://scenes/style/personajes_superficie.tscn",
+	"res://scenes/style/personajes_deposito.tscn",
 ]
 
 const HELP: String = "← → diorama · C cámara · ↑ ↓ miedo · R radiación · L linterna"

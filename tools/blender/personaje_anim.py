@@ -200,11 +200,11 @@ def _hands_holding(rig: pb.Rig, t: float) -> Pose:
     pose = Pose(rig)
     sway = _wave(t)
     for sign, side in HAND_SIDES:
-        elbow = Vector((sign * 0.3, 0.06, -0.46 + 0.003 * sway))
-        wrist = Vector((sign * 0.2, 0.33, -0.27 + 0.004 * sway))
-        _place_arm(pose, side, elbow, wrist, UP + LEFT * -0.25 * sign)
-        pose.turn(f"{side}Hand", UP, -sign * 10.0)
-        _curl(pose, sign, side, 14.0, thumb=-8.0)
+        elbow = Vector((sign * 0.33, 0.2, -0.52 + 0.003 * sway))
+        wrist = Vector((sign * 0.225, 0.47, -0.33 + 0.004 * sway))
+        _place_arm(pose, side, elbow, wrist, UP + LEFT * -0.2 * sign)
+        pose.turn(f"{side}Hand", UP, -sign * 14.0)
+        _curl(pose, sign, side, 10.0, thumb=-10.0)
     return pose
 
 

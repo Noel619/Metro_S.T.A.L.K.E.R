@@ -1,0 +1,9 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/casco.gdshader" id="1_shader"]
+
+[resource]
+resource_name = "resaltado"
+shader = ExtResource("1_shader")
+shader_parameter/width_scale = 2.4
+shader_parameter/irregularity = 0.6

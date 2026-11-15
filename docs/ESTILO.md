@@ -91,16 +91,36 @@ De noche la luz ambiente y la de la luna son casi nulas (`tinta_negro` = 1): el 
 - **Destrucción** (superficie): hollín de incendio sobre las ventanas quemadas (`scorch`), paneles caídos con el hueco oscuro y varillas, balcones desplomados que cuelgan de la bisagra, cornisas rotas, escombros al pie de la fachada y puertas tapiadas con tablones.
 - **Nombres de material**: `metal` (rampa de metal), `vidrio`, `bombilla` (emite luz), `nevado` (nieve vieja) y `lejano_*` (siluetas del horizonte). El resto usa el material base.
 
+## 4b. Personas
+
+![Los protagonistas en el patio](capturas/fase2_personajes_superficie.jpg)
+
+- **Tono** ([D-023](DECISIONES.md)): nada de juguetes. Unas siete cabezas de alto, flacos, cargados de hombros; caras cansadas y sucias; ropa heredada, remendada, manchada de grasa y con barro de rodillas abajo.
+- **Cara**: lámina 2D de 8 expresiones (`assets/ui/cara_*.svg`) sobre una cabeza con relieve. Ojos pequeños con el párpado pesado, ojeras, rayas de lápiz bajo el pómulo, la boca apretada. Sin colorete ni brillos.
+- **Contorno**: además del contorno del post-proceso, las personas llevan un casco invertido (`assets/shaders/casco.gdshader`, segunda pasada de los materiales `ropa`, `piel` y `prenda_jugador`). Su grosor sigue al de la zona y al miedo, y varía a saltos.
+- **Movimiento a saltos**: 12 fotogramas por segundo.
+- **Color del jugador**: la bufanda (y el trapo de la trenza) se tiñen con el color de cada jugador, siempre apagado: ocre `#9A7A2E`, petróleo `#2C6468`, óxido `#7A4A30` y azul pizarra `#42558A`. No hay jugador rojo.
+
+| Uso | Hex |
+|---|---|
+| Piel | `#C9A58B`, enrojecida por el frío `#B5766A`, sucia `#7C6455` |
+| Chaqueta acolchada del chico | `#676650`, oscura `#525240` |
+| Capote de la chica | `#5B5A54`, oscuro `#494842` |
+| Lona | `#6B634C`, `#555D47` (zurrón) |
+| Cuero | `#3E2C21`, gastado `#5F4532` |
+| Goma, cinta aislante | `#222224`, `#1F2733` |
+| Cuerda | `#85765A` |
+| Mugre, polvo, barro | `#26221E`, `#8B8576`, `#4E4233` |
+
 ## 5. Herramientas de revisión
 
 - `tools/capture.sh escena salida.png [ancho] [alto] [fotogramas]` hace una captura por cada cámara del grupo `capture_camera`.
 - `CAPTURE_ARGS="--hide=InkPost"` captura sin post-proceso.
 - `CAPTURE_ARGS="--post=debug_view=N"` muestra una capa del post-proceso: 1 profundidad, 2 normales, 3 contorno, 4 tramado, 5 color de entrada, 6 relleno.
-- Escenas de revisión en `scenes/style/`: `diorama_deposito_limpio`, `diorama_deposito_abandonado`, `diorama_patio_dia`, `diorama_patio_anochecer`, `diorama_patio_noche` y `prueba_estilo`. El visor (`visor_estilo`, la escena principal) las recorre todas.
+- Escenas de revisión en `scenes/style/`: `diorama_deposito_limpio`, `diorama_deposito_abandonado`, `diorama_patio_dia`, `diorama_patio_anochecer`, `diorama_patio_noche`, `prueba_estilo`, `personajes_superficie`, `personajes_deposito` y `primera_persona_chico` / `primera_persona_chica`. El visor (`visor_estilo`, la escena principal) las recorre todas.
 
 ## 6. Pendiente en la Fase 1
 
-- Contorno por casco invertido para personajes y criaturas (F1-03).
 - Huellas en la nieve y ventisca (F1-07).
 - Más detalle en las ruinas del horizonte y en la silueta de la Zona Cero.
 - Panel de depuración dentro del juego para mover miedo, hora y zona (F1-11).

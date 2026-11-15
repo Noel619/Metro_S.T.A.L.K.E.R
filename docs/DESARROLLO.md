@@ -7,11 +7,25 @@ Cómo poner en marcha el proyecto, generar los assets y comprobar que todo funci
 1. Descarga **Godot 4.7.2** (versión estándar, no la de .NET) desde [godotengine.org](https://godotengine.org/download/windows/). Tiene que ser esa versión exacta.
 2. Descarga o clona este repositorio.
 3. Abre Godot, pulsa **Importar** y elige el archivo `project.godot`.
-4. Pulsa **F5**. Se abre el **visor del estilo**, con los dioramas de la Fase 1 en movimiento:
+4. Pulsa **F5**. Se abre **el depósito jugable** (Fase 2):
+
+| Control | Qué hace |
+|---|---|
+| W A S D · ratón | Andar y mirar |
+| F | Coger lo que tienes delante (el punto de lápiz se convierte en una mano) y soltarlo |
+| Botón derecho, mantenido | Acerca el objeto a los ojos; el ratón lo gira |
+| Esc | Suelta o recupera el ratón |
+| F9 | Abre la partida a otro jugador (puerto 24680) |
+| F10 | Te une a una partida abierta en la misma máquina |
+| F1 | Oculta la ayuda |
+
+Argumentos, después de `--`: `--chica` (juegas con la chica), `--host` (abres la partida) y `--join=DIRECCION` (te unes a otra). Por ejemplo, para probar el cooperativo en un solo PC: `godot --path . -- --host` en una ventana y `godot --path . -- --join=127.0.0.1 --chica` en otra.
+
+El **visor del estilo** de la Fase 1 sigue en `scenes/style/visor_estilo.tscn` (ábrela y pulsa F6):
 
 | Tecla | Qué hace |
 |---|---|
-| ← → | Cambia de diorama (depósito limpio, depósito abandonado y patio de día, al anochecer y de noche) |
+| ← → | Cambia de diorama (depósito, patio de día, al anochecer y de noche, y las hojas de los personajes) |
 | C | Cambia de cámara |
 | ↑ ↓ | Sube o baja el miedo: el trazo tiembla más y el tramado invade la imagen |
 | R | Activa o quita la radiación (más grano) |
@@ -43,7 +57,7 @@ Solo hacen falta para cambiar recetas o generadores.
 | `make models` | Solo los modelos (`tools/blender/recipes/`) |
 | `make import` | Importa los recursos en Godot |
 | `make test` | Tests unitarios, sin pantalla |
-| `make test-net` | Prueba de red: un anfitrión y un invitado en la misma máquina |
+| `make test-net` | Pruebas de red: un anfitrión y un invitado en la misma máquina (la caja de la Fase 0 y el depósito) |
 | `make lint` | Revisa el estilo del código GDScript |
 | `make capture` | Capturas de las escenas de revisión en `docs/capturas/` |
 | `make setup` | Reescribe controles, capas y buses de audio en `project.godot` |
@@ -69,6 +83,16 @@ Todo se genera por código. **Nunca se editan a mano** los archivos de `assets/m
 | `-colconvexa` | La malla se sustituye por una colisión convexa |
 
 El nombre del material elige el material de Godot si existe `assets/materials/<nombre>.tres`; si no, se usa `base_vertex.tres`, que pinta con los colores por vértice.
+
+### Personajes
+
+- `tools/blender/personaje_bpy.py`: piezas blandas con color y pesos de hueso (`Sculpt`), volúmenes sobre los que colocar correas y bolsillos (`Profile`), el esqueleto y las poses con cinemática inversa.
+- `tools/blender/personaje_anim.py`: las animaciones, como funciones del tiempo. Un nombre que acaba en `-loop` se importa en bucle.
+- `tools/blender/recipes/personajes.py`: `jugador_chico`, `jugador_chica` y las manos de primera persona (`manos_*`).
+- En Godot, `PlayerAvatar` (`scripts/actors/player_avatar.gd`) carga el modelo y lo anima: `speed`, `carrying`, `look_pitch`, `expression`, y la mochila, el zurrón y la mascarilla, que se pueden ocultar.
+- Para revisarlos: `tools/capture.sh res://scenes/style/personajes_superficie.tscn salida.png`.
+
+Si cambias un material de `assets/materials/` después de importar un modelo, borra su copia de `.godot/imported/` para que Godot lo importe otra vez.
 
 ### Ilustraciones 2D
 
@@ -105,4 +129,9 @@ Las escenas de revisión del estilo están en `scenes/style/` y se describen en 
 
 ## Cooperativo
 
-El juego arranca siempre como anfitrión sin invitados (`NetSession`). Para probar dos jugadores en la misma máquina, `make test-net` lanza un anfitrión y un invitado y comprueba que el invitado ve moverse la caja de "Hola, Tumansk".
+El juego arranca siempre como anfitrión sin invitados (`NetSession`). `make test-net` lanza dos pruebas con un anfitrión y un invitado en la misma máquina:
+
+- **caja**: el invitado ve moverse la caja de "Hola, Tumansk".
+- **deposito**: el invitado entra en el depósito, recibe su jugador y los 22 objetos, anda, coge una lata, se la lleva y la suelta; el anfitrión comprueba que lo ve andar y llevarla.
+
+Quién manda sobre qué está en [D-003](DECISIONES.md) y [D-024](DECISIONES.md).
