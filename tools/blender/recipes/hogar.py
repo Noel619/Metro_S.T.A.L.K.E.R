@@ -25,6 +25,17 @@ RUST = "#8E4A2F"
 SOOT = "#26262A"
 EMBER_OFF = "#4A2C20"
 STEEL = "#8C918D"
+VENEER = "#7A4E33"
+VENEER_DARK = "#5A3B2A"
+BAKELITE_CREAM = "#CDBF9F"
+BAKELITE_DARK = "#2E2B28"
+CLOTH = "#9C8C66"
+DIAL_CREAM = "#E9E2CC"
+LEATHER = "#6B4A2B"
+SIGNAL_RED = "#C8323C"
+
+# Radio: la aguja del dial se desliza DIAL_TRAVEL metros a cada lado del centro.
+DIAL_TRAVEL = 0.066
 
 
 def build_stove() -> bpy.types.Object:
@@ -109,7 +120,117 @@ def build_stove() -> bpy.types.Object:
     return root
 
 
+def build_radio() -> bpy.types.Object:
+    """Radio de sobremesa: caja de chapa de madera, rejilla de tela y dial.
+
+    Es la radio del depósito (sus tres mandos son los ajustes del juego) y
+    también botín de los pisos. Nodos propios, con el origen en su eje:
+    ``mando_volumen``, ``mando_brillo`` y ``mando_sensibilidad`` giran sobre su
+    eje Y (en Godot, ``rotation.z``); ``aguja`` se desliza a lo largo de X por
+    el dial, DIAL_TRAVEL metros a cada lado; ``piloto`` es la lámpara de encendido.
+    """
+    rng = random.Random(127)
+    root = tb.empty("radio-fisico")
+    width, depth, height, feet = 0.44, 0.17, 0.26, 0.012
+    front = -depth / 2.0
+    mid_z = feet + height / 2.0
+
+    wood = tb.MeshBuilder(seed=127)
+    wood.box((width, depth, height), (0.0, 0.0, mid_z), VENEER, bevel=0.016, segments=3, cuts=4, jitter=0.03)
+    for x in (-width / 2.0 + 0.04, width / 2.0 - 0.04):
+        for y in (-depth / 2.0 + 0.035, depth / 2.0 - 0.035):
+            wood.cylinder(0.014, feet + 0.004, (x, y, feet / 2.0 + 0.002), "#2A2725", segments=10)
+    # Frente: marco, tela del altavoz con sus lamas y ventana del dial.
+    wood.box((width - 0.04, 0.008, height - 0.04), (0.0, front - 0.002, mid_z), BAKELITE_CREAM, bevel=0.003, cuts=2)
+    speaker_x, speaker_w, speaker_h = -0.085, 0.21, 0.18
+    wood.box((speaker_w, 0.004, speaker_h), (speaker_x, front - 0.007, mid_z), CLOTH, cuts=3, jitter=0.05)
+    for index in range(10):
+        x = speaker_x - speaker_w / 2.0 + 0.012 + index * (speaker_w - 0.024) / 9.0
+        wood.box((0.007, 0.007, speaker_h + 0.004), (x, front - 0.011, mid_z), VENEER_DARK, rotation=(0.0, 0.0, rng.uniform(-0.5, 0.5)), bevel=0.002, jitter=0.08)
+    for z in (mid_z - speaker_h / 2.0, mid_z + speaker_h / 2.0):
+        wood.box((speaker_w + 0.016, 0.01, 0.01), (speaker_x, front - 0.011, z), VENEER_DARK, bevel=0.003)
+    dial = (0.118, front - 0.008, mid_z + 0.055)
+    wood.box((0.168, 0.006, 0.072), dial, "#33302C", bevel=0.003)
+    wood.box((0.152, 0.004, 0.056), (dial[0], dial[1] - 0.003, dial[2]), DIAL_CREAM)
+    for index in range(25):
+        x = dial[0] - DIAL_TRAVEL + 2.0 * DIAL_TRAVEL * index / 24.0
+        long_mark = index % 4 == 0
+        wood.box((0.0022 if long_mark else 0.0012, 0.0015, 0.016 if long_mark else 0.009), (x, dial[1] - 0.0055, dial[2] + 0.012), INK)
+    for index in range(7):
+        wood.box((0.009 + rng.uniform(0.0, 0.008), 0.0015, 0.004), (dial[0] - 0.06 + index * 0.02, dial[1] - 0.0055, dial[2] - 0.014), "#6E6A5E")
+    # Asa de cuero arriba y antena telescópica detrás.
+    top = feet + height
+    wood.ribbon(
+        tb.smooth_path(((-0.1, 0.0, top - 0.002), (-0.09, 0.0, top + 0.012), (-0.05, 0.0, top + 0.03), (0.05, 0.0, top + 0.03), (0.09, 0.0, top + 0.012), (0.1, 0.0, top - 0.002)), 3),
+        0.026,
+        0.005,
+        LEATHER,
+        center=(0.0, 0.0, top - 0.1),
+    )
+    cabinet = wood.finish("caja", tb.material("madera", VENEER), root)
+    tb.stain(cabinet, VENEER_DARK, amount=0.6, scale=7.0, coverage=0.4, seed=127, stretch_z=0.3)
+    tb.stain(cabinet, "#4A4640", amount=0.5, scale=9.0, coverage=0.2, seed=128)
+    tb.dent(cabinet, (width / 2.0, front, top), radius=0.04, depth=0.005)
+    tb.wobble(cabinet, amount=0.0012, scale=6.0, seed=127)
+
+    metal = tb.MeshBuilder(seed=131)
+    for x in (-0.1, 0.1):
+        metal.box((0.03, 0.034, 0.006), (x, 0.0, top + 0.002), STEEL, bevel=0.002)
+    antenna = Vector((width / 2.0 - 0.035, depth / 2.0 - 0.02, top))
+    lean = Vector((0.16, 0.05, 1.0)).normalized()
+    metal.lathe(((0.0, 0.0), (0.011, 0.0), (0.011, 0.01), (0.007, 0.016), (0.0, 0.016)), antenna, STEEL, segments=10)
+    reach = 0.012
+    for length, radius in ((0.2, 0.0038), (0.17, 0.0028), (0.14, 0.0019)):
+        metal.bar(antenna + lean * reach, antenna + lean * (reach + length), radius, STEEL, 6)
+        reach += length
+    metal.sphere(0.0045, antenna + lean * reach, STEEL, segments=8)
+    # Trasera: tapa de cartón prensado con rendijas y el cable de la red.
+    metal.box((width - 0.05, 0.006, height - 0.05), (0.0, depth / 2.0 + 0.001, mid_z), "#5E5346", bevel=0.002, cuts=2)
+    for row in range(3):
+        for column in range(6):
+            metal.box((0.036, 0.004, 0.006), (-0.125 + column * 0.05, depth / 2.0 + 0.0035, mid_z + 0.045 - row * 0.022), INK)
+    cord = Vector((-0.15, depth / 2.0 + 0.004, feet + 0.04))
+    metal.cylinder(0.008, 0.012, cord, "#2A2725", rotation=(90.0, 0.0, 0.0), segments=8)
+    metal.tube(
+        tb.smooth_path((cord + Vector((0.0, 0.004, 0.0)), cord + Vector((-0.005, 0.04, -0.012)), (-0.19, depth / 2.0 + 0.075, 0.006), (-0.25, depth / 2.0 + 0.06, 0.004), (-0.3, depth / 2.0 + 0.1, 0.004)), 4),
+        0.003,
+        "#2A2725",
+        segments=6,
+    )
+    metal_obj = metal.finish("herrajes", tb.material("metal", STEEL), root)
+
+    parts = {cabinet: None, metal_obj: None}
+    for index, name in enumerate(("mando_volumen", "mando_brillo", "mando_sensibilidad")):
+        at = (0.058 + index * 0.06, front - 0.006, mid_z - 0.05)
+        knob = tb.MeshBuilder(seed=137 + index)
+        knob.lathe(((0.0, 0.0), (0.023, 0.0), (0.023, 0.003), (0.019, 0.005), (0.017, 0.018), (0.014, 0.021), (0.0, 0.021)), at, BAKELITE_DARK, rotation=(90.0, 0.0, 0.0), segments=18)
+        pointer = rng.uniform(-70.0, 70.0)
+        a = math.radians(pointer)
+        knob.box((0.003, 0.003, 0.014), (at[0] + 0.01 * math.sin(a), at[1] - 0.0215, at[2] + 0.01 * math.cos(a)), DIAL_CREAM, rotation=(0.0, pointer, 0.0))
+        knob_obj = knob.finish(name, tb.material("metal", BAKELITE_DARK), root)
+        tb.set_origin(knob_obj, at)
+        parts[knob_obj] = None
+    needle = tb.MeshBuilder(seed=149)
+    needle_at = (dial[0] - DIAL_TRAVEL * 0.35, dial[1] - 0.0065, dial[2])
+    needle.box((0.0022, 0.0015, 0.05), needle_at, SIGNAL_RED)
+    needle_obj = needle.finish("aguja", tb.material("metal", SIGNAL_RED), root)
+    tb.set_origin(needle_obj, needle_at)
+    lamp = tb.MeshBuilder(seed=151)
+    lamp_at = (0.028, front - 0.006, mid_z - 0.05)
+    lamp.lathe(((0.0, 0.0), (0.008, 0.0), (0.008, 0.003), (0.0, 0.003)), lamp_at, STEEL, rotation=(90.0, 0.0, 0.0), segments=10)
+    lamp.sphere(0.0055, (lamp_at[0], lamp_at[1] - 0.003, lamp_at[2]), EMBER_OFF, segments=8)
+    lamp_obj = lamp.finish("piloto", tb.material("piloto", EMBER_OFF), root)
+    tb.set_origin(lamp_obj, lamp_at)
+    parts[needle_obj] = None
+    parts[lamp_obj] = None
+
+    tb.collision_box("radio", (width, depth + 0.02, height + feet), (0.0, 0.0, (height + feet) / 2.0), root)
+    tb.paint(parts, ao_distance=0.06, seed=127)
+    return root
+
+
 def models() -> dict:
     return {
         "estufa": build_stove,
+        "radio": build_radio,
     }
