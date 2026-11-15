@@ -22,6 +22,55 @@ func test_every_piece_the_rules_ask_for_exists() -> void:
 				node.free()
 
 
+func test_masonry_houses_follow_any_footprint() -> void:
+	# Una L, una curva (como las casas de la plaza) y un recorte con astillas.
+	var curve: PackedVector2Array = PackedVector2Array()
+	for k: int in 21:
+		var angle: float = deg_to_rad(200.0 + k * 3.0)
+		curve.append(Vector2(cos(angle), sin(angle)) * 100.0)
+	for k: int in range(20, -1, -1):
+		var angle: float = deg_to_rad(200.0 + k * 3.0)
+		curve.append(Vector2(cos(angle), sin(angle)) * 84.0)
+	var shapes: Dictionary = {
+		"ele":
+		PackedVector2Array(
+			[
+				Vector2(0, 0),
+				Vector2(60, 0),
+				Vector2(60, 16),
+				Vector2(16, 16),
+				Vector2(16, 50),
+				Vector2(0, 50)
+			]
+		),
+		"curva": curve,
+		"recorte":
+		PackedVector2Array(
+			[Vector2(0, 0), Vector2(40, 0), Vector2(40.2, 0.1), Vector2(40, 16), Vector2(0, 16)]
+		),
+	}
+	for shape: String in shapes:
+		for kind: String in ["estalinka", "estalinka_baja"]:
+			for damage: int in range(1, 5):
+				var spec: Dictionary = {
+					"tipo": kind,
+					"clave": "PRUEBA-%s-%s-%d" % [shape, kind, damage],
+					"huella": shapes[shape],
+					"pisos": 7 if kind == "estalinka" else 3,
+					"dano": damage,
+					"incendio": "parcial",
+					"patios": PackedVector2Array([Vector2(30, 40)]),
+					"arco": true,
+					"bomba": Vector2(800.0, 600.0),
+				}
+				var node: Node3D = _kit.build(spec)
+				var missing: PackedStringArray = node.get_meta(&"kit_faltan")
+				var label: String = "%s %s, daño %d" % [kind, shape, damage]
+				assert_true(missing.is_empty(), "%s: faltan %s" % [label, ", ".join(missing)])
+				assert_true(int(node.get_meta(&"kit_piezas")) > 60, "%s: casi vacío" % label)
+				node.free()
+
+
 func test_pieces_match_the_rules_measures() -> void:
 	var meshes: Dictionary = _kit.meshes_for("jrushchovka")
 	# Las piezas de un vano ocupan su vano y su planta, y el muro entra hacia -z.
@@ -86,11 +135,11 @@ func test_damage_lowers_the_end_facing_the_bomb() -> void:
 	assert_true(block.broken[block.broken.size() - 1], "lo hundido acaba en muñones")
 
 
-func test_plan_panel_blocks_are_built() -> void:
+func test_plan_buildings_are_built() -> void:
 	var plan: CityPlan = CityPlan.load_default()
 	var built: int = 0
 	for building: Dictionary in plan.data["edificios"]:
-		if not String(building["tipo"]) in ["jrushchovka", "bloque9", "torre16"]:
+		if not BuildingKit.supports(building["tipo"]):
 			continue
 		var spec: Dictionary = {
 			"tipo": building["tipo"],
@@ -100,13 +149,14 @@ func test_plan_panel_blocks_are_built() -> void:
 			"dano": int(building["dano"]),
 			"incendio": building["incendio"],
 			"bomba": plan.ground_zero(),
+			"arco": String(building.get("notas", "")).contains("Arco"),
 		}
 		var node: Node3D = _kit.build(spec)
 		var missing: PackedStringArray = node.get_meta(&"kit_faltan")
 		assert_true(missing.is_empty(), "%s: faltan %s" % [building["id"], ", ".join(missing)])
 		node.free()
 		built += 1
-	assert_eq(built, 29, "las jrushchovkas, los bloques de 9 y la torre del plano")
+	assert_eq(built, 86, "los bloques de paneles y las casas estalinistas del plano")
 
 
 func _spec(kind: String, damage: int, fire: String) -> Dictionary:

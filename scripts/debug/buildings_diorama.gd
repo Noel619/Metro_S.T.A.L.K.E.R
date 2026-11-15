@@ -12,6 +12,13 @@ const GROUND_MATERIAL: String = "res://assets/materials/nevado.tres"
 ## Dónde cae la bomba de este diorama: al noreste, como en Tumansk.
 const BOMB: Vector2 = Vector2(900.0, 700.0)
 
+## "bloques": una calle de Los Bloques hecha a mano, con cada tipo y cada daño. "plaza":
+## las casas del plano que el kit sabe montar alrededor de [member center], tal como son.
+@export_enum("bloques", "plaza") var escena: String = "bloques"
+## Centro de la escena "plaza", en coordenadas de plano (la plaza del Trabajo).
+@export var center: Vector2 = Vector2(430.0, 330.0)
+## Radio de la escena "plaza", en metros.
+@export var radius: float = 210.0
 @export_enum("dia", "anochecer", "noche") var mood: String = "dia"
 ## Hora del día (0 a 24). Si es negativa, se usa [member mood].
 @export_range(-1.0, 24.0) var hour: float = -1.0
@@ -49,6 +56,8 @@ func _apply_atmosphere() -> void:
 
 ## Las fichas de los edificios del diorama.
 func specs() -> Array[Dictionary]:
+	if escena == "plaza":
+		return _plan_specs()
 	return [
 		{
 			"tipo": "jrushchovka",
@@ -108,6 +117,40 @@ func specs() -> Array[Dictionary]:
 	]
 
 
+## Las casas del plano alrededor de [member center], con lo que el plano sabe de ellas: la
+## huella, las plantas, el daño, el incendio, sus patios y si tienen un arco.
+func _plan_specs() -> Array[Dictionary]:
+	var plan: CityPlan = CityPlan.load_default()
+	var courtyards: PackedVector2Array = PackedVector2Array()
+	for courtyard: Dictionary in plan.data["patios"]:
+		var middle: Vector2 = CityGeometry.centroid(CityPlan.ring(courtyard["forma"][0]))
+		if middle.distance_to(center) < radius + 60.0:
+			courtyards.append(middle)
+	var result: Array[Dictionary] = []
+	for building: Dictionary in plan.data["edificios"]:
+		var at: Vector2 = Vector2(building["centro"][0], building["centro"][1])
+		if not BuildingKit.supports(building["tipo"]) or at.distance_to(center) > radius:
+			continue
+		(
+			result
+			. append(
+				{
+					"tipo": building["tipo"],
+					"clave": building["id"],
+					"huella": CityPlan.ring(building["huella"][0]),
+					"pisos": int(building["pisos"]),
+					"dano": int(building["dano"]),
+					"incendio": building["incendio"],
+					"cota": float(building["cota"]),
+					"patios": courtyards,
+					"arco": String(building.get("notas", "")).contains("Arco"),
+					"bomba": plan.ground_zero(),
+				}
+			)
+		)
+	return result
+
+
 func _build() -> void:
 	if _built != null:
 		_built.free()
@@ -115,10 +158,14 @@ func _build() -> void:
 	_built.name = "Edificios"
 	add_child(_built)
 	var kit: BuildingKit = BuildingKit.new()
+	var origin: Vector2 = center if escena == "plaza" else Vector2.ZERO
 	for spec: Dictionary in specs():
-		spec["origen"] = Vector2.ZERO
-		spec["bomba"] = BOMB
-		_built.add_child(kit.build(spec))
+		spec["origen"] = origin
+		if not spec.has("bomba"):
+			spec["bomba"] = BOMB
+		var building: Node3D = kit.build(spec)
+		building.position.y = float(spec.get("cota", 0.0))
+		_built.add_child(building)
 	_ground()
 
 

@@ -10,4 +10,4 @@ shader_parameter/ramps = ExtResource("2_ramps")
 shader_parameter/snow_amount = 0.85
 shader_parameter/snow_color = Color(0.74, 0.72, 0.67, 1)
 shader_parameter/brick_mode = 2
-shader_parameter/brick_tint = Color(0.92, 0.62, 0.5, 1)
+shader_parameter/brick_tint = Color(0.86, 0.66, 0.56, 1)

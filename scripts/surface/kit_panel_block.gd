@@ -1,5 +1,5 @@
 class_name KitPanelBlock
-extends RefCounted
+extends KitRules
 ## Las reglas de los bloques de paneles: la jrushchovka (5 plantas), el bloque de 9 y la
 ## torre de 16, con las piezas de kit_paneles (tools/blender/recipes/kit_paneles.py).
 ##
@@ -69,27 +69,16 @@ const INSERTS: Dictionary = {
 }
 ## Probabilidad de que falte un panel, por nivel de daño.
 const MISSING_PANEL: Array[float] = [0.0, 0.012, 0.035, 0.12, 0.2]
-## Probabilidad de que un balcón se haya caído, por nivel de daño.
-const FALLEN_BALCONY: Array[float] = [0.0, 0.07, 0.18, 0.4, 0.55]
 const ROOF_COLOR: Color = Color("#2f2c29")
 const RUBBLE_COLOR: Color = Color("#4d4943")
 const RUBBLE_MODELS: PackedStringArray = [
 	"res://assets/models/escombros.glb", "res://assets/models/escombros_grande.glb"
 ]
 
-var spec: Dictionary
-var assembly: KitAssembly
-var kind: String
-var key: String
-var floors: int
-var damage: int
 ## Plantas en pie y si su remate está roto, por columna (de la esquina 0 a la 1 del frente).
 var standing: PackedInt32Array = PackedInt32Array()
 var broken: Array[bool] = []
 
-var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
-var _origin: Vector2
-var _bomb: Vector2
 ## Las cuatro esquinas, empezando por el principio del frente (sentido antihorario).
 var _corners: PackedVector2Array
 var _axis: Vector2
@@ -99,18 +88,12 @@ var _depth: float
 var _count: int
 var _width: float
 var _tint: Color
-var _wear: float
 var _stairs: Dictionary = {}
 var _section_of: PackedInt32Array = PackedInt32Array()
 var _kitchens: Dictionary = {}
 var _balconies: Dictionary = {}
 var _fire: Dictionary = {}
 var _fire_chance: float = 0.0
-
-
-func _init(building: Dictionary, kit_assembly: KitAssembly) -> void:
-	spec = building
-	assembly = kit_assembly
 
 
 func build(parent: Node3D) -> void:
@@ -132,18 +115,13 @@ func build(parent: Node3D) -> void:
 
 
 func _setup() -> void:
-	kind = spec["tipo"]
-	key = String(spec.get("clave", kind))
 	floors = int(spec.get("pisos", 9 if kind == "bloque9" else (16 if kind == "torre16" else 5)))
-	damage = clampi(int(spec.get("dano", 1)), 1, 4)
-	_rng.seed = hash(key)
 	var outline: PackedVector2Array = CityGeometry.clean(spec["huella"])
 	outline.reverse()
 	if outline.size() != 4:
 		push_warning("%s: la huella no es un rectángulo; se usa su caja." % key)
 		outline = _bounding_rectangle(outline)
 	_origin = spec.get("origen", CityGeometry.centroid(outline))
-	_bomb = spec.get("bomba", Vector2(1.0e5, 1.0e5))
 	var front: int = _front_edge(outline)
 	_corners = PackedVector2Array()
 	for i: int in 4:
@@ -332,7 +310,7 @@ func _column(face: Dictionary, bay: int) -> void:
 func _cell(face: Dictionary, f: int, below: Color) -> Color:
 	var placement: Transform3D = _jitter(_frame(face, PLINTH + f * STOREY))
 	var tone: Color = _panel_tone()
-	var data: Color = _from_below(below)
+	var data: Color = _from_below(below, STOREY)
 	var opening: String = _opening(face, f)
 	if opening != "ciego" and f > 0 and _rng.randf() < MISSING_PANEL[damage]:
 		assembly.put("panel_caido", placement, tone, data)
@@ -371,18 +349,11 @@ func _opening(face: Dictionary, f: int) -> String:
 	return "ventana"
 
 
-## El hollín de la ventana de abajo, visto desde esta celda (una planta más arriba).
-func _from_below(below: Color) -> Color:
-	if below.g <= 0.0:
-		return Color(_wear, 0.0, 0.0, 0.0)
-	return Color(_wear, below.g, below.b, below.a - STOREY)
-
-
 ## Lo que remata una columna: los muñones de la planta hundida o el peto.
 func _top(face: Dictionary, kept: int, below: Color) -> void:
 	var column: int = face["column"]
 	var top: float = PLINTH + kept * STOREY
-	var data: Color = _from_below(below)
+	var data: Color = _from_below(below, STOREY)
 	if broken[column]:
 		# Los testeros no tienen ventanas: sus muñones son bajos y de lado a lado.
 		var stubs: Array = ["c", "d", "f"]
@@ -412,7 +383,7 @@ func _stair_column(face: Dictionary) -> void:
 	for k: int in maxi(0, kept - 1):
 		var placement: Transform3D = _jitter(_frame(face, PORTAL_HEIGHT + k * STOREY))
 		var burnt: bool = _burnt(column, k + 1)
-		var data: Color = _from_below(below)
+		var data: Color = _from_below(below, STOREY)
 		var source: Vector2 = SOOT_SOURCES["escalera"]
 		if burnt:
 			data = Color(_wear, 0.8, source.x, source.y)
@@ -422,7 +393,7 @@ func _stair_column(face: Dictionary) -> void:
 		assembly.put("escalera_interior", placement)
 		below = Color(_wear, 0.6, source.x, source.y) if burnt else Color(_wear, 0.0, 0.0, 0.0)
 	var top: float = PLINTH + kept * STOREY
-	var remate: Color = _from_below(below)
+	var remate: Color = _from_below(below, STOREY)
 	assembly.put("panel_remate", _frame(face, top - STOREY * 0.5), _panel_tone(), remate)
 	below.a -= STOREY * 0.5
 	_top(face, kept, below)
@@ -459,48 +430,13 @@ func _loggia(placement: Transform3D, burnt: bool) -> void:
 		assembly.put("logia_acristalada", placement)
 
 
-## El estado de una ventana: los cristales que quedan según el daño y si mira a la bomba.
-func _window_state(f: int, facing: bool) -> String:
-	if damage >= 3:
-		return _weighted({"rota": 0.25, "vacia": 0.6, "quemada": 0.15})
-	if f == 0 and _rng.randf() < 0.45:
-		return "tapiada"
-	var weights: Dictionary = {
-		"intacta": 0.32,
-		"cortina": 0.12,
-		"rota": 0.3,
-		"vacia": 0.1,
-		"tapiada": 0.08,
-		"plastico": 0.05
-	}
-	if damage == 2:
-		weights = {
-			"intacta": 0.12,
-			"cortina": 0.05,
-			"rota": 0.4,
-			"vacia": 0.31,
-			"tapiada": 0.07,
-			"plastico": 0.04
-		}
-	var state: String = _weighted(weights)
-	if facing and state in ["intacta", "cortina"] and _rng.randf() < 0.6:
-		state = "rota"
-	return state
-
-
 ## Las cocinas, las puertas de balcón y la escalera tienen menos estados que las ventanas.
 func _insert_state(insert: String, state: String) -> String:
 	if insert == "ventana":
 		return state
 	if insert == "escalera":
-		return {"cortina": "intacta", "tapiada": "rota", "plastico": "rota"}.get(state, state)
-	return {"cortina": "intacta", "plastico": "tapiada"}.get(state, state)
-
-
-func _door_state() -> String:
-	if damage >= 3:
-		return _pick(["arrancada", "abierta"])
-	return _weighted({"cerrada": 0.3, "abierta": 0.3, "tapiada": 0.25, "arrancada": 0.15})
+		return _stair_state(state)
+	return _short_state(state)
 
 
 func _room(burnt: bool) -> String:
@@ -674,16 +610,6 @@ func _collision(parent: Node3D) -> void:
 # --------------------------------------------------------------------------
 
 
-## El marco de una pieza: x a lo largo de la fachada, y arriba y z hacia fuera.
-func _frame(face: Dictionary, height: float) -> Transform3D:
-	var direction: Vector2 = face["direction"]
-	var x_axis: Vector3 = Vector3(direction.x, 0.0, -direction.y)
-	var outward: Vector3 = Vector3(direction.y, 0.0, direction.x)
-	return Transform3D(
-		Basis(x_axis * float(face["scale"]), Vector3.UP, outward), _local(face["start"], height)
-	)
-
-
 ## Un sitio de la cubierta: [param along] metros por el frente y [param inward] hacia dentro.
 func _roof_frame(along: float, inward: float, height: float, turn: float) -> Transform3D:
 	var point: Vector2 = _corners[0] + _axis * along + _inward * inward
@@ -720,27 +646,3 @@ func _center() -> Vector2:
 func _panel_tone() -> Color:
 	var shade: float = 1.0 + _rng.randf_range(-0.035, 0.035)
 	return Color(_tint.r * shade, _tint.g * shade, _tint.b * shade)
-
-
-func _pick(options: Array) -> String:
-	return options[_rng.randi() % options.size()]
-
-
-func _pick_color(options: Array[Color]) -> Color:
-	return options[_rng.randi() % options.size()]
-
-
-func _weighted(weights: Dictionary) -> String:
-	var total: float = 0.0
-	for option: String in weights:
-		total += float(weights[option])
-	var r: float = _rng.randf() * total
-	for option: String in weights:
-		r -= float(weights[option])
-		if r <= 0.0:
-			return option
-	return weights.keys()[weights.size() - 1]
-
-
-func _local(point: Vector2, height: float) -> Vector3:
-	return Vector3(point.x - _origin.x, height, _origin.y - point.y)

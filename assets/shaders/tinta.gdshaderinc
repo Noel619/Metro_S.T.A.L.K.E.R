@@ -166,10 +166,11 @@ void fragment() {
 			if (brick_mode == 1) {
 				base = mix(base, bricks, wall);
 			} else {
-				// Revoque caído: manchas alrededor de los huecos y abajo (el alfa), más
-				// grandes cuanto más desgastado está el edificio, con borde de tinta.
-				float grain = value_noise(world_position * 1.9) * 0.6 + value_noise(world_position * 6.1) * 0.4;
-				float m = COLOR.a * (0.25 + muro_datos.r) + (grain - 0.5) * 0.55 - 0.42;
+				// Revoque caído: manchas sueltas de medio metro a dos, que el ruido reparte por
+				// el muro; el alfa (junto a los huecos y abajo) solo las hace algo más
+				// probables y el desgaste del edificio, más grandes. Borde de tinta.
+				float grain = value_noise(world_position * 0.9) * 0.65 + value_noise(world_position * 3.7) * 0.35;
+				float m = (grain - 0.5) + (COLOR.a - 0.5) * 0.25 + muro_datos.r * 0.25 - 0.32;
 				float mw = max(fwidth(m), 1e-4);
 				base = mix(base, bricks, smoothstep(-mw, mw, m) * wall);
 				base *= 1.0 - (1.0 - smoothstep(0.0, 2.5 * mw, abs(m))) * wall * 0.55;

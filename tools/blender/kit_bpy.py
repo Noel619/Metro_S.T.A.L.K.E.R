@@ -387,6 +387,60 @@ def railing(
         mb.box((0.02, 0.02, z1 - z0 - 0.1), (x, y, (z0 + z1) / 2.0 + 0.01), color)
 
 
+def banded_wall(
+    mb: tb.MeshBuilder,
+    x_range: tuple[float, float],
+    z_range: tuple[float, float],
+    y_range: tuple[float, float],
+    color: str,
+    *,
+    holes: Sequence[tuple[float, float, float, float]] = (),
+    band: float = 0.42,
+    gap: float = 0.025,
+    gap_color: str = "#5E5446",
+    step: float = 0.6,
+) -> None:
+    """Muro almohadillado (los bajos estalinistas): bandas de revoque con la junta pintada.
+
+    Las juntas van enrasadas y de color, no hundidas: una ranura fina se volvería una
+    línea punteada en el contorno de tinta.
+    """
+    x0, x1 = x_range
+    z0, z1 = z_range
+    y0, y1 = y_range
+    z = z0
+    while z < z1 - 1e-6:
+        top = min(z1, z + band)
+        joint = min(top, z + band - gap) if top - z > gap * 2.0 else top
+        clipped = [(a, max(b, z), c, min(d, joint)) for a, b, c, d in holes if b < joint and d > z]
+        mb.slab((x0, x1), (z, joint), (y0, y1), color, holes=clipped, step=step, jitter=0.02, back=False, ring=0.08)
+        if joint < top:
+            gaps = [(a, max(b, joint), c, min(d, top)) for a, b, c, d in holes if b < top and d > joint]
+            mb.slab((x0, x1), (joint, top), (y0 + 0.001, y0 + 0.04), gap_color, holes=gaps, back=False)
+        z = top
+
+
+def balusters(
+    mb: tb.MeshBuilder,
+    start: Vector,
+    end: Vector,
+    z: float,
+    height: float,
+    color: str,
+    *,
+    spacing: float = 0.19,
+    segments: int = 8,
+) -> None:
+    """Fila de balaustres torneados entre dos puntos, de pie sobre ``z``."""
+    length = (end - start).length
+    count = max(1, round(length / spacing))
+    h = height
+    profile = [(0.0, 0.0), (0.055, 0.0), (0.055, h * 0.08), (0.038, h * 0.12), (0.06, h * 0.38), (0.035, h * 0.72), (0.03, h * 0.82), (0.045, h * 0.88), (0.045, h), (0.0, h)]
+    for k in range(count):
+        p = start.lerp(end, (k + 0.5) / count)
+        mb.lathe(profile, (p.x, p.y, z), color, segments=segments)
+
+
 # --------------------------------------------------------------------------
 # Carpinterías
 # --------------------------------------------------------------------------
@@ -438,6 +492,7 @@ def window_layout(opening: tuple[float, float, float, float], kind: str, frame: 
     - "escalera": paño fijo partido en cuatro.
     - "portal": puerta de dos hojas con cristales altos y montante.
     - "escaparate": luna grande con montante (bajos comerciales).
+    - "alta": la ventana estalinista, alta, con travesaño y montante.
     """
     x0, z0, x1, z1 = opening
     ix0, iz0, ix1, iz1 = x0 + frame, z0 + frame, x1 - frame, z1 - frame
@@ -477,6 +532,15 @@ def window_layout(opening: tuple[float, float, float, float], kind: str, frame: 
         top = iz1 - 0.55
         return [
             Sash((ix0, iz0, ix1, top), [((0, 0, 1, 1), glass)], "izquierda"),
+            Sash((ix0, top, ix1, iz1), [((0, 0, 0.5, 1), glass), ((0.5, 0, 1, 1), glass)], "izquierda"),
+        ]
+    if kind == "alta":
+        # Ventana estalinista: dos hojas partidas por un travesaño y el montante arriba.
+        top = iz0 + (iz1 - iz0) * 0.76
+        split = ix0 + width * 0.5
+        return [
+            Sash((ix0, iz0, split, top), [((0, 0, 1, 0.5), glass), ((0, 0.5, 1, 1), glass)], "izquierda"),
+            Sash((split, iz0, ix1, top), [((0, 0, 1, 0.5), glass), ((0, 0.5, 1, 1), glass)], "derecha"),
             Sash((ix0, top, ix1, iz1), [((0, 0, 0.5, 1), glass), ((0.5, 0, 1, 1), glass)], "izquierda"),
         ]
     raise ValueError(f"Carpintería desconocida: {kind}")
@@ -600,7 +664,7 @@ def window(
         mb.slab((x0, x1), (z0, z1), (depth, depth + 0.08), color, holes=[(x0 + frame, z0 + frame, x1 - frame, z1 - frame)], jitter=0.04)
     # Las hojas exteriores.
     sashes = window_layout(opening, kind, frame)
-    swinging = {"habitacion": 2, "cocina": 2, "puerta": 1, "portal": 2}.get(kind, 0)
+    swinging = {"habitacion": 2, "cocina": 2, "puerta": 1, "portal": 2, "alta": 2}.get(kind, 0)
     open_index = -1
     if state == "rota" and swinging > 0:
         open_index = open_sash if open_sash is not None else rng.randrange(swinging)

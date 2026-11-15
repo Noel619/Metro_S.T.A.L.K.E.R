@@ -15,20 +15,26 @@ extends RefCounted
 ##   siempre igual.
 ## - "bomba": Vector2, dónde cayó la bomba: el extremo que la mira se hunde antes y su
 ##   fachada pierde más cristales.
-## - Opcionales de cada familia; los bloques de paneles: "entrada" (el lado de los
-##   portales, un índice de la huella) y "portales".
+## - Opcionales de cada familia. Los bloques de paneles: "entrada" (el lado de los
+##   portales, un índice de la huella) y "portales". Las casas de muros de carga:
+##   "patios" (puntos dentro de los patios: los lados que los miran son fachadas de patio),
+##   "comercios" (escaparates en los bajos de la calle) y "arco" (un arco al patio).
 ##
 ## Cada pieza se repite con una MultiMesh: una llamada de dibujo por pieza y edificio.
 ## Algunos tipos visten las mismas piezas con otro material (sus "pieles"): los bloques
 ## altos llevan plaqueta en vez de hormigón pintado.
 
-const LIBRARIES: PackedStringArray = ["res://assets/models/kit_paneles.glb"]
+const LIBRARIES: PackedStringArray = [
+	"res://assets/models/kit_paneles.glb", "res://assets/models/kit_estalinka.glb"
+]
 const MATERIALS_DIR: String = "res://assets/materials/"
 ## La familia de reglas que monta cada tipo del plano.
 const FAMILIES: Dictionary = {
 	"jrushchovka": "paneles",
 	"bloque9": "paneles",
 	"torre16": "paneles",
+	"estalinka": "mamposteria",
+	"estalinka_baja": "mamposteria",
 }
 ## Los materiales que cambia cada tipo.
 const SKINS: Dictionary = {
@@ -76,6 +82,8 @@ func build(spec: Dictionary) -> Node3D:
 	match FAMILIES.get(kind, ""):
 		"paneles":
 			KitPanelBlock.new(spec, assembly).build(node)
+		"mamposteria":
+			KitMasonry.new(spec, assembly).build(node)
 		_:
 			push_error("El kit no sabe montar el tipo '%s'." % kind)
 	assembly.flush(node)
