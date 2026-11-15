@@ -24,6 +24,11 @@ STEEL_DARK = "#3F4A4F"
 RUST = "#8E4A2F"
 ASH_WOOD = "#B08A5A"
 GRIME = "#6E5038"
+PLANK = "#7E6F5C"
+PLANK_DARK = "#51463B"
+PLANK_LIGHT = "#9C8E78"
+PLANK_PAINT = "#7C93A0"
+KNOT = "#55463A"
 
 
 def _grip(root: bpy.types.Object, at: tuple[float, float, float]) -> None:
@@ -85,7 +90,65 @@ def build_hammer() -> bpy.types.Object:
     return root
 
 
+def build_plank() -> bpy.types.Object:
+    """Tablón de andamio para tender puentes: 2,6 m, alabeado, con nudos, una raja y clavos viejos.
+
+    Va tumbado a lo largo de X. Un extremo conserva la pintura con que lo
+    marcaron en la obra.
+    """
+    rng = random.Random(241)
+    root = tb.empty("tablon-fisico")
+    length, width, thick = 2.6, 0.22, 0.042
+    half_l = length / 2.0
+
+    def warp(point: Vector) -> Vector:
+        """Alabeo del tablón: algo arqueado a lo largo y retorcido de punta a punta."""
+        t = point.x / half_l
+        twist = math.radians(1.6) * t
+        y, z = point.y, point.z - thick / 2.0
+        return Vector((
+            point.x,
+            y * math.cos(twist) - z * math.sin(twist) + 0.008 * (1.0 - t * t),
+            y * math.sin(twist) + z * math.cos(twist) + thick / 2.0 + 0.011 * (1.0 - t * t) + 0.004,
+        ))
+
+    mb = tb.MeshBuilder(seed=241)
+    mb.box((length, width, thick), (0.0, 0.0, thick / 2.0), PLANK, bevel=0.004, segments=2, cuts=11, jitter=0.03)
+    # Pintura de obra en un extremo y una franja desvaída más adentro.
+    mb.box((0.262, width + 0.0012, thick + 0.0012), (-half_l + 0.1295, 0.0, thick / 2.0), PLANK_PAINT, bevel=0.004, segments=2, cuts=3, jitter=0.05)
+    mb.box((0.05, width + 0.0008, thick + 0.0008), (-half_l + 0.36, 0.0, thick / 2.0), PLANK_PAINT, bevel=0.004, segments=2, cuts=3, jitter=0.08)
+    # Veta: trazos cortos y oscuros a lo largo de la cara de arriba.
+    for _ in range(26):
+        streak = rng.uniform(0.07, 0.2)
+        mb.box((streak, rng.uniform(0.0012, 0.0024), 0.0012), (rng.uniform(-half_l + 0.42, half_l - 0.12), rng.uniform(-width / 2.0 + 0.012, width / 2.0 - 0.012), thick + 0.0001), PLANK_DARK, rotation=(0.0, 0.0, rng.uniform(-0.5, 0.5)), jitter=0.2)
+    # Nudos y una raja que entra desde la otra punta.
+    for _ in range(4):
+        knot = (rng.uniform(-half_l + 0.5, half_l - 0.3), rng.uniform(-width / 2.0 + 0.04, width / 2.0 - 0.04))
+        size = rng.uniform(0.012, 0.022)
+        mb.lathe(((0.0, 0.0), (size, 0.0), (size * 0.6, 0.0006), (0.0, 0.0008)), (knot[0], knot[1], thick), KNOT, segments=10)
+        mb.lathe(((0.0, 0.0), (size * 0.45, 0.0), (0.0, 0.0006)), (knot[0], knot[1], thick + 0.0007), INK, segments=8)
+    mb.box((0.34, 0.0035, thick + 0.0012), (half_l - 0.17, 0.028, thick / 2.0), INK, rotation=(0.0, 0.0, -1.8))
+    mb.box((0.12, 0.0025, thick + 0.0012), (half_l - 0.06, -0.05, thick / 2.0), INK, rotation=(0.0, 0.0, 2.5))
+    # Clavos viejos: uno derecho y otro doblado a martillazos.
+    nail_x = -half_l + 0.5
+    mb.bar((nail_x, 0.05, thick - 0.004), (nail_x, 0.05, thick + 0.028), 0.0022, STEEL_DARK, 6)
+    mb.cylinder(0.0055, 0.002, (nail_x, 0.05, thick + 0.029), STEEL_DARK, segments=8)
+    mb.tube(tb.smooth_path(((nail_x + 0.09, -0.04, thick - 0.004), (nail_x + 0.09, -0.04, thick + 0.012), (nail_x + 0.096, -0.036, thick + 0.02), (nail_x + 0.112, -0.028, thick + 0.0125)), 3), 0.0022, RUST, segments=6)
+    for vert in mb.bm.verts:
+        vert.co = warp(vert.co)
+    plank = mb.finish("tablon", tb.material("madera", PLANK), root)
+    tb.stain(plank, PLANK_DARK, amount=0.6, scale=2.2, coverage=0.45, seed=241)
+    tb.stain(plank, PLANK_LIGHT, amount=0.5, scale=6.0, coverage=0.3, seed=242)
+    tb.dent(plank, (0.4, width / 2.0, thick), radius=0.09, depth=0.008)
+    tb.wobble(plank, amount=0.0006, scale=2.0, seed=241)
+
+    tb.collision_box("tablon", (length, width, thick + 0.016), (0.0, 0.004, (thick + 0.016) / 2.0 + 0.004), root)
+    tb.paint({plank: None}, samples=16, ao_distance=0.08, ao=0.45, seed=241)
+    return root
+
+
 def models() -> dict:
     return {
         "martillo": build_hammer,
+        "tablon": build_plank,
     }
