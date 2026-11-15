@@ -84,6 +84,12 @@ Lo que se mueve o se enciende en el juego es un nodo propio dentro del modelo, c
 | `radio` | `aguja`, `piloto` | La aguja se desliza en X ±0,066 m; el piloto se enciende |
 | `mostrador` | `cajon` | Se abre deslizándolo 0,3 m hacia -Z |
 | `pila_descontaminacion` | `llave`, `agua` | La llave gira en `rotation.y`; el agua se tiñe, sube o se oculta |
+| `cuaderno` | `tapa`, `goma`, `lapiz` | La tapa se abre con `rotation.z` de 0 a 180°; la goma se oculta y el lápiz se saca |
+| `cuaderno_abierto` | `pagina_izquierda`, `pagina_derecha` | Caras donde se dibuja: UV de 0 a 1 (origen arriba a la izquierda de cada página) y material `papel.tres` |
+| `cuaderno_abierto` | `lapiz`, `cinta` | Se ocultan o se mueven |
+| `brujula` | `aguja`, `bisel` | `rotation.y`; la aguja en reposo marca el norte (-Z) |
+
+Las herramientas que se empuñan (`martillo`, `palanca`) llevan un nodo vacío `agarre` en el punto por donde las coge la mano.
 
 ### Ilustraciones 2D
 
@@ -91,7 +97,7 @@ Lo que se mueve o se enciende en el juego es un nodo propio dentro del modelo, c
 
 ### Texturas
 
-`tools/textures/generate_textures.py` genera el papel, los cuatro tonos de tramado, las rampas del sombreado por bandas y los ruidos. Todas se pueden repetir sin costuras.
+`tools/textures/generate_textures.py` genera el papel, los cuatro tonos de tramado, las rampas del sombreado por bandas y los ruidos. Todas se pueden repetir sin costuras, salvo `pagina_cuadriculada.png`, que es una página entera del cuaderno (la usa `assets/materials/papel.tres`).
 
 ## Capturas
 
