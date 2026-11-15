@@ -84,6 +84,34 @@ def empty(name: str, parent: bpy.types.Object | None = None) -> bpy.types.Object
     return obj
 
 
+def _snap(bm: bmesh.types.BMesh) -> None:
+    """Redondea las posiciones a 0,01 mm.
+
+    La rejilla va desplazada para que las medidas "redondas" (0,6625 m,
+    2,5 mm...) no caigan justo en una frontera, donde el ruido de la última
+    cifra las haría saltar de casilla.
+    """
+    for vert in bm.verts:
+        vert.co = Vector(round(c + 3.7e-6, 5) for c in vert.co)
+
+
+def _weld(bm: bmesh.types.BMesh) -> None:
+    """Funde los vértices que coinciden (piezas que se tocan).
+
+    ``remove_doubles`` hace lo mismo, pero cuál de los dos vértices sobrevive
+    cambia de una ejecución a otra. Aquí sobrevive siempre el primero que se creó.
+    """
+    _snap(bm)
+    first: dict[tuple, bmesh.types.BMVert] = {}
+    targets = {}
+    for vert in bm.verts:
+        keep = first.setdefault(tuple(vert.co), vert)
+        if keep is not vert:
+            targets[vert] = keep
+    if targets:
+        bmesh.ops.weld_verts(bm, targetmap=targets)
+
+
 def _sort_geometry(bm: bmesh.types.BMesh) -> None:
     """Deja vértices, aristas y caras en un orden que solo depende de la forma.
 
@@ -101,9 +129,7 @@ def _sort_geometry(bm: bmesh.types.BMesh) -> None:
         sequence.sort(key=rank.__getitem__)
         sequence.index_update()
 
-    # El biselado también deja un ruido de milmillonésimas de metro: se redondea a 0,01 mm.
-    for vert in bm.verts:
-        vert.co = Vector(round(c, 5) for c in vert.co)
+    _snap(bm)
     reorder(bm.verts, lambda v: tuple(v.co))
     # Cada cara empieza por su vértice de menor índice: así se triangula siempre igual.
     colors = [*bm.loops.layers.color.values(), *bm.loops.layers.float_color.values()]
@@ -541,7 +567,7 @@ class MeshBuilder:
         mat: bpy.types.Material | None = None,
         parent: bpy.types.Object | None = None,
     ) -> bpy.types.Object:
-        bmesh.ops.remove_doubles(self.bm, verts=list(self.bm.verts), dist=0.00001)
+        _weld(self.bm)
         _sort_geometry(self.bm)
         mesh = bpy.data.meshes.new(name)
         self.bm.to_mesh(mesh)
