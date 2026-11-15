@@ -88,8 +88,13 @@ Lo que se mueve o se enciende en el juego es un nodo propio dentro del modelo, c
 | `cuaderno_abierto` | `pagina_izquierda`, `pagina_derecha` | Caras donde se dibuja: UV de 0 a 1 (origen arriba a la izquierda de cada página) y material `papel.tres` |
 | `cuaderno_abierto` | `lapiz`, `cinta` | Se ocultan o se mueven |
 | `brujula` | `aguja`, `bisel` | `rotation.y`; la aguja en reposo marca el norte (-Z) |
+| `linterna_dinamo` | `manivela` | `rotation.x`; lleva también `bombilla` y `foco`, como la linterna de pilas |
+| `navaja` | `hoja` | Se pliega dentro del mango con `rotation.y` de 0 a -180° |
+| `prismaticos` | `lentes`, `rueda_enfoque` | Los cristales llevan `vidrio.tres` (para el reflejo); la rueda gira en `rotation.z` |
+| `despertador` | `aguja_horas`, `aguja_minutos`, `aguja_alarma` | `rotation.z` negativo va en el sentido del reloj; a 0° marcan las doce |
+| `despertador` | `martillo`, `llave_cuerda` | El badajo oscila entre las campanas y la llave gira, los dos en `rotation.z` |
 
-Las herramientas que se empuñan (`martillo`, `palanca`) llevan un nodo vacío `agarre` en el punto por donde las coge la mano.
+Las herramientas que se empuñan (`martillo`, `palanca`, `navaja`) llevan un nodo vacío `agarre` en el punto por donde las coge la mano. La `cizalla`, que es de dos manos, lleva `agarre` y `agarre_2`.
 
 ### Ilustraciones 2D
 
