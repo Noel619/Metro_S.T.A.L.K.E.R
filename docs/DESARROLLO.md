@@ -53,7 +53,7 @@ Todo se genera por código. **Nunca se editan a mano** los archivos de `assets/m
 ### Modelos 3D
 
 - Cada archivo de `tools/blender/recipes/` es una receta. Define `models()`, que devuelve un diccionario `nombre → función que construye el modelo`.
-- Las utilidades comunes están en `tools/blender/tumansk_bpy.py`: cajas con bisel, imperfección controlada (`wobble`, `dent`, `apply_bulge`), pintura por vértice (color base, oclusión y cavidades) y exportación.
+- Las utilidades comunes están en `tools/blender/tumansk_bpy.py`: cajas con bisel, piezas de torno (`lathe`), placas con contorno (`prism`), tubos y cintas que siguen una curva (`tube`, `ribbon`, `smooth_path`), imperfección controlada (`wobble`, `dent`, `apply_bulge`), pintura por vértice (color base, oclusión y cavidades) y exportación.
 - `make models` (o `python3 tools/blender/build_assets.py nombre`) genera `assets/models/<nombre>.glb`.
 - Godot lo importa solo y `tools/godot/post_import.gd` aplica las convenciones de nombre:
 
@@ -65,6 +65,25 @@ Todo se genera por código. **Nunca se editan a mano** los archivos de `assets/m
 | `-colconvexa` | La malla se sustituye por una colisión convexa |
 
 El nombre del material elige el material de Godot si existe `assets/materials/<nombre>.tres`; si no, se usa `base_vertex.tres`, que pinta con los colores por vértice.
+
+El generador es reproducible: la misma receta da siempre el mismo archivo, byte a byte. Si un modelo cambia al regenerarlo sin haber tocado su receta, es un fallo.
+
+#### Piezas móviles
+
+Lo que se mueve o se enciende en el juego es un nodo propio dentro del modelo, con el origen en su eje (`tb.set_origin`). En reposo marca el cero o está apagado.
+
+| Modelo | Nodo | Cómo se mueve (en Godot) |
+|---|---|---|
+| `bascula` | `aguja` | `rotation.z` de 0 a -64° (fondo de escala) |
+| `dosimetro` | `aguja` | `rotation.y` de 0 a -90° |
+| `dosimetro` | `piloto` | Lámpara: cambiarle el material para encenderla |
+| `linterna` | `bombilla`, `foco` | Bombilla apagada (ponerle `bombilla.tres`) y punto donde colgar la luz |
+| `mascara` | `cristales` | Material propio, para empañarlos y agrietarlos |
+| `estufa` | `brasas` | Rendijas de la puerta: ponerles un material que emita luz |
+| `radio` | `mando_volumen`, `mando_brillo`, `mando_sensibilidad` | `rotation.z` |
+| `radio` | `aguja`, `piloto` | La aguja se desliza en X ±0,066 m; el piloto se enciende |
+| `mostrador` | `cajon` | Se abre deslizándolo 0,3 m hacia -Z |
+| `pila_descontaminacion` | `llave`, `agua` | La llave gira en `rotation.y`; el agua se tiñe, sube o se oculta |
 
 ### Ilustraciones 2D
 

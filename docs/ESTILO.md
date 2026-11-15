@@ -70,6 +70,7 @@ Regla: el rojo (`#C8323C`) se reserva para lo importante.
 - **Biseles** de 3 a 20 mm según el tamaño. Las piezas sin bisel se sombrean planas.
 - **Imperfección** siempre con semilla: `wobble` (ondulación de 2 a 6 mm en objetos, hasta 22 cm en montones de nieve), `dent` (abolladuras), `apply_bulge` (cartón hinchado), giros de 0,5 a 2° en baldosas y tablones.
 - **Variación de color** por pieza de un 4 a un 10 % (`jitter`), más manchas (`stain`). Con `stretch_z` < 1 las manchas se alargan en vertical, como chorretones bajo los balcones.
+- **Subdivisión**: las manchas y las abolladuras se pintan por vértice. Una cara grande necesita `cuts` (en las cajas) o más pasos en el perfil (en las piezas de torno) para recogerlas.
 - **Pintura** (`paint`): oclusión de 8 a 32 muestras según el tamaño, cavidades oscuras y aristas algo más claras.
 - **Nombres de material**: `metal` (rampa de metal), `vidrio`, `bombilla` (emite luz) y `nevado` (nieve). El resto usa el material base.
 
