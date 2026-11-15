@@ -312,6 +312,120 @@ def build_container() -> bpy.types.Object:
     return root
 
 
+def build_kiosk() -> bpy.types.Object:
+    """Quiosco de prensa de chapa y cristal, cerrado desde hace años.
+
+    El frente (la ventanilla y su repisa) mira hacia -Y; la puerta está detrás.
+    Dentro hay una caja oscura para que los cristales rotos den a un interior
+    en sombra.
+    """
+    rng = random.Random(107)
+    root = tb.empty("quiosco-estatico")
+    width, depth = 2.4, 1.8
+    base_z, sill_z, head_z, top_z = 0.14, 1.0, 2.1, 2.46
+    wall, post = 0.04, 0.07
+    paint_color, paint_dark = "#5F7F86", "#4C676E"
+    mb = tb.MeshBuilder(seed=107)
+
+    mb.box((width + 0.25, depth + 0.25, base_z), (0.0, 0.0, base_z / 2.0), CONCRETE, bevel=0.02, cuts=3, jitter=0.05)
+    mb.box((width - 0.1, depth - 0.1, head_z - base_z), (0.0, 0.0, (head_z + base_z) / 2.0), "#24262A")
+
+    def side(axis: int, sign: float, bays: list[str]) -> None:
+        """Una pared: ``axis`` 0 corre a lo largo de X (frente y trasera); 1, a lo largo de Y."""
+        length = width if axis == 0 else depth
+        fixed = sign * (depth if axis == 0 else width) / 2.0
+        bay = length / len(bays)
+
+        def at(u: float, z: float, out: float = 0.0) -> tuple[float, float, float]:
+            return (u, fixed + sign * out, z) if axis == 0 else (fixed + sign * out, u, z)
+
+        def dims(along: float, thick: float, tall: float) -> tuple[float, float, float]:
+            return (along, thick, tall) if axis == 0 else (thick, along, tall)
+
+        def turn(angle: float) -> tuple[float, float, float]:
+            return (0.0, angle, 0.0) if axis == 0 else (angle, 0.0, 0.0)
+
+        for index in range(len(bays) + 1):
+            u = -length / 2.0 + index * bay
+            mb.box(dims(post, post, head_z - base_z), at(u, (head_z + base_z) / 2.0), FRAME, bevel=0.008, jitter=0.05)
+        mb.box(dims(length, post + 0.02, 0.06), at(0.0, sill_z), FRAME, bevel=0.01, cuts=3, jitter=0.04)
+        for index, kind in enumerate(bays):
+            u = -length / 2.0 + (index + 0.5) * bay
+            inner = bay - post
+            if kind == "door":
+                mb.box(dims(inner, wall, head_z - base_z - 0.04), at(u, (head_z + base_z) / 2.0, -0.005), paint_dark, bevel=0.01, cuts=2, jitter=0.05)
+                mb.box(dims(inner - 0.14, 0.012, 0.6), at(u, 0.62, 0.02), paint_color, bevel=0.006)
+                mb.box(dims(inner - 0.14, 0.012, 0.7), at(u, 1.52, 0.02), paint_color, bevel=0.006)
+                mb.box(dims(0.03, 0.05, 0.14), at(u + inner / 2.0 - 0.09, 1.08, 0.04), METAL, bevel=0.006)
+                mb.box(dims(0.07, 0.03, 0.09), at(u + inner / 2.0 - 0.09, 0.98, 0.05), RUST, rotation=turn(rng.uniform(-10.0, 10.0)), bevel=0.01)
+                continue
+            mb.box(dims(inner, wall, sill_z - base_z), at(u, (sill_z + base_z) / 2.0, -0.005), paint_color, rotation=turn(rng.uniform(-0.6, 0.6)), bevel=0.012, cuts=2, jitter=0.07)
+            mb.box(dims(inner - 0.12, 0.012, sill_z - base_z - 0.16), at(u, (sill_z + base_z) / 2.0, 0.018), paint_dark, bevel=0.006, jitter=0.05)
+            glass_h = head_z - sill_z - 0.03
+            glass_z = (head_z + sill_z) / 2.0 + 0.015
+            if kind == "glass":
+                mb.box(dims(inner, 0.016, glass_h), at(u, glass_z), GLASS, jitter=0.12)
+                mb.box(dims(inner, 0.03, 0.03), at(u, sill_z + glass_h * 0.38), FRAME, bevel=0.005, jitter=0.05)
+                # Portadas y avisos pegados por dentro, amarillos de años.
+                for _ in range(rng.randint(0, 2)):
+                    mb.box(
+                        dims(rng.uniform(0.16, 0.24), 0.006, rng.uniform(0.2, 0.3)),
+                        at(u + rng.uniform(-0.12, 0.12), glass_z + rng.uniform(-0.05, 0.32), 0.012),
+                        rng.choice(("#CFC6AE", "#BDB294", "#D8D0B8")),
+                        rotation=turn(rng.uniform(-7.0, 7.0)),
+                        jitter=0.06,
+                    )
+            elif kind == "boards":
+                mb.box(dims(inner, 0.02, glass_h), at(u, glass_z), "#8B7355", cuts=2, jitter=0.08)
+                for z, tilt in ((glass_z + 0.25, rng.uniform(-6.0, 6.0)), (glass_z - 0.22, rng.uniform(-6.0, 6.0))):
+                    mb.box(dims(bay + 0.06, 0.022, 0.11), at(u, z, 0.03), FRAME_WOOD, rotation=turn(tilt), bevel=0.006, jitter=0.1)
+            elif kind == "broken":
+                # Quedan los picos del cristal en las esquinas.
+                for du, dz, angle in ((-1.0, -1.0, 38.0), (1.0, 1.0, 30.0), (1.0, -1.0, -42.0), (-1.0, 1.0, -25.0)):
+                    mb.box(dims(0.34, 0.012, 0.2), at(u + du * (inner / 2.0 - 0.07), glass_z + dz * (glass_h / 2.0 - 0.06)), GLASS, rotation=turn(angle), jitter=0.12)
+            elif kind == "window":
+                # Ventanilla: cristal arriba, hueco abajo y repisa para el cambio.
+                mb.box(dims(inner, 0.016, glass_h * 0.58), at(u, head_z - glass_h * 0.29 - 0.0), GLASS, jitter=0.1)
+                mb.box(dims(inner, 0.03, 0.035), at(u, sill_z + glass_h * 0.42 + 0.03), FRAME, bevel=0.006)
+                mb.box(dims(bay + 0.2, 0.34, 0.035), at(u, sill_z + 0.045, 0.17), FRAME, rotation=turn(0.0), bevel=0.012, cuts=2, jitter=0.05)
+                for du in (-1.0, 1.0):
+                    mb.box(dims(0.03, 0.26, 0.03), at(u + du * (bay / 2.0), sill_z - 0.1, 0.13), METAL, rotation=((-38.0 * sign, 0.0, 0.0) if axis == 0 else (0.0, 38.0 * sign, 0.0)), bevel=0.004)
+
+    side(0, -1.0, ["glass", "window", "boards", "glass"])
+    side(0, 1.0, ["glass", "door", "broken", "glass"])
+    side(1, -1.0, ["glass", "broken", "boards"])
+    side(1, 1.0, ["boards", "glass", "glass"])
+
+    # Friso del rótulo y tejado en voladizo, algo caído hacia atrás.
+    fascia = top_z - head_z
+    for axis, sign in ((0, -1.0), (0, 1.0), (1, -1.0), (1, 1.0)):
+        size = (width + 0.1, 0.06, fascia) if axis == 0 else (0.06, depth + 0.1, fascia)
+        center = (0.0, sign * (depth / 2.0 + 0.02), head_z + fascia / 2.0) if axis == 0 else (sign * (width / 2.0 + 0.02), 0.0, head_z + fascia / 2.0)
+        mb.box(size, center, paint_color, bevel=0.012, cuts=3, jitter=0.05)
+    mb.box((width - 0.5, 0.03, fascia - 0.1), (0.0, -depth / 2.0 - 0.055, head_z + fascia / 2.0), "#D8D0B8", rotation=(0.0, rng.uniform(-1.2, 1.2), 0.0), bevel=0.006, cuts=2)
+    x = -width / 2.0 + 0.42
+    while x < width / 2.0 - 0.5:
+        letter = rng.uniform(0.09, 0.17)
+        mb.box((letter, 0.012, rng.uniform(0.11, 0.15)), (x + letter / 2.0, -depth / 2.0 - 0.073, head_z + fascia / 2.0), paint_dark, jitter=0.15)
+        x += letter + rng.uniform(0.035, 0.07)
+    mb.box((width + 0.7, depth + 0.7, 0.09), (0.0, 0.04, top_z + 0.05), "#6A6F70", rotation=(2.2, 0.0, rng.uniform(-0.4, 0.4)), bevel=0.02, cuts=4, jitter=0.04)
+    mb.box((width + 0.2, depth + 0.2, 0.08), (0.0, 0.03, top_z + 0.13), "#5C6162", rotation=(2.2, 0.0, 0.0), bevel=0.02, cuts=3)
+    # Chimenea de la estufilla y un cajón de periódicos junto a la puerta.
+    mb.bar((width / 2.0 - 0.35, depth / 2.0 - 0.3, top_z + 0.1), (width / 2.0 - 0.35, depth / 2.0 - 0.3, top_z + 0.62), 0.05, RUST, 10)
+    mb.cylinder(0.085, 0.05, (width / 2.0 - 0.35, depth / 2.0 - 0.3, top_z + 0.65), RUST, radius_top=0.02, segments=10)
+    mb.box((0.55, 0.38, 0.32), (-width / 2.0 + 0.45, depth / 2.0 + 0.36, 0.16), FRAME_WOOD, rotation=(0.0, 0.0, rng.uniform(-12.0, 12.0)), bevel=0.012, jitter=0.08)
+
+    kiosk = mb.finish("quiosco", _snow_material(), root)
+    tb.stain(kiosk, RUST, amount=0.75, scale=2.4, coverage=0.3, seed=107)
+    tb.stain(kiosk, "#3C4144", amount=0.5, scale=3.0, coverage=0.35, seed=108, stretch_z=0.25)
+    tb.dent(kiosk, (width / 2.0, -0.2, 0.6), radius=0.35, depth=0.03)
+    tb.wobble(kiosk, amount=0.006, scale=1.5, seed=107)
+    tb.collision_box("quiosco", (width + 0.1, depth + 0.1, top_z + 0.15), (0.0, 0.0, (top_z + 0.15) / 2.0), root)
+    tb.collision_box("quiosco_repisa", (0.8, 0.34, 0.05), (-0.3, -depth / 2.0 - 0.17, sill_z + 0.045), root)
+    tb.paint({kiosk: None}, samples=14, ao_distance=0.4, seed=107)
+    return root
+
+
 def build_ground() -> bpy.types.Object:
     """El suelo del patio: nieve con un sendero pisado, bordillos y montículos."""
     rng = random.Random(83)
@@ -362,5 +476,6 @@ def models() -> dict:
         "coche": build_car,
         "columpio": build_swing,
         "contenedor": build_container,
+        "quiosco": build_kiosk,
         "suelo_patio": build_ground,
     }
