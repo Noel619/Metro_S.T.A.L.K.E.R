@@ -62,6 +62,8 @@ const SHADER_GLOBALS: Dictionary = {
 	"tinta_color": ["color", Color("#1b1a22")],
 	"tinta_tinte": ["color", Color(1.0, 0.97, 0.92)],
 	"tinta_horizonte": ["color", Color(0.66, 0.63, 0.54)],
+	"tinta_niebla": ["color", Color("#85827a")],
+	"tinta_niebla_densidad": ["float", 0.011],
 }
 
 ## Valores por defecto al importar. Las texturas del estilo (rampas, tramados)

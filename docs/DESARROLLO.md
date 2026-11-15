@@ -20,6 +20,40 @@ Cómo poner en marcha el proyecto, generar los assets y comprobar que todo funci
 
 Los modelos, las texturas y las ilustraciones ya vienen generados en el repositorio: no hace falta instalar nada más para jugar o abrir las escenas.
 
+## La maqueta de la ciudad (F3-15)
+
+Tumansk entera, levantada desde el plano en volúmenes sencillos para probar recorridos, vistas, sectores de carga y rendimiento. Para abrirla: en Godot, abre `scenes/debug/maqueta_ciudad.tscn` y pulsa **F6** (ejecutar la escena actual). Tarda un par de segundos en levantar la ciudad. Empiezas a pie en la salida del metro, a mediodía.
+
+| Tecla | Qué hace |
+|---|---|
+| Clic / Esc | Captura el ratón para mirar / lo suelta |
+| W A S D | Moverse. Andando: Mayús corre, C se agacha, Espacio salta. Volando: Mayús acelera, Espacio sube, C baja y la rueda cambia la velocidad |
+| Tab | Andar (con colisión, a 1,4 m/s) o volar (sin colisión) |
+| 1-9 y 0 | Las vistas fijas: la salida, la avenida, Los Bloques, el río, el puente, la Escalinata, la zona industrial, la Zona Cero, la ciudad desde el aire y las rutas desde el aire |
+| R / Mayús+R | Recorre la ruta siguiente / anterior del plano a paso de persona, con cronómetro. **+** y **-** la aceleran (×4, ×16); Retroceso la para |
+| F2 / F3 / F4 | Capas: las rutas; la rejilla de sectores y las zonas; los hitos que se ven desde donde estás |
+| V | Comprueba en toda la ciudad la regla «desde cualquier punto se ven al menos dos hitos» y marca los puntos ciegos (rosa: ninguno; amarillo: uno) |
+| N | Niebla: la del juego, una ligera o ninguna (sin niebla, todos los sectores detallados) |
+| O / P / L | Oclusión sí o no / post-proceso de tinta sí o no / linterna |
+| B | Prueba de rendimiento: recorre las vistas a pie de calle y da los fps (media y peor momento), las llamadas de dibujo y los triángulos |
+| F1 | El panel de depuración: hora del día, clima, miedo, radiación y estilo |
+| F9 | Oculta el texto |
+
+El panel de arriba dice dónde estás (sector, zona, coordenadas del plano, rumbo), qué edificio tienes delante (su id del plano, plantas, altura y lo que queda en pie, daño e incendio), qué hitos se ven desde ahí y cuánto cuesta la imagen (fps, llamadas de dibujo, triángulos, sectores detallados).
+
+Es una herramienta de desarrollo: lee `data/ciudad/` directamente (ver [D-024](DECISIONES.md)), así que funciona desde el editor, no en una build exportada. El código:
+
+| Archivo | Qué hace |
+|---|---|
+| `scripts/surface/city_plan.gd` | `CityPlan`: lee el plano, el relieve (16 bits) y el suelo; alturas, sectores, zonas y conversión de coordenadas |
+| `scripts/surface/city.gd` | `City`: levanta los 48 sectores, cada uno con su versión lejana y la detallada, colisión y oclusores |
+| `scripts/surface/city_terrain.gd` | El relieve por sectores (cada 2 m y cada 8 m) y su colisión |
+| `scripts/surface/city_buildings.gd` | Cada edificio a su altura, con su cubierta y lo que queda en pie según su daño |
+| `scripts/surface/city_props.gd` | Vehículos, árboles, puentes, tuberías, vallas, la línea eléctrica y los muros del borde |
+| `scripts/surface/city_geometry.gd`, `mesh_buffer.gd` | Cuentas con polígonos y construcción de mallas |
+| `scripts/debug/city_mockup.gd` | La escena: vistas, recorridos, panel, capas, pruebas |
+| `scripts/debug/mockup_walker.gd`, `city_overlays.gd` | El visitante (andar y volar) y las capas de ayuda |
+
 ## Herramientas para generar los assets
 
 Solo hacen falta para cambiar recetas o generadores.
@@ -121,21 +155,21 @@ Las herramientas que se empuñan (`martillo`, `palanca`, `navaja`) llevan un nod
 | `datos.py` | Los datos: zonas, calles, edificios, patios, vehículos, hitos, subsuelo, amenazas, peligros y rutas |
 | `geo.py` | Marcos de referencia (el eje monumental) y figuras |
 | `relieve.py` | El terreno: río, loma, barranco, colina y cráter |
-| `plano.py` | Valida, calcula daños, escombros y relieve, y exporta |
+| `plano.py` | Valida, calcula daños, escombros, relieve y cotas, y exporta el plano (`plano.json`), el relieve (`relieve.png`) y el suelo de la maqueta (`suelo.png`) |
 | `dibujo.py` | Dibuja las cuatro hojas de desarrollo |
 
 Para dibujar una sola hoja: `python3 tools/ciudad/plano.py --plano=general` (también `subsuelo`, `peligros` o `rutas`).
 
 ## Capturas
 
-`tools/capture.sh res://escena.tscn salida.png [ancho] [alto] [fotogramas]` renderiza con el render real (Forward+) sin pantalla: usa un servidor X virtual y, si no hay GPU, Vulkan por software. Las cámaras del grupo `capture_camera` generan una imagen cada una.
+`tools/capture.sh res://escena.tscn salida.png [ancho] [alto] [fotogramas]` renderiza con el render real (Forward+) sin pantalla: usa un servidor X virtual y, si no hay GPU, Vulkan por software. Las cámaras del grupo `capture_camera` generan una imagen cada una. En la maqueta, las cámaras de las capturas son sus vistas fijas: `tools/capturas_docs.sh maqueta` rehace las suyas (con `--call=MaquetaCiudad:capture_only:avenida` se captura una sola).
 
 Opciones extra con la variable `CAPTURE_ARGS`:
 
 - `--hide=InkPost`: captura sin el post-proceso del estilo.
 - `--post=debug_view=N`: muestra una capa del post-proceso (ver `docs/ESTILO.md`).
 
-Las escenas de revisión del estilo están en `scenes/style/` y se describen en [ESTILO.md](ESTILO.md). `tools/capturas_docs.sh [filtro]` rehace las capturas de `docs/capturas/` (o solo las de un grupo: `deposito`, `equipo`, `patio`, `interfaz`); dice qué cámara de cada escena va a la documentación y con qué nombre. Las de interfaz (`scenes/ui/prueba_interfaz.tscn` y `prueba_tipografia.tscn`) son 2D: se capturan igual, sin cámara.
+Las escenas de revisión del estilo están en `scenes/style/` y se describen en [ESTILO.md](ESTILO.md). `tools/capturas_docs.sh [filtro]` rehace las capturas de `docs/capturas/` (o solo las de un grupo: `deposito`, `equipo`, `patio`, `interfaz`, `maqueta`); dice qué cámara de cada escena va a la documentación y con qué nombre. Las de interfaz (`scenes/ui/prueba_interfaz.tscn` y `prueba_tipografia.tscn`) son 2D: se capturan igual, sin cámara.
 
 Con `CAPTURE_ARGS="--call=Nodo:metodo[:valor]"` se llama a un método antes de capturar; por ejemplo, el panel de depuración abierto a las 18:45:
 

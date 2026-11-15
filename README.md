@@ -45,14 +45,14 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 
 | | |
 |---|---|
-| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) completa, a falta de tu aprobación |
+| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) completa, a falta de tu aprobación · Fase 3 empezada: la maqueta de la ciudad (F3-15) |
 | **Motor** | Godot 4.7.2 |
 | **Plataforma** | PC (Windows; la build de Linux sale casi gratis) |
 | **Idioma** | Solo español |
 | **Calidad objetivo** | Lista para publicarse, aunque por ahora no se publique |
 | **Equipo de referencia** | Ryzen 7 8700G con su gráfica integrada (Radeon 780M) |
 | **Siguiente hito** | H1 · *Prueba de Tinta* (Fase 1) |
-| **La ciudad** | Plano completo fijado: [docs/CIUDAD.md](docs/CIUDAD.md) |
+| **La ciudad** | Plano completo fijado: [docs/CIUDAD.md](docs/CIUDAD.md) · Maqueta en 3D: `scenes/debug/maqueta_ciudad.tscn` (F6 en el editor) |
 
 **Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre el visor del estilo: ← → cambian de diorama, C de cámara, ↑ ↓ suben o bajan el miedo, L enciende la linterna y F1 abre el panel de depuración (hora, clima, miedo, radiación y estilo). Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
 
@@ -85,6 +85,19 @@ Tumansk ya tiene plano: **dónde está cada calle, cada manzana y cada edificio*
 
 Todo está explicado en [docs/CIUDAD.md](docs/CIUDAD.md), con cuatro hojas: [general](docs/ciudad/plano_tumansk.jpg), [subsuelo](docs/ciudad/plano_tumansk_subsuelo.jpg), [amenazas y peligros](docs/ciudad/plano_tumansk_peligros.jpg) y [rutas](docs/ciudad/plano_tumansk_rutas.jpg).
 
+### La maqueta de la ciudad (F3-15)
+
+| | |
+|---|---|
+| ![Tumansk desde el aire, sin niebla](docs/capturas/fase3_maqueta_aerea.jpg) | ![La avenida, hacia el puente y la Casa de los Sóviets](docs/capturas/fase3_maqueta_avenida.jpg) |
+| ![Las rutas y los sectores](docs/capturas/fase3_maqueta_rutas.jpg) | ![El panel: dónde estás, qué tienes delante y qué hitos se ven](docs/capturas/fase3_maqueta_panel.jpg) |
+
+La ciudad entera en 3D, levantada desde el plano en volúmenes sencillos: el relieve, las calles, los 357 edificios a su altura y con lo que queda en pie según su daño, los vehículos, los árboles y los puentes. Sirve para probar recorridos, vistas, sectores de carga y rendimiento antes de construir con el kit modular.
+
+- **Para abrirla:** en Godot, `scenes/debug/maqueta_ciudad.tscn` y **F6**. Se recorre a pie (Tab para volar), con vistas fijas (1-9 y 0) y recorridos automáticos de las rutas del plano con cronómetro (R).
+- **Herramientas:** cuenta los hitos que se ven desde donde estás (y comprueba la regla en toda la ciudad con V) y mide el rendimiento en tu PC (B). Todas las teclas, en [DESARROLLO.md](docs/DESARROLLO.md#la-maqueta-de-la-ciudad-f3-15).
+- **Lo que ha enseñado**, en [CIUDAD.md](docs/CIUDAD.md#15-la-maqueta): desde el 92 % de la calle se ven al menos dos hitos, pero no desde los patios cerrados; y la niebla de día tapa la ciudad a partir de unos 300 m, así que los hitos la atraviesan.
+
 ### Decisiones tomadas
 
 | Tema | Decisión |
@@ -116,8 +129,9 @@ Todo está explicado en [docs/CIUDAD.md](docs/CIUDAD.md), con cuatro hojas: [gen
 
 ### Próximos pasos
 
-1. **Fase 1**: revisar las capturas, el [vídeo](docs/capturas/fase1_dioramas.mp4) y las piezas de interfaz, y aprobar el estilo. Con eso empiezan las Fases 2 y 3.
-2. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan.
+1. **Fase 1**: revisar las capturas, el [vídeo](docs/capturas/fase1_dioramas.mp4) y las piezas de interfaz, y aprobar el estilo. Con eso empiezan de lleno las Fases 2 y 3.
+2. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos).
+3. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
 
 ---
 
@@ -736,13 +750,13 @@ Elegidas en la Fase 1 (F1-13). Las cuatro tienen licencia OFL, español completo
 │   ├── fonts/
 │   └── audio/               # music/, ambience/, sfx/, ui/
 ├── data/                    # recursos .tres: el contenido del juego
-│   └── ciudad/              # el plano de la ciudad (plano.json y relieve.png), generado
+│   └── ciudad/              # el plano de la ciudad (plano.json, relieve.png y suelo.png), generado
 ├── scenes/                  # depot/, station/, surface/, ui/, actors/, props/, debug/
 ├── scripts/
 │   ├── core/                # autoloads y utilidades
 │   ├── net/                 # sesión, anfitrión, replicación
 │   ├── depot/               # objetos, banco, descontaminación, tienda, economía
-│   ├── surface/             # jugador, herramientas, cuaderno, sigilo, supervivencia
+│   ├── surface/             # la ciudad (plano, sectores, maqueta), jugador, herramientas, cuaderno…
 │   ├── ai/                  # percepción, conocimiento, criaturas, humanos
 │   └── ui/
 ├── tools/
@@ -925,11 +939,12 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F3-12** Heridas básicas: mordeduras y sangrado.
 - [ ] **F3-13** Audio: oclusión, reverberación, ambiente dinámico, nieve.
 - [ ] **F3-14** **Zona 1, La Plaza**: primero con geometría provisional y después estilizada, con al menos 3 rutas a cada objetivo.
-- [ ] **F3-15** **Maqueta automática de la ciudad**: un generador en Godot lee `data/ciudad/plano.json` y levanta la ciudad entera en volúmenes sencillos (relieve, calles, edificios a su altura, escombros). Sirve para probar recorridos, vistas, sectores de carga y rendimiento antes de construir.
+- [x] **F3-15** **Maqueta automática de la ciudad**: un generador en Godot lee `data/ciudad/plano.json` y levanta la ciudad entera en volúmenes sencillos (relieve, calles, edificios a su altura, escombros). Sirve para probar recorridos, vistas, sectores de carga y rendimiento antes de construir. *(Hecha: `scenes/debug/maqueta_ciudad.tscn`, con recorridos de las rutas, hitos a la vista, prueba de rendimiento y 48 sectores con dos niveles de detalle; ver [CIUDAD.md](docs/CIUDAD.md#15-la-maqueta).)*
 - [ ] **F3-16** Kit modular de arquitectura soviética para los tipos del plano (jrushchovka, bloque de 9 plantas, casa estalinista), con daños por nivel e interiores de serie.
 
 **Entregable**: una salida de 10 a 20 minutos: subir por la escalera, llegar a un objetivo y volver.
 **Criterio de salida**: en las pruebas, los jugadores planifican antes de salir, dibujan su mapa, usan al menos dos rutas distintas y ninguna muerte se siente injusta.
+**Estado**: 🟨 empezada por la ciudad: F3-15 hecha, a falta de tu revisión. La maqueta es geometría provisional y no depende del estilo, así que se ha adelantado mientras se aprueba la Fase 1.
 
 ### Fase 4: El mundo vivo · tamaño L
 
@@ -1037,7 +1052,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 | **H0 · Hola, Tumansk** | 0 | Proyecto, red, pipelines y CI | Un asset va de la receta al juego sin pasos manuales; dos instancias sincronizadas | S | ✅ |
 | **H1 · Prueba de Tinta** | 1 | 2 dioramas y guía de estilo | Estilo aprobado por ti | M | 🟨 |
 | **H2 · El depósito abre** | 2 | Depósito jugable | Del depósito sucio a la primera venta, sin cajas de texto | L | ⬜ |
-| **H3 · Primera salida** | 3 | La Plaza, el cuaderno y la Jauría | Se planifica, se dibuja, se usan rutas distintas; muertes justas | L | ⬜ |
+| **H3 · Primera salida** | 3 | La Plaza, el cuaderno y la Jauría | Se planifica, se dibuja, se usan rutas distintas; muertes justas | L | 🟨 |
 | **H4 · El mundo vivo** | 4 | Las zonas 1 y 2 funcionando sin el jugador | Lo que ves al llegar cuadra con lo que pasó; rutinas y peleas que nadie provoca | L | ⬜ |
 | **H5 · Los primeros días** | 5 | Vertical slice | Bucle completo, 60 fps en tu PC, cooperativo de 2 | XL | ⬜ |
 | **H6 · Alfa** | 6 | Contenido completo | Completable de principio a fin | XXL | ⬜ |
@@ -1111,6 +1126,8 @@ Cada pregunta lleva una propuesta. Si te parece bien, basta con decir "ok".
 | # | Pregunta | Propuesta |
 |---|---|---|
 | 1 | ¿Pasamos la Hoja de Desarrollo a **Issues de GitHub**? Una "issue" es una ficha por tarea dentro de GitHub, con su estado y sus comentarios, y todas juntas se pueden ver como un tablero (pendiente, en curso, hecho). Es opcional: el README ya cumple esa función | No por ahora: seguimos con el README |
+| 2 | **Los hitos y la niebla.** Con la niebla de día del estilo, la ciudad desaparece a partir de unos 300 m, y sin mapas el jugador se orienta con los hitos. En la maqueta, los hitos atraviesan la niebla: como mucho los tapa un 78 % ([D-027](docs/DECISIONES.md)). ¿Te parece bien que los hitos se vean siempre, como siluetas apagadas? | Sí, con ese tope; se ajusta mirando la maqueta en tu PC |
+| 3 | **Los patios ciegos.** Desde el 92 % de la calle se ven al menos dos hitos, pero desde muchos patios cerrados no se ve ninguno (sobre todo en Los Bloques: solo el 73 % de los puntos ven dos). ¿Cambiamos la regla del plano a «desde cualquier calle», o añadimos hitos que asomen por encima de los tejados? | Cambiar la regla a las calles: un patio cerrado que no deja ver nada da miedo, y eso también sirve |
 
 ### Respondidas
 

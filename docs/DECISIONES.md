@@ -93,3 +93,23 @@ El vídeo de revisión se graba con `--write-movie`, a fotogramas fijos (12 por 
 ## D-023 · Un solo kit de modelos, con el generador reproducible
 
 Los modelos se hicieron en dos ramas a la vez. Al juntarlas, de los objetos que estaban en las dos (la báscula, el dosímetro, la linterna, la máscara y el quiosco) se quedan los de la rama de modelos, más trabajados, y los otros se borran con sus recetas: no hay dos versiones del mismo objeto. El generador es el reproducible de esa rama (sin conjuntos en el orden de las aristas, vértices soldados y geometría ordenada), así que la misma receta da siempre el mismo archivo, byte a byte: un `.glb` solo cambia cuando cambia su receta. Los muebles y el equipo que esa rama adelantó para las Fases 2 y 3 ya se usan en el depósito y en la mesa del equipo.
+
+## D-024 · La maqueta se levanta al abrirla, desde los datos del plano
+
+La maqueta automática de la ciudad (F3-15, `scenes/debug/maqueta_ciudad.tscn`) no se guarda como escena: `City` la construye al abrirla a partir de `data/ciudad/` (plano, relieve y suelo), en un segundo y medio. Así nunca se queda desfasada respecto al plano: se cambia `tools/ciudad/datos.py`, se ejecuta `make ciudad` y la próxima vez que se abre ya es la ciudad nueva. Godot no importa `data/ciudad/` (`.gdignore`): los archivos se leen tal cual, y el relieve de 16 bits se descomprime en GDScript (`CityPlan.decode_gray16`), porque el cargador de PNG de Godot lo reduce a 8 bits y se perderían los centímetros. Por eso la maqueta funciona ejecutando desde el proyecto (el editor), no en una build exportada. Cuando la ciudad pase al juego, el plano se convertirá en recursos de Godot.
+
+## D-025 · Del plano al mundo: el norte es -Z
+
+El plano mide en metros con x hacia el este e y hacia el norte. En el mundo de Godot, el punto (x, y) a la altura h es `Vector3(x, h, -y)`: el este es +X y el norte es -Z, como la aguja de la brújula. El origen es la esquina suroeste del mapa. La conversión está en un solo sitio (`CityPlan.to_world` y `CityPlan.to_plan`).
+
+## D-026 · Sectores con dos niveles de detalle; lo lejano, del color de la niebla
+
+Cada sector de 200 × 200 m tiene una versión lejana (el relieve cada 8 m y los edificios en un solo bloque) y una detallada (el relieve cada 2 m, cada edificio con sus ventanas, los vehículos, los árboles y las estructuras). La detallada se dibuja cuando la cámara está a menos de 450 m del centro del sector; si no, la lejana (HLOD con `visibility_parent`, sin huecos ni solapes). La versión lejana se pinta del color de la niebla, sin luz (`tinta_silueta.gdshader`): con la niebla del juego, a esa distancia lo detallado ya se ve exactamente así, de modo que el cambio no se nota y cuesta muy poco. Lo que destaca contra el cielo es el perfil de la ciudad. El color de la niebla llega a los shaders por dos parámetros globales nuevos, `tinta_niebla` y `tinta_niebla_densidad`, que fija `Atmosphere`. Los edificios grandes y el relieve son oclusores.
+
+## D-027 · Los hitos atraviesan la niebla
+
+Sin mapas, el jugador se orienta con lo que ve de lejos (docs/CIUDAD.md, sección 8), pero la niebla de día del estilo (densidad 0,011) lo borra todo a partir de unos 300 m. Los hitos se dibujan con `tinta_hito.gdshader`, que les pone su propia niebla con un tope: como mucho los tapa un 78 %. Se ven siempre, como siluetas apagadas, igual que las ruinas del horizonte del patio (D-014). Es una propuesta pendiente de tu revisión: el tope se ajusta en el material (`hito_niebla_max`). La maqueta cuenta los hitos que se ven desde cada punto y comprueba la regla del plano en toda la ciudad.
+
+## D-028 · El suelo de la ciudad lo pinta el plano
+
+`tools/ciudad/plano.py` exporta, además del plano y el relieve, `data/ciudad/suelo.png` (1 m por píxel): el color del suelo bajo la nieve (calzadas, aceras, plazas, hielo, vías, patios, escombros) y, en el canal alfa, cuánta nieve lo cubre. Se pinta con las mismas figuras de shapely que valida el plano, así que el suelo de la maqueta coincide con las hojas. También exporta la cota de cada edificio (el terreno sin escombros bajo su huella: los muñones quedan medio enterrados en su propio escombro), los árboles (que antes solo existían en el dibujo; las hojas no cambian) y las medidas de los vehículos. Al exportar, las huellas que el redondeo a 0,1 m dejaba con astillas cruzadas se limpian. El daño de cada edificio se expresa en la maqueta con reglas fijas (el extremo que mira a la bomba se hunde, cascarones, muñones) y las mismas semillas que usa `plano.py` (`CityPlan.chance` da los mismos números que `azar`).

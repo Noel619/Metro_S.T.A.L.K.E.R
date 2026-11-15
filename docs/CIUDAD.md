@@ -2,7 +2,7 @@
 
 Este documento fija **dónde está cada cosa** en Tumansk: calles, manzanas, edificios, relieve, metro, amenazas, peligros y rutas. Es un plano **solo para desarrollo**: el jugador nunca lo verá, porque en el juego no hay mapas y cada uno dibuja el suyo.
 
-La fuente de verdad son los datos de [`tools/ciudad/datos.py`](../tools/ciudad/datos.py). `make ciudad` los valida (nada se solapa, nada pisa la calle ni el río, cada edificio está en su zona), calcula los daños y los escombros, exporta [`data/ciudad/plano.json`](../data/ciudad/plano.json) y el relieve en 16 bits, y dibuja las cuatro hojas de abajo. La CI comprueba que el plano sigue siendo válido en cada cambio.
+La fuente de verdad son los datos de [`tools/ciudad/datos.py`](../tools/ciudad/datos.py). `make ciudad` los valida (nada se solapa, nada pisa la calle ni el río, cada edificio está en su zona), calcula los daños, los escombros y la cota de cada edificio, exporta [`data/ciudad/plano.json`](../data/ciudad/plano.json), el relieve en 16 bits y el suelo de la maqueta, y dibuja las cuatro hojas de abajo. La CI comprueba que el plano sigue siendo válido en cada cambio. Con esos datos se levanta [la maqueta](#15-la-maqueta), la ciudad entera en 3D.
 
 | Hoja | Qué muestra |
 |---|---|
@@ -24,6 +24,7 @@ La fuente de verdad son los datos de [`tools/ciudad/datos.py`](../tools/ciudad/d
 | Superficie construida | 30,7 ha en planta; unos 946 000 m² de suelo entre todas las plantas |
 | Calles | 16,3 km, más pasos, escaleras y sendas |
 | Vehículos | 866 (coches, autobuses, tranvías, trolebuses, camiones, vagones, barcazas) |
+| Árboles | 2685: 2254 en pie, secos; 431 tumbados, todos apuntando lejos de la bomba; a menos de 380 m de ella no queda ninguno |
 | Relieve | De −18 m (fondo del cráter) a +26 m (colina del parque); el río helado, a −6 m |
 | Cruzarla | 1,6 km de oeste a este: unos 20 minutos andando sin parar; más de una hora con cuidado |
 
@@ -251,9 +252,56 @@ Los tipos siguen las medidas de las series soviéticas reales. Los interiores de
 ## 14. Cómo se construye
 
 1. **El plano son datos.** `tools/ciudad/datos.py` decide la posición, el tipo, las plantas, el uso y las notas de cada cosa. `plano.py` calcula el daño, los incendios, los escombros y el relieve, y lo exporta a `data/ciudad/plano.json`.
-2. **Maqueta automática** (Fase 3): un generador en Godot lee el JSON y levanta la ciudad en volúmenes sencillos (relieve, calles, edificios a su altura) para probar recorridos, vistas y rendimiento antes de construir nada.
+2. **Maqueta automática** (hecha, F3-15): un generador en Godot lee el plano y levanta la ciudad en volúmenes sencillos (relieve, calles, edificios a su altura, escombros) para probar recorridos, vistas y rendimiento antes de construir nada. Ver [la sección 15](#15-la-maqueta).
 3. **Kit modular:** cada tipo de edificio se monta con las piezas del kit de arquitectura soviética (paneles, ventanas, balcones, portales, escaleras, cubiertas), con el daño de su nivel y las variaciones de su semilla.
 4. **Sitios clave a mano:** los 44 edificios con interior hecho a mano y los lugares de las misiones se terminan uno a uno.
 5. **Carga por sectores:** la ciudad se carga en celdas de 200 × 200 m. Hay detalle completo en la celda del jugador y en las de alrededor, y versiones simplificadas más lejos. Las manzanas sirven de oclusores (lo que tapan no se dibuja), algo imprescindible para llegar a 60 fps con la gráfica integrada.
 
 **Para cambiar algo:** se edita `tools/ciudad/datos.py` y se ejecuta `make ciudad`. Si algo se solapa, pisa la calle o cae en la zona equivocada, el generador lo dice y la CI no pasa.
+
+## 15. La maqueta
+
+![Tumansk desde el aire, sin niebla](capturas/fase3_maqueta_aerea.jpg)
+
+La maqueta (`scenes/debug/maqueta_ciudad.tscn`, F3-15) levanta la ciudad entera desde los datos del plano en un segundo y medio. Se recorre a pie (a 1,4 m/s y con colisión) o volando, y tiene herramientas para medir. Cómo se abre y sus teclas, en [DESARROLLO.md](DESARROLLO.md#la-maqueta-de-la-ciudad-f3-15).
+
+- **Lo que se levanta:**
+  - El relieve, cada 2 m, pintado con el suelo del plano (calzadas, aceras, plazas, el hielo, las vías, los patios y los escombros) bajo la nieve vieja.
+  - Los 357 edificios, a su altura y con lo que queda en pie según su daño. Las torres llevan aguja (la de la Casa de los Sóviets, doblada hacia el suroeste), las chimeneas se estrechan, las torres de refrigeración tienen su forma y las casas de madera y las de antes de la revolución llevan tejado a dos aguas.
+  - Los 866 vehículos, los 2685 árboles y los puentes (el del Progreso, con su vano hundido sobre el hielo, y el del ferrocarril, de celosía).
+  - Las tuberías elevadas (el tubo cruza el río con su pasarela), las vallas, la línea eléctrica y el muro de la autovía caída al oeste y al norte.
+- **El daño en volumen:**
+  - Nivel 2: se hunde el extremo que mira a la bomba.
+  - Nivel 3: un cascarón de alturas desiguales, más bajo del lado de la bomba.
+  - Nivel 4: muñones de una o dos plantas, medio enterrados en su escombro.
+  - Las casas de madera ardieron (quedan los restos) y el Edificio Partido conserva solo la mitad que no miraba a la bomba.
+  - Las torres, las chimeneas, los depósitos, las ruinas y los hitos conservan la altura del plano.
+- **Sectores:** los 48 sectores tienen una versión lejana (del color de la niebla, barata) y una detallada, que se dibuja a menos de 450 m. Los edificios grandes y el relieve son oclusores.
+
+![Las rutas y los sectores de la orilla sur](capturas/fase3_maqueta_rutas.jpg)
+
+### Lo que ha enseñado la maqueta
+
+- **Los hitos se ven desde casi toda la calle, pero no desde los patios.** Con línea de visión desde la altura de los ojos (cada 20 m, fuera de los edificios), desde el 92 % de los 4039 puntos se ven al menos dos hitos. Por zonas:
+
+  | Zona | Se ven dos o más |
+  |---|---|
+  | El río, el Parque y el Hospital, la Zona Industrial | 97–100 % |
+  | El Centro, la Zona Cero | 93–95 % |
+  | La Avenida y el Mercado, el Barrio Obrero, La Plaza | 82–83 % |
+  | Los Bloques | 73 % |
+
+  Los puntos ciegos son casi todos patios cerrados: los de los microdistritos, los del Barrio Obrero y los de las manzanas estalinistas (rosa: ningún hito; amarillo: uno). La regla del plano («desde cualquier punto») se cumple en las calles; en los patios habría que aceptarlo o añadir hitos que asomen por encima de los tejados (una chimenea de calefacción, un depósito de agua, una antena).
+
+  ![Puntos ciegos: desde las baldosas rosas no se ve ningún hito; desde las amarillas, uno](capturas/fase3_maqueta_hitos.jpg)
+
+- **La niebla de día tapa la ciudad a partir de unos 300 m.** Solo los hitos la atraviesan ([D-027](DECISIONES.md)): por eso desde la avenida se ve la torre de la Casa de los Sóviets a 850 m, pero no el resto del centro.
+- **Rendimiento** (contado en el entorno de desarrollo, sin gráfica; los fps hay que medirlos en tu PC con la tecla B): a pie de calle se dibujan entre 80 y 200 objetos por imagen (llamadas de dibujo) y entre 0,48 y 0,6 millones de triángulos, con la oclusión activa (quita hasta una cuarta parte de las llamadas en la zona industrial y alrededor de un 12 % en la plaza). La mayor parte de los triángulos es el relieve detallado, no los edificios: es lo primero que habría que aligerar si hiciera falta.
+
+| | |
+|---|---|
+| ![La salida del metro, hacia la plaza](capturas/fase3_maqueta_salida.jpg) | ![Los Bloques](capturas/fase3_maqueta_bloques.jpg) |
+| ![El Puente del Progreso y su vano hundido](capturas/fase3_maqueta_puente.jpg) | ![Desde lo alto de la Escalinata](capturas/fase3_maqueta_centro.jpg) |
+| ![La zona industrial y la central](capturas/fase3_maqueta_industria.jpg) | ![La Zona Cero: el Edificio Partido](capturas/fase3_maqueta_zona_cero.jpg) |
+| ![El panel de la maqueta: dónde estás, qué tienes delante, los hitos a la vista y el coste de la imagen](capturas/fase3_maqueta_panel.jpg) | ![La avenida al anochecer](capturas/fase3_maqueta_avenida_anochecer.jpg) |
+

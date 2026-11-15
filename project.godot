@@ -275,3 +275,11 @@ tinta_negro={
 "type": "float",
 "value": 0.0
 }
+tinta_niebla={
+"type": "color",
+"value": Color(0.52156866, 0.50980395, 0.47843137, 1)
+}
+tinta_niebla_densidad={
+"type": "float",
+"value": 0.011
+}

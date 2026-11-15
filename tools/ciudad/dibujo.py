@@ -17,7 +17,6 @@ import numpy as np
 import shapely
 from PIL import Image, ImageChops, ImageDraw, ImageFont
 from shapely.geometry import LineString, Point
-from shapely.ops import unary_union
 
 import datos as D
 import relieve as R
@@ -258,63 +257,14 @@ def textura_papel(img: Image.Image, fuerza: float = 0.22) -> Image.Image:
 # ---------------------------------------------------------------------------
 # Capas del plano
 # ---------------------------------------------------------------------------
-def zonas_verdes():
-    parque = D.poligono([(0, 840), (150, 830), (330, 808), (330, 1200), (0, 1200)])
-    hospital = D.caja(352, 840, 632, 1170)
-    barranco = banda(R.BARRANCO, 92.0, puntas="round").difference(D.RIO)
-    playa = D.poligono([(0, 668), (340, 640), (345, 680), (0, 705)]).difference(D.RIO)
-    return {"parque": parque, "hospital": hospital, "barranco": barranco, "playa": playa}
-
-
-ESTANQUE = D.elipse(240, 884, 62, 28, 8)
-
-
-def capa_arboles(l: Lienzo, calles, edificios_union, semilla: int = 7) -> None:
-    rng = np.random.default_rng(semilla)
-    verdes = zonas_verdes()
-    areas = [
-        (verdes["parque"].difference(ESTANQUE).difference(D.elipse(142, 1136, 82, 54)), 9.0),
-        (verdes["hospital"], 13.0),
-        (verdes["barranco"], 10.0),
-        (D.ZONA_POLIGONOS[2], 15.0),
-        (D.ZONA_POLIGONOS[4], 19.0),
-        (D.ZONA_POLIGONOS[7].difference(verdes["barranco"]), 20.0),
-        (D.ZONA_POLIGONOS[1], 22.0),
-        (D.ZONA_POLIGONOS[3], 18.0),
-    ]
-    patios = unary_union([q["forma"].buffer(2.0) for q in D.PATIOS])
-    bloqueo = unary_union([calles, edificios_union.buffer(3.0), D.RIO.buffer(4.0), patios])
-    xs, ys = [], []
-    for area, paso in areas:
-        minx, miny, maxx, maxy = area.bounds
-        gx, gy = np.meshgrid(np.arange(minx, maxx, paso), np.arange(miny, maxy, paso))
-        gx = gx.ravel() + rng.uniform(-0.45, 0.45, gx.size) * paso
-        gy = gy.ravel() + rng.uniform(-0.45, 0.45, gy.size) * paso
-        dentro = shapely.contains_xy(area, gx, gy) & ~shapely.contains_xy(bloqueo, gx, gy)
-        xs.append(gx[dentro])
-        ys.append(gy[dentro])
-    # Hileras de árboles en las aceras de la avenida y del bulevar.
-    for s in np.arange(-250, 365, 11.0):
-        for t in (33.0, -33.0):
-            x, y = eje(s, t)
-            if math.hypot(x - 430, y - 330) > 95:
-                xs.append(np.array([x]))
-                ys.append(np.array([y]))
-    x = np.concatenate(xs)
-    y = np.concatenate(ys)
-    dist = np.hypot(x - D.GZ[0], y - D.GZ[1])
-    ux = (x - D.GZ[0]) / np.maximum(dist, 1)
-    uy = (y - D.GZ[1]) / np.maximum(dist, 1)
-    for xi, yi, di, uxi, uyi in zip(x, y, dist, ux, uy):
-        if di < 380:
-            continue
-        if di < 900:
+def capa_arboles(l: Lienzo) -> None:
+    for a in D.ARBOLES:
+        x, y = a["pos"]
+        if a["estado"] == "tumbado":
             # Tumbados: apuntan lejos de la bomba.
-            largo = 4.5
-            l.linea([(xi, yi), (xi + uxi * largo, yi + uyi * largo)], TINTA + (150,), 1.0)
+            l.linea([(x, y), a["_punta"]], TINTA + (150,), 1.0)
             continue
-        r = 1.9 + rng.uniform(-0.3, 0.5)
-        l.circulo(xi, yi, r * ESCALA, relleno=(150, 140, 110, 60), borde=TINTA + (120,), grueso=0.6)
+        l.circulo(x, y, a["copa"] * ESCALA, relleno=(150, 140, 110, 60), borde=TINTA + (120,), grueso=0.6)
 
 
 def capa_calles(l: Lienzo, calles) -> None:
@@ -536,7 +486,7 @@ def capa_edificios(l: Lienzo, numeros: bool = True, apagado: float = 0.0) -> Non
 
 def capa_agua(l: Lienzo) -> None:
     l.poligono(D.RIO, relleno=AGUA + (255,))
-    l.poligono(ESTANQUE, relleno=AGUA + (255,))
+    l.poligono(D.ESTANQUE, relleno=AGUA + (255,))
     rng = np.random.default_rng(11)
     # Grietas del hielo
     for _ in range(170):
@@ -555,7 +505,7 @@ def capa_agua(l: Lienzo) -> None:
             if g.geom_type == "LineString":
                 l.linea(list(g.coords), (236, 242, 242, 200), 0.9)
     l.poligono(D.RIO, borde=AGUA_BORDE + (255,), grueso=1.6)
-    l.poligono(ESTANQUE, borde=AGUA_BORDE + (255,), grueso=1.2)
+    l.poligono(D.ESTANQUE, borde=AGUA_BORDE + (255,), grueso=1.2)
 
 
 def capa_limites(l: Lienzo) -> None:
@@ -833,7 +783,7 @@ def guardar(l: Lienzo, ruta: Path) -> None:
 def base(h: np.ndarray, res: float, escombros, calles, apagado: float = 0.0, numeros: bool = True, arboles: bool = True) -> Lienzo:
     l = Lienzo()
     l.d.rectangle([l.ox, l.oy, l.ox + l.w, l.oy + l.h], fill=TIERRA + (255,))
-    verdes = zonas_verdes()
+    verdes = D.ZONAS_VERDES
     l.poligono(verdes["parque"], relleno=VERDE + (255,))
     l.poligono(verdes["hospital"], relleno=VERDE + (150,))
     l.poligono(verdes["barranco"].difference(D.RIO), relleno=VERDE + (190,))
@@ -850,7 +800,7 @@ def base(h: np.ndarray, res: float, escombros, calles, apagado: float = 0.0, num
     capa_vallas_y_sendas(l)
     capa_vias(l)
     if arboles:
-        capa_arboles(l, calles, unary_union([e["huella"] for e in D.EDIFICIOS]))
+        capa_arboles(l)
     capa_vehiculos(l)
     capa_edificios(l, numeros=numeros)
     capa_puentes(l)

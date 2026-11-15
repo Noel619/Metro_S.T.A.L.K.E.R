@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Rehace las capturas de la documentación (docs/capturas/fase1_*.jpg) a 1600×900.
+# Rehace las capturas de la documentación (docs/capturas/*.jpg) a 1600×900.
 # Cada escena se captura con todas sus cámaras; aquí se eligen las que pasan a
 # la documentación y con qué nombre. Necesita Pillow (para el JPG).
 #
 # Uso: tools/capturas_docs.sh [filtro]
-#   filtro: solo los grupos cuyo nombre lo contenga (deposito, equipo, patio, interfaz).
+#   filtro: solo los grupos cuyo nombre lo contenga (deposito, equipo, patio, interfaz,
+#   maqueta).
 set -eu
 cd "$(dirname "$0")/.."
 FILTER="${1:-}"
@@ -13,9 +14,10 @@ trap 'rm -rf "$TMP"' EXIT
 
 want() { [ -z "$FILTER" ] || [[ "$1" == *"$FILTER"* ]]; }
 
-# capture escena nombre [CAPTURE_ARGS]
+# capture escena nombre [CAPTURE_ARGS] [fotogramas]
 capture() {
-    CAPTURE_ARGS="${3:-}" tools/capture.sh "res://scenes/$1.tscn" "$TMP/$2.png" 1600 900 | grep -v "^Captura" || true
+    CAPTURE_ARGS="${3:-}" tools/capture.sh "res://scenes/$1.tscn" "$TMP/$2.png" 1600 900 "${4:-30}" \
+        | grep -v "^Captura" || true
 }
 
 # keep captura nombre_en_docs
@@ -71,4 +73,30 @@ if want interfaz; then
     keep interfaz fase1_interfaz
     capture ui/prueba_tipografia tipografias
     keep tipografias fase1_tipografias
+fi
+if want maqueta; then
+    # La maqueta no tiene partículas ni nada que asentar: con 10 fotogramas basta.
+    capture debug/maqueta_ciudad maqueta "" 10
+    keep maqueta_vista_aerea fase3_maqueta_aerea
+    keep maqueta_vista_rutas fase3_maqueta_rutas
+    keep maqueta_vista_salida fase3_maqueta_salida
+    keep maqueta_vista_avenida fase3_maqueta_avenida
+    keep maqueta_vista_bloques fase3_maqueta_bloques
+    keep maqueta_vista_rio fase3_maqueta_rio
+    keep maqueta_vista_puente fase3_maqueta_puente
+    keep maqueta_vista_centro fase3_maqueta_centro
+    keep maqueta_vista_industria fase3_maqueta_industria
+    keep maqueta_vista_zona_cero fase3_maqueta_zona_cero
+    capture debug/maqueta_ciudad ciegos \
+        "--call=MaquetaCiudad:survey_landmarks --call=MaquetaCiudad:capture_only:aerea" 10
+    keep ciegos fase3_maqueta_hitos
+    capture debug/maqueta_ciudad anochecer \
+        "--call=MaquetaCiudad:set_hour:18.6 --call=MaquetaCiudad:capture_only:avenida" 10
+    keep anochecer fase3_maqueta_avenida_anochecer
+    capture debug/maqueta_ciudad noche \
+        "--call=MaquetaCiudad:set_hour:23 --call=MaquetaCiudad:set_flashlight:1 --call=MaquetaCiudad:capture_only:salida" 10
+    keep noche fase3_maqueta_salida_noche
+    capture debug/maqueta_ciudad panel \
+        "--call=MaquetaCiudad:go_to_view:1 --call=MaquetaCiudad:show_layers:hitos --call=MaquetaCiudad:capture_walker" 20
+    keep panel fase3_maqueta_panel
 fi

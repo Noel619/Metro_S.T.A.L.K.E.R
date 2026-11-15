@@ -15,6 +15,7 @@ from __future__ import annotations
 import hashlib
 import math
 
+import numpy as np
 import shapely
 from shapely.geometry import Point, Polygon
 from shapely.geometry.polygon import orient
@@ -1061,6 +1062,75 @@ SENDAS: list[dict] = [
     {"nombre": "Escaleras de la loma", "puntos": [(1100, 798), (1110, 830), (1120, 870)]},
     {"nombre": "Escaleras del barranco", "puntos": [(742, 1112), (720, 1100), (700, 1094)]},
 ]
+
+# ---------------------------------------------------------------------------
+# Zonas verdes y árboles
+# ---------------------------------------------------------------------------
+ZONAS_VERDES: dict[str, Polygon] = {
+    "parque": poligono([(0, 840), (150, 830), (330, 808), (330, 1200), (0, 1200)]),
+    "hospital": caja(352, 840, 632, 1170),
+    "barranco": banda(R.BARRANCO, 92.0, puntas="round").difference(RIO),
+    "playa": poligono([(0, 668), (340, 640), (345, 680), (0, 705)]).difference(RIO),
+}
+
+
+def _arboles(semilla: int = 7) -> list[dict]:
+    """Árboles de los parques, los patios y las aceras de la avenida. A menos de 380 m de la
+    bomba no queda ninguno; hasta 900 m están tumbados y todos apuntan lejos de ella (una
+    pista para orientarse); más lejos siguen en pie, secos.
+
+    `copa` es el radio de la copa de los que siguen en pie; `rumbo`, hacia dónde apunta la
+    copa de los tumbados (grados desde el este). `_punta` solo la usa el dibujo."""
+    rng = np.random.default_rng(semilla)
+    verdes = ZONAS_VERDES
+    areas = [
+        (verdes["parque"].difference(ESTANQUE).difference(elipse(142, 1136, 82, 54)), 9.0),
+        (verdes["hospital"], 13.0),
+        (verdes["barranco"], 10.0),
+        (ZONA_POLIGONOS[2], 15.0),
+        (ZONA_POLIGONOS[4], 19.0),
+        (ZONA_POLIGONOS[7].difference(verdes["barranco"]), 20.0),
+        (ZONA_POLIGONOS[1], 22.0),
+        (ZONA_POLIGONOS[3], 18.0),
+    ]
+    patios = unary_union([q["forma"].buffer(2.0) for q in PATIOS])
+    edificios = unary_union([e["huella"] for e in EDIFICIOS])
+    bloqueo = unary_union([CALLES_UNION, edificios.buffer(3.0), RIO.buffer(4.0), patios])
+    xs, ys = [], []
+    for area, paso in areas:
+        minx, miny, maxx, maxy = area.bounds
+        gx, gy = np.meshgrid(np.arange(minx, maxx, paso), np.arange(miny, maxy, paso))
+        gx = gx.ravel() + rng.uniform(-0.45, 0.45, gx.size) * paso
+        gy = gy.ravel() + rng.uniform(-0.45, 0.45, gy.size) * paso
+        dentro = shapely.contains_xy(area, gx, gy) & ~shapely.contains_xy(bloqueo, gx, gy)
+        xs.append(gx[dentro])
+        ys.append(gy[dentro])
+    # Hileras de árboles en las aceras de la avenida y del bulevar.
+    for s in np.arange(-250, 365, 11.0):
+        for t in (33.0, -33.0):
+            x, y = eje(s, t)
+            if math.hypot(x - 430, y - 330) > 95:
+                xs.append(np.array([x]))
+                ys.append(np.array([y]))
+    x = np.concatenate(xs)
+    y = np.concatenate(ys)
+    dist = np.hypot(x - GZ[0], y - GZ[1])
+    ux = (x - GZ[0]) / np.maximum(dist, 1)
+    uy = (y - GZ[1]) / np.maximum(dist, 1)
+    arboles = []
+    for xi, yi, di, uxi, uyi in zip(x, y, dist, ux, uy):
+        if di < 380:
+            continue
+        if di < 900:
+            arboles.append({"pos": (float(xi), float(yi)), "estado": "tumbado",
+                            "rumbo": math.degrees(math.atan2(uyi, uxi)) % 360.0,
+                            "_punta": (xi + uxi * 4.5, yi + uyi * 4.5)})
+            continue
+        arboles.append({"pos": (float(xi), float(yi)), "estado": "en_pie", "copa": 1.9 + rng.uniform(-0.3, 0.5)})
+    return arboles
+
+
+ARBOLES = _arboles()
 
 # ---------------------------------------------------------------------------
 # Vehículos: el atasco de la evacuación, los aparcados y los trenes

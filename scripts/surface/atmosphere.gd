@@ -187,6 +187,9 @@ static func apply_values(
 	sun.light_energy = values["sun_energy"]
 	sun.rotation_degrees = values["sun_rotation"]
 	RenderingServer.global_shader_parameter_set("tinta_horizonte", values["horizon"])
+	# La ciudad lejana y los hitos hacen su propia niebla (ver tinta_silueta y tinta_hito).
+	RenderingServer.global_shader_parameter_set("tinta_niebla", values["fog"])
+	RenderingServer.global_shader_parameter_set("tinta_niebla_densidad", values["fog_density"])
 	if StyleDirector.zone != values["style"]:
 		StyleDirector.set_zone(values["style"], not environment.has_meta(&"aplicado"))
 	environment.set_meta(&"aplicado", true)

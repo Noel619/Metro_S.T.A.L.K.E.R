@@ -10,8 +10,9 @@ Uso: python3 tools/ciudad/plano.py [--solo-datos | --comprobar] [--plano=general
    solaparse y en la zona que dicen.
 2. Calcula el daño de cada edificio (distancia a la Zona Cero, con variación fija
    por edificio), los incendios y los escombros que caen a la calle.
-3. Calcula el relieve con los terraplenes y los escombros.
-4. Exporta data/ciudad/plano.json y data/ciudad/relieve.png (16 bits).
+3. Calcula el relieve con los terraplenes y los escombros, y la cota de cada edificio.
+4. Exporta data/ciudad/plano.json, data/ciudad/relieve.png (16 bits) y el suelo de la
+   maqueta, data/ciudad/suelo.png.
 5. Dibuja los planos de desarrollo en docs/ciudad/.
 """
 
@@ -24,6 +25,7 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import shapely
 from shapely import STRtree
 from shapely.geometry import Point
 from shapely.ops import unary_union
@@ -219,6 +221,138 @@ def calcular_relieve(escombros: list[dict], res: float = 2.0) -> np.ndarray:
     return h, terreno
 
 
+def muestrear(h: np.ndarray, res: float, xs: np.ndarray, ys: np.ndarray) -> np.ndarray:
+    """Altura bilineal en puntos del mapa. h[j, i] es la altura del centro de la celda
+    ((i + 0,5)·res, (j + 0,5)·res): la fila 0 es el borde sur."""
+    fx = np.clip(np.asarray(xs, float) / res - 0.5, 0.0, h.shape[1] - 1.0001)
+    fy = np.clip(np.asarray(ys, float) / res - 0.5, 0.0, h.shape[0] - 1.0001)
+    i0 = np.floor(fx).astype(int)
+    j0 = np.floor(fy).astype(int)
+    tx = fx - i0
+    ty = fy - j0
+    return (h[j0, i0] * (1 - tx) * (1 - ty) + h[j0, i0 + 1] * tx * (1 - ty)
+            + h[j0 + 1, i0] * (1 - tx) * ty + h[j0 + 1, i0 + 1] * tx * ty)
+
+
+def calcular_cotas(terreno: np.ndarray, res: float) -> None:
+    """Cota de cada edificio: la altura del terreno sin escombros bajo su huella.
+
+    `cota` (la mediana) es el nivel de la planta baja; `cota_min` (el punto más bajo de la
+    huella), hasta dónde bajan los muros en las laderas. Se mide sin los montones de
+    escombros porque el escombro cae encima: un muñón queda medio enterrado en el suyo."""
+    for e in D.EDIFICIOS:
+        h = e["huella"]
+        minx, miny, maxx, maxy = h.bounds
+        gx, gy = np.meshgrid(np.arange(minx + 1.0, maxx, 2.0), np.arange(miny + 1.0, maxy, 2.0))
+        dentro = shapely.contains_xy(h, gx.ravel(), gy.ravel())
+        borde = np.array(h.exterior.coords)
+        xs = np.concatenate([gx.ravel()[dentro], borde[:, 0]])
+        ys = np.concatenate([gy.ravel()[dentro], borde[:, 1]])
+        alturas = muestrear(terreno, res, xs, ys)
+        e["cota"] = round(float(np.median(alturas)), 2)
+        e["cota_min"] = round(float(alturas.min()), 2)
+
+
+# ---------------------------------------------------------------------------
+# Suelo de la maqueta
+# ---------------------------------------------------------------------------
+# Color del suelo bajo la nieve (RGB) y cuánta nieve lo cubre (A: 0 nada, 255 todo).
+# La nieve es vieja y nunca blanca: la pone el shader del suelo encima de este color.
+SUELO: dict[str, tuple[int, int, int, int]] = {
+    "tierra": (98, 92, 82, 235),
+    "parque": (100, 98, 80, 245),
+    "ladera": (90, 86, 72, 225),
+    "arena": (138, 126, 104, 215),
+    "hielo": (118, 130, 134, 105),
+    "acera": (116, 112, 104, 200),
+    "calzada": (60, 58, 56, 150),
+    "mediana": (96, 94, 84, 235),
+    "plaza": (124, 118, 108, 185),
+    "camino": (104, 92, 76, 205),
+    "via": (52, 48, 46, 80),
+    "tranvia": (46, 44, 42, 120),
+    "escombros": (88, 80, 72, 115),
+    "juegos": (140, 120, 90, 205),
+    "pista": (96, 100, 90, 225),
+    "hockey": (168, 178, 180, 60),
+    "basuras": (58, 56, 52, 130),
+    "aparcamiento": (90, 88, 84, 190),
+    "carbon": (30, 28, 28, 0),
+    "cementerio": (104, 100, 84, 240),
+    "patio_transformadores": (110, 108, 102, 180),
+    "acero": (92, 88, 84, 150),
+    "huerto": (96, 84, 66, 230),
+}
+ANCHO_VIA = {"principal": 7.0, "secundaria": 3.6, "playa": 3.2}
+
+
+def ancho_acera(c: dict) -> float:
+    """Aceras de una calle: las da su calzada si la tiene; los pasos de servicio no tienen."""
+    if c["tipo"] == "servicio":
+        return 0.0
+    if "calzada" in c:
+        return (c["ancho"] - c["calzada"]) / 2.0
+    return min(5.0, max(2.0, round(c["ancho"] * 0.2, 1)))
+
+
+def exportar_suelo(escombros: list[dict], res: float = 1.0) -> dict:
+    """Pinta el suelo de la maqueta (data/ciudad/suelo.png), capa a capa y sin suavizar."""
+    from PIL import Image, ImageDraw
+
+    from geo import banda, circulo
+
+    nx, ny = int(ANCHO / res), int(ALTO / res)
+    img = Image.new("RGBA", (nx, ny), SUELO["tierra"])
+
+    def pts(anillo) -> list[tuple[float, float]]:
+        return [(x / res, (ALTO - y) / res) for x, y in anillo]
+
+    def pintar(formas, clase: str) -> None:
+        mascara = Image.new("L", (nx, ny), 0)
+        d = ImageDraw.Draw(mascara)
+        for forma in formas:
+            partes = forma.geoms if forma.geom_type in ("MultiPolygon", "GeometryCollection") else [forma]
+            for g in partes:
+                if g.geom_type != "Polygon" or g.is_empty:
+                    continue
+                d.polygon(pts(g.exterior.coords), fill=255)
+                for hueco in g.interiors:
+                    d.polygon(pts(hueco.coords), fill=0)
+        img.paste(SUELO[clase], None, mascara)
+
+    verdes = D.ZONAS_VERDES
+    pintar([verdes["parque"], verdes["hospital"]], "parque")
+    pintar([verdes["barranco"]], "ladera")
+    pintar([verdes["playa"]], "arena")
+    pintar([D.RIO, D.ESTANQUE], "hielo")
+    for clase in SUELO:
+        formas = [p["forma"] for p in D.PATIOS if p["tipo"] == clase]
+        if formas:
+            pintar(formas, clase)
+    calles = [c for c in D.CALLES if c["tipo"] != "puente"]
+    pintar([banda(c["puntos"], c["ancho"]) for c in calles if c["tipo"] not in ("peatonal", "escalinata", "camino")], "acera")
+    pintar([p["forma"] for p in D.PLAZAS]
+           + [banda(c["puntos"], c["ancho"]) for c in calles if c["tipo"] in ("peatonal", "escalinata")], "plaza")
+    calzadas = [banda(c["puntos"], c["ancho"] - 2.0 * ancho_acera(c)) for c in calles
+                if c["tipo"] not in ("peatonal", "escalinata", "camino")]
+    # La glorieta de la plaza del Trabajo: un anillo de calzada alrededor de la isleta.
+    centro = (430.0, 330.0)
+    pintar(calzadas + [circulo(*centro, 50.0, 64)], "calzada")
+    avenida = next(c for c in D.CALLES if c["id"] == "avenida_progreso")
+    mediana = banda(avenida["puntos"], avenida["mediana"]).difference(circulo(*centro, 50.0, 64))
+    pintar([mediana, circulo(*centro, 30.0, 64)], "mediana")
+    pintar([banda(c["puntos"], c["ancho"]) for c in calles if c["tipo"] == "camino"]
+           + [banda(s["puntos"], 2.5) for s in D.SENDAS], "camino")
+    # Las vías y el tranvía cruzan el río por los puentes: sobre el hielo no se pintan.
+    pintar([banda(v["puntos"], ANCHO_VIA[v["tipo"]]).difference(D.RIO) for v in D.VIAS], "via")
+    pintar([banda(t["puntos"], 2.6).difference(D.RIO) for t in D.TRANVIAS], "tranvia")
+    pintar([e["forma"] for e in escombros], "escombros")
+    img.save(SALIDA_DATOS / "suelo.png")
+    return {"archivo": "suelo.png", "resolucion": res, "filas": "la primera fila es el borde norte",
+            "canales": "RGB: color del suelo bajo la nieve; A: cuánta nieve lo cubre (0 nada, 255 todo)",
+            "clases": {k: list(v) for k, v in SUELO.items()}}
+
+
 def exportar_relieve(h: np.ndarray, res: float) -> dict:
     from PIL import Image
 
@@ -231,7 +365,35 @@ def exportar_relieve(h: np.ndarray, res: float) -> dict:
 # ---------------------------------------------------------------------------
 # Exportación
 # ---------------------------------------------------------------------------
-def exportar_json(escombros: list[dict], meta_relieve: dict, calles) -> dict:
+def huella_exportable(huella) -> list:
+    """Coordenadas de una huella para plano.json. Al redondearlas a 0,1 m, alguna huella
+    recortada contra su manzana queda con astillas (tiras de centímetros) que se cruzan:
+    esas se limpian quitando las tiras de menos de medio metro y se ajustan a la rejilla
+    de 0,1 m sin perder la validez. Las demás se exportan tal cual."""
+    from shapely.geometry import Polygon
+
+    anillos = coords(huella)
+    if Polygon(anillos[0], anillos[1:]).is_valid:
+        return anillos
+    limpia = huella.buffer(-0.25, join_style=2).buffer(0.25, join_style=2)
+    if limpia.geom_type == "MultiPolygon":
+        limpia = max(limpia.geoms, key=lambda g: g.area)
+    limpia = shapely.set_precision(limpia, 0.1)
+    if limpia.geom_type == "MultiPolygon":
+        limpia = max(limpia.geoms, key=lambda g: g.area)
+    return coords(limpia)
+
+
+def exportar_arbol(a: dict) -> dict:
+    registro = {"pos": (round(a["pos"][0], 1), round(a["pos"][1], 1)), "estado": a["estado"]}
+    if a["estado"] == "tumbado":
+        registro["rumbo"] = round(a["rumbo"], 1)
+    else:
+        registro["copa"] = round(a["copa"], 2)
+    return registro
+
+
+def exportar_json(escombros: list[dict], meta_relieve: dict, meta_suelo: dict, calles) -> dict:
     def pts(lista):
         return [(round(x, 1), round(y, 1)) for x, y in lista]
 
@@ -242,7 +404,7 @@ def exportar_json(escombros: list[dict], meta_relieve: dict, calles) -> dict:
         registro["sector"] = sector_de(c.x, c.y)
         registro["centro"] = (round(c.x, 1), round(c.y, 1))
         registro["superficie"] = round(e["huella"].area, 1)
-        registro["huella"] = coords(e["huella"])
+        registro["huella"] = huella_exportable(e["huella"])
         edificios.append(registro)
     estadisticas = {
         "edificios": len(D.EDIFICIOS),
@@ -270,6 +432,7 @@ def exportar_json(escombros: list[dict], meta_relieve: dict, calles) -> dict:
         "zonas": {str(k): {**v, "poligono": coords(D.ZONA_POLIGONOS[k]) if k in D.ZONA_POLIGONOS else None} for k, v in D.ZONAS.items()},
         "rio": {"nombre": "Tumán", "eje": D.R.RIO_EJE, "poligono": coords(D.RIO), "hielo": D.R.NIVEL_HIELO},
         "relieve": meta_relieve,
+        "suelo": meta_suelo,
         "calles": [{**c, "puntos": pts(c["puntos"])} for c in D.CALLES],
         "plazas": [{**{k: v for k, v in p.items() if k != "forma"}, "forma": coords(p["forma"])} for p in D.PLAZAS],
         "vias": [{**v, "puntos": pts(v["puntos"])} for v in D.VIAS],
@@ -307,7 +470,9 @@ def exportar_json(escombros: list[dict], meta_relieve: dict, calles) -> dict:
         "patios": [{**{k: v for k, v in p.items() if k != "forma"}, "forma": coords(p["forma"])} for p in D.PATIOS],
         "vallas": [{**v, "puntos": pts(v["puntos"])} for v in D.VALLAS],
         "sendas": [{**s, "puntos": pts(s["puntos"])} for s in D.SENDAS],
+        "arboles": [exportar_arbol(a) for a in D.ARBOLES],
         "vehiculos": D.VEHICULOS,
+        "medidas_vehiculos": D.MEDIDAS,
         "lineas_electricas": D.LINEAS_ELECTRICAS,
         "estadisticas": estadisticas,
     }
@@ -324,8 +489,10 @@ def main() -> int:
     calcular_danos()
     escombros = calcular_escombros()
     relieve, terreno = calcular_relieve(escombros, 2.0)
+    calcular_cotas(terreno, 2.0)
     meta = exportar_relieve(relieve, 2.0)
-    estadisticas = exportar_json(escombros, meta, calles)
+    meta_suelo = exportar_suelo(escombros, 1.0)
+    estadisticas = exportar_json(escombros, meta, meta_suelo, calles)
     print(json.dumps(estadisticas, ensure_ascii=False, indent=1))
     if problemas:
         print(f"\n{len(problemas)} problemas:")

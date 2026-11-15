@@ -187,3 +187,22 @@ La prueba de legibilidad está en `scenes/ui/prueba_tipografia.tscn`:
 ## 7. Fase 1: lo que falta
 
 Nada, salvo tu aprobación. Lo que se ajuste a partir de tu revisión se apuntará aquí.
+
+## 8. La ciudad: suelo, fachadas, lejanía e hitos (maqueta, F3-15)
+
+La maqueta de la ciudad usa el mismo sombreado por bandas, con tres variantes del cuerpo común (`tinta.gdshaderinc`, por `#define`) y un shader para lo lejano. Los materiales existentes no cambian.
+
+| Shader | Para qué |
+|---|---|
+| `tinta_suelo` | El suelo: color y nieve de `data/ciudad/suelo.png` (calzadas, aceras, plazas, hielo, vías, patios, escombros), proyectado desde arriba. La nieve vieja cubre a parches lo que pide cada clase de suelo y resbala de las cuestas |
+| `tinta_fachada` | Las fachadas: ventanas pintadas (una textura de un vano que se repite por vano y por planta) donde el alfa del color de vértice lo pide. Las cubiertas cogen nieve y el hollín de los incendios oscurece la parte alta |
+| `tinta_hito` | Los hitos: como las fachadas, pero con su propia niebla y un tope (`hito_niebla_max` = 0,78): nunca desaparecen del todo ([D-027](DECISIONES.md)) |
+| `tinta_silueta` | La versión lejana de cada sector: color plano de la niebla, sin luz ([D-026](DECISIONES.md)) |
+
+`Atmosphere` publica el color y la densidad de la niebla de cada hora en dos parámetros globales nuevos, `tinta_niebla` y `tinta_niebla_densidad`, para que lo lejano y los hitos casen con la niebla del motor a cualquier hora y con cualquier clima.
+
+| | |
+|---|---|
+| ![La avenida, hacia el puente y la Casa de los Sóviets](capturas/fase3_maqueta_avenida.jpg) | ![La avenida al anochecer](capturas/fase3_maqueta_avenida_anochecer.jpg) |
+| ![La salida del metro, de noche y con linterna](capturas/fase3_maqueta_salida_noche.jpg) | ![El Muelle Sur: el río helado y la loma](capturas/fase3_maqueta_rio.jpg) |
+
