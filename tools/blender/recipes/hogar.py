@@ -272,18 +272,32 @@ def build_cot() -> bpy.types.Object:
     frame_obj = frame.finish("armazon", tb.material("metal", BED_PAINT), root)
     tb.stain(frame_obj, RUST, amount=0.75, scale=6.0, coverage=0.35, seed=157)
 
-    def settle(obj: bpy.types.Object, drape: bool = False) -> None:
-        """Hunde la ropa de cama por el centro y, si ``drape``, la deja caer por los costados."""
-        for vert in obj.data.vertices:
-            x, y = vert.co.x, vert.co.y
-            sag = max(0.0, 1.0 - (x / (bed_l / 2.0)) ** 2) * max(0.0, 1.0 - (y / (bed_w / 2.0)) ** 2)
-            vert.co.z -= 0.035 * sag
-            over = abs(y) - bed_w / 2.0
-            if drape and over > 0.0:
-                vert.co.z -= over * 1.7
-                vert.co.y = math.copysign(bed_w / 2.0 + 0.014 + over * 0.2, y)
+    mattress_z = rail_z + 0.092
+    mattress_bottom = mattress_z - 0.055
+    drape_out = half_w + 0.036 - bed_w / 2.0
 
-    mattress_z = rail_z + 0.085
+    def settle(obj: bpy.types.Object, drape: float = 0.0) -> None:
+        """Hunde la ropa de cama por el centro y, si ``drape`` (el grosor de la pieza), la deja caer por los costados.
+
+        El fondo del colchón no se hunde (se apoya en el somier) y la manta cae
+        por fuera de los largueros, sin atravesarlos.
+        """
+        middle = sum(v.co.z for v in obj.data.vertices) / len(obj.data.vertices)
+        for vert in obj.data.vertices:
+            x, y, z = vert.co
+            sag = max(0.0, 1.0 - (x / (bed_l / 2.0)) ** 2) * max(0.0, 1.0 - (y / (bed_w / 2.0)) ** 2)
+            vert.co.z -= 0.035 * sag * min(1.0, max(0.0, (z - mattress_bottom) / 0.11))
+            over = abs(y) - bed_w / 2.0
+            if drape > 0.0 and over > 0.0:
+                # Primero salva el larguero en diagonal; después cuelga casi a plomo.
+                reach = min(over, 0.06)
+                hang = max(0.0, over - 0.06)
+                side = bed_w / 2.0 + reach * (drape_out / 0.06) + hang * 0.04
+                if z < middle:
+                    side -= drape * 0.6
+                vert.co.y = math.copysign(side, y)
+                vert.co.z -= reach * 0.5 + hang * 2.3
+
     mattress = tb.box("colchon", (bed_l, bed_w, 0.11), (0.0, 0.0, mattress_z), cuts=7, bevel=0.03, segments=3, mat=tb.material("tela", TICKING), parent=root)
     tb.apply_bulge(mattress, (0.0, 0.0, mattress_z), (bed_l / 2.0, bed_w / 2.0, 0.055), 0.012)
     settle(mattress)
@@ -293,17 +307,18 @@ def build_cot() -> bpy.types.Object:
     pillow = tb.box("almohada", (0.46, 0.4, 0.1), pillow_at, cuts=5, bevel=0.035, segments=3, mat=tb.material("tela", LINEN), parent=root)
     tb.apply_bulge(pillow, pillow_at, (0.23, 0.2, 0.05), 0.022)
     tb.dent(pillow, (pillow_at[0] + 0.03, pillow_at[1], pillow_at[2] + 0.07), radius=0.16, depth=0.03)
+    tb.set_origin(pillow, pillow_at)
     pillow.rotation_euler = (0.0, 0.0, math.radians(rng.uniform(-7.0, 7.0)))
     tb.wobble(pillow, amount=0.005, scale=8.0, seed=158)
     # Manta: cubre de medio cuerpo a los pies, con la vuelta doblada y dos listas.
-    blanket_x = 0.3
+    blanket_x = 0.27
     blanket = tb.box("manta", (bed_l - 0.62, bed_w + 0.3, 0.022), (blanket_x, 0.0, top + 0.012), cuts=9, bevel=0.007, mat=tb.material("tela", WOOL), parent=root)
-    fold = tb.box("manta_vuelta", (0.2, bed_w + 0.28, 0.02), (blanket_x - (bed_l - 0.62) / 2.0 + 0.07, 0.0, top + 0.034), cuts=9, bevel=0.007, mat=tb.material("tela", WOOL_LIGHT), parent=root)
+    fold = tb.box("manta_vuelta", (0.2, bed_w + 0.28, 0.02), (blanket_x - (bed_l - 0.62) / 2.0 + 0.1, 0.0, top + 0.034), cuts=9, bevel=0.007, mat=tb.material("tela", WOOL_LIGHT), parent=root)
     stripes = []
     for index, x in enumerate((half_l - 0.3, half_l - 0.2)):
         stripes.append(tb.box(f"manta_lista_{index}", (0.055, bed_w + 0.302, 0.004), (x, 0.0, top + 0.0245), cuts=9, mat=tb.material("tela", WOOL_STRIPE), parent=root))
     for index, piece in enumerate((blanket, fold, *stripes)):
-        settle(piece, drape=True)
+        settle(piece, drape=0.022 if piece in (blanket, fold) else 0.004)
         tb.wobble(piece, amount=0.007 if piece in (blanket, fold) else 0.0, scale=7.0, seed=159)
     # Las listas siguen las arrugas de la manta.
     for piece in stripes:
