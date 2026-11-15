@@ -29,6 +29,11 @@ ALUMINIUM = "#A9ADA8"
 RUBBER = "#26241F"
 RUST = "#8E4A2F"
 SIGNAL_RED = "#C8323C"
+MUSTARD = "#9C8546"
+MUSTARD_DARK = "#786537"
+CHROME = "#A2A7A3"
+BRASS = "#B59A5A"
+BULB_OFF = "#D9D2B8"
 
 # Dosímetro: la aguja recorre METER_SWEEP grados a cada lado del centro.
 METER_SWEEP = 45.0
@@ -48,7 +53,7 @@ def build_dosimeter() -> bpy.types.Object:
     pivot = (0.0, 0.022, top + 0.0075)
 
     mb = tb.MeshBuilder(seed=73)
-    mb.box((width, length, height), (0.0, 0.0, height / 2.0), OLIVE, bevel=0.009, segments=2)
+    mb.box((width, length, height), (0.0, 0.0, height / 2.0), OLIVE, bevel=0.009, segments=2, cuts=6)
     mb.box((width - 0.014, length - 0.014, 0.006), (0.0, 0.0, height + 0.001), OLIVE_DARK, bevel=0.002)
     for x in (-1.0, 1.0):
         for y in (-1.0, 1.0):
@@ -144,7 +149,86 @@ def build_dosimeter() -> bpy.types.Object:
     return root
 
 
+def build_flashlight() -> bpy.types.Object:
+    """Linterna de pilas, de petaca: caja de hojalata esmaltada y reflector al frente.
+
+    Se apoya de pie y alumbra hacia +Y (en Godot, hacia -Z: hacia delante). El
+    nodo vacío ``foco`` marca dónde colgar la luz. La ``bombilla`` lleva el
+    material "bombilla_apagada"; al encenderla, el juego le pone ``bombilla.tres``.
+    """
+    rng = random.Random(89)
+    root = tb.empty("linterna-fisico")
+    width, depth, height = 0.068, 0.038, 0.108
+    head = (0.0, depth / 2.0, 0.07)
+
+    mb = tb.MeshBuilder(seed=89)
+    mb.box((width, depth, height), (0.0, 0.0, height / 2.0), MUSTARD, bevel=0.007, segments=2, cuts=5)
+    # Tapa de las pilas: un cerco más oscuro abajo, con su bisagra y su cierre.
+    mb.box((width + 0.002, depth + 0.002, 0.016), (0.0, 0.0, 0.01), MUSTARD_DARK, bevel=0.004, segments=2)
+    mb.cylinder(0.003, width * 0.7, (0.0, -depth / 2.0 - 0.001, 0.019), STEEL, rotation=(0.0, 90.0, 0.0), segments=8)
+    mb.box((0.014, 0.004, 0.02), (0.0, depth / 2.0 + 0.001, 0.016), STEEL, rotation=(rng.uniform(-3.0, 3.0), 0.0, 0.0), bevel=0.0015)
+    # Costillas de agarre en los cantos.
+    for side in (-1.0, 1.0):
+        for index in range(5):
+            mb.box((0.003, depth * 0.62, 0.0045), (side * (width / 2.0 + 0.0003), 0.0, 0.032 + index * 0.0085), MUSTARD_DARK, bevel=0.001)
+    # Cabezal: aro cromado y reflector hundido.
+    mb.lathe(
+        (
+            (0.027, -0.002), (0.0325, 0.0), (0.035, 0.004), (0.035, 0.013), (0.032, 0.017), (0.0285, 0.0165),
+            (0.027, 0.013), (0.02, 0.0075), (0.011, 0.004), (0.0, 0.003),
+        ),
+        head,
+        CHROME,
+        rotation=(-90.0, 0.0, 0.0),
+        segments=24,
+        sharp_angle=50.0,
+    )
+    for angle in range(0, 360, 30):
+        a = math.radians(angle)
+        mb.box((0.0035, 0.008, 0.002), (head[0] + 0.0355 * math.cos(a), head[1] + 0.0085, head[2] + 0.0355 * math.sin(a)), STEEL_DARK, rotation=(0.0, 90.0 - angle, 0.0))
+    # Interruptor deslizante, arriba.
+    mb.box((0.016, 0.026, 0.002), (0.0, 0.0, height + 0.0005), STEEL_DARK, bevel=0.0006)
+    mb.box((0.011, 0.01, 0.006), (0.0, -0.006, height + 0.0035), CHROME, bevel=0.0015)
+    for index in range(3):
+        mb.box((0.011, 0.0012, 0.0012), (0.0, -0.009 + index * 0.003, height + 0.0068), STEEL_DARK)
+    # Detrás: pinza para el cinturón y anilla para colgarla de un botón.
+    mb.box((0.017, 0.0025, 0.062), (0.0, -depth / 2.0 - 0.0045, 0.062), CHROME, rotation=(-2.5, 0.0, rng.uniform(-1.0, 1.0)), bevel=0.001)
+    mb.box((0.017, 0.006, 0.008), (0.0, -depth / 2.0 - 0.002, 0.09), CHROME, bevel=0.001)
+    mb.tube(
+        tb.smooth_path(
+            (
+                (-0.011, -depth / 2.0 + 0.004, height - 0.004), (-0.012, -depth / 2.0 - 0.001, height + 0.008),
+                (-0.008, -depth / 2.0 - 0.003, height + 0.019), (0.0, -depth / 2.0 - 0.004, height + 0.023),
+                (0.008, -depth / 2.0 - 0.003, height + 0.019), (0.012, -depth / 2.0 - 0.001, height + 0.008),
+                (0.011, -depth / 2.0 + 0.004, height - 0.004),
+            ),
+            steps=3,
+        ),
+        0.0016,
+        STEEL,
+        segments=6,
+    )
+    body = mb.finish("cuerpo", tb.material("metal", MUSTARD), root)
+    tb.stain(body, "#8E7A45", amount=0.5, scale=16.0, coverage=0.35, seed=89)
+    tb.stain(body, RUST, amount=0.7, scale=22.0, coverage=0.3, seed=90)
+    tb.dent(body, (width / 2.0, 0.0, 0.085), radius=0.02, depth=0.0025)
+    tb.wobble(body, amount=0.0005, scale=12.0, seed=89)
+
+    bulb = tb.MeshBuilder(seed=97)
+    bulb.cylinder(0.0045, 0.006, (head[0], head[1] + 0.005, head[2]), BRASS, rotation=(-90.0, 0.0, 0.0), segments=8)
+    bulb.sphere(0.0058, (head[0], head[1] + 0.0105, head[2]), BULB_OFF, segments=10, scale=(1.0, 1.2, 1.0))
+    bulb_obj = bulb.finish("bombilla", tb.material("bombilla_apagada", BULB_OFF), root)
+    tb.set_origin(bulb_obj, (head[0], head[1] + 0.0105, head[2]))
+    focus = tb.empty("foco", root)
+    focus.location = (head[0], head[1] + 0.017, head[2])
+
+    tb.collision_box("linterna", (width + 0.004, depth + 0.02, height), (0.0, 0.006, height / 2.0), root)
+    tb.paint({body: None, bulb_obj: None}, ao_distance=0.04, ao=0.5, seed=89)
+    return root
+
+
 def models() -> dict:
     return {
         "dosimetro": build_dosimeter,
+        "linterna": build_flashlight,
     }
