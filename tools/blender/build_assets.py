@@ -32,6 +32,8 @@ def load_recipes() -> dict:
     for path in sorted((HERE / "recipes").glob("*.py")):
         spec = importlib.util.spec_from_file_location(f"recipes.{path.stem}", path)
         module = importlib.util.module_from_spec(spec)
+        # Las dataclasses de una receta necesitan encontrar su módulo.
+        sys.modules[spec.name] = module
         spec.loader.exec_module(module)
         for name, builder in module.models().items():
             if name in builders:
