@@ -1,0 +1,12 @@
+[gd_resource type="ShaderMaterial" load_steps=3 format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/tinta_muro.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://assets/textures/rampas.png" id="2_ramps"]
+
+[resource]
+resource_name = "azulejo"
+shader = ExtResource("1_shader")
+shader_parameter/ramps = ExtResource("2_ramps")
+shader_parameter/snow_amount = 0.85
+shader_parameter/snow_color = Color(0.74, 0.72, 0.67, 1)
+shader_parameter/tile_size = 0.1

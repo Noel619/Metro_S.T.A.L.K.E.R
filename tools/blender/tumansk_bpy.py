@@ -84,6 +84,23 @@ def empty(name: str, parent: bpy.types.Object | None = None) -> bpy.types.Object
     return obj
 
 
+def _breaks(values: Iterable[float], step: float, tolerance: float = 1e-4) -> list[float]:
+    """Cortes ordenados de una rejilla: los valores dados, sin repetidos, y más cortes
+    para que ningún tramo pase de ``step`` (si es positivo)."""
+    ordered = sorted(values)
+    result = [ordered[0]]
+    for value in ordered[1:]:
+        if value - result[-1] > tolerance:
+            result.append(value)
+    if step <= 0.0:
+        return result
+    fine = [result[0]]
+    for a, b in zip(result, result[1:]):
+        parts = max(1, math.ceil((b - a) / step - 1e-6))
+        fine.extend(a + (b - a) * k / parts for k in range(1, parts + 1))
+    return fine
+
+
 def _snap(bm: bmesh.types.BMesh) -> None:
     """Redondea las posiciones a 0,01 mm.
 
@@ -261,12 +278,26 @@ class MeshBuilder:
     Cada pieza lleva su propio color base, que se guarda por esquina en el
     atributo "Base"; ``paint`` lo usa después como color de partida. Las piezas
     con bisel se sombrean suaves; las demás, planas.
+
+    Una malla puede llevar varios materiales: las piezas que se crean dentro de
+    ``with builder.material(n):`` usan el material ``n`` de la lista que se le
+    pasa a ``finish`` (por defecto, el 0).
     """
 
     def __init__(self, seed: int = 0) -> None:
         self.bm = bmesh.new()
         self.base = self.bm.loops.layers.color.new("Base")
         self.rng = random.Random(seed)
+        self.slot = 0
+
+    @contextlib.contextmanager
+    def material(self, slot: int):
+        """Las piezas creadas dentro del bloque usan el material ``slot`` de ``finish``."""
+        previous, self.slot = self.slot, slot
+        try:
+            yield
+        finally:
+            self.slot = previous
 
     def _finish_piece(self, before: set, color: str, jitter: float, smooth: bool) -> list:
         faces = [f for f in self.bm.faces if f not in before]
@@ -278,6 +309,7 @@ class MeshBuilder:
         value = (min(1.0, srgb.x), min(1.0, srgb.y), min(1.0, srgb.z), 1.0)
         for face in faces:
             face.smooth = smooth
+            face.material_index = self.slot
             for loop in face.loops:
                 loop[self.base] = value
         return faces
@@ -321,6 +353,135 @@ class MeshBuilder:
                 affect="EDGES", clamp_overlap=True,
             )
         return self._finish_piece(before, color, jitter, smooth=bevel > 0.0)
+
+    def slab(
+        self,
+        x_range: tuple[float, float],
+        z_range: tuple[float, float],
+        y_range: tuple[float, float],
+        color: str,
+        *,
+        holes: Iterable[tuple[float, float, float, float]] = (),
+        bevel: float = 0.0,
+        step: float = 0.0,
+        jitter: float = 0.0,
+        back: bool = True,
+        ring: float = 0.0,
+        extra_x: Iterable[float] = (),
+    ) -> list:
+        """Placa de una pieza (un muro, un marco) con huecos rectangulares que la atraviesan.
+
+        La cara delantera está en ``y_range[0]`` y mira hacia -Y; la trasera, en
+        ``y_range[1]``. ``holes`` son rectángulos ``(x0, z0, x1, z1)``. ``step``
+        subdivide las caras en celdas de ese tamaño como mucho (las manchas y la
+        oclusión se pintan por vértice). ``ring`` añade una fila de vértices a esa
+        distancia de cada hueco, para que lo que se pinta en su borde (la oclusión
+        de la mocheta) no se extienda por el muro; ``extra_x`` añade cortes
+        verticales (para pintar chorretones estrechos). El bisel va solo en el borde
+        de la cara delantera (el contorno y los huecos); sin ``back`` no se hace la
+        trasera, que en un muro nunca se ve.
+        """
+        before = set(self.bm.faces)
+        (x0, x1), (z0, z1), (y0, y1) = x_range, z_range, y_range
+        cut = [(max(a, x0), max(b, z0), min(c, x1), min(d, z1)) for a, b, c, d in holes]
+        cut = [h for h in cut if h[2] - h[0] > 1e-4 and h[3] - h[1] > 1e-4]
+        x_cuts = [x0, x1, *(v for h in cut for v in (h[0], h[2]))]
+        z_cuts = [z0, z1, *(v for h in cut for v in (h[1], h[3]))]
+        extra_xs = list(extra_x)
+        extra_zs = []
+        if ring > 0.0:
+            extra_xs += [v for h in cut for v in (h[0] - ring, h[2] + ring)]
+            extra_zs += [v for h in cut for v in (h[1] - ring, h[3] + ring)]
+        # Los cortes de más solo valen dentro de la placa y lejos de los que ya hay (si
+        # no, dejarían tiras finísimas que estropean el bisel).
+        margin = 2.0 * bevel + 0.01
+        x_cuts += [v for v in extra_xs if x0 < v < x1 and min(abs(v - c) for c in x_cuts) > margin]
+        z_cuts += [v for v in extra_zs if z0 < v < z1 and min(abs(v - c) for c in z_cuts) > margin]
+        xs = _breaks(x_cuts, step)
+        zs = _breaks(z_cuts, step)
+
+        def solid(i: int, j: int) -> bool:
+            if i < 0 or j < 0 or i >= len(xs) - 1 or j >= len(zs) - 1:
+                return False
+            xc, zc = (xs[i] + xs[i + 1]) / 2.0, (zs[j] + zs[j + 1]) / 2.0
+            return not any(a < xc < c and b < zc < d for a, b, c, d in cut)
+
+        verts: dict[tuple[int, int, int], bmesh.types.BMVert] = {}
+
+        def v(i: int, j: int, layer: int) -> bmesh.types.BMVert:
+            key = (i, j, layer)
+            if key not in verts:
+                verts[key] = self.bm.verts.new((xs[i], (y0, y1)[layer], zs[j]))
+            return verts[key]
+
+        new_faces = []
+        for j in range(len(zs) - 1):
+            for i in range(len(xs) - 1):
+                if not solid(i, j):
+                    continue
+                quads = [(v(i, j, 0), v(i + 1, j, 0), v(i + 1, j + 1, 0), v(i, j + 1, 0))]
+                if back:
+                    quads.append((v(i, j + 1, 1), v(i + 1, j + 1, 1), v(i + 1, j, 1), v(i, j, 1)))
+                if not solid(i - 1, j):
+                    quads.append((v(i, j, 0), v(i, j + 1, 0), v(i, j + 1, 1), v(i, j, 1)))
+                if not solid(i + 1, j):
+                    quads.append((v(i + 1, j, 0), v(i + 1, j, 1), v(i + 1, j + 1, 1), v(i + 1, j + 1, 0)))
+                if not solid(i, j - 1):
+                    quads.append((v(i, j, 0), v(i, j, 1), v(i + 1, j, 1), v(i + 1, j, 0)))
+                if not solid(i, j + 1):
+                    quads.append((v(i, j + 1, 0), v(i + 1, j + 1, 0), v(i + 1, j + 1, 1), v(i, j + 1, 1)))
+                new_faces.extend(self.bm.faces.new(quad) for quad in quads)
+        if bevel > 0.0:
+            self.bm.normal_update()
+            front = {vert for key, vert in verts.items() if key[2] == 0}
+            edges = [
+                edge
+                for edge in dict.fromkeys(e for f in new_faces for e in f.edges)
+                if edge.verts[0] in front
+                and edge.verts[1] in front
+                and len(edge.link_faces) == 2
+                and edge.calc_face_angle(0.0) > 0.5
+            ]
+            result = bmesh.ops.bevel(
+                self.bm, geom=edges, offset=bevel, segments=1, profile=0.5,
+                affect="EDGES", clamp_overlap=True,
+            )
+            chamfers = set(result["faces"])
+            self.bm.normal_update()
+            # Las aristas sin bisel (detrás de las mochetas, el fondo) quedan vivas.
+            pieces = [f for f in self.bm.faces if f not in before]
+            for edge in dict.fromkeys(e for f in pieces for e in f.edges):
+                if (
+                    len(edge.link_faces) == 2
+                    and edge.calc_face_angle(0.0) > 0.6
+                    and not any(f in chamfers for f in edge.link_faces)
+                ):
+                    edge.smooth = False
+        return self._finish_piece(before, color, jitter, smooth=bevel > 0.0)
+
+    def quad(
+        self,
+        corners: Iterable[Iterable[float]],
+        color: str,
+        *,
+        cuts: int = 0,
+        jitter: float = 0.0,
+    ) -> list:
+        """Cara suelta de cuatro esquinas (en orden antihorario vista desde delante).
+
+        ``cuts`` la parte en una rejilla para que recoja la oclusión por vértice.
+        """
+        before = set(self.bm.faces)
+        a, b, c, d = (Vector(p) for p in corners)
+        steps = cuts + 1
+        grid = [
+            [self.bm.verts.new(a.lerp(b, i / steps).lerp(d.lerp(c, i / steps), j / steps)) for i in range(steps + 1)]
+            for j in range(steps + 1)
+        ]
+        for j in range(steps):
+            for i in range(steps):
+                self.bm.faces.new((grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i]))
+        return self._finish_piece(before, color, jitter, smooth=False)
 
     def cylinder(
         self,
@@ -564,16 +725,20 @@ class MeshBuilder:
     def finish(
         self,
         name: str,
-        mat: bpy.types.Material | None = None,
+        mat: bpy.types.Material | Iterable[bpy.types.Material] | None = None,
         parent: bpy.types.Object | None = None,
     ) -> bpy.types.Object:
+        """La malla terminada. ``mat`` es un material o la lista de los de cada ``material(n)``."""
         _weld(self.bm)
         _sort_geometry(self.bm)
         mesh = bpy.data.meshes.new(name)
         self.bm.to_mesh(mesh)
         self.bm.free()
-        if mat is not None:
+        if isinstance(mat, bpy.types.Material):
             mesh.materials.append(mat)
+        elif mat is not None:
+            for each in mat:
+                mesh.materials.append(each)
         obj = bpy.data.objects.new(name, mesh)
         bpy.context.scene.collection.objects.link(obj)
         obj.parent = parent
@@ -750,13 +915,19 @@ def paint(
     mottling: float = 0.06,
     ground_z: float | None = 0.0,
     seed: int = 0,
+    occluders: Iterable[bpy.types.Object] | None = None,
 ) -> None:
     """Pinta los colores por vértice de varias piezas a la vez.
 
     Todas las piezas se tapan entre sí al calcular la oclusión, y el suelo
-    (``ground_z``) también, para que el objeto "pese" sobre él.
+    (``ground_z``) también, para que el objeto "pese" sobre él. Con
+    ``occluders``, solo tapan esas mallas (una pieza del kit y su contexto: los
+    vecinos que tendrá al montarla, aunque no se exporten).
     """
-    meshes = [o for o in bpy.context.scene.objects if o.type == "MESH" and not is_collision(o)]
+    if occluders is None:
+        meshes = [o for o in bpy.context.scene.objects if o.type == "MESH" and not is_collision(o)]
+    else:
+        meshes = [o for o in occluders if o.type == "MESH"]
     bvh = _world_bvh(meshes, ground_z)
     directions = _hemisphere(samples, seed)
     up = Vector((0.0, 0.0, 1.0))
@@ -817,6 +988,23 @@ def paint(
         attribute = mesh.color_attributes["Color"]
         mesh.color_attributes.active_color = attribute
         mesh.color_attributes.render_color_index = mesh.color_attributes.active_color_index
+
+
+def set_alpha(obj: bpy.types.Object, function) -> None:
+    """Escribe una máscara en el alfa del color ya pintado: ``function(posición, normal)``.
+
+    La normal es la de cada esquina (respeta las aristas vivas). El alfa no es
+    transparencia: los shaders lo leen como máscara (dónde se ha caído el revoque
+    y asoma el ladrillo, o qué caras llevan plaqueta, por ejemplo).
+    """
+    mesh = obj.data
+    attribute = mesh.color_attributes["Color"]
+    normals = mesh.corner_normals
+    for loop in mesh.loops:
+        vertex = mesh.vertices[loop.vertex_index]
+        alpha = min(1.0, max(0.0, function(vertex.co, normals[loop.index].vector)))
+        r, g, b, _ = attribute.data[loop.index].color
+        attribute.data[loop.index].color = (r, g, b, alpha)
 
 
 # --------------------------------------------------------------------------
