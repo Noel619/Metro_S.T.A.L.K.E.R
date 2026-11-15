@@ -43,6 +43,8 @@ LABEL = "#D9CDB0"
 LEATHER = "#7A5234"
 LEATHER_DARK = "#4E3422"
 BRASS_DARK = "#8A733F"
+DYNAMO_GREEN = "#3F5A52"
+DYNAMO_DARK = "#2C423C"
 
 # Dosímetro: la aguja recorre METER_SWEEP grados a cada lado del centro.
 METER_SWEEP = 45.0
@@ -422,10 +424,90 @@ def build_compass() -> bpy.types.Object:
     return root
 
 
+def build_dynamo_flashlight() -> bpy.types.Object:
+    """Linterna de dinamo: cuerpo de baquelita con la manivela en el costado derecho.
+
+    Descansa sobre su base y alumbra hacia +Y (en Godot, hacia -Z). Nodos
+    propios: ``manivela`` (gira sobre su eje X: en Godot, ``rotation.x``),
+    ``bombilla`` (material "bombilla_apagada") y el vacío ``foco``, donde
+    colgar la luz.
+    """
+    rng = random.Random(277)
+    root = tb.empty("linterna_dinamo-fisico")
+    width, length, height = 0.058, 0.105, 0.05
+    mid_z = height / 2.0
+    head = (0.0, length / 2.0, mid_z)
+
+    mb = tb.MeshBuilder(seed=277)
+    mb.box((width, length, height), (0.0, 0.0, mid_z), DYNAMO_GREEN, bevel=0.013, segments=3, cuts=5, jitter=0.03)
+    # Estrías para los dedos, arriba, y la placa del fabricante en el costado izquierdo.
+    for index in range(6):
+        mb.box((0.03, 0.0042, 0.003), (0.0, -0.04 + index * 0.0095, height + 0.0006), DYNAMO_DARK, bevel=0.001)
+    mb.box((0.0016, 0.04, 0.015), (-width / 2.0 - 0.0004, -0.008, mid_z), BRASS, rotation=(rng.uniform(-1.5, 1.5), 0.0, 0.0), bevel=0.0006)
+    for y in (-0.024, 0.008):
+        mb.cylinder(0.0018, 0.0016, (-width / 2.0 - 0.0012, y, mid_z), STEEL_DARK, rotation=(0.0, 90.0, 0.0), segments=6)
+    # Cabezal: aro cromado y reflector hundido.
+    mb.lathe(
+        (
+            (0.02, -0.002), (0.0228, 0.0), (0.0245, 0.003), (0.0245, 0.0095), (0.0226, 0.0125), (0.0202, 0.0122),
+            (0.019, 0.0095), (0.014, 0.0055), (0.008, 0.003), (0.0, 0.0022),
+        ),
+        head,
+        CHROME,
+        rotation=(-90.0, 0.0, 0.0),
+        segments=24,
+        sharp_angle=50.0,
+    )
+    # Asiento de la manivela y ojal del cordón.
+    hub = Vector((width / 2.0, -0.006, mid_z))
+    mb.lathe(((0.016, -0.002), (0.016, 0.0028), (0.013, 0.0032), (0.0, 0.0032)), hub, DYNAMO_DARK, rotation=(0.0, 90.0, 0.0), segments=18, sharp_angle=35.0)
+    eyelet = Vector((0.0, -length / 2.0, mid_z + 0.006))
+    mb.lathe(((0.0055, -0.001), (0.0055, 0.004), (0.003, 0.005), (0.0, 0.005)), eyelet, STEEL, rotation=(90.0, 0.0, 0.0), segments=10)
+    mb.tube(
+        tb.smooth_path(
+            (
+                eyelet + Vector((0.0035, -0.0055, 0.0)), (0.012, -length / 2.0 - 0.02, 0.012), (0.03, -length / 2.0 - 0.05, 0.0024),
+                (0.02, -length / 2.0 - 0.1, 0.0022), (-0.02, -length / 2.0 - 0.105, 0.0022), (-0.036, -length / 2.0 - 0.06, 0.0024),
+                (-0.014, -length / 2.0 - 0.022, 0.012), eyelet + Vector((-0.0035, -0.0055, 0.0)),
+            ),
+            5,
+        ),
+        0.0018,
+        RUBBER,
+        segments=6,
+    )
+    body = mb.finish("cuerpo", tb.material("metal", DYNAMO_GREEN), root)
+    tb.stain(body, "#5F776E", amount=0.5, scale=20.0, coverage=0.3, seed=277)
+    tb.stain(body, DYNAMO_DARK, amount=0.5, scale=13.0, coverage=0.3, seed=278)
+    tb.dent(body, (-width / 2.0, 0.03, height * 0.75), radius=0.018, depth=0.002)
+
+    crank = tb.MeshBuilder(seed=281)
+    reach = Vector((0.0, -math.cos(math.radians(22.0)), math.sin(math.radians(22.0))))
+    crank.lathe(((0.011, 0.0), (0.011, 0.0035), (0.007, 0.0065), (0.0, 0.0065)), hub + Vector((0.0032, 0.0, 0.0)), CHROME, rotation=(0.0, 90.0, 0.0), segments=16, sharp_angle=35.0)
+    crank.box((0.0036, 0.05, 0.0095), hub + Vector((0.0058, 0.0, 0.0)) + reach * 0.02, CHROME, rotation=(-22.0, 0.0, 0.0), bevel=0.0012)
+    crank.lathe(((0.0042, 0.0), (0.0062, 0.004), (0.0066, 0.015), (0.005, 0.019), (0.0, 0.019)), hub + Vector((0.0076, 0.0, 0.0)) + reach * 0.04, BAKELITE, rotation=(0.0, 90.0, 0.0), segments=12)
+    crank_obj = crank.finish("manivela", tb.material("metal", CHROME), root)
+    tb.set_origin(crank_obj, hub + Vector((0.0032, 0.0, 0.0)))
+
+    bulb = tb.MeshBuilder(seed=283)
+    bulb.cylinder(0.0036, 0.005, (head[0], head[1] + 0.0045, head[2]), BRASS, rotation=(-90.0, 0.0, 0.0), segments=8)
+    bulb.sphere(0.0046, (head[0], head[1] + 0.0085, head[2]), BULB_OFF, segments=10, scale=(1.0, 1.2, 1.0))
+    bulb_obj = bulb.finish("bombilla", tb.material("bombilla_apagada", BULB_OFF), root)
+    tb.set_origin(bulb_obj, (head[0], head[1] + 0.0085, head[2]))
+    focus = tb.empty("foco", root)
+    focus.location = (head[0], head[1] + 0.013, head[2])
+
+    tb.collision_box("linterna_dinamo", (width, length + 0.012, height), (0.0, 0.006, mid_z), root)
+    tb.collision_box("linterna_dinamo_manivela", (0.03, 0.055, 0.03), (width / 2.0 + 0.015, -0.025, mid_z + 0.007), root)
+    tb.paint({body: None, crank_obj: None, bulb_obj: None}, ao_distance=0.03, ao=0.5, seed=277)
+    return root
+
+
 def models() -> dict:
     return {
         "dosimetro": build_dosimeter,
         "linterna": build_flashlight,
         "mascara": build_mask,
         "brujula": build_compass,
+        "linterna_dinamo": build_dynamo_flashlight,
     }
