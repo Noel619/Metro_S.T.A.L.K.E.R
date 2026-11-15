@@ -25,6 +25,19 @@ jobs:
       - run: pip install "gdtoolkit==4.5.0"
       - run: make lint
 
+  ciudad:
+    name: Plano de la ciudad
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "numpy==2.5.3" "pillow==12.3.0" "shapely==2.2.0"
+      - run: make ciudad-comprobar
+      - name: Los datos exportados coinciden con los del repositorio
+        run: git diff --exit-code data/ciudad/plano.json
+
   test:
     name: Tests y prueba de red
     runs-on: ubuntu-24.04

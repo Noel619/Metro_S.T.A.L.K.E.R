@@ -3,7 +3,7 @@ GODOT ?= godot
 PYTHON ?= python3
 GD_DIRS := scripts tests tools/godot tools/capture
 
-.PHONY: help setup assets textures svg models import test test-net lint format capture
+.PHONY: help setup assets textures svg models import test test-net lint format capture ciudad ciudad-comprobar
 
 help: ## muestra esta ayuda
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-10s %s\n", $$1, $$2}'
@@ -21,6 +21,12 @@ svg: ## ilustraciones 2D con aspecto dibujado (rough.js)
 
 models: ## modelos 3D a partir de las recetas (Blender como módulo de Python)
 	$(PYTHON) tools/blender/build_assets.py
+
+ciudad: ## plano de la ciudad: datos (data/ciudad) y planos de desarrollo (docs/ciudad)
+	$(PYTHON) tools/ciudad/plano.py
+
+ciudad-comprobar: ## valida el plano de la ciudad (sin dibujar)
+	$(PYTHON) tools/ciudad/plano.py --comprobar
 
 import: ## importa los recursos en Godot
 	$(GODOT) --headless --path . --import

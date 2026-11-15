@@ -52,6 +52,7 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 | **Calidad objetivo** | Lista para publicarse, aunque por ahora no se publique |
 | **Equipo de referencia** | Ryzen 7 8700G con su gráfica integrada (Radeon 780M) |
 | **Siguiente hito** | H1 · *Prueba de Tinta* (Fase 1) |
+| **La ciudad** | Plano completo fijado: [docs/CIUDAD.md](docs/CIUDAD.md) |
 
 **Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre el visor del estilo: ← → cambian de diorama, C de cámara, ↑ ↓ suben o bajan el miedo y L enciende la linterna. Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
 
@@ -65,6 +66,18 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 | ![Hacia la Zona Cero, entre los bloques](docs/capturas/fase1_patio_dia_horizonte.jpg) | ![El depósito, hacia el pasillo de la estación](docs/capturas/fase1_deposito_limpio_persiana.jpg) |
 
 Todo lo que se ve (estanterías, cajas, persiana, bloques dañados, escombros, coches, ruinas del horizonte) está generado por código. La guía de estilo con los valores actuales está en [docs/ESTILO.md](docs/ESTILO.md).
+
+### El plano de la ciudad
+
+![Plano general de Tumansk](docs/ciudad/plano_tumansk.jpg)
+
+Tumansk ya tiene plano: **dónde está cada calle, cada manzana y cada edificio**, el relieve, el metro, las amenazas, los peligros y varias rutas a cada objetivo. Es solo para desarrollo (en el juego no hay mapas).
+
+- 1,6 × 1,2 km, con 8 zonas, el río y los túneles.
+- 357 edificios, 314 de ellos con interior.
+- 16 km de calles y 866 vehículos del atasco de la evacuación.
+
+Todo está explicado en [docs/CIUDAD.md](docs/CIUDAD.md), con cuatro hojas: [general](docs/ciudad/plano_tumansk.jpg), [subsuelo](docs/ciudad/plano_tumansk_subsuelo.jpg), [amenazas y peligros](docs/ciudad/plano_tumansk_peligros.jpg) y [rutas](docs/ciudad/plano_tumansk_rutas.jpg).
 
 ### Decisiones tomadas
 
@@ -89,7 +102,7 @@ Todo lo que se ve (estanterías, cajas, persiana, bloques dañados, escombros, c
 | Defensa | **Herramientas, no armas.** No se puede matar |
 | Enemigos | **Pocos y de gran calidad.** Los humanos son muy inteligentes, pero nunca saben nada que no hayan percibido. Los saqueadores matan |
 | Mundo vivo | Como en *Rain World*: **el mundo funciona sin el jugador**. Saqueadores y criaturas tienen rutinas de día y de noche, se cazan y se enfrentan entre ellos. El jugador es un organismo más |
-| Ciudad | Una ciudad de verdad, con lógica: los edificios se recorren por dentro y la calidad es la misma en toda la parte explorable |
+| Ciudad | Una ciudad de verdad, con lógica: los edificios se recorren por dentro y la calidad es la misma en toda la parte explorable. **El plano completo está fijado** en [docs/CIUDAD.md](docs/CIUDAD.md): 1,6 × 1,2 km a orillas del río Tumán, 8 zonas, el río y los túneles |
 | Cooperativo | **Arquitectura preparada desde el primer día**, de 2 a 4 jugadores |
 | Motor | **Godot 4.7.2** con GDScript tipado |
 | Estilo visual | **Ilustración entintada** |
@@ -97,7 +110,7 @@ Todo lo que se ve (estanterías, cajas, persiana, bloques dañados, escombros, c
 
 ### Próximos pasos
 
-1. **Fase 1**: la *Prueba de Tinta*, con las primeras capturas del estilo final para que las apruebes.
+1. **Fase 1**: cerrar la *Prueba de Tinta* (lo que queda está en la [Fase 1](#fase-1-la-prueba-de-tinta-puerta-de-estilo--tamaño-m)).
 2. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan.
 
 ---
@@ -374,18 +387,21 @@ No hay armas. No hay magia. Hay oficio.
 
 ### 6.10 Las zonas de Tumansk
 
-Las zonas se hacen **a mano**, sin generación procedural, con mucha densidad y varias rutas. Están ordenadas por distancia a la estación: cuanto más lejos, más peligro y más valor.
+La ciudad es **una sola zona continua y grande**, sin pantallas de carga, dividida en barrios que se ordenan por distancia a la estación: cuanto más lejos, más peligro y más valor. **El plano está fijado** en [docs/CIUDAD.md](docs/CIUDAD.md): dónde está cada calle, cada edificio, cada guarida y cada ruta. El trazado se decide a mano; los edificios se levantan con el kit modular a partir de ese plano y los sitios clave se terminan a mano.
 
 | # | Zona | Salida típica | Qué hay | Amenazas | Botín |
 |---|---|---|---|---|---|
-| 0 | **La Estación** | — | Tu depósito, el pasillo, la escalera, la compuerta | Ninguna: es segura | — |
-| 1 | **La Plaza** | 10–20 min | La salida del metro, quioscos, un paso subterráneo, el primer patio | La Jauría (a veces), radiación leve | Latas, ropa, chatarra |
-| 2 | **Los Bloques** | 20–40 min | Un microdistrito de bloques de paneles, una escuela, una farmacia de barrio | El Inquilino, la Jauría | Medicinas básicas, herramientas, objetos personales |
-| 3 | **La Avenida y el Mercado** | 30–60 min | Avenida de ocho carriles, grandes almacenes, mercado cubierto, pasos subterráneos | Saqueadores, el Llamador, la Jauría | Ropa, comida, electrónica |
-| 4 | **La Zona Industrial** | 45–60 min | Fábrica, playa de vías, almacenes | Un campamento de saqueadores, radiación alta | Herramientas, combustible, componentes |
-| 5 | **El Hospital** | Unos 60 min | Un hospital de varias plantas | El Inquilino, el Llamador, saqueadores | Medicinas valiosas |
-| 6 | **La Zona Cero** | La gran expedición: de 60 minutos a 2 o 3 horas | Donde cayó la bomba. No se va al cráter: el destino es un edificio partido por la mitad que está muy cerca. Radiación extrema y aire irrespirable. Aquí está la respuesta sobre tu padre | Todas, más el entorno | El final del juego |
-| — | **Los túneles** | Variable | Túneles hacia estaciones abandonadas: rutas alternativas para llegar a otras zonas | Oscuridad, agua, el Llamador | — |
+| 0 | **La Estación** | — | Tu depósito, el pasillo, la escalera, la compuerta. Es la última estación habitada hacia el norte y el este | Ninguna: es segura | — |
+| 1 | **La Plaza** | 10–20 min | La plaza redonda del Trabajo, las torres de la avenida, el vestíbulo del metro, el paso subterráneo, el primer patio y la plaza de la Estación con el tren de la evacuación | La Jauría (a veces), radiación leve | Latas, ropa, chatarra, paquetes de correos |
+| 2 | **Los Bloques** | 20–40 min | Un microdistrito de jrushchovkas y bloques de 9 plantas, la Torre de 16, la escuela, dos guarderías, la farmacia y el universam de Mineros 7, los garajes y la playa | El Inquilino, la Jauría | Medicinas básicas, conservas, herramientas, objetos personales |
+| 3 | **La Avenida y el Mercado** | 30–60 min | La avenida de ocho carriles hasta el puente, el Mercado Central, los Grandes Almacenes, el cine, el depósito de trolebuses, el socavón y el paso subterráneo del Mercado | Saqueadores (vigía), el Llamador, la Jauría | Ropa, comida, electrónica, baterías |
+| 4 | **El Barrio Obrero** | 30–50 min | El Palacio de la Cultura, la panificadora, los baños, los bomberos con su torre, la comisaría, barracones de madera y la iglesia vieja junto a la vía | La Jauría, rondas de saqueadores | Cuerda, ganzúas, equipos de respiración, azúcar y sal |
+| 5 | **La Zona Industrial** | 45–60 min | La fábrica y su búnker, la playa de vías, el puerto con sus grúas, el elevador de grano, la central térmica y el parque de carbón que aún arde | La guarida de los saqueadores, radiación alta al este, humo | Herramientas, combustible, componentes, máscaras |
+| 6 | **El Parque y el Hospital** | Unos 60 min | Al otro lado del río: el parque con su colina, la torre de paracaídas y el estadio, y el Hospital Nº 3 con la Cruz Roja | El Inquilino, la segunda jauría | Medicinas valiosas, insulina |
+| 7 | **El Centro** | 60–90 min | La ciudad vieja (fortaleza, catedral, mercaderes) y el centro estalinista (Escalinata, plaza Central, Casa de los Sóviets, teatro, hotel, circo, universidad); las casas de madera del barranco | Saqueadores (segunda guarida y vigía en la torre), el Inquilino del hotel, el Llamador del barranco | Material de laboratorio, máscaras militares, telas, conservas caseras |
+| 8 | **La Zona Cero** | La gran expedición: de 60 minutos a 2 o 3 horas | Donde cayó la bomba. No se va al cráter: el destino es un edificio partido por la mitad que está muy cerca. Radiación extrema y aire irrespirable. Aquí está la respuesta sobre tu padre | Todas, más el entorno | Las mejores máscaras y filtros (búnker de la Planta) y el final del juego |
+| — | **El río** | — | El Tumán helado, con cinco cruces: el tubo, el puente hundido, el hielo, el puente del ferrocarril y el túnel inundado | Hielo fino, vigías | — |
+| — | **Los túneles** | Variable | Dos líneas de metro con estaciones muertas, galerías y colectores: rutas alternativas para llegar a otras zonas | Oscuridad, agua, el Llamador | — |
 
 ### 6.11 La gran expedición
 
@@ -511,6 +527,7 @@ Tiene una fase propia en el plan ([Fase 4](#fase-4-el-mundo-vivo--tamaño-l)), a
 - **Guerra atómica**: la Noche de la Caída de las Bombas, hace dos años. Sin año en el calendario y sin explicaciones largas.
 - **Gobierno civil**: bajo tierra, la ciudad formó un gobierno civil en la red de túneles. No se profundiza en él, pero explica que las estaciones estén en buen estado, que haya orden y que el depósito pague impuesto.
 - **Tumansk**: una ciudad soviética ficticia inspirada en Moscú, con avenidas anchas, microdistritos de bloques de paneles y un metro monumental y frío. Todo el texto del juego está en español, carteles incluidos, pero el diseño es soviético.
+- **La ciudad cuenta su historia por capas**: la fortaleza sobre el río, el barrio de los mercaderes, el ferrocarril, la fábrica y su barrio obrero, el eje estalinista y los microdistritos. La Noche dejó su propia capa: la bomba en el nudo ferroviario, otra más lejos que tiró la autovía, los incendios y la evacuación hacia el metro. Ver [docs/CIUDAD.md](docs/CIUDAD.md).
 - **Sin facciones** y **sin nombre de estación**.
 - **Tu padre**: era stalker, enfermó, subió una última vez y no volvió. No sabes nada de él. En la superficie hay pocos rastros suyos, y ambiguos.
 - **La historia se cuenta poco, y a través del entorno**: pisos abandonados, notas, fotos, objetos personales. No hay cinemáticas.
@@ -708,6 +725,7 @@ Candidatas con licencia libre (OFL); se validan en la Fase 1.
 │   ├── fonts/
 │   └── audio/               # music/, ambience/, sfx/, ui/
 ├── data/                    # recursos .tres: el contenido del juego
+│   └── ciudad/              # el plano de la ciudad (plano.json y relieve.png), generado
 ├── scenes/                  # depot/, station/, surface/, ui/, actors/, props/, debug/
 ├── scripts/
 │   ├── core/                # autoloads y utilidades
@@ -720,6 +738,7 @@ Candidatas con licencia libre (OFL); se validan en la Fase 1.
 │   ├── blender/             # recetas de modelos (bpy) → .glb
 │   ├── svg/                 # generadores de ilustración 2D (rough.js)
 │   ├── textures/            # generadores de texturas (numpy, Pillow)
+│   ├── ciudad/              # el plano de la ciudad: datos, validación y planos de desarrollo
 │   └── capture/             # capturas automáticas para revisión
 ├── tests/
 └── docs/                    # GDD vivo, guía de estilo, registro de decisiones
@@ -849,6 +868,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F1-12** Primeras piezas de interfaz en el estilo final: una página de cuaderno con un mapa dibujado, una etiqueta de precio, un recibo con sello y una ficha de encargo.
 - [ ] **F1-13** Selección de tipografías y prueba de legibilidad.
 - [ ] **F1-14** Guía de estilo con los parámetros definitivos, más capturas y un vídeo corto. *(Hechas la guía y las capturas; falta el vídeo.)*
+- [x] **F1-15** Plano completo de la ciudad: calles, manzanas, cada edificio, relieve, subsuelo, amenazas, peligros y rutas, como datos validados y cuatro hojas de desarrollo ([docs/CIUDAD.md](docs/CIUDAD.md)).
 
 **Entregable**: dos dioramas a calidad final y la guía de estilo con los valores fijados.
 **Criterio de salida**: **tú apruebas el estilo**. Si no convence, se itera aquí; nunca se produce contenido sobre un estilo sin aprobar.
@@ -894,6 +914,8 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F3-12** Heridas básicas: mordeduras y sangrado.
 - [ ] **F3-13** Audio: oclusión, reverberación, ambiente dinámico, nieve.
 - [ ] **F3-14** **Zona 1, La Plaza**: primero con geometría provisional y después estilizada, con al menos 3 rutas a cada objetivo.
+- [ ] **F3-15** **Maqueta automática de la ciudad**: un generador en Godot lee `data/ciudad/plano.json` y levanta la ciudad entera en volúmenes sencillos (relieve, calles, edificios a su altura, escombros). Sirve para probar recorridos, vistas, sectores de carga y rendimiento antes de construir.
+- [ ] **F3-16** Kit modular de arquitectura soviética para los tipos del plano (jrushchovka, bloque de 9 plantas, casa estalinista), con daños por nivel e interiores de serie.
 
 **Entregable**: una salida de 10 a 20 minutos: subir por la escalera, llegar a un objetivo y volver.
 **Criterio de salida**: en las pruebas, los jugadores planifican antes de salir, dibujan su mapa, usan al menos dos rutas distintas y ninguna muerte se siente injusta.
@@ -926,7 +948,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F5-03** Radiación (dosis, enfermedad, pastillas) y aire (máscara, filtros, empañado).
 - [ ] **F5-04** **El Inquilino**, completo: territorio, vibraciones por la estructura, huecos y bajantes, señales.
 - [ ] **F5-05** Estetoscopio, martillo y clavos (para condenar trampillas) y cuerda por fachada.
-- [ ] **F5-06** **Zona 2, Los Bloques**, parcial: dos bloques, la farmacia y la escuela.
+- [ ] **F5-06** **Zona 2, Los Bloques**, parcial: Mineros 7 (con la farmacia, el universam y el Inquilino), una jrushchovka, la escuela Nº 21 y los garajes de la Jauría.
 - [ ] **F5-07** Encargos con pistas, 3 clientes y una reputación sencilla.
 - [ ] **F5-08** Tablero de planificación en el depósito (páginas e hilo).
 - [ ] **F5-09** Clima (nieve, viento, ventisca) y luz del día.
@@ -944,7 +966,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Objetivo**: todo el contenido dentro del juego.
 
-- [ ] **F6-01** Zonas: Los Bloques completa, La Avenida y el Mercado, La Zona Industrial y El Hospital.
+- [ ] **F6-01** Zonas: Los Bloques completa, La Avenida y el Mercado, El Barrio Obrero, La Zona Industrial, El Parque y el Hospital y El Centro, según el plano.
 - [ ] **F6-02** Los túneles como rutas alternativas.
 - [ ] **F6-03** **El Llamador**, completo.
 - [ ] **F6-04** **Los Saqueadores**, primera versión: patrullas, vigías, investigación, búsqueda en grupo, comunicación audible y memoria.
@@ -1018,7 +1040,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 | Elemento | Vertical slice (Fase 5) | Versión 1.0 |
 |---|---|---|
-| Zonas | 1 completa y 1 parcial | 6, más los túneles |
+| Zonas | 1 completa y 1 parcial | 8, más el río y los túneles (la ciudad entera del plano) |
 | Amenazas | La Jauría y el Inquilino | La Jauría, el Inquilino, el Llamador y los Saqueadores |
 | Herramientas | 12 | Unas 25 |
 | Objetos de botín distintos | Unos 30 | Unos 100 |
@@ -1032,7 +1054,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 Si hay que reducir el alcance, se recorta en este orden:
 
 1. Los túneles como rutas alternativas.
-2. La Zona Industrial.
+2. Interiores hechos a mano en la Zona Industrial y el Barrio Obrero: se quedan con los interiores de serie.
 3. La personalización avanzada del depósito.
 4. El cooperativo de 4 (se quedaría en 2).
 5. El clima variable (se quedaría solo la nieve).
@@ -1060,7 +1082,8 @@ Si hay que reducir el alcance, se recorta en este orden:
 | Que el arte generado por código no alcance la calidad buscada | Alto | Puerta de estilo en la Fase 1. El shader hace buena parte del trabajo. Iteración a base de capturas. Si un asset clave no llega al nivel, se modela a mano en Blender o se encarga |
 | Animar criaturas (sobre todo cuadrúpedos) | Alto | Pocas amenazas, así que cada una recibe tiempo de sobra; animación "a saltos", que perdona imperfecciones; ajustes procedurales |
 | Cooperativo | Alto | Red desde la Fase 0 y pruebas con dos instancias en cada fase |
-| Alcance | Alto | Estación pequeña, 5 zonas, 4 amenazas, la lista de recortes |
+| Alcance | Alto | Estación pequeña, 4 amenazas, la lista de recortes |
+| Tamaño de la ciudad: muchos edificios con interior y la misma calidad en todos | Alto | El plano es un dato validado; maqueta automática antes de construir; kit modular con interiores de serie; solo 44 sitios hechos a mano; carga por sectores de 200 m y manzanas como oclusores |
 | Que dibujar mapas en primera persona resulte incómodo | Medio | Prototipo temprano (Fase 3), trazo suavizado, regla, símbolos y pruebas con jugadores |
 | Que la muerte permanente frustre | Medio | Amenazas que avisan, herramientas de información, ninguna muerte sin señales previas |
 | Rendimiento con gráfica integrada | Medio | Iluminación horneada, presupuesto por efecto, escalado FSR |
@@ -1099,6 +1122,7 @@ Cada pregunta lleva una propuesta. Si te parece bien, basta con decir "ok".
 | Estilo, revisión 2 | El exterior transmite la sensación. Mantener esa calidad, con lógica de ciudad, en toda la parte explorable. Noche mucho más oscura (sin linterna casi no se ve). Anochecer, bien, con un ligero retoque. La silueta de la Zona Cero se queda así por ahora |
 | Historia de fondo | Gobierno civil en la red de túneles; dos años desde la Noche de la Caída de las Bombas |
 | Mundo vivo | Como en *Rain World*: el mundo funciona sin el jugador, con fase propia en el plan |
+| Ciudad | Una zona grande y continua, con la lógica de una ciudad real y nada plano. Plano completo fijado en [docs/CIUDAD.md](docs/CIUDAD.md) antes de cerrar la Fase 1 |
 
 ---
 

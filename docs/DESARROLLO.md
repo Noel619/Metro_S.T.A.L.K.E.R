@@ -28,7 +28,8 @@ Solo hacen falta para cambiar recetas o generadores.
 | Godot | 4.7.2 | Motor |
 | Python | 3.13 (la exige `bpy` 5.3) | Modelos y texturas |
 | `bpy` | 5.3.0 (`pip install bpy==5.3.0`) | Blender como módulo de Python |
-| `numpy`, `pillow` | Recientes | Texturas |
+| `numpy`, `pillow` | Recientes | Texturas y plano de la ciudad |
+| `shapely` | 2.2 | Plano de la ciudad (geometría) |
 | `gdtoolkit` | 4.5.0 | Revisar y formatear GDScript |
 | Node.js | 20 o superior | Ilustraciones 2D (rough.js) |
 
@@ -46,6 +47,8 @@ Solo hacen falta para cambiar recetas o generadores.
 | `make lint` | Revisa el estilo del código GDScript |
 | `make capture` | Capturas de las escenas de revisión en `docs/capturas/` |
 | `make setup` | Reescribe controles, capas y buses de audio en `project.godot` |
+| `make ciudad` | Valida el plano de la ciudad, exporta `data/ciudad/` y dibuja las hojas de `docs/ciudad/` |
+| `make ciudad-comprobar` | Solo valida y exporta el plano (lo que hace la CI) |
 
 ## Los pipelines de arte
 
@@ -74,6 +77,20 @@ El nombre del material elige el material de Godot si existe `assets/materials/<n
 ### Texturas
 
 `tools/textures/generate_textures.py` genera el papel, los cuatro tonos de tramado, las rampas del sombreado por bandas y los ruidos. Todas se pueden repetir sin costuras.
+
+### El plano de la ciudad
+
+`tools/ciudad/` contiene el plano de Tumansk ([CIUDAD.md](CIUDAD.md)):
+
+| Archivo | Qué hace |
+|---|---|
+| `datos.py` | Los datos: zonas, calles, edificios, patios, vehículos, hitos, subsuelo, amenazas, peligros y rutas |
+| `geo.py` | Marcos de referencia (el eje monumental) y figuras |
+| `relieve.py` | El terreno: río, loma, barranco, colina y cráter |
+| `plano.py` | Valida, calcula daños, escombros y relieve, y exporta |
+| `dibujo.py` | Dibuja las cuatro hojas de desarrollo |
+
+Para dibujar una sola hoja: `python3 tools/ciudad/plano.py --plano=general` (también `subsuelo`, `peligros` o `rutas`).
 
 ## Capturas
 
