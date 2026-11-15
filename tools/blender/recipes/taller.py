@@ -54,9 +54,11 @@ def build_scale() -> bpy.types.Object:
     """
     rng = random.Random(61)
     root = tb.empty("bascula-estatico")
-    width, depth, base_h = 0.56, 0.27, 0.105
-    pivot = (0.0, 0.0, base_h + 0.07)
-    head_r, head_t = 0.40, 0.085
+    width, depth, base_h = 0.62, 0.27, 0.105
+    # El abanico va sobre una columna, por encima de los platos: así no se tocan.
+    pivot = (0.0, 0.0, base_h + 0.2)
+    head_r, head_t = 0.36, 0.085
+    pan_x, bowl = 0.235, 0.87
     front = -head_t / 2.0
 
     mb = tb.MeshBuilder(seed=61)
@@ -74,7 +76,9 @@ def build_scale() -> bpy.types.Object:
 
     # Cabezal en abanico, con cerco y esfera por las dos caras (la del cliente también).
     neck_z = base_h + 0.01
-    mb.box((0.15, head_t + 0.02, 0.05), (0.0, 0.0, neck_z + 0.02), ENAMEL_BLUE, bevel=0.012, segments=2)
+    column_top = pivot[2] - 0.04
+    mb.box((0.16, head_t + 0.03, 0.05), (0.0, 0.0, neck_z + 0.02), ENAMEL_BLUE, bevel=0.012, segments=2)
+    mb.box((0.094, head_t - 0.012, column_top - neck_z), (0.0, 0.0, (column_top + neck_z) / 2.0), ENAMEL_BLUE, bevel=0.012, segments=2, cuts=2)
     mb.prism(_sector(head_r, SCALE_SWEEP + 9.0, 0.06), head_t, (0.0, 0.0, pivot[2] - 0.045), ENAMEL_BLUE, rotation=(90.0, 0.0, 0.0), bevel=0.012, segments=2)
     for side in (-1.0, 1.0):
         mb.prism(
@@ -112,23 +116,26 @@ def build_scale() -> bpy.types.Object:
     # Platos: a la izquierda el de las pesas, plano; a la derecha el cuenco del género.
     pans = tb.MeshBuilder(seed=67)
     pan_z = base_h + 0.085
-    for x, tilt in ((-0.18, rng.uniform(-1.0, 1.0)), (0.18, rng.uniform(-1.0, 1.0))):
+    for x, tilt in ((-pan_x, rng.uniform(-1.0, 1.0)), (pan_x, rng.uniform(-1.0, 1.0))):
         pans.lathe(((0.0, 0.0), (0.03, 0.0), (0.03, 0.006), (0.013, 0.012), (0.013, 0.06), (0.0, 0.06)), (x, 0.0, base_h + 0.015), STEEL_DARK, segments=12)
         for angle in (0.0, 90.0):
             pans.box((0.15, 0.022, 0.012), (x, 0.0, pan_z - 0.012), STEEL_DARK, rotation=(0.0, tilt, angle), bevel=0.004)
     pans.lathe(
         ((0.0, 0.0), (0.098, 0.0), (0.108, 0.004), (0.108, 0.012), (0.1, 0.015), (0.092, 0.011), (0.0, 0.011)),
-        (-0.18, 0.0, pan_z - 0.006),
+        (-pan_x, 0.0, pan_z - 0.006),
         ALUMINIUM,
         segments=28,
         jitter=0.03,
     )
     pans.lathe(
-        (
-            (0.0, 0.0), (0.05, 0.001), (0.1, 0.014), (0.135, 0.04), (0.148, 0.064), (0.154, 0.066),
-            (0.153, 0.07), (0.145, 0.068), (0.13, 0.044), (0.096, 0.02), (0.048, 0.007), (0.0, 0.006),
-        ),
-        (0.18, 0.0, pan_z - 0.006),
+        [
+            (radius * bowl, z)
+            for radius, z in (
+                (0.0, 0.0), (0.05, 0.001), (0.1, 0.014), (0.135, 0.04), (0.148, 0.064), (0.154, 0.066),
+                (0.153, 0.07), (0.145, 0.068), (0.13, 0.044), (0.096, 0.02), (0.048, 0.007), (0.0, 0.006),
+            )
+        ],
+        (pan_x, 0.0, pan_z - 0.006),
         ALUMINIUM,
         segments=28,
         sharp_angle=60.0,
@@ -136,7 +143,7 @@ def build_scale() -> bpy.types.Object:
     )
     pans_obj = pans.finish("platos", tb.material("metal", ALUMINIUM), root)
     tb.stain(pans_obj, ALUMINIUM_DARK, amount=0.6, scale=7.0, coverage=0.35, seed=67)
-    tb.dent(pans_obj, (0.3, -0.08, pan_z + 0.05), radius=0.06, depth=0.006)
+    tb.dent(pans_obj, (pan_x + 0.1, -0.08, pan_z + 0.05), radius=0.06, depth=0.006)
 
     # Aguja (por las dos caras), con contrapeso. Se construye marcando el cero.
     needle = tb.MeshBuilder(seed=71)
@@ -151,8 +158,8 @@ def build_scale() -> bpy.types.Object:
     needle_obj = needle.finish("aguja", tb.material("metal", INK), root)
     tb.set_origin(needle_obj, pivot)
 
-    tb.collision_box("bascula_base", (width + 0.12, depth + 0.04, base_h + 0.16), (0.0, 0.0, (base_h + 0.16) / 2.0), root)
-    tb.collision_box("bascula_esfera", (0.5, head_t + 0.02, head_r), (0.0, 0.0, pivot[2] + head_r / 2.0), root)
+    tb.collision_box("bascula_base", (2.0 * pan_x + 0.28, depth + 0.04, base_h + 0.15), (0.0, 0.0, (base_h + 0.15) / 2.0), root)
+    tb.collision_box("bascula_esfera", (0.46, head_t + 0.02, head_r + 0.045), (0.0, 0.0, pivot[2] - 0.045 + (head_r + 0.045) / 2.0), root)
     tb.paint({body: None, pans_obj: None, needle_obj: None}, ao_distance=0.12, seed=61)
     return root
 
