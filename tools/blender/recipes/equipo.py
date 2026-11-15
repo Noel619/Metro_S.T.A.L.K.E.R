@@ -49,6 +49,9 @@ BINO_BODY = "#4A4F50"
 BINO_DARK = "#35393B"
 LEATHERETTE = "#3D3833"
 BINO_BAND = "#6E6248"
+CLOCK_ENAMEL = "#8FA08A"
+CLOCK_DARK = "#6C7C68"
+BELL = "#B0A77E"
 
 # Dosímetro: la aguja recorre METER_SWEEP grados a cada lado del centro.
 METER_SWEEP = 45.0
@@ -604,6 +607,134 @@ def build_binoculars() -> bpy.types.Object:
     return root
 
 
+def build_alarm_clock() -> bpy.types.Object:
+    """Despertador de cuerda de dos campanas, de pie sobre sus tres patas, con la esfera hacia -Y.
+
+    Nodos propios, con el origen en su eje: ``aguja_horas``, ``aguja_minutos``
+    y ``aguja_alarma`` (giran en el sentido del reloj con ``rotation.z``
+    negativo en Godot; a 0° marcan las doce), ``martillo`` (el badajo, que
+    oscila entre las campanas con ``rotation.z``) y ``llave_cuerda`` (gira
+    sobre su eje Y: en Godot, ``rotation.z``).
+    """
+    rng = random.Random(349)
+    root = tb.empty("despertador-fisico")
+    radius, half_d = 0.052, 0.023
+    centre = Vector((0.0, 0.0, 0.068))
+    dial_y = -(half_d - 0.004)  # la esfera va hundida tras el aro
+
+    def face(distance: float, angle: float, y: float) -> tuple[float, float, float]:
+        """Punto de la esfera a ``distance`` del centro y ``angle`` grados desde las doce, en el sentido del reloj."""
+        a = math.radians(angle)
+        return (centre.x + distance * math.sin(a), y, centre.z + distance * math.cos(a))
+
+    mb = tb.MeshBuilder(seed=349)
+    # Caja esmaltada, aro cromado y esfera.
+    mb.lathe(
+        ((0.0, -half_d), (radius - 0.007, -half_d), (radius, -half_d + 0.005), (radius, half_d - 0.007), (radius - 0.0045, half_d - 0.004), (0.0, half_d - 0.004)),
+        centre,
+        CLOCK_ENAMEL,
+        rotation=(90.0, 0.0, 0.0),
+        segments=32,
+        sharp_angle=35.0,
+        jitter=0.03,
+    )
+    mb.lathe(
+        ((radius + 0.0005, half_d - 0.008), (radius + 0.0026, half_d - 0.006), (radius + 0.0026, half_d - 0.001), (radius - 0.001, half_d + 0.0012), (radius - 0.0046, half_d - 0.0003), (radius - 0.0046, half_d - 0.004)),
+        centre,
+        CHROME,
+        rotation=(90.0, 0.0, 0.0),
+        segments=32,
+        sharp_angle=35.0,
+    )
+    mb.lathe(((radius - 0.0047, half_d - 0.0039), (0.02, half_d - 0.0038), (0.0, half_d - 0.0037)), centre, DIAL_CREAM, rotation=(90.0, 0.0, 0.0), segments=32)
+    for index in range(60):
+        angle = index * 6.0
+        if index % 5 == 0:
+            quarter = index % 15 == 0
+            length = 0.009 if quarter else 0.0065
+            mb.box((0.0032 if quarter else 0.0018, 0.0005, length), face(radius - 0.009 - length / 2.0, angle, dial_y - 0.0003), INK, rotation=(0.0, angle, 0.0))
+        else:
+            mb.box((0.0007, 0.0005, 0.0022), face(radius - 0.0105, angle, dial_y - 0.0003), INK, rotation=(0.0, angle, 0.0))
+    # Tres patas: dos delante y una detrás.
+    for foot in (Vector((-0.036, -0.012, 0.0055)), Vector((0.036, -0.012, 0.0055)), Vector((0.0, 0.034, 0.0055))):
+        top = Vector((foot.x * 0.72, foot.y * 0.55, centre.z - radius + 0.012 + abs(foot.x) * 0.18))
+        mb.bar(top, foot, 0.0034, CHROME, 8)
+        mb.sphere(0.0055, foot, CHROME, segments=10)
+    # Campanas sobre sus postes, y el asa que las une.
+    bell_r, lean = 0.023, 33.0
+    tops = []
+    for side in (-1.0, 1.0):
+        axis = Vector((side * math.sin(math.radians(lean)), 0.0, math.cos(math.radians(lean))))
+        base = centre + axis * (radius + 0.02)
+        mb.bar(centre + axis * (radius - 0.003), base + axis * 0.004, 0.0032, CHROME, 8)
+        mb.lathe(
+            ((0.0, 0.0012), (bell_r - 0.002, 0.0006), (bell_r, 0.0), (bell_r + 0.0005, 0.004), (bell_r - 0.0025, 0.011), (bell_r - 0.009, 0.0175), (0.006, 0.0205), (0.0, 0.021)),
+            base,
+            BELL,
+            rotation=_aim(axis),
+            segments=24,
+            sharp_angle=50.0,
+            jitter=0.04,
+        )
+        mb.lathe(((0.0, 0.0), (0.0048, 0.0), (0.0048, 0.003), (0.003, 0.0055), (0.0, 0.0055)), base + axis * 0.0205, CHROME, rotation=_aim(axis), segments=8)
+        tops.append(base + axis * 0.0255)
+    arch = centre.z + radius + 0.058
+    mb.tube(tb.smooth_path((tops[0], (-0.04, 0.0, arch - 0.01), (-0.02, 0.0, arch - 0.002), (0.0, 0.0, arch), (0.02, 0.0, arch - 0.002), (0.04, 0.0, arch - 0.01), tops[1]), 4), 0.0026, CHROME, segments=8)
+    # Trasera: mandos de poner en hora y la palanca de la alarma; segunda llave, la del timbre.
+    back = half_d
+    for x in (-0.014, 0.014):
+        mb.lathe(((0.0, 0.0), (0.0045, 0.0), (0.0045, 0.006), (0.0, 0.006)), (x, back, centre.z + 0.02), CHROME, rotation=(-90.0, 0.0, 0.0), segments=10)
+    mb.box((0.004, 0.006, 0.012), (0.0, back + 0.002, centre.z + 0.036), CHROME, rotation=(0.0, rng.uniform(-18.0, 18.0), 0.0), bevel=0.001)
+
+    def key(builder: tb.MeshBuilder, at: Vector, turn: float) -> None:
+        """Llave de mariposa en la trasera."""
+        builder.cylinder(0.0022, 0.012, at + Vector((0.0, 0.006, 0.0)), CHROME, rotation=(90.0, 0.0, 0.0), segments=8)
+        builder.prism(((-0.011, -0.004), (-0.004, -0.0065), (0.004, -0.0065), (0.011, -0.004), (0.011, 0.004), (0.004, 0.0065), (-0.004, 0.0065), (-0.011, 0.004)), 0.0022, at + Vector((0.0, 0.012, 0.0)), CHROME, rotation=(90.0, turn, 0.0), bevel=0.0007)
+
+    key(mb, Vector((0.022, back, centre.z - 0.014)), 25.0)
+    body = mb.finish("caja", tb.material("metal", CLOCK_ENAMEL), root)
+    tb.stain(body, CLOCK_DARK, amount=0.5, scale=22.0, coverage=0.3, seed=349)
+    tb.stain(body, RUST, amount=0.6, scale=17.0, coverage=0.16, seed=350)
+    tb.dent(body, (radius * 0.7, 0.0, centre.z - radius * 0.7), radius=0.022, depth=0.0025)
+
+    parts = {body: None}
+    hands = (
+        ("aguja_alarma", 0.022, 0.0022, 0.0012, BRASS_DARK, 212.0),
+        ("aguja_horas", 0.026, 0.0046, 0.0024, INK, 304.5),
+        ("aguja_minutos", 0.039, 0.003, 0.0036, INK, 54.0),
+    )
+    for name, length, width, lift, color, shown in hands:
+        hand = tb.MeshBuilder(seed=353)
+        y = dial_y - lift
+        hand.prism(((-width / 2.0, -0.006), (width / 2.0, -0.006), (width * 0.3, length - 0.004), (0.0, length), (-width * 0.3, length - 0.004)), 0.0006, (centre.x, y, centre.z), color, rotation=(90.0, 0.0, 0.0))
+        hand.cylinder(0.003 if name != "aguja_minutos" else 0.0042, 0.0008 if name != "aguja_minutos" else 0.0018, (centre.x, y - (0.0 if name != "aguja_minutos" else 0.0006), centre.z), BRASS if name == "aguja_minutos" else color, rotation=(90.0, 0.0, 0.0), segments=10)
+        hand_obj = hand.finish(name, tb.material("metal", color), root)
+        tb.set_origin(hand_obj, (centre.x, y, centre.z))
+        # Un giro positivo sobre Y, en Blender, va en el sentido del reloj visto de frente.
+        hand_obj.rotation_euler = (0.0, math.radians(shown), 0.0)
+        parts[hand_obj] = None
+
+    hammer = tb.MeshBuilder(seed=359)
+    pivot = centre + Vector((0.0, 0.0, radius - 0.002))
+    hammer.bar(pivot, pivot + Vector((0.0, 0.0, 0.024)), 0.0018, CHROME, 6)
+    hammer.sphere(0.0058, pivot + Vector((0.0, 0.0, 0.027)), CHROME, segments=10)
+    hammer_obj = hammer.finish("martillo", tb.material("metal", CHROME), root)
+    tb.set_origin(hammer_obj, pivot)
+    parts[hammer_obj] = None
+
+    wind = tb.MeshBuilder(seed=367)
+    wind_at = Vector((-0.022, back, centre.z - 0.014))
+    key(wind, wind_at, -40.0)
+    wind_obj = wind.finish("llave_cuerda", tb.material("metal", CHROME), root)
+    tb.set_origin(wind_obj, wind_at)
+    parts[wind_obj] = None
+    bpy.context.view_layer.update()
+
+    tb.collision_box("despertador", (0.125, 0.07, arch + 0.003), (0.0, 0.006, (arch + 0.003) / 2.0), root)
+    tb.paint(parts, ao_distance=0.03, ao=0.5, seed=349)
+    return root
+
+
 def models() -> dict:
     return {
         "dosimetro": build_dosimeter,
@@ -612,4 +743,5 @@ def models() -> dict:
         "brujula": build_compass,
         "linterna_dinamo": build_dynamo_flashlight,
         "prismaticos": build_binoculars,
+        "despertador": build_alarm_clock,
     }
