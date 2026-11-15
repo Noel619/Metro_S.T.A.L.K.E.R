@@ -29,6 +29,8 @@ PLANK_DARK = "#51463B"
 PLANK_LIGHT = "#9C8E78"
 PLANK_PAINT = "#7C93A0"
 KNOT = "#55463A"
+CROWBAR_PAINT = "#46535A"
+CROWBAR_STEEL = "#868B88"
 
 
 def _grip(root: bpy.types.Object, at: tuple[float, float, float]) -> None:
@@ -147,8 +149,58 @@ def build_plank() -> bpy.types.Object:
     return root
 
 
+def build_crowbar() -> bpy.types.Object:
+    """Palanca de barra hexagonal: cuello de cisne con uña en una punta y boca de cincel en la otra.
+
+    Va tumbada a lo largo de X, con el cuello hacia +X curvándose hacia +Y.
+    """
+    root = tb.empty("palanca-fisico")
+    radius = 0.009
+    z = radius
+
+    mb = tb.MeshBuilder(seed=251)
+    # Barra y cuello de cisne, de una pieza.
+    bend, bend_r = Vector((0.2, 0.046)), 0.046
+    # Con un anillo cada 3 cm, para que la barra recoja el óxido y el desgaste.
+    path = [(-0.31 + 0.03 * index, 0.0, z) for index in range(18)]
+    for index in range(1, 9):
+        angle = math.radians(-90.0 + 160.0 * index / 8.0)
+        path.append((bend.x + bend_r * math.cos(angle), bend.y + bend_r * math.sin(angle), z))
+    mb.tube(path, radius, CROWBAR_PAINT, segments=6, jitter=0.03)
+    end_angle = math.radians(70.0)
+    neck_end = Vector((bend.x + bend_r * math.cos(end_angle), bend.y + bend_r * math.sin(end_angle)))
+    along = Vector((-math.sin(end_angle), math.cos(end_angle)))
+    across = Vector((along.y, -along.x))
+
+    def tongue(start: Vector, along: Vector, across: Vector, length: float, base: float, tip: float, lift: float) -> list[tuple[float, float]]:
+        """Contorno de una lengüeta que se afila: de ``base`` de ancho a ``tip`` en la punta, algo desviada."""
+        far = start + along * length + across * lift
+        points = [start + across * (base / 2.0), far + across * (tip / 2.0), far - across * (tip / 2.0), start - across * (base / 2.0)]
+        area = sum(a.x * b.y - b.x * a.y for a, b in zip(points, points[1:] + points[:1]))
+        if area < 0.0:
+            points.reverse()
+        return [tuple(point) for point in points]
+
+    # Uña: se aplana y se abre en dos dientes para sacar clavos.
+    mb.prism(tongue(neck_end - along * 0.006, along, across, 0.05, 0.017, 0.004, -0.004), 0.024, (0.0, 0.0, z), CROWBAR_STEEL, bevel=0.002)
+    tip = neck_end + along * 0.044 - across * 0.004
+    mb.prism(tongue(tip - along * 0.014, along, across, 0.016, 0.0015, 0.007, 0.0), 0.0075, (0.0, 0.0, z), INK)
+    # Boca de cincel en la otra punta, algo girada.
+    mb.prism(tongue(Vector((-0.304, 0.0)), Vector((-1.0, 0.0)), Vector((0.0, 1.0)), 0.07, 0.017, 0.0025, 0.012), 0.022, (0.0, 0.0, z), CROWBAR_STEEL, bevel=0.002)
+    bar = mb.finish("palanca", tb.material("metal", CROWBAR_PAINT), root)
+    tb.stain(bar, STEEL_WORN, amount=0.55, scale=16.0, coverage=0.3, seed=251)
+    tb.stain(bar, RUST, amount=0.7, scale=9.0, coverage=0.28, seed=252)
+
+    _grip(root, (-0.08, 0.0, z))
+    tb.collision_box("palanca_barra", (0.59, 0.022, 0.024), (-0.085, 0.004, z), root)
+    tb.collision_box("palanca_cuello", (0.075, 0.13, 0.024), (0.215, 0.062, z), root)
+    tb.paint({bar: None}, ao_distance=0.03, ao=0.45, seed=251)
+    return root
+
+
 def models() -> dict:
     return {
         "martillo": build_hammer,
         "tablon": build_plank,
+        "palanca": build_crowbar,
     }
