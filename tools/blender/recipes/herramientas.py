@@ -37,6 +37,11 @@ RUBBER = "#2A2725"
 BOLT = "#8C918D"
 HEMP = "#B39B6E"
 HEMP_DARK = "#8A744C"
+WALNUT = "#6B4630"
+WALNUT_DARK = "#4A3122"
+BRASS = "#B59A5A"
+BLADE = "#8E9492"
+BLADE_EDGE = "#B4B8B4"
 
 
 def _grip(root: bpy.types.Object, at: tuple[float, float, float]) -> None:
@@ -381,6 +386,67 @@ def build_rope() -> bpy.types.Object:
     return root
 
 
+def build_pocket_knife() -> bpy.types.Object:
+    """Navaja de bolsillo, abierta y tumbada: la hoja hacia +X y el mango hacia -X, con el filo hacia -Y.
+
+    La ``hoja`` es un nodo propio con el origen en el eje: se pliega dentro
+    del mango girándola 180° (en Godot, ``rotation.y`` de 0 a -180°).
+    """
+    rng = random.Random(311)
+    root = tb.empty("navaja-fisico")
+    liner, gap, scale = 0.0008, 0.003, 0.0036
+    mid_z = scale + liner + gap / 2.0
+    outline = [(0.006, -0.0108), (-0.03, -0.0116), (-0.07, -0.0118), (-0.097, -0.0108), (-0.105, -0.0062), (-0.1065, 0.0), (-0.105, 0.0062), (-0.097, 0.0106), (0.006, 0.0098), (0.0095, 0.0)]
+
+    def cut(points: list[tuple[float, float]], x_min: float, x_max: float, inset: float) -> list[tuple[float, float]]:
+        """El contorno del mango entre dos X, metido ``inset`` hacia dentro: cachas y virolas."""
+        top = lambda x: 0.0098 + (0.0106 - 0.0098) * min(1.0, (0.006 - x) / 0.103)  # noqa: E731
+        bottom = lambda x: -0.0108 - 0.001 * math.sin(math.pi * min(1.0, max(0.0, (0.006 - x) / 0.103)))  # noqa: E731
+        steps = 6
+        xs = [x_max + (x_min - x_max) * i / steps for i in range(steps + 1)]
+        return _ccw([(x, bottom(x) + inset) for x in xs] + [(x, top(x) - inset) for x in reversed(xs)])
+
+    mb = tb.MeshBuilder(seed=311)
+    for side in (-1.0, 1.0):
+        z_liner = mid_z + side * (gap / 2.0 + liner / 2.0)
+        z_scale = mid_z + side * (gap / 2.0 + liner + scale / 2.0)
+        mb.prism(_ccw(outline), liner, (0.0, 0.0, z_liner), BLADE)
+        # Cachas de nogal entre dos virolas de latón, con sus tres remaches.
+        mb.prism(cut(outline, -0.091, -0.013, 0.0004), scale, (0.0, 0.0, z_scale), WALNUT, bevel=0.0011, jitter=0.06)
+        mb.prism(_ccw([(0.006, -0.0108), (-0.013, -0.0112), (-0.013, 0.0101), (0.006, 0.0098), (0.0095, 0.0)]), scale, (0.0, 0.0, z_scale), BRASS, bevel=0.0011)
+        mb.prism(_ccw([(-0.091, -0.0112), (-0.097, -0.0108), (-0.105, -0.0062), (-0.1065, 0.0), (-0.105, 0.0062), (-0.097, 0.0106), (-0.091, 0.0105)]), scale, (0.0, 0.0, z_scale), BRASS, bevel=0.0011)
+        for x in (-0.03, -0.052, -0.074):
+            mb.cylinder(0.0015, 0.0008, (x, rng.uniform(-0.001, 0.001), z_scale + side * scale / 2.0), BRASS, segments=8)
+        mb.cylinder(0.0028, 0.001, (0.0, 0.0, z_scale + side * scale / 2.0), BLADE, segments=10)
+    # Muelle: el fleje del lomo, entre las dos platinas.
+    mb.prism(_ccw([(-0.006, 0.0096), (-0.097, 0.0104), (-0.104, 0.0062), (-0.1, 0.0052), (-0.094, 0.0082), (-0.006, 0.0076)]), gap, (0.0, 0.0, mid_z), BLADE)
+    # Anilla para el cordón.
+    ring = Vector((-0.1105, 0.0, mid_z))
+    mb.tube([ring + Vector((0.0055 * math.cos(math.radians(a)), 0.0055 * math.sin(math.radians(a)), 0.0)) for a in range(0, 361, 30)], 0.0009, BLADE, segments=6, caps=False)
+    handle = mb.finish("mango", tb.material("metal", BRASS), root)
+    tb.stain(handle, WALNUT_DARK, amount=0.5, scale=40.0, coverage=0.35, seed=311)
+
+    blade = tb.MeshBuilder(seed=313)
+    half = 0.0074
+    blade.prism(
+        _ccw([(-0.0045, -half), (0.012, -half), (0.05, -0.0071), (0.068, -0.0042), (0.0815, 0.0012), (0.066, 0.0062), (0.054, half), (-0.0045, half)]),
+        0.0024,
+        (0.0, 0.0, mid_z),
+        BLADE,
+    )
+    # El bisel del filo, más claro, y la uñeta para abrirla.
+    blade.prism(_ccw([(0.012, -half), (0.05, -0.0071), (0.068, -0.0042), (0.0815, 0.0012), (0.066, -0.0022), (0.05, -0.0046), (0.012, -0.0048)]), 0.0026, (0.0, 0.0, mid_z), BLADE_EDGE)
+    for side in (-1.0, 1.0):
+        blade.box((0.017, 0.0011, 0.0002), (0.034, 0.0048, mid_z + side * 0.0012), INK, rotation=(0.0, 0.0, 2.0))
+    blade_obj = blade.finish("hoja", tb.material("metal", BLADE), root)
+    tb.set_origin(blade_obj, (0.0, 0.0, mid_z))
+
+    _grip(root, (-0.05, 0.0, mid_z))
+    tb.collision_box("navaja", (0.2, 0.024, 2.0 * mid_z), (-0.015, 0.0, mid_z), root)
+    tb.paint({handle: None, blade_obj: None}, ao_distance=0.012, ao=0.45, seed=311)
+    return root
+
+
 def models() -> dict:
     return {
         "martillo": build_hammer,
@@ -388,4 +454,5 @@ def models() -> dict:
         "palanca": build_crowbar,
         "cizalla": build_bolt_cutter,
         "cuerda": build_rope,
+        "navaja": build_pocket_knife,
     }
