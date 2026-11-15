@@ -40,6 +40,9 @@ RUBBER_DARK = "#474C46"
 STRAP = "#3D403B"
 GLASS = "#262A30"
 LABEL = "#D9CDB0"
+LEATHER = "#7A5234"
+LEATHER_DARK = "#4E3422"
+BRASS_DARK = "#8A733F"
 
 # Dosímetro: la aguja recorre METER_SWEEP grados a cada lado del centro.
 METER_SWEEP = 45.0
@@ -326,9 +329,103 @@ def build_mask() -> bpy.types.Object:
     return root
 
 
+def build_compass() -> bpy.types.Object:
+    """Brújula de pulsera: caja de baquelita, bisel de latón con alzas y correa de cuero.
+
+    Descansa boca arriba, con el norte de la esfera hacia +Y (en Godot, hacia
+    -Z). Nodos propios: ``aguja`` (gira sobre su eje Z: en Godot,
+    ``rotation.y``; en reposo marca el norte) y ``bisel`` (el aro giratorio).
+    """
+    rng = random.Random(257)
+    root = tb.empty("brujula-fisico")
+    lift = 0.0022  # la correa pasa por debajo de la caja
+    dial_z = lift + 0.0092
+
+    mb = tb.MeshBuilder(seed=257)
+    mb.lathe(
+        ((0.0, 0.0), (0.027, 0.0), (0.03, 0.003), (0.03, 0.0118), (0.0282, 0.0135), (0.0256, 0.0135), (0.0256, 0.009), (0.0, 0.009)),
+        (0.0, 0.0, lift),
+        BAKELITE,
+        segments=28,
+        sharp_angle=40.0,
+        jitter=0.05,
+    )
+    mb.lathe(((0.0254, 0.0), (0.012, 0.0001), (0.0, 0.0002)), (0.0, 0.0, dial_z), DIAL_CREAM, segments=28)
+    # Esfera: una marca cada 15°, más larga en los cuatro rumbos, y el norte en rojo.
+    for index in range(24):
+        angle = index * 15.0
+        if index == 0:
+            continue
+        cardinal = index % 6 == 0
+        mark = 0.007 if cardinal else 0.0035
+        distance = 0.0235 - mark / 2.0
+        a = math.radians(angle)
+        mb.box((0.0016 if cardinal else 0.0009, mark, 0.0004), (distance * math.sin(a), distance * math.cos(a), dial_z + 0.0004), INK, rotation=(0.0, 0.0, -angle))
+    mb.prism(((-0.0035, 0.0165), (0.0035, 0.0165), (0.0, 0.0238)), 0.0004, (0.0, 0.0, dial_z + 0.0004), SIGNAL_RED)
+    mb.lathe(((0.0, 0.0), (0.0016, 0.0), (0.0016, 0.0024), (0.0, 0.0026)), (0.0, 0.0, dial_z + 0.0002), BRASS, segments=8)
+    # Orejas de la correa.
+    for side in (-1.0, 1.0):
+        for x in (-0.0105, 0.0105):
+            mb.box((0.003, 0.008, 0.005), (x, side * 0.0325, lift + 0.0035), BAKELITE, bevel=0.001)
+        mb.bar((-0.0105, side * 0.0345, lift + 0.0035), (0.0105, side * 0.0345, lift + 0.0035), 0.0011, STEEL, 6)
+    body = mb.finish("caja", tb.material("metal", BAKELITE), root)
+    tb.stain(body, "#4A4038", amount=0.5, scale=60.0, coverage=0.3, seed=257)
+
+    # Correa: pasa por debajo de la caja; un cabo lleva la hebilla y el otro, los agujeros.
+    strap = tb.MeshBuilder(seed=263)
+    strap.ribbon(
+        tb.smooth_path(((0.0, -0.118, 0.0012), (0.0005, -0.07, 0.0012), (0.0, -0.036, 0.0013), (0.0, 0.0, 0.0011), (0.0, 0.036, 0.0013), (-0.0008, 0.08, 0.0012), (0.0, 0.142, 0.0012)), 4),
+        0.018,
+        0.0022,
+        LEATHER,
+        center=(0.0, 0.0, -1.0),
+    )
+    for index in range(5):
+        strap.lathe(((0.0, 0.0), (0.0013, 0.0), (0.0, 0.0002)), (0.0, 0.086 + index * 0.011, 0.0024), INK, segments=6)
+    strap.prism(((-0.009, 0.0), (0.009, 0.0), (0.0, 0.012)), 0.0022, (0.0, 0.142, 0.0012), LEATHER)
+    buckle_y = -0.121
+    for x in (-0.0115, 0.0115):
+        strap.bar((x, buckle_y - 0.009, 0.0022), (x, buckle_y + 0.009, 0.0022), 0.0012, STEEL, 6)
+    for y in (-0.009, 0.009):
+        strap.bar((-0.0115, buckle_y + y, 0.0022), (0.0115, buckle_y + y, 0.0022), 0.0012, STEEL, 6)
+    strap.bar((0.0, buckle_y + 0.008, 0.0026), (0.001, buckle_y - 0.012, 0.0032), 0.0009, STEEL, 6)
+    strap.box((0.021, 0.006, 0.0032), (0.0, -0.1, 0.0018), LEATHER_DARK, bevel=0.0006)
+    strap_obj = strap.finish("correa", tb.material("cuero", LEATHER), root)
+    tb.stain(strap_obj, LEATHER_DARK, amount=0.55, scale=30.0, coverage=0.4, seed=263)
+
+    bezel = tb.MeshBuilder(seed=269)
+    bezel_z = lift + 0.0122
+    bezel.lathe(((0.0288, 0.0), (0.0316, 0.0012), (0.0316, 0.0042), (0.0292, 0.0054), (0.0262, 0.0046), (0.0262, 0.0022)), (0.0, 0.0, bezel_z), BRASS, segments=28, sharp_angle=35.0)
+    for index in range(28):
+        a = math.radians(index * 360.0 / 28.0 + 6.0)
+        bezel.box((0.0012, 0.0016, 0.0028), (0.0319 * math.cos(a), 0.0319 * math.sin(a), bezel_z + 0.0027), BRASS_DARK, rotation=(0.0, 0.0, math.degrees(a)))
+    # Alzas para tomar rumbos: una ranura delante y un pínula detrás.
+    bezel.box((0.007, 0.0022, 0.0075), (0.0, 0.0292, bezel_z + 0.0085), BRASS, bevel=0.0006)
+    bezel.box((0.0012, 0.0026, 0.005), (0.0, 0.0292, bezel_z + 0.0095), INK)
+    bezel.prism(((-0.0026, 0.0), (0.0026, 0.0), (0.0, 0.0075)), 0.002, (0.0, -0.0292, bezel_z + 0.0048), BRASS, rotation=(90.0, 0.0, 0.0))
+    bezel_obj = bezel.finish("bisel", tb.material("metal", BRASS), root)
+    tb.set_origin(bezel_obj, (0.0, 0.0, bezel_z))
+
+    needle = tb.MeshBuilder(seed=271)
+    needle_z = dial_z + 0.0026
+    needle.prism(((-0.0024, 0.0), (0.0024, 0.0), (0.0, 0.0205)), 0.0006, (0.0, 0.0, needle_z), SIGNAL_RED)
+    needle.prism(((0.0024, 0.0), (-0.0024, 0.0), (0.0, -0.0205)), 0.0006, (0.0, 0.0, needle_z), STEEL_DARK)
+    needle.cylinder(0.0022, 0.0012, (0.0, 0.0, needle_z + 0.0004), BRASS, segments=8)
+    needle_obj = needle.finish("aguja", tb.material("metal", SIGNAL_RED), root)
+    tb.set_origin(needle_obj, (0.0, 0.0, needle_z))
+    needle_obj.rotation_euler = (0.0, 0.0, math.radians(rng.uniform(-25.0, -12.0)))
+    bpy.context.view_layer.update()
+
+    tb.collision_box("brujula", (0.064, 0.064, lift + 0.022), (0.0, 0.0, (lift + 0.022) / 2.0), root)
+    tb.collision_box("brujula_correa", (0.024, 0.275, 0.004), (0.0, 0.0115, 0.002), root)
+    tb.paint({body: None, strap_obj: None, bezel_obj: None, needle_obj: None}, ao_distance=0.012, ao=0.5, seed=257)
+    return root
+
+
 def models() -> dict:
     return {
         "dosimetro": build_dosimeter,
         "linterna": build_flashlight,
         "mascara": build_mask,
+        "brujula": build_compass,
     }
