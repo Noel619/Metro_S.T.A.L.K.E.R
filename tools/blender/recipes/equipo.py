@@ -45,6 +45,10 @@ LEATHER_DARK = "#4E3422"
 BRASS_DARK = "#8A733F"
 DYNAMO_GREEN = "#3F5A52"
 DYNAMO_DARK = "#2C423C"
+BINO_BODY = "#4A4F50"
+BINO_DARK = "#35393B"
+LEATHERETTE = "#3D3833"
+BINO_BAND = "#6E6248"
 
 # Dosímetro: la aguja recorre METER_SWEEP grados a cada lado del centro.
 METER_SWEEP = 45.0
@@ -503,6 +507,103 @@ def build_dynamo_flashlight() -> bpy.types.Object:
     return root
 
 
+def build_binoculars() -> bpy.types.Object:
+    """Prismáticos de prismas de Porro, tumbados: los objetivos hacia +Y (en Godot, hacia -Z) y los oculares hacia -Y.
+
+    Nodos propios: ``lentes`` (los cuatro cristales, con el material
+    ``vidrio``: son los que pueden delatarte con un reflejo) y
+    ``rueda_enfoque`` (gira sobre su eje Y: en Godot, ``rotation.z``).
+    """
+    rng = random.Random(317)
+    root = tb.empty("prismaticos-fisico")
+    mid_z = 0.0276
+    hinge_z = mid_z + 0.004
+    house_x, house_y = 0.052, -0.012
+
+    body = tb.MeshBuilder(seed=317)
+    glass = tb.MeshBuilder(seed=331)
+    for side in (-1.0, 1.0):
+        # Caja de los prismas, forrada, con sus dos tapas atornilladas.
+        # Es ancha: el objetivo cae en su mitad de fuera y el ocular, en la de dentro.
+        body.box((0.068, 0.05, 0.05), (side * house_x, house_y, mid_z), LEATHERETTE, bevel=0.012, segments=2, cuts=3, jitter=0.05)
+        for face in (-1.0, 1.0):
+            plate_y = house_y + face * 0.0255
+            body.box((0.056, 0.003, 0.038), (side * house_x, plate_y, mid_z), BINO_BODY, bevel=0.0012)
+            for dx, dz in ((-0.023, 0.014), (0.023, -0.014)):
+                body.cylinder(0.0016, 0.0012, (side * house_x + dx, plate_y + face * 0.0017, mid_z + dz), STEEL, rotation=(90.0, 0.0, 0.0), segments=6)
+        # Tubo del objetivo, con su aro delantero.
+        objective = (side * 0.06, house_y + 0.0245, mid_z)
+        body.lathe(
+            ((0.0235, 0.0), (0.0235, 0.004), (0.0222, 0.007), (0.0245, 0.042), (0.027, 0.048), (0.027, 0.062), (0.0256, 0.0652), (0.0236, 0.0635), (0.0226, 0.057)),
+            objective,
+            BINO_BODY,
+            rotation=(-90.0, 0.0, 0.0),
+            segments=22,
+            sharp_angle=35.0,
+            jitter=0.04,
+        )
+        body.lathe(((0.0272, 0.05), (0.0277, 0.0515), (0.0277, 0.0585), (0.0272, 0.06)), objective, BINO_BAND, rotation=(-90.0, 0.0, 0.0), segments=22)
+        glass.lathe(((0.0228, 0.0572), (0.012, 0.0592), (0.0, 0.0598)), objective, GLASS, rotation=(-90.0, 0.0, 0.0), segments=22)
+        # Ocular, más cerca del centro que el objetivo, con su concha.
+        eyepiece = (side * 0.034, house_y - 0.024, mid_z)
+        body.lathe(
+            ((0.0132, 0.0), (0.0132, 0.011), (0.0156, 0.013), (0.0156, 0.02), (0.0136, 0.022), (0.014, 0.029), (0.0176, 0.035), (0.0176, 0.0385), (0.0152, 0.0398), (0.0128, 0.036)),
+            eyepiece,
+            BINO_DARK,
+            rotation=(90.0, 0.0, 0.0),
+            segments=18,
+            sharp_angle=35.0,
+        )
+        glass.lathe(((0.013, 0.0362), (0.006, 0.0357), (0.0, 0.0355)), eyepiece, GLASS, rotation=(90.0, 0.0, 0.0), segments=18)
+        # Brazos de la bisagra y anilla de la correa.
+        for arm_y in (house_y - 0.016, house_y + 0.016):
+            body.box((0.02, 0.0135, 0.011), (side * 0.012, arm_y, hinge_z), BINO_BODY, bevel=0.002)
+        body.box((0.0045, 0.011, 0.007), (side * (house_x + 0.0358), house_y - 0.008, mid_z + 0.012), STEEL, bevel=0.001)
+    # Eje de la bisagra, con su tapa, y puente de los oculares.
+    body.lathe(((0.0, 0.0), (0.0062, 0.0), (0.0078, 0.002), (0.0078, 0.048), (0.0062, 0.05), (0.0, 0.05)), (0.0, house_y - 0.025, hinge_z), BINO_DARK, rotation=(-90.0, 0.0, 0.0), segments=14)
+    body.bar((-0.034, house_y - 0.037, hinge_z), (0.034, house_y - 0.037, hinge_z), 0.0042, BINO_BODY, 8)
+    body.bar((0.0, house_y - 0.037, hinge_z), (0.0, house_y - 0.025, hinge_z), 0.0036, BINO_BODY, 8)
+    body_obj = body.finish("cuerpo", tb.material("metal", BINO_BODY), root)
+    tb.stain(body_obj, BRASS_DARK, amount=0.45, scale=30.0, coverage=0.2, seed=317)
+    tb.stain(body_obj, "#5A5F60", amount=0.4, scale=18.0, coverage=0.3, seed=318)
+    tb.dent(body_obj, (0.06, house_y + 0.064, mid_z + 0.027), radius=0.02, depth=0.002)
+    glass_obj = glass.finish("lentes", tb.material("vidrio", GLASS), root)
+
+    wheel = tb.MeshBuilder(seed=337)
+    wheel_at = (0.0, house_y, hinge_z)
+    wheel.lathe(((0.0, -0.0085), (0.0115, -0.0085), (0.0125, -0.007), (0.0125, 0.007), (0.0115, 0.0085), (0.0, 0.0085)), wheel_at, BINO_DARK, rotation=(-90.0, 0.0, 0.0), segments=20, sharp_angle=35.0)
+    for index in range(20):
+        a = math.radians(index * 18.0 + 4.0)
+        wheel.box((0.0014, 0.013, 0.0016), (0.0127 * math.cos(a), house_y, hinge_z + 0.0127 * math.sin(a)), BINO_BODY, rotation=(0.0, 90.0 - math.degrees(a), 0.0))
+    wheel_obj = wheel.finish("rueda_enfoque", tb.material("metal", BINO_DARK), root)
+    tb.set_origin(wheel_obj, wheel_at)
+
+    # Correa: de anilla a anilla, tendida sobre la mesa por detrás de los oculares.
+    strap = tb.MeshBuilder(seed=347)
+    lug_y, lug_z = house_y - 0.008, mid_z + 0.012
+    sway = rng.uniform(-0.01, 0.01)
+    strap.ribbon(
+        tb.smooth_path(
+            (
+                (-0.0905, lug_y, lug_z), (-0.1, lug_y - 0.006, lug_z - 0.004), (-0.112, lug_y - 0.03, 0.006), (-0.108, lug_y - 0.07, 0.0014),
+                (-0.07 + sway, lug_y - 0.125, 0.0012), (0.0, lug_y - 0.15, 0.0012), (0.07, lug_y - 0.12 + sway, 0.0012),
+                (0.109, lug_y - 0.07, 0.0014), (0.112, lug_y - 0.03, 0.006), (0.1, lug_y - 0.006, lug_z - 0.004), (0.0905, lug_y, lug_z),
+            ),
+            5,
+        ),
+        0.011,
+        0.0018,
+        LEATHER,
+        center=(0.0, lug_y - 0.04, -0.6),
+    )
+    strap_obj = strap.finish("correa", tb.material("cuero", LEATHER), root)
+    tb.stain(strap_obj, LEATHER_DARK, amount=0.55, scale=25.0, coverage=0.4, seed=347)
+
+    tb.collision_box("prismaticos", (0.18, 0.15, 0.056), (0.0, 0.006, 0.028), root)
+    tb.paint({body_obj: None, glass_obj: None, wheel_obj: None, strap_obj: None}, ao_distance=0.03, ao=0.5, seed=317)
+    return root
+
+
 def models() -> dict:
     return {
         "dosimetro": build_dosimeter,
@@ -510,4 +611,5 @@ def models() -> dict:
         "mascara": build_mask,
         "brujula": build_compass,
         "linterna_dinamo": build_dynamo_flashlight,
+        "prismaticos": build_binoculars,
     }
