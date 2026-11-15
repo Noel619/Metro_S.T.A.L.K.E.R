@@ -84,6 +84,50 @@ def empty(name: str, parent: bpy.types.Object | None = None) -> bpy.types.Object
     return obj
 
 
+def _sort_geometry(bm: bmesh.types.BMesh) -> None:
+    """Deja vértices, aristas y caras en un orden que solo depende de la forma.
+
+    El biselado de Blender no devuelve las caras siempre en el mismo orden ni
+    empezando por la misma esquina; sin esto, dos ejecuciones darían archivos
+    distintos del mismo modelo.
+    """
+
+    def by_vertices(element) -> tuple:
+        return tuple(sorted(v.index for v in element.verts))
+
+    def reorder(sequence, key) -> None:
+        # Las secuencias de bmesh solo ordenan con claves numéricas: se pasa el puesto.
+        rank = {element: place for place, element in enumerate(sorted(sequence, key=key))}
+        sequence.sort(key=rank.__getitem__)
+        sequence.index_update()
+
+    reorder(bm.verts, lambda v: (round(v.co.x, 6), round(v.co.y, 6), round(v.co.z, 6)))
+    # Cada cara empieza por su vértice de menor índice: así se triangula siempre igual.
+    colors = [*bm.loops.layers.color.values(), *bm.loops.layers.float_color.values()]
+    uvs = list(bm.loops.layers.uv.values())
+    for face in list(bm.faces):
+        verts = list(face.verts)
+        start = min(range(len(verts)), key=lambda i: verts[i].index)
+        if start == 0:
+            continue
+        loops = list(face.loops)
+        order = [*range(start, len(verts)), *range(start)]
+        color_values = [[tuple(loops[i][layer]) for i in order] for layer in colors]
+        uv_values = [[loops[i][layer].uv.copy() for i in order] for layer in uvs]
+        smooth, material_index = face.smooth, face.material_index
+        bm.faces.remove(face)
+        face = bm.faces.new([verts[i] for i in order])
+        face.smooth, face.material_index = smooth, material_index
+        for layer, values in zip(colors, color_values):
+            for loop, value in zip(face.loops, values):
+                loop[layer] = value
+        for layer, values in zip(uvs, uv_values):
+            for loop, value in zip(face.loops, values):
+                loop[layer].uv = value
+    reorder(bm.edges, by_vertices)
+    reorder(bm.faces, by_vertices)
+
+
 def mesh_object(
     name: str,
     bm: bmesh.types.BMesh,
@@ -91,6 +135,7 @@ def mesh_object(
     parent: bpy.types.Object | None = None,
     smooth: bool = True,
 ) -> bpy.types.Object:
+    _sort_geometry(bm)
     mesh = bpy.data.meshes.new(name)
     bm.to_mesh(mesh)
     bm.free()
@@ -158,6 +203,29 @@ def set_origin(obj: bpy.types.Object, pivot: Iterable[float]) -> None:
     bpy.context.view_layer.update()
 
 
+def smooth_path(points: Iterable[Iterable[float]], steps: int = 4) -> list[Vector]:
+    """Curva suave (Catmull-Rom) que pasa por ``points``: cables, mangueras, asas."""
+    path = [Vector(p) for p in points]
+    if len(path) < 3:
+        return path
+    result = []
+    for i in range(len(path) - 1):
+        p0, p1, p2, p3 = path[max(i - 1, 0)], path[i], path[i + 1], path[min(i + 2, len(path) - 1)]
+        for k in range(steps):
+            t = k / steps
+            result.append(
+                0.5
+                * (
+                    2.0 * p1
+                    + (p2 - p0) * t
+                    + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t * t
+                    + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t * t * t
+                )
+            )
+    result.append(path[-1])
+    return result
+
+
 class MeshBuilder:
     """Construye una malla con muchas piezas (baldosas, tablones, barras...).
 
@@ -203,7 +271,8 @@ class MeshBuilder:
         )
         result = bmesh.ops.create_cube(self.bm, size=1.0, matrix=matrix, calc_uvs=True)
         if bevel > 0.0:
-            edges = list({edge for vert in result["verts"] for edge in vert.link_edges})
+            # Sin conjuntos: su orden cambia de una ejecución a otra y el modelo dejaría de ser idéntico.
+            edges = list(dict.fromkeys(edge for vert in result["verts"] for edge in vert.link_edges))
             bmesh.ops.bevel(
                 self.bm, geom=edges, offset=bevel, segments=segments, profile=0.5,
                 affect="EDGES", clamp_overlap=True,
@@ -345,7 +414,7 @@ class MeshBuilder:
             j = (i + 1) % count
             self.bm.faces.new((bottom[i], bottom[j], top[j], top[i]))
         if bevel > 0.0:
-            edges = list({edge for vert in (*bottom, *top) for edge in vert.link_edges})
+            edges = list(dict.fromkeys(edge for vert in (*bottom, *top) for edge in vert.link_edges))
             bmesh.ops.bevel(
                 self.bm, geom=edges, offset=bevel, segments=segments, profile=0.5,
                 affect="EDGES", clamp_overlap=True,
@@ -422,6 +491,7 @@ class MeshBuilder:
         parent: bpy.types.Object | None = None,
     ) -> bpy.types.Object:
         bmesh.ops.remove_doubles(self.bm, verts=list(self.bm.verts), dist=0.00001)
+        _sort_geometry(self.bm)
         mesh = bpy.data.meshes.new(name)
         self.bm.to_mesh(mesh)
         self.bm.free()
