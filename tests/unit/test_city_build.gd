@@ -72,6 +72,109 @@ func test_walker_lands_on_the_ground() -> void:
 	walker.queue_free()
 
 
+func test_transit_is_built_and_cuts_the_terrain() -> void:
+	var stats: Dictionary = _city.stats["transito"]
+	assert_true(int(stats["triangulos"]) > 100000, "la red de tránsito se levanta entera")
+	assert_eq(int(stats["detalles"]), _detail_count())
+	# En medio de la calzada de la avenida, lo que se pisa va por debajo del relieve: la
+	# colisión del relieve está rebajada y se pisa el asfalto.
+	var roadway: Vector2 = _city.plan.axis_point(150.0, 18.0)
+	var hit: Dictionary = _ray_down(roadway, [])
+	var level: float = float(_city.plan.transit["niveles"]["calzada"])
+	assert_almost(hit["position"].y, _city.plan.transit_base_at(roadway) + level, 0.02)
+	assert_true(hit["position"].y < _city.plan.height_at(roadway) - 0.1, "bajo el relieve")
+
+
+func test_surfaces_sit_at_their_level() -> void:
+	var plan: CityPlan = _city.plan
+	var levels: Dictionary = plan.transit["niveles"]
+	# La mediana de la avenida, su calzada, su acera y el tablero del puente.
+	var places: Array = [
+		[plan.axis_point(150.0, 0.0), levels["isleta"]],
+		[plan.axis_point(150.0, -20.0), levels["calzada"]],
+		[plan.axis_point(150.0, 32.0), levels["losas"]],
+	]
+	for place: Array in places:
+		var point: Vector2 = place[0]
+		var hit: Dictionary = _ray_down(point, [])
+		assert_almost(
+			hit["position"].y, plan.transit_base_at(point) + float(place[1]), 0.02, "en %s" % point
+		)
+	var deck: Vector2 = plan.axis_point(455.0, 5.0)
+	var rule: Dictionary = plan.transit["puente"]["regla"]
+	var expected: float = lerpf(
+		float(rule["z0"]),
+		float(rule["z1"]),
+		clampf((deck.y - float(rule["o"][1])) / float(rule["largo"]), 0.0, 1.0)
+	)
+	assert_almost(_ray_down(deck, [])["position"].y, expected + float(levels["calzada"]), 0.02)
+
+
+func test_escalinata_steps_are_level_and_climb() -> void:
+	var plan: CityPlan = _city.plan
+	var stairs: Dictionary = plan.transit["escaleras"][0]
+	var treads: Array = stairs["pisadas"]
+	var previous: float = -INF
+	for tread: Array in treads:
+		# Justo pasada la arista (la rampa de colisión del peldaño de arriba no llega).
+		var front: float = float(tread[0]) + 0.04
+		if front < 650.0:
+			continue
+		for t: float in [-15.0, 0.0, 15.0]:
+			var hit: Dictionary = _ray_down(plan.axis_point(front, t), [])
+			assert_almost(hit["position"].y, float(tread[2]), 0.01, "peldaño en s=%.1f" % front)
+		assert_true(float(tread[2]) > previous, "cada peldaño, más alto")
+		previous = float(tread[2])
+
+
+func test_a_walker_climbs_a_curb_and_a_flight() -> void:
+	var plan: CityPlan = _city.plan
+	# De la calzada de la avenida a su acera, cruzando el bordillo.
+	var start: Vector2 = plan.axis_point(150.0, 24.0)
+	var end: float = await _walk(start, plan.axis_point(150.0, 32.0), 7.0)
+	assert_almost(end, plan.transit_base_at(plan.axis_point(150.0, 32.0)) + 0.03, 0.12)
+	# Y un tramo de la Escalinata hacia arriba.
+	var bottom: Vector2 = plan.axis_point(652.0, 0.0)
+	var climbed: float = await _walk(bottom, plan.axis_point(664.0, 0.0), 12.0)
+	assert_true(climbed > _city.surface_height(bottom) + 1.2, "sube un tramo entero")
+
+
+## Lleva un cuerpo como el del visitante de [param from] hacia [param to] y devuelve a qué
+## altura acaba.
+func _walk(from: Vector2, to: Vector2, seconds: float) -> float:
+	var body: CharacterBody3D = CharacterBody3D.new()
+	var shape: CollisionShape3D = CollisionShape3D.new()
+	var capsule: CapsuleShape3D = CapsuleShape3D.new()
+	capsule.radius = 0.3
+	capsule.height = 1.75
+	shape.shape = capsule
+	shape.position = Vector3(0.0, 0.875, 0.0)
+	body.add_child(shape)
+	body.floor_max_angle = deg_to_rad(50.0)
+	body.floor_snap_length = 0.6
+	get_tree().root.add_child(body)
+	body.global_position = CityPlan.to_world(from, _city.surface_height(from) + 0.05)
+	var direction: Vector3 = (CityPlan.to_world(to) - CityPlan.to_world(from)).normalized()
+	var frames: int = int(seconds * Engine.physics_ticks_per_second)
+	for _i: int in frames:
+		var flat: Vector2 = CityPlan.to_plan(body.global_position)
+		if flat.distance_to(to) < 0.3:
+			break
+		body.velocity.x = direction.x * 1.4
+		body.velocity.z = direction.z * 1.4
+		body.velocity.y = 0.0 if body.is_on_floor() else body.velocity.y - 9.8 / 60.0
+		body.move_and_slide()
+		await get_tree().physics_frame
+	var height: float = body.global_position.y
+	body.queue_free()
+	return height
+
+
+func _detail_count() -> int:
+	var details: Dictionary = _city.plan.transit["detalles"]
+	return details["tapas"].size() + details["sumideros"].size()
+
+
 func _ray_down(point: Vector2, exclude: Array[RID]) -> Dictionary:
 	var space: PhysicsDirectSpaceState3D = _city.get_world_3d().direct_space_state
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(

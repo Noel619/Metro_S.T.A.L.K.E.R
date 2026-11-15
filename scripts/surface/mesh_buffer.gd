@@ -56,6 +56,30 @@ func add_face(
 			indices.append_array([base, base + i + 1, base + i])
 
 
+## Un polígono convexo que mira hacia arriba, con la normal de cada vértice (sombreado
+## suave). Los puntos van en sentido antihorario vistos desde arriba, en el plano (x al
+## este, y al norte); se dan ya en el espacio de la malla.
+func add_polygon(
+	points: PackedVector3Array,
+	vertex_normals: PackedVector3Array,
+	color: Color,
+	vertex_uvs: PackedVector2Array
+) -> void:
+	var count: int = points.size()
+	if count < 3:
+		return
+	var base: int = vertices.size()
+	vertices.append_array(points)
+	normals.append_array(vertex_normals)
+	uvs.append_array(vertex_uvs)
+	for i: int in count:
+		colors.append(color)
+	# Antihorario en el plano es antihorario visto desde arriba también en el mundo (el
+	# norte es -Z): Godot dibuja la cara delantera en sentido horario, así que se invierte.
+	for i: int in range(1, count - 1):
+		indices.append_array([base, base + i + 1, base + i])
+
+
 ## Un polígono horizontal cualquiera (también cóncavo) a la altura [param height], ya
 ## triangulado (índices de [method Geometry2D.triangulate_polygon]). [param to_local]
 ## pasa del plano al espacio de la malla.

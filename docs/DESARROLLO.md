@@ -22,7 +22,7 @@ Los modelos, las texturas y las ilustraciones ya vienen generados en el reposito
 
 ## La maqueta de la ciudad (F3-15)
 
-Tumansk entera, levantada desde el plano en volúmenes sencillos para probar recorridos, vistas, sectores de carga y rendimiento. Para abrirla: en Godot, abre `scenes/debug/maqueta_ciudad.tscn` y pulsa **F6** (ejecutar la escena actual). Tarda un par de segundos en levantar la ciudad. Empiezas a pie en la salida del metro, a mediodía.
+Tumansk entera, levantada desde el plano en volúmenes sencillos para probar recorridos, vistas, sectores de carga y rendimiento. Para abrirla: en Godot, abre `scenes/debug/maqueta_ciudad.tscn` y pulsa **F6** (ejecutar la escena actual). Tarda unos segundos en levantar la ciudad (la red de tránsito se levanta sector a sector en varios hilos). Empiezas a pie en la salida del metro, a mediodía.
 
 | Tecla | Qué hace |
 |---|---|
@@ -30,6 +30,7 @@ Tumansk entera, levantada desde el plano en volúmenes sencillos para probar rec
 | W A S D | Moverse. Andando: Mayús corre, C se agacha, Espacio salta. Volando: Mayús acelera, Espacio sube, C baja y la rueda cambia la velocidad |
 | Tab | Andar (con colisión, a 1,4 m/s) o volar (sin colisión) |
 | 1-9 y 0 | Las vistas fijas: la salida, la avenida, Los Bloques, el río, el puente, la Escalinata, la zona industrial, la Zona Cero, la ciudad desde el aire y las rutas desde el aire |
+| Mayús+1-4 | Las vistas de la red de tránsito: la Escalinata desde abajo, un cruce del Barrio Obrero, el vano hundido del puente y las escaleras de la loma |
 | R / Mayús+R | Recorre la ruta siguiente / anterior del plano a paso de persona, con cronómetro. **+** y **-** la aceleran (×4, ×16); Retroceso la para |
 | F2 / F3 / F4 | Capas: las rutas; la rejilla de sectores y las zonas; los hitos que se ven desde donde estás |
 | V | Comprueba en toda la ciudad la regla «desde cualquier punto se ven al menos dos hitos» y marca los puntos ciegos (rosa: ninguno; amarillo: uno) |
@@ -155,7 +156,9 @@ Las herramientas que se empuñan (`martillo`, `palanca`, `navaja`) llevan un nod
 | `datos.py` | Los datos: zonas, calles, edificios, patios, vehículos, hitos, subsuelo, amenazas, peligros y rutas |
 | `geo.py` | Marcos de referencia (el eje monumental) y figuras |
 | `relieve.py` | El terreno: río, loma, barranco, colina y cráter |
-| `plano.py` | Valida, calcula daños, escombros, relieve y cotas, y exporta el plano (`plano.json`), el relieve (`relieve.png`) y el suelo de la maqueta (`suelo.png`) |
+| `plano.py` | Valida, calcula daños, escombros, relieve y cotas, y exporta el plano (`plano.json`), el relieve (`relieve.png`), el suelo de la maqueta (`suelo.png`) y la red de tránsito (`transito.json`, `rasante.png`, `rejilla.png` y `rebaje.png`) |
+| `transito.py` | Traza la red de tránsito (calles, aceras, plazas, sendas, escaleras, el puente) con sus alturas, aristas, marcas y detalles |
+| `rejilla.py` | Lo que el tránsito tapa de cada triángulo de la rejilla del relieve, el relleno exacto y el rebaje de la colisión |
 | `dibujo.py` | Dibuja las cuatro hojas de desarrollo |
 
 Para dibujar una sola hoja: `python3 tools/ciudad/plano.py --plano=general` (también `subsuelo`, `peligros` o `rutas`).

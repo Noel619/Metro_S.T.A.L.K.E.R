@@ -51,6 +51,8 @@ const CAR_MODEL_LENGTH: float = 4.3
 ## Alto de los muros de la autovía caída, al oeste y al norte del mapa.
 const BORDER_WALL_HEIGHT: float = 10.0
 const STRUCTURE_COLOR: Color = Color("#77736b")
+## Lo que queda la losa del puente por debajo de la calzada (el firme).
+const DECK_GAP: float = 0.02
 
 var plan: CityPlan
 ## Tableros de los puentes: lo que se pisa encima del hielo.
@@ -91,7 +93,9 @@ func vehicles() -> Dictionary:
 		var width: float = sizes[kind][1]
 		var height: float = VEHICLE_HEIGHT.get(kind, 2.0)
 		var yaw: Basis = Basis(Vector3.UP, deg_to_rad(vehicle["angulo"]))
-		var ground: float = surface_height(point)
+		# La altura de lo que pisa la da el plano si está en el tránsito (la calzada va por
+		# debajo de la rasante); si no, el relieve o el tablero de un puente.
+		var ground: float = float(vehicle["z"]) if vehicle.has("z") else surface_height(point)
 		var model: String = "caja"
 		var basis: Basis = yaw * Basis.from_scale(Vector3(length, height, width))
 		var origin: Vector3 = CityPlan.to_world(point, ground + height * 0.5)
@@ -136,7 +140,8 @@ func trees() -> Dictionary:
 				Basis(Vector3.UP, CityPlan.chance(key + "/giro") * TAU)
 				* Basis.from_scale(Vector3.ONE * grown)
 			)
-		var origin: Vector3 = CityPlan.to_world(point, plan.height_at(point) + lift)
+		var ground: float = float(tree["z"]) if tree.has("z") else plan.height_at(point)
+		var origin: Vector3 = CityPlan.to_world(point, ground + lift)
 		_add_instance(result, plan.sector_of(point), model, Transform3D(basis, origin), Color.WHITE)
 	return result
 
@@ -165,22 +170,34 @@ func _add_instance(
 	by_model[model].append([transform, color])
 
 
+## Los tableros de los puentes. El del Progreso va de orilla a orilla sobre el río (en
+## tierra es calle) con la altura del tablero de la red de tránsito: la losa queda justo
+## bajo la calzada.
 func _prepare_decks() -> void:
 	var bridge: Dictionary = _street("puente_progreso")
 	var gap: Array = bridge["vano_hundido"]
-	var south: float = plan.height_at(plan.axis_point(368.0))
-	var north: float = plan.height_at(plan.axis_point(636.0))
 	var half: float = float(bridge["ancho"]) * 0.5
-	for span: Vector2 in [Vector2(372.0, gap[0]), Vector2(gap[1], 632.0)]:
+	var rule: Dictionary = plan.transit["puente"]["regla"]
+	var roadway: float = float(plan.transit["niveles"]["calzada"])
+	# Donde el eje del puente entra y sale del río.
+	var banks: Vector2 = Vector2(INF, -INF)
+	var s: float = 372.0
+	while s <= 632.0:
+		if plan.is_on_river(plan.axis_point(s)):
+			banks = Vector2(minf(banks.x, s), maxf(banks.y, s))
+		s += 0.5
+	for span: Vector2 in [Vector2(banks.x, gap[0]), Vector2(gap[1], banks.y)]:
+		var from: Vector2 = plan.axis_point(span.x)
+		var to: Vector2 = plan.axis_point(span.y)
 		(
 			_decks
 			. append(
 				{
-					"from": plan.axis_point(span.x),
-					"to": plan.axis_point(span.y),
+					"from": from,
+					"to": to,
 					"half_width": half,
-					"height_from": lerpf(south, north, (span.x - 372.0) / 260.0),
-					"height_to": lerpf(south, north, (span.y - 372.0) / 260.0),
+					"height_from": _ramp(rule, from) + roadway - DECK_GAP,
+					"height_to": _ramp(rule, to) + roadway - DECK_GAP,
 				}
 			)
 		)
@@ -202,6 +219,13 @@ func _prepare_decks() -> void:
 	)
 
 
+func _ramp(rule: Dictionary, point: Vector2) -> float:
+	var origin: Vector2 = Vector2(rule["o"][0], rule["o"][1])
+	var direction: Vector2 = Vector2(rule["d"][0], rule["d"][1])
+	var f: float = clampf((point - origin).dot(direction) / float(rule["largo"]), 0.0, 1.0)
+	return lerpf(float(rule["z0"]), float(rule["z1"]), f)
+
+
 func _street(id: String) -> Dictionary:
 	for street: Dictionary in plan.data["calles"]:
 		if street["id"] == id:
@@ -216,22 +240,11 @@ func _bridge_progreso(parts: Dictionary) -> void:
 	var gap: Array = bridge["vano_hundido"]
 	var thickness: float = bridge["tablero"]
 	var color: Color = Color("#807b72")
+	# Las losas (los pretiles, las aceras y la calzada los pone la red de tránsito).
 	for deck: Dictionary in _decks.slice(0, 2):
 		var a: Vector3 = CityPlan.to_world(deck["from"], float(deck["height_from"]) - thickness)
 		var b: Vector3 = CityPlan.to_world(deck["to"], float(deck["height_to"]) - thickness)
 		_beam(parts, a, b, float(deck["half_width"]) * 2.0, thickness, color)
-		for side: float in [-1.0, 1.0]:
-			var offset: Vector3 = (
-				_across(deck["from"], deck["to"]) * (float(deck["half_width"]) - 0.3) * side
-			)
-			_beam(
-				parts,
-				a + offset + Vector3.UP * thickness,
-				b + offset + Vector3.UP * thickness,
-				0.3,
-				1.1,
-				color
-			)
 	var ice: float = plan.data["rio"]["hielo"]
 	var top: float = float(_decks[0]["height_to"]) - 2.5
 	var sunk_from: Vector3 = CityPlan.to_world(

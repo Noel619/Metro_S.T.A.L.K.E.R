@@ -8,6 +8,8 @@
 //   (las ventanas) solo se aplica donde el alfa del color de vértice lo pide.
 // - TINTA_HITO: los hitos de la ciudad (tinta_hito.gdshader). La niebla nunca
 //   los borra del todo: el jugador se orienta con ellos.
+// - TINTA_TRANSITO: los pavimentos de la ciudad (tinta_transito.gdshader). La nieve
+//   va a parches como en el suelo; cuánta cubre la dice el alfa del color de vértice.
 
 global uniform int tinta_rampa;
 #ifdef TINTA_HITO
@@ -77,6 +79,10 @@ void fragment() {
 	if (use_vertex_color) {
 		base *= COLOR.rgb;
 	}
+#ifdef TINTA_TRANSITO
+	// Manchas grandes de suciedad y hollín: el pavimento nunca es del todo uniforme.
+	base *= mix(0.88, 1.05, value_noise(world_position * 0.13));
+#endif
 #ifdef TINTA_SUELO
 	// El plano tiene el norte en -Z; la primera fila de ground_map es el borde norte.
 	vec2 plan = vec2(world_position.x, -world_position.z);
@@ -84,11 +90,16 @@ void fragment() {
 	base *= ground.rgb;
 #endif
 	if (snow_amount > 0.0) {
-#ifdef TINTA_SUELO
+#if defined(TINTA_SUELO) || defined(TINTA_TRANSITO)
 		// Nieve vieja a parches: cubre lo que pide el suelo y resbala de las cuestas.
 		float n = value_noise(world_position * 0.31) * 0.55 + value_noise(world_position * 1.7) * 0.3
 			+ value_noise(world_position * 7.0) * 0.15;
-		float cover = ground.a * smoothstep(0.62, 0.9, normalize(world_normal).y) * snow_amount;
+#ifdef TINTA_SUELO
+		float amount = ground.a;
+#else
+		float amount = COLOR.a;
+#endif
+		float cover = amount * smoothstep(0.62, 0.9, normalize(world_normal).y) * snow_amount;
 		float snow = smoothstep(n - 0.06, n + 0.06, cover);
 #else
 		float n = value_noise(world_position * 3.0) * 0.6 + value_noise(world_position * 11.0) * 0.4;

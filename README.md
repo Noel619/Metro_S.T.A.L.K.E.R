@@ -941,10 +941,11 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F3-14** **Zona 1, La Plaza**: primero con geometría provisional y después estilizada, con al menos 3 rutas a cada objetivo.
 - [x] **F3-15** **Maqueta automática de la ciudad**: un generador en Godot lee `data/ciudad/plano.json` y levanta la ciudad entera en volúmenes sencillos (relieve, calles, edificios a su altura, escombros). Sirve para probar recorridos, vistas, sectores de carga y rendimiento antes de construir. *(Hecha: `scenes/debug/maqueta_ciudad.tscn`, con recorridos de las rutas, hitos a la vista, prueba de rendimiento y 48 sectores con dos niveles de detalle; ver [CIUDAD.md](docs/CIUDAD.md#15-la-maqueta).)*
 - [ ] **F3-16** Kit modular de arquitectura soviética para los tipos del plano (jrushchovka, bloque de 9 plantas, casa estalinista), con daños por nivel e interiores de serie.
+- [ ] **F3-17** **Red de tránsito de la ciudad** en 3D: calzadas, aceras, bordillos, plazas, sendas, camino, escaleras y el tablero del puente, con muros, pretiles, pasos de cebra, tapas y sumideros, encajados en el relieve y con colisión que se sube andando. *(Hecho todo lo que se pisa, en la maqueta: ver [CIUDAD.md](docs/CIUDAD.md#16-la-red-de-tránsito). Faltan las vías del tren y del tranvía, con sus andenes y pasos a nivel, y los modelos de detalle de las tapas y los sumideros.)*
 
 **Entregable**: una salida de 10 a 20 minutos: subir por la escalera, llegar a un objetivo y volver.
 **Criterio de salida**: en las pruebas, los jugadores planifican antes de salir, dibujan su mapa, usan al menos dos rutas distintas y ninguna muerte se siente injusta.
-**Estado**: 🟨 empezada por la ciudad: F3-15 hecha, a falta de tu revisión. La maqueta es geometría provisional y no depende del estilo, así que se ha adelantado mientras se aprueba la Fase 1.
+**Estado**: 🟨 empezada por la ciudad: F3-15 hecha y F3-17 (la red de tránsito) casi, a falta de tu revisión. La maqueta es geometría provisional y no depende del estilo, así que se ha adelantado mientras se aprueba la Fase 1.
 
 ### Fase 4: El mundo vivo · tamaño L
 

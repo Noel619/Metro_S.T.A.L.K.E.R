@@ -36,7 +36,7 @@ jobs:
       - run: pip install "numpy==2.5.3" "pillow==12.3.0" "shapely==2.2.0"
       - run: make ciudad-comprobar
       - name: Los datos exportados coinciden con los del repositorio
-        run: git diff --exit-code data/ciudad/plano.json
+        run: git diff --exit-code data/ciudad/plano.json data/ciudad/transito.json
 
   test:
     name: Tests y prueba de red

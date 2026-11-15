@@ -263,10 +263,11 @@ Los tipos siguen las medidas de las series soviéticas reales. Los interiores de
 
 ![Tumansk desde el aire, sin niebla](capturas/fase3_maqueta_aerea.jpg)
 
-La maqueta (`scenes/debug/maqueta_ciudad.tscn`, F3-15) levanta la ciudad entera desde los datos del plano en un segundo y medio. Se recorre a pie (a 1,4 m/s y con colisión) o volando, y tiene herramientas para medir. Cómo se abre y sus teclas, en [DESARROLLO.md](DESARROLLO.md#la-maqueta-de-la-ciudad-f3-15).
+La maqueta (`scenes/debug/maqueta_ciudad.tscn`, F3-15) levanta la ciudad entera desde los datos del plano en unos cinco segundos (tres son la red de tránsito, que se levanta sector a sector en varios hilos). Se recorre a pie (a 1,4 m/s y con colisión) o volando, y tiene herramientas para medir. Cómo se abre y sus teclas, en [DESARROLLO.md](DESARROLLO.md#la-maqueta-de-la-ciudad-f3-15).
 
 - **Lo que se levanta:**
-  - El relieve, cada 2 m, pintado con el suelo del plano (calzadas, aceras, plazas, el hielo, las vías, los patios y los escombros) bajo la nieve vieja.
+  - El relieve, cada 2 m, pintado con el suelo del plano (el hielo, las vías, los patios y los escombros) bajo la nieve vieja.
+  - La red de tránsito: calzadas, aceras, plazas, sendas, escaleras y el tablero del puente, con sus bordillos, muros, pretiles, pasos de cebra, tapas y sumideros. Ver [la sección 16](#16-la-red-de-tránsito).
   - Los 357 edificios, a su altura y con lo que queda en pie según su daño. Las torres llevan aguja (la de la Casa de los Sóviets, doblada hacia el suroeste), las chimeneas se estrechan, las torres de refrigeración tienen su forma y las casas de madera y las de antes de la revolución llevan tejado a dos aguas.
   - Los 866 vehículos, los 2685 árboles y los puentes (el del Progreso, con su vano hundido sobre el hielo, y el del ferrocarril, de celosía).
   - Las tuberías elevadas (el tubo cruza el río con su pasarela), las vallas, la línea eléctrica y el muro de la autovía caída al oeste y al norte.
@@ -305,3 +306,33 @@ La maqueta (`scenes/debug/maqueta_ciudad.tscn`, F3-15) levanta la ciudad entera 
 | ![La zona industrial y la central](capturas/fase3_maqueta_industria.jpg) | ![La Zona Cero: el Edificio Partido](capturas/fase3_maqueta_zona_cero.jpg) |
 | ![El panel de la maqueta: dónde estás, qué tienes delante, los hitos a la vista y el coste de la imagen](capturas/fase3_maqueta_panel.jpg) | ![La avenida al anochecer](capturas/fase3_maqueta_avenida_anochecer.jpg) |
 
+
+## 16. La red de tránsito
+
+![La Escalinata desde el rellano de abajo](capturas/fase3_transito_escalinata.jpg)
+
+Todo lo que se pisa para ir de un sitio a otro, levantado en 3D: 212.000 m² de calzada, 107.000 de aceras (asfalto en los barrios, losas en el centro), 33.000 de plazas de granito, 10.000 de isletas, el adoquín de la ciudad vieja, las sendas de grava de los parques, el camino de tierra del barranco, la Escalinata, las escaleras de las sendas y el tablero del puente del Progreso. En las lindes: 30 km de bordillos, 25 km de bordes de jardín, las contrahuellas, los muros de las escaleras, los pretiles del puente y del muelle, los bordes rotos del vano hundido y 72 alcorques. Encima: 126 pasos de cebra, la línea del eje de las calles principales y del puente, 437 tapas de registro y 954 sumideros.
+
+**Niveles.** Respecto a la rasante (el terreno nivelado, sin escombros):
+
+| Superficie | Altura |
+|---|---|
+| Aceras, plazas, paseos e isletas | +3 cm (junto a la tierra, el bordillo de jardín asoma 2 cm más) |
+| Calzada y adoquín | −12 cm: el bordillo tiene 15 cm (asoma 1 cm sobre la acera) |
+| Sendas | +5 cm, con un bordillo bajo |
+| Camino de tierra | −3 cm (un poco hundido) |
+| Alcorques | −5 cm, con su cerco |
+
+**Cómo se hace.** `tools/ciudad/transito.py` decide la forma en planta con las mismas figuras de shapely que valida el plano, y la reparte en *grupos*: un trozo de una clase de superficie con su *regla* de altura (la rasante más el nivel de la clase, un plano fijo para los peldaños o la rampa del tablero del puente) y la orientación de su textura (las losas siguen la calle). Las *aristas* entre grupos, y entre un grupo y la tierra, salen ya clasificadas: bordillo, borde, contrahuella, escalón, muro, pretil (el desnivel con el terreno pasa de 40 cm), rotura o fachada. `tools/ciudad/rejilla.py` decide qué hace la maqueta con cada triángulo de la rejilla del relieve de 2 m: si el tránsito lo tapa, no se dibuja; donde una acera llega a la tierra, se dibuja el terreno debajo (la acera va 3 cm más alta); donde lo que se pisa va por debajo del terreno (una calzada, un camino, los peldaños excavados), se dibuja aparte, exacto, lo que queda de tierra. Con eso, `CityTransit` levanta cada sector en su hilo: corta las superficies por la rejilla donde la rasante no es plana (para que sigan el terreno igual que su malla) y extruye el perfil de cada arista. El terreno ni asoma entre las losas ni deja zanjas junto a las aceras, y los montones de escombros que cayeron a la calle siguen ahí, asomando sobre el asfalto.
+
+**La Escalinata.** Sube 11 m por la loma en 73 contrahuellas de 15 cm y huellas de 33-38 cm, en siete tramos de once peldaños con descansillos donde la ladera se allana. Los peldaños van horizontales de lado a lado y la ladera cae de través (un 14 %): a un lado va excavada (muro de contención) y al otro en alto (muro con pretil), con el pretil siguiendo la línea de los peldaños. La parte de la plaza del Puente Norte que queda al pie es su rellano de abajo, a la cota del muelle; lo que la plaza tenía ladera arriba, al otro lado de la Bajada, queda en tierra. Arriba, el Bulevar del Río la cruza por la plaza de la cabeza (allanada de lado a lado); su trozo que caía sobre los tramos desaparece. Las escaleras de la loma (74 peldaños) y del barranco (33) son de hormigón, con muretes y barandillas de tubo.
+
+**El puente.** Sobre el río, el tablero va en línea recta de la cota del Muelle Sur (0) a la del Muelle Norte (1 m), con su calzada de 21 m, aceras de 5,5 m, pretiles y los bordes rotos donde se hundió el vano central. En los muelles de granito la orilla cae a pico: la rasante se rellena hasta el borde del agua y un pretil cierra el muelle.
+
+**Para caminar.** Los bordillos y los peldaños llevan una rampa de colisión invisible (unos 30°): se suben andando, sin saltar. Bajo el tránsito, la colisión del relieve baja al menos 30 cm (y lo que haga falta bajo los peldaños excavados).
+
+![Un cruce del Barrio Obrero: bordillos, pasos de cebra y sumideros](capturas/fase3_transito_esquina.jpg)
+
+![Las escaleras de la loma, del Muelle Norte al Bulevar](capturas/fase3_transito_loma.jpg)
+
+**Pendiente.** Las vías del tren y del tranvía (balasto, traviesas, carriles, andenes y pasos a nivel) y los modelos de detalle de las tapas y los sumideros (ahora son volúmenes sencillos).

@@ -19,6 +19,8 @@ fijas). Se guardan en assets/textures/ y las usan los shaders de assets/shaders/
                  el color es nieve pisada, más oscura; el alfa, la forma.
 - pagina_cuadriculada.png  una página del cuaderno: cuadrícula de 5 mm trazada algo
                  suelta. No se enlosa: cubre la página entera (UV de 0 a 1).
+- pavimentos/    los pavimentos de la ciudad (asfalto, losas, granito, adoquín, bordillo,
+                 hormigón, grava, tierra y pintura vial): ver pavimentos.py.
 """
 
 from __future__ import annotations
@@ -279,7 +281,16 @@ def main() -> None:
         path = OUT_DIR / name
         image.save(path, optimize=True)
         print(f"  {path.relative_to(ROOT)}  {image.size[0]}x{image.size[1]} {image.mode}")
-    print(f"{len(outputs)} texturas generadas.")
+    from pavimentos import TEXTURAS
+
+    folder = OUT_DIR / "pavimentos"
+    folder.mkdir(parents=True, exist_ok=True)
+    for name, build in TEXTURAS.items():
+        image = build()
+        path = folder / name
+        image.save(path, optimize=True)
+        print(f"  {path.relative_to(ROOT)}  {image.size[0]}x{image.size[1]} {image.mode}")
+    print(f"{len(outputs) + len(TEXTURAS)} texturas generadas.")
 
 
 if __name__ == "__main__":

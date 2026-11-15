@@ -11,6 +11,10 @@ extends RefCounted
 const WHITE: Color = Color(1.0, 1.0, 1.0, 0.0)
 
 var plan: CityPlan
+## Triángulos de la rejilla de [member hole_step] metros que no se dibujan (los tapa el
+## tránsito: CityTransit.touched), dos por celda.
+var holes: PackedByteArray = PackedByteArray()
+var hole_step: float = 2.0
 
 
 func _init(city_plan: CityPlan) -> void:
@@ -66,12 +70,22 @@ func grid_mesh(
 				grid[k + nx] if j < ny - 1 else plan.height_at(p + Vector2(0.0, step))
 			)
 			mesh.normals[k] = Vector3(west - east, 2.0 * step, north - south).normalized()
+	var cells: int = plan.relief_size.x
+	var first: Vector2i = Vector2i((rect.position / step).round())
+	var with_holes: bool = not holes.is_empty() and is_equal_approx(step, hole_step)
 	for j: int in ny - 1:
 		for i: int in nx - 1:
 			var a: int = j * nx + i
+			var id: int = -1
+			if with_holes and _inside_grid(first + Vector2i(i, j)):
+				id = ((first.y + j) * cells + first.x + i) * 2
 			# Con el norte en -Z, (a, a+nx, a+nx+1) gira en el sentido del reloj visto desde
-			# arriba: es la cara delantera para Godot.
-			mesh.indices.append_array([a, a + nx, a + nx + 1, a, a + nx + 1, a + 1])
+			# arriba: es la cara delantera para Godot (el triángulo del noroeste); (a,
+			# a+nx+1, a+1), el del sureste.
+			if id < 0 or holes[id] == 0:
+				mesh.indices.append_array([a, a + nx, a + nx + 1])
+			if id < 0 or holes[id + 1] == 0:
+				mesh.indices.append_array([a, a + nx + 1, a + 1])
 	if skirt > 0.0:
 		_skirt(mesh, nx, ny, skirt)
 	return mesh
@@ -122,6 +136,12 @@ func surroundings_mesh(margin: float, step: float) -> MeshBuffer:
 			kept.append_array([mesh.indices[t], mesh.indices[t + 1], mesh.indices[t + 2]])
 	mesh.indices = kept
 	return mesh
+
+
+func _inside_grid(cell: Vector2i) -> bool:
+	return (
+		cell.x >= 0 and cell.y >= 0 and cell.x < plan.relief_size.x and cell.y < plan.relief_size.y
+	)
 
 
 ## Un faldón que cuelga del borde de la rejilla, con las caras hacia fuera.

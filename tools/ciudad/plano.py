@@ -10,10 +10,14 @@ Uso: python3 tools/ciudad/plano.py [--solo-datos | --comprobar] [--plano=general
    solaparse y en la zona que dicen.
 2. Calcula el daño de cada edificio (distancia a la Zona Cero, con variación fija
    por edificio), los incendios y los escombros que caen a la calle.
-3. Calcula el relieve con los terraplenes y los escombros, y la cota de cada edificio.
-4. Exporta data/ciudad/plano.json, data/ciudad/relieve.png (16 bits) y el suelo de la
-   maqueta, data/ciudad/suelo.png.
-5. Dibuja los planos de desarrollo en docs/ciudad/.
+3. Calcula el relieve con los terraplenes, las calles de la loma niveladas y los
+   escombros, y la cota de cada edificio.
+4. Traza la red de tránsito (transito.py): calzadas, aceras, bordillos, escaleras, el
+   tablero del puente, pasos de cebra… con sus alturas.
+5. Exporta data/ciudad/plano.json, data/ciudad/relieve.png (16 bits), la rasante del
+   tránsito (data/ciudad/rasante.png), la red de tránsito (data/ciudad/transito.json) y el
+   suelo de la maqueta, data/ciudad/suelo.png.
+6. Dibuja los planos de desarrollo en docs/ciudad/.
 """
 
 from __future__ import annotations
@@ -34,6 +38,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import datos as D  # noqa: E402
 import relieve as R  # noqa: E402
+import transito as T  # noqa: E402
 from geo import ALTO, ANCHO, SECTOR, banda, coords, distancia, sector_de  # noqa: E402
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -207,7 +212,9 @@ def suavizar(a: np.ndarray, radio: int) -> np.ndarray:
     return a
 
 
-def calcular_relieve(escombros: list[dict], res: float = 2.0) -> np.ndarray:
+def calcular_relieve(escombros: list[dict], res: float = 2.0) -> tuple[np.ndarray, np.ndarray]:
+    """El relieve (lo que se ve: con los escombros) y el terreno (sin ellos). Los dos con
+    los terraplenes del ferrocarril y las calles de la falda de la loma niveladas."""
     nx, ny = int(ANCHO / res), int(ALTO / res)
     xs = (np.arange(nx) + 0.5) * res
     ys = (np.arange(ny) + 0.5) * res
@@ -215,10 +222,9 @@ def calcular_relieve(escombros: list[dict], res: float = 2.0) -> np.ndarray:
     h = R.altura_natural(gx, gy)
     for t in D.TERRAPLENES:
         h = h + R.terraplen(gx, gy, t["puntos"], t["alto"], t["corona"], t["talud"])
-    terreno = h.copy()
+    terreno = T.nivelar(h, res)
     montones = rasterizar([(e["forma"], e["alto"]) for e in escombros], res, nx, ny)
-    h = h + suavizar(montones, max(1, int(4 / res)))
-    return h, terreno
+    return terreno + suavizar(montones, max(1, int(4 / res))), terreno
 
 
 def muestrear(h: np.ndarray, res: float, xs: np.ndarray, ys: np.ndarray) -> np.ndarray:
@@ -329,23 +335,10 @@ def exportar_suelo(escombros: list[dict], res: float = 1.0) -> dict:
         formas = [p["forma"] for p in D.PATIOS if p["tipo"] == clase]
         if formas:
             pintar(formas, clase)
-    calles = [c for c in D.CALLES if c["tipo"] != "puente"]
-    pintar([banda(c["puntos"], c["ancho"]) for c in calles if c["tipo"] not in ("peatonal", "escalinata", "camino")], "acera")
-    pintar([p["forma"] for p in D.PLAZAS]
-           + [banda(c["puntos"], c["ancho"]) for c in calles if c["tipo"] in ("peatonal", "escalinata")], "plaza")
-    calzadas = [banda(c["puntos"], c["ancho"] - 2.0 * ancho_acera(c)) for c in calles
-                if c["tipo"] not in ("peatonal", "escalinata", "camino")]
-    # La glorieta de la plaza del Trabajo: un anillo de calzada alrededor de la isleta.
-    centro = (430.0, 330.0)
-    pintar(calzadas + [circulo(*centro, 50.0, 64)], "calzada")
-    avenida = next(c for c in D.CALLES if c["id"] == "avenida_progreso")
-    mediana = banda(avenida["puntos"], avenida["mediana"]).difference(circulo(*centro, 50.0, 64))
-    pintar([mediana, circulo(*centro, 30.0, 64)], "mediana")
-    pintar([banda(c["puntos"], c["ancho"]) for c in calles if c["tipo"] == "camino"]
-           + [banda(s["puntos"], 2.5) for s in D.SENDAS], "camino")
+    # Las calles, las plazas, las sendas y el camino no se pintan: la maqueta los levanta
+    # con sus propios materiales (data/ciudad/transito.json) y el terreno de debajo no se ve.
     # Las vías y el tranvía cruzan el río por los puentes: sobre el hielo no se pintan.
     pintar([banda(v["puntos"], ANCHO_VIA[v["tipo"]]).difference(D.RIO) for v in D.VIAS], "via")
-    pintar([banda(t["puntos"], 2.6).difference(D.RIO) for t in D.TRANVIAS], "tranvia")
     pintar([e["forma"] for e in escombros], "escombros")
     img.save(SALIDA_DATOS / "suelo.png")
     return {"archivo": "suelo.png", "resolucion": res, "filas": "la primera fila es el borde norte",
@@ -353,12 +346,12 @@ def exportar_suelo(escombros: list[dict], res: float = 1.0) -> dict:
             "clases": {k: list(v) for k, v in SUELO.items()}}
 
 
-def exportar_relieve(h: np.ndarray, res: float) -> dict:
+def exportar_relieve(h: np.ndarray, res: float, archivo: str = "relieve.png") -> dict:
     from PIL import Image
 
-    codigo = np.clip((h + 50.0) * 100.0, 0, 65535).astype(np.uint16)
-    Image.fromarray(np.flipud(codigo)).save(SALIDA_DATOS / "relieve.png")
-    return {"archivo": "relieve.png", "resolucion": res, "codificacion": "metros = valor / 100 - 50",
+    codigo = np.clip(np.round((h + 50.0) * 100.0), 0, 65535).astype(np.uint16)
+    Image.fromarray(np.flipud(codigo)).save(SALIDA_DATOS / archivo)
+    return {"archivo": archivo, "resolucion": res, "codificacion": "metros = valor / 100 - 50",
             "filas": "la primera fila es el borde norte", "min": round(float(h.min()), 2), "max": round(float(h.max()), 2)}
 
 
@@ -386,6 +379,8 @@ def huella_exportable(huella) -> list:
 
 def exportar_arbol(a: dict) -> dict:
     registro = {"pos": (round(a["pos"][0], 1), round(a["pos"][1], 1)), "estado": a["estado"]}
+    if a.get("z") is not None:
+        registro["z"] = a["z"]
     if a["estado"] == "tumbado":
         registro["rumbo"] = round(a["rumbo"], 1)
     else:
@@ -393,7 +388,21 @@ def exportar_arbol(a: dict) -> dict:
     return registro
 
 
-def exportar_json(escombros: list[dict], meta_relieve: dict, meta_suelo: dict, calles) -> dict:
+def alturas_en_el_transito(trazado, alturas) -> None:
+    """La altura de lo que pisan los árboles y los vehículos que están en el tránsito (una
+    acera, un alcorque, el tablero del puente…); los demás, la sacan del relieve."""
+    for lista in (D.ARBOLES, D.VEHICULOS):
+        for cosa in lista:
+            x, y = cosa["pos"]
+            grupo = T._grupo_en(trazado, x, y)
+            if grupo is None:
+                cosa.pop("z", None)
+                continue
+            z = float(alturas.z(trazado.grupos[grupo], [x], [y])[0])
+            cosa["z"] = round(max(z, float(alturas.terreno([x], [y])[0])), 3)
+
+
+def exportar_json(escombros: list[dict], meta_relieve: dict, meta_suelo: dict, calles, meta_transito: dict) -> dict:
     def pts(lista):
         return [(round(x, 1), round(y, 1)) for x, y in lista]
 
@@ -433,6 +442,7 @@ def exportar_json(escombros: list[dict], meta_relieve: dict, meta_suelo: dict, c
         "rio": {"nombre": "Tumán", "eje": D.R.RIO_EJE, "poligono": coords(D.RIO), "hielo": D.R.NIVEL_HIELO},
         "relieve": meta_relieve,
         "suelo": meta_suelo,
+        "transito": meta_transito,
         "calles": [{**c, "puntos": pts(c["puntos"])} for c in D.CALLES],
         "plazas": [{**{k: v for k, v in p.items() if k != "forma"}, "forma": coords(p["forma"])} for p in D.PLAZAS],
         "vias": [{**v, "puntos": pts(v["puntos"])} for v in D.VIAS],
@@ -490,9 +500,16 @@ def main() -> int:
     escombros = calcular_escombros()
     relieve, terreno = calcular_relieve(escombros, 2.0)
     calcular_cotas(terreno, 2.0)
+    rasante = T.rasante_transito(terreno, 2.0)
+    alturas = T.Alturas(rasante, relieve, terreno, 2.0)
+    trazado = T.trazar_completo(alturas)
+    problemas += T.comprobar(trazado, alturas)
+    alturas_en_el_transito(trazado, alturas)
     meta = exportar_relieve(relieve, 2.0)
+    exportar_relieve(rasante, 2.0, "rasante.png")
+    meta_transito = {"archivo": "transito.json", **T.exportar(trazado, alturas, SALIDA_DATOS)}
     meta_suelo = exportar_suelo(escombros, 1.0)
-    estadisticas = exportar_json(escombros, meta, meta_suelo, calles)
+    estadisticas = exportar_json(escombros, meta, meta_suelo, calles, meta_transito)
     print(json.dumps(estadisticas, ensure_ascii=False, indent=1))
     if problemas:
         print(f"\n{len(problemas)} problemas:")

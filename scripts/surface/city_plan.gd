@@ -1,8 +1,9 @@
 class_name CityPlan
 extends RefCounted
-## El plano de Tumansk dentro de Godot: lee data/ciudad/ (plano.json, relieve.png y
-## suelo.png, que genera `make ciudad`) y responde preguntas sobre él: la altura del
-## terreno en un punto, el sector, la zona…
+## El plano de Tumansk dentro de Godot: lee data/ciudad/ (plano.json, relieve.png,
+## suelo.png y la red de tránsito, transito.json con su rasante.png, que genera `make
+## ciudad`) y responde preguntas sobre él: la altura del terreno en un punto, el sector, la
+## zona…
 ##
 ## Coordenadas del plano: metros, x hacia el este e y hacia el norte, con el origen en la
 ## esquina suroeste. En el mundo, x es el este, y es la altura y el norte es -z (como en la
@@ -30,6 +31,19 @@ var heights: PackedFloat32Array = PackedFloat32Array()
 ## Suelo de la maqueta: color bajo la nieve (RGB) y cuánta nieve lo cubre (A). La primera
 ## fila es el borde norte.
 var ground: Image
+## La red de tránsito (transito.json): grupos de superficie con su regla de altura,
+## aristas, muros, escaleras, marcas viales y detalles.
+var transit: Dictionary = {}
+## La rasante del tránsito, como [member heights]: el terreno nivelado sin escombros, con
+## los muelles rellenos hasta el agua. Lo que se pisa va a esta altura más su nivel.
+var transit_heights: PackedFloat32Array = PackedFloat32Array()
+## Lo que el tránsito cubre de cada triángulo de la rejilla del relieve (rejilla.png): un
+## byte por celda, fila a fila de sur a norte, con el estado del triángulo noroeste en los
+## bits 0-2 y el del sureste en los 3-5.
+var transit_grid: PackedByteArray = PackedByteArray()
+## Cuánto se rebaja la colisión del relieve en cada punto de la rejilla (rebaje.png), en
+## metros, fila a fila de sur a norte.
+var transit_carve: PackedFloat32Array = PackedFloat32Array()
 ## Qué falló al cargar; vacío si nada.
 var error: String = ""
 
@@ -156,7 +170,7 @@ func load_from(directory: String) -> Error:
 		if zone["poligono"] != null:
 			_zones[key.to_int()] = ring(zone["poligono"][0])
 	_river = ring(data["rio"]["poligono"][0])
-	return OK
+	return _load_transit(directory)
 
 
 ## ¿Se cargó bien?
@@ -167,14 +181,39 @@ func is_loaded() -> bool:
 ## Altura del terreno (con los montones de escombros) en un punto del plano. Fuera del
 ## mapa se repite la del borde.
 func height_at(point: Vector2) -> float:
-	var fx: float = clampf(point.x / relief_resolution - 0.5, 0.0, relief_size.x - 1.001)
-	var fy: float = clampf(point.y / relief_resolution - 0.5, 0.0, relief_size.y - 1.001)
-	var i: int = int(fx)
-	var j: int = int(fy)
-	var k: int = j * relief_size.x + i
-	var south: float = lerpf(heights[k], heights[k + 1], fx - i)
-	var north: float = lerpf(heights[k + relief_size.x], heights[k + relief_size.x + 1], fx - i)
-	return lerpf(south, north, fy - j)
+	return _bilinear(heights, point)
+
+
+## Altura de la rasante del tránsito en un punto (bilineal, como [method height_at]).
+func transit_base_at(point: Vector2) -> float:
+	return _bilinear(transit_heights, point)
+
+
+## Las alturas de [param values] (el relieve o la rasante) en los puntos de la rejilla de
+## [member relief_resolution] metros (las esquinas de las celdas): (ancho + 1) × (alto + 1)
+## valores, fila a fila de sur a norte. Son las mismas que da [method height_at] en esos
+## puntos (la media de las cuatro celdas que los rodean).
+func vertex_grid(values: PackedFloat32Array) -> PackedFloat32Array:
+	var nx: int = relief_size.x + 1
+	var ny: int = relief_size.y + 1
+	var result: PackedFloat32Array = PackedFloat32Array()
+	result.resize(nx * ny)
+	for j: int in ny:
+		var south: int = clampi(j - 1, 0, relief_size.y - 1) * relief_size.x
+		var north: int = clampi(j, 0, relief_size.y - 1) * relief_size.x
+		for i: int in nx:
+			var west: int = clampi(i - 1, 0, relief_size.x - 1)
+			var east: int = clampi(i, 0, relief_size.x - 1)
+			result[j * nx + i] = (
+				(
+					values[south + west]
+					+ values[south + east]
+					+ values[north + west]
+					+ values[north + east]
+				)
+				* 0.25
+			)
+	return result
 
 
 ## El punto del plano sobre el terreno, en coordenadas del mundo.
@@ -209,6 +248,11 @@ func zone_at(point: Vector2) -> int:
 	return 0
 
 
+## ¿Está el punto sobre el río (dentro de sus orillas)?
+func is_on_river(point: Vector2) -> bool:
+	return Geometry2D.is_point_in_polygon(point, _river)
+
+
 ## Nombre de una zona, o "el río" para la 0 cuando el punto está sobre el hielo.
 func zone_label(point: Vector2) -> String:
 	var zone: int = zone_at(point)
@@ -231,6 +275,62 @@ func axis_point(along: float, across: float = 0.0) -> Vector2:
 ## La Zona Cero (donde cayó la bomba), en el plano.
 func ground_zero() -> Vector2:
 	return Vector2(data["zona_cero"][0], data["zona_cero"][1])
+
+
+func _bilinear(values: PackedFloat32Array, point: Vector2) -> float:
+	var fx: float = clampf(point.x / relief_resolution - 0.5, 0.0, relief_size.x - 1.001)
+	var fy: float = clampf(point.y / relief_resolution - 0.5, 0.0, relief_size.y - 1.001)
+	var i: int = int(fx)
+	var j: int = int(fy)
+	var k: int = j * relief_size.x + i
+	var south: float = lerpf(values[k], values[k + 1], fx - i)
+	var north: float = lerpf(values[k + relief_size.x], values[k + relief_size.x + 1], fx - i)
+	return lerpf(south, north, fy - j)
+
+
+func _load_transit(directory: String) -> Error:
+	if not data.has("transito"):
+		return _fail("plano.json no trae la red de tránsito: hay que ejecutar «make ciudad».")
+	var text: String = FileAccess.get_file_as_string(
+		directory + String(data["transito"]["archivo"])
+	)
+	var parsed: Variant = JSON.parse_string(text)
+	if not parsed is Dictionary:
+		return _fail("No se puede leer la red de tránsito (%s)." % data["transito"]["archivo"])
+	transit = parsed
+	var decoded: Dictionary = decode_gray16(
+		FileAccess.get_file_as_bytes(directory + String(transit["rasante"]["archivo"]))
+	)
+	if decoded.is_empty() or Vector2i(decoded["width"], decoded["height"]) != relief_size:
+		return _fail("No se puede leer la rasante del tránsito.")
+	transit_heights = _heights_from(decoded["bytes"], relief_size)
+	return _load_transit_grid(directory)
+
+
+## La rejilla del tránsito (qué tapa de cada triángulo del relieve) y el rebaje.
+func _load_transit_grid(directory: String) -> Error:
+	var grid: Image = Image.new()
+	var grid_bytes: PackedByteArray = FileAccess.get_file_as_bytes(
+		directory + String(transit["rejilla"]["archivo"])
+	)
+	if grid_bytes.is_empty() or grid.load_png_from_buffer(grid_bytes) != OK:
+		return _fail("No se puede leer la rejilla del tránsito.")
+	grid.convert(Image.FORMAT_L8)
+	if Vector2i(grid.get_width(), grid.get_height()) != relief_size:
+		return _fail("La rejilla del tránsito no casa con el relieve.")
+	var rows: PackedByteArray = grid.get_data()
+	transit_grid.resize(rows.size())
+	for j: int in relief_size.y:
+		var src: int = (relief_size.y - 1 - j) * relief_size.x
+		for i: int in relief_size.x:
+			transit_grid[j * relief_size.x + i] = rows[src + i]
+	var carve: Dictionary = decode_gray16(
+		FileAccess.get_file_as_bytes(directory + String(transit["rebaje"]["archivo"]))
+	)
+	if carve.is_empty() or Vector2i(carve["width"], carve["height"]) != relief_size + Vector2i.ONE:
+		return _fail("No se puede leer el rebaje del tránsito.")
+	transit_carve = _millimeters_from(carve["bytes"], relief_size + Vector2i.ONE)
+	return OK
 
 
 func _fail(message: String) -> Error:
@@ -283,6 +383,19 @@ static func _paeth(a: int, b: int, c: int) -> int:
 	if pa <= pb and pa <= pc:
 		return a
 	return b if pb <= pc else c
+
+
+## Pasa milímetros de 16 bits a metros y da la vuelta a las filas (la 0, la del sur).
+static func _millimeters_from(bytes: PackedByteArray, grid: Vector2i) -> PackedFloat32Array:
+	var result: PackedFloat32Array = PackedFloat32Array()
+	result.resize(grid.x * grid.y)
+	for j: int in grid.y:
+		var src: int = (grid.y - 1 - j) * grid.x * 2
+		var dst: int = j * grid.x
+		for i: int in grid.x:
+			result[dst + i] = ((bytes[src] << 8) | bytes[src + 1]) / 1000.0
+			src += 2
+	return result
 
 
 ## Pasa los valores de 16 bits a metros (valor / 100 - 50) y da la vuelta a las filas,

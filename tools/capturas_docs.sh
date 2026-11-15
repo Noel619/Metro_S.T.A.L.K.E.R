@@ -87,6 +87,10 @@ if want maqueta; then
     keep maqueta_vista_centro fase3_maqueta_centro
     keep maqueta_vista_industria fase3_maqueta_industria
     keep maqueta_vista_zona_cero fase3_maqueta_zona_cero
+    keep maqueta_vista_escalinata fase3_transito_escalinata
+    keep maqueta_vista_esquina fase3_transito_esquina
+    keep maqueta_vista_vano fase3_transito_vano
+    keep maqueta_vista_loma fase3_transito_loma
     capture debug/maqueta_ciudad ciegos \
         "--call=MaquetaCiudad:survey_landmarks --call=MaquetaCiudad:capture_only:aerea" 10
     keep ciegos fase3_maqueta_hitos

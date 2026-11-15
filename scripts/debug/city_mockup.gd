@@ -5,11 +5,11 @@ extends Node3D
 ## probar recorridos, vistas, sectores de carga y rendimiento antes de construir.
 ##
 ## Tab: andar o volar · ratón: mirar (clic para capturarlo, Esc para soltarlo) · WASD,
-## Mayús, C, Espacio: moverse · 1-9 y 0: vistas · R: recorrer la ruta siguiente (Mayús+R,
-## la anterior; Retroceso, parar; + y -, más o menos deprisa) · F2: rutas · F3: sectores y
-## zonas · F4: hitos a la vista · N: niebla · O: oclusión · P: tinta · L: linterna · B: prueba
-## de rendimiento · V: comprobar los hitos en toda la ciudad · F1: hora, clima y estilo · F9:
-## oculta el texto.
+## Mayús, C, Espacio: moverse · 1-9 y 0: vistas (con Mayús, las de la red de tránsito) ·
+## R: recorrer la ruta siguiente (Mayús+R, la anterior; Retroceso, parar; + y -, más o
+## menos deprisa) · F2: rutas · F3: sectores y zonas · F4: hitos a la vista · N: niebla ·
+## O: oclusión · P: tinta · L: linterna · B: prueba de rendimiento · V: comprobar los hitos
+## en toda la ciudad · F1: hora, clima y estilo · F9: oculta el texto.
 
 ## Vistas fijas: posición y punto al que miran, en el plano (x, y) y en metros sobre lo
 ## que se pisa (z). Son también las cámaras de las capturas de revisión. "niebla" y "capas"
@@ -88,6 +88,34 @@ const VIEWS: Array[Dictionary] = [
 		"niebla": "sin",
 		"capas": ["rutas", "sectores"],
 	},
+	{
+		"name": "escalinata",
+		"title": "La Escalinata desde el rellano de abajo",
+		"from": Vector3(858.2, 805.6, 1.7),
+		"to": Vector3(927.8, 882.9, 1.6),
+		"fov": 62.0,
+	},
+	{
+		"name": "esquina",
+		"title": "Un cruce del Barrio Obrero: bordillos, pasos de cebra y sumideros",
+		"from": Vector3(553.0, 198.0, 1.6),
+		"to": Vector3(571.0, 214.0, -0.6),
+		"fov": 66.0,
+	},
+	{
+		"name": "vano",
+		"title": "El tablero del puente se corta en el vano hundido",
+		"from": Vector3(738.9, 664.1, 1.7),
+		"to": Vector3(767.9, 705.3, -3.0),
+		"fov": 62.0,
+	},
+	{
+		"name": "loma",
+		"title": "Las escaleras de la loma, del Muelle Norte al Bulevar",
+		"from": Vector3(1099.0, 801.5, 1.7),
+		"to": Vector3(1118.0, 862.0, 2.5),
+		"fov": 60.0,
+	},
 ]
 ## Niebla: la del juego, una ligera (para ver lejos) o ninguna (todo detallado).
 const FOG_MODES: PackedStringArray = ["juego", "ligera", "sin"]
@@ -98,7 +126,7 @@ const ROUTE_SPEEDS: Array[float] = [1.0, 4.0, 16.0]
 const COMPASS: PackedStringArray = ["E", "NE", "N", "NO", "O", "SO", "S", "SE"]
 const DEBUG_PANEL: Script = preload("res://scripts/debug/debug_panel.gd")
 const HELP: String = (
-	"Tab andar/volar · 1-9 y 0 vistas · R recorrido (Mayús+R atrás, Retroceso para, + -)"
+	"Tab andar/volar · 1-9 y 0 vistas (Mayús: tránsito) · R recorrido (Mayús+R atrás, + -)"
 	+ " · F2 rutas · F3 sectores · F4 hitos a la vista\n"
 	+ "N niebla · O oclusión · P tinta · L linterna · B prueba de rendimiento"
 	+ " · V comprobar hitos · F1 hora y estilo · F9 texto"
@@ -296,7 +324,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if key == null or not key.pressed or key.echo:
 		return
 	if key.keycode >= KEY_0 and key.keycode <= KEY_9:
-		_go_to_view(wrapi(key.keycode - KEY_1, 0, 10))
+		# Con Mayús, las vistas de la red de tránsito (la undécima y siguientes).
+		var index: int = wrapi(key.keycode - KEY_1, 0, 10) + (10 if key.shift_pressed else 0)
+		if index < VIEWS.size():
+			_go_to_view(index)
 		return
 	match key.keycode:
 		KEY_ESCAPE:

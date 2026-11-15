@@ -4,6 +4,9 @@ extends Node3D
 ## automática de F3-15, para probar recorridos, vistas, sectores de carga y rendimiento
 ## antes de construir con el kit modular.
 ##
+## Las calles, aceras, plazas, escaleras y sendas son la red de tránsito (CityTransit, desde
+## data/ciudad/transito.json), con sus bordillos, muros, pasos de cebra, tapas y sumideros.
+##
 ## La ciudad se divide en los sectores de 200 × 200 m del plano (A1-H6). Cada sector tiene
 ## una versión lejana ("Lejos": el relieve cada 8 m y los edificios en un solo bloque, del
 ## color de la niebla) y una detallada (el relieve cada 2 m, cada edificio con sus
@@ -26,6 +29,22 @@ const OCCLUDER_MIN_AREA: float = 80.0
 const PROP_MODELS: PackedStringArray = [
 	"coche", "coche_quemado", "arbol_desnudo", "arbol_desnudo_b"
 ]
+## Materiales del tránsito: textura (assets/textures/pavimentos/), nieve y fila de rampas.
+const TRANSIT_MATERIALS: Dictionary = {
+	"asfalto": ["asfalto", 0.75],
+	"acera": ["asfalto", 0.85],
+	"losas": ["losas", 0.85],
+	"plaza": ["granito", 0.85],
+	"adoquin": ["adoquin", 0.8],
+	"granito": ["granito", 0.8],
+	"bordillo": ["bordillo", 0.6],
+	"hormigon": ["hormigon", 0.75],
+	"grava": ["grava", 0.9],
+	"tierra": ["tierra", 0.9],
+	"pintura": ["pintura", 0.6],
+	"metal": ["", 0.3],
+}
+const PAVEMENTS_DIR: String = "res://assets/textures/pavimentos/"
 
 ## Distancia al centro de un sector a partir de la cual se dibuja su versión lejana.
 @export var near_distance: float = 450.0
@@ -45,6 +64,7 @@ var _models: Dictionary = {}
 var _builder: CityBuildings
 var _terrain: CityTerrain
 var _props: CityProps
+var _transit: CityTransit
 
 
 ## Levanta la ciudad entera (tarda unos segundos).
@@ -57,6 +77,11 @@ func build(city_plan: CityPlan) -> void:
 	stats = {"triangulos_cerca": 0, "triangulos_lejos": 0, "vehiculos": 0, "arboles": 0}
 	_make_materials()
 	_load_models()
+	_transit = CityTransit.new(plan)
+	_transit.build()
+	_terrain.holes = _transit.touched
+	_terrain.hole_step = NEAR_STEP
+	stats["transito"] = _transit.stats
 	var vehicles: Dictionary = _props.vehicles()
 	var trees: Dictionary = _props.trees()
 	var structures: Dictionary = _props.structures()
@@ -92,9 +117,11 @@ func standing_height(building: Dictionary) -> float:
 	return _builder.standing_height(building)
 
 
-## Altura de lo que se pisa en un punto del plano (los puentes incluidos).
+## Altura de lo que se pisa en un punto del plano: el tránsito si lo hay (la calzada, los
+## peldaños, el tablero del puente…); si no, el relieve o el tablero de otro puente.
 func surface_height(point: Vector2) -> float:
-	return _props.surface_height(point)
+	var transit: float = _transit.surface_at(point) if _transit != null else NAN
+	return _props.surface_height(point) if is_nan(transit) else transit
 
 
 func _build_sector(
@@ -136,11 +163,12 @@ func _build_sector(
 	var heights: PackedFloat32Array = _terrain.sector_heights(sector, NEAR_STEP)
 	var ground: CollisionShape3D = CollisionShape3D.new()
 	ground.name = "Relieve"
-	ground.shape = _terrain.heightmap_shape(NEAR_STEP, heights)
+	ground.shape = _terrain.heightmap_shape(NEAR_STEP, _carved(sector, heights))
 	ground.scale = Vector3(NEAR_STEP, 1.0, NEAR_STEP)
 	body.add_child(ground)
 	var near_terrain: MeshBuffer = _terrain.grid_mesh(rect, NEAR_STEP, heights, center, 3.0)
 	_add_mesh(node, "Terreno", near_terrain, _materials["suelo"], NodePath("../Lejos"))
+	_add_transit(node, sector, body)
 	var buildings_node: Node3D = Node3D.new()
 	buildings_node.name = "Edificios"
 	node.add_child(buildings_node)
@@ -171,6 +199,44 @@ func _build_sector(
 	occluder_node.name = "Oclusor"
 	occluder_node.occluder = occluder
 	node.add_child(occluder_node)
+
+
+## Las alturas de la colisión del relieve de un sector, rebajadas bajo el tránsito.
+func _carved(sector: Vector2i, heights: PackedFloat32Array) -> PackedFloat32Array:
+	var result: PackedFloat32Array = heights.duplicate()
+	var n: int = _terrain.grid_size(NEAR_STEP)
+	var stride: int = _transit.cells.x + 1
+	var first: Vector2i = sector * _transit.cells_per_sector
+	for j: int in n:
+		for i: int in n:
+			var gx: int = mini(first.x + i, _transit.cells.x)
+			var gy: int = mini(first.y + j, _transit.cells.y)
+			result[j * n + i] -= _transit.carve[gy * stride + gx]
+	return result
+
+
+## La red de tránsito del sector: una malla por material, su colisión y los detalles.
+func _add_transit(node: Node3D, sector: Vector2i, body: StaticBody3D) -> void:
+	var holder: Node3D = Node3D.new()
+	holder.name = "Transito"
+	node.add_child(holder)
+	var by_material: Dictionary = _transit.meshes.get(sector, {})
+	for material: String in by_material:
+		var mesh: MeshBuffer = by_material[material]
+		if mesh.is_empty():
+			continue
+		var shared: Material = _materials["suelo"] if material == "suelo" else _materials[material]
+		_add_mesh(holder, material.capitalize(), mesh, shared, NodePath("../../Lejos"))
+	var faces: MeshBuffer = _transit.collision.get(sector)
+	if faces != null and not faces.vertices.is_empty():
+		var shape: ConcavePolygonShape3D = ConcavePolygonShape3D.new()
+		shape.backface_collision = true
+		shape.set_faces(faces.vertices)
+		var collision: CollisionShape3D = CollisionShape3D.new()
+		collision.name = "Transito"
+		collision.shape = shape
+		body.add_child(collision)
+	_add_props(node, _transit.instances.get(sector, {}), "Detalles")
 
 
 ## Distancia a la que cada sector pasa a su versión lejana (muy grande: todo detallado).
@@ -221,12 +287,14 @@ func _blocks_view(building: Dictionary) -> bool:
 	return _builder.standing_height(building) >= OCCLUDER_MIN_HEIGHT
 
 
-## Vehículos y árboles del sector como instancias (una MultiMesh por modelo).
-func _add_props(sector_node: Node3D, props: Dictionary) -> void:
+## Vehículos y árboles (o los detalles del tránsito) del sector como instancias: una
+## MultiMesh por modelo. Cada instancia es una transformación, o un par (transformación,
+## color).
+func _add_props(sector_node: Node3D, props: Dictionary, holder_name: String = "Objetos") -> void:
 	if props.is_empty():
 		return
 	var holder: Node3D = Node3D.new()
-	holder.name = "Objetos"
+	holder.name = holder_name
 	sector_node.add_child(holder)
 	for model: String in props:
 		var instances: Array = props[model]
@@ -236,10 +304,11 @@ func _add_props(sector_node: Node3D, props: Dictionary) -> void:
 		multimesh.mesh = _models[model][0]
 		multimesh.instance_count = instances.size()
 		for i: int in instances.size():
-			var placed: Transform3D = instances[i][0]
+			var entry: Variant = instances[i]
+			var placed: Transform3D = entry[0] if entry is Array else entry
 			placed.origin -= sector_node.position
 			multimesh.set_instance_transform(i, placed)
-			multimesh.set_instance_color(i, instances[i][1])
+			multimesh.set_instance_color(i, entry[1] if entry is Array else Color.WHITE)
 		var node: MultiMeshInstance3D = MultiMeshInstance3D.new()
 		node.name = model.capitalize().replace(" ", "")
 		node.multimesh = multimesh
@@ -248,7 +317,8 @@ func _add_props(sector_node: Node3D, props: Dictionary) -> void:
 		holder.add_child(node)
 		node.visibility_parent = NodePath("../../Lejos")
 		var counter: String = "arboles" if model.begins_with("arbol") else "vehiculos"
-		stats[counter] += instances.size()
+		if holder_name == "Objetos":
+			stats[counter] += instances.size()
 
 
 ## El terreno de alrededor del mapa: sin colisión (los bordes no se cruzan).
@@ -297,6 +367,16 @@ func _make_materials() -> void:
 	var far: ShaderMaterial = ShaderMaterial.new()
 	far.shader = load(SHADERS_DIR + "tinta_silueta.gdshader")
 	_materials["lejos"] = far
+	for kind: String in TRANSIT_MATERIALS:
+		var settings: Array = TRANSIT_MATERIALS[kind]
+		var material: ShaderMaterial = _shader_material("tinta_transito", ramps, settings[1])
+		if not String(settings[0]).is_empty():
+			material.set_shader_parameter(
+				"albedo_texture", load(PAVEMENTS_DIR + String(settings[0]) + ".png")
+			)
+		if kind == "metal":
+			material.set_shader_parameter("ramp_row", 4)
+		_materials[kind] = material
 
 
 func _shader_material(shader_name: String, ramps: Texture2D, snow: float) -> ShaderMaterial:
@@ -331,3 +411,24 @@ func _load_models() -> void:
 	var box: BoxMesh = BoxMesh.new()
 	box.size = Vector3.ONE
 	_models["caja"] = [box, load(BOX_MATERIAL)]
+	_load_detail_models()
+
+
+## Los detalles del tránsito: tapas de registro y sumideros de fundición, a ras del suelo.
+func _load_detail_models() -> void:
+	var cast_iron: ShaderMaterial = _shader_material("tinta", load(RAMPS) as Texture2D, 0.35)
+	cast_iron.set_shader_parameter("albedo_color", Color(0.34, 0.33, 0.31))
+	cast_iron.set_shader_parameter("ramp_row", 4)
+	var round_lid: CylinderMesh = CylinderMesh.new()
+	round_lid.top_radius = 0.33
+	round_lid.bottom_radius = 0.33
+	round_lid.height = 0.03
+	round_lid.radial_segments = 20
+	round_lid.rings = 1
+	var square_lid: BoxMesh = BoxMesh.new()
+	square_lid.size = Vector3(0.62, 0.03, 0.62)
+	var drain: BoxMesh = BoxMesh.new()
+	drain.size = Vector3(0.75, 0.03, 0.4)
+	_models["tapa_redonda"] = [round_lid, cast_iron]
+	_models["tapa_cuadrada"] = [square_lid, cast_iron]
+	_models["sumidero"] = [drain, cast_iron]
