@@ -1,10 +1,20 @@
 # Guía de estilo: ilustración entintada
 
-Estado: **segunda pasada de la Fase 1**, pendiente de tu aprobación. Los valores de esta guía son los que usan ahora mismo los shaders, `StyleDirector` y `Atmosphere`.
+Estado: **Fase 1 completa**, pendiente de tu aprobación final. Los valores de esta guía son los que usan ahora mismo los shaders, `StyleDirector` y `Atmosphere`.
 
 **Revisión 1** (tu respuesta): contorno y tramado, bien; el depósito cálido, muy bien; el exterior estaba demasiado blanco y pálido, sin ambiente posapocalíptico, y el cielo no podía ser negro. La segunda pasada cambia el exterior (secciones 2, 3, 5 y 6).
 
 **Revisión 2**: el exterior transmite la sensación; hay que mantener ese nivel en toda la ciudad. La noche, mucho más oscura (sin linterna casi no se ve). El anochecer, bien, con un ligero retoque: ahora es algo más marrón y menos saturado.
+
+**Cierre de la Fase 1**:
+
+- Contorno de casco invertido para los objetos clave.
+- Huellas en la nieve y ventisca.
+- Los cinco objetos que faltaban.
+- La hora del día continua.
+- El panel de depuración.
+- Las primeras piezas de interfaz y las tipografías.
+- Un [vídeo de 33 segundos](capturas/fase1_dioramas.mp4) con todos los dioramas.
 
 ![Depósito limpio](capturas/fase1_deposito_limpio.jpg)
 
@@ -20,6 +30,17 @@ Estado: **segunda pasada de la Fase 1**, pendiente de tu aprobación. Los valore
 | Estado del dibujo | `scripts/core/style_director.gd` | Mezcla el preajuste de la zona con el miedo y la radiación y lo publica en los parámetros globales `tinta_*` |
 
 El post-proceso es un rectángulo que cubre la pantalla (`scenes/style/ink_post.tscn`). Se dibuja antes que los objetos transparentes, así que las partículas (nieve, polvo) y las telarañas quedan limpias encima del dibujo.
+
+### Contorno de casco invertido (objetos clave, personas y criaturas)
+
+El contorno del post-proceso es fino y uniforme. Lo importante lleva además un **casco invertido** (`InkHull.add_to(nodo)`, `assets/shaders/contorno_casco.gdshader`):
+
+- Es una copia de la malla con las normales suavizadas: los vértices que comparten posición promedian su normal, así el casco no se abre en las aristas vivas.
+- Se hincha unos píxeles (2,6 px a 1080p, igual de cerca que de lejos) y se pinta de tinta solo por detrás.
+- Tiembla a saltos con el trazo vivo y engorda con el miedo.
+- Sirve también al juego: lo que se puede coger destaca con un trazo de pincel.
+
+![Las herramientas del oficio, con contorno de casco](capturas/fase1_deposito_limpio_banco.jpg)
 
 ## 2. Preajustes por zona
 
@@ -70,6 +91,19 @@ El post-proceso es un rectángulo que cubre la pantalla (`scenes/style/ink_post.
 
 **Cielo** (`scripts/surface/atmosphere.gd`). Nunca es negro del todo, pero la noche es muy oscura: sin linterna solo se distinguen el cielo y las siluetas (revisión 2).
 
+- **Hora continua:** `Atmosphere.apply_hour(entorno, sol, hora)` interpola entre los momentos de referencia.
+
+  | Hora | Momento |
+  |---|---|
+  | 0:00–5:00 | Noche |
+  | 6:30 | Amanecer: el anochecer con el sol al este |
+  | 8:00–16:30 | Día |
+  | 18:00 | Anochecer |
+  | Desde las 19:30 | Noche |
+
+  El preajuste de estilo cambia de día a noche con una transición. El reloj del mundo (Fase 4) usará esta función.
+- **Clima:** con ventisca, la niebla se cierra (densidad 0,055) y se vuelve gris, nunca blanca. La luz baja, el cielo se cubre y la nieve cruza de lado con ráfagas.
+
 | Momento | Cénit | Horizonte | Nubes (claro / oscuro) | Luz |
 |---|---|---|---|---|
 | Día | `#6E7273` | `#9A968C` | `#AEABA2` / `#6A6967` | Sol velado `#F2E6CC` |
@@ -82,6 +116,20 @@ Regla: el rojo (`#C8323C`) se reserva para lo importante.
 
 De noche la luz ambiente y la de la luna son casi nulas (`tinta_negro` = 1): el relleno de tinta es casi negro y los contornos solo se dibujan donde llega algo de luz. La linterna (`scripts/surface/flashlight.gd`) es un foco de luz cálida que sale de la mano: dentro de su cono vuelven el color, el tramado y la tinta. Los copos de nieve reciben la luz de la escena, así que de noche solo se ven dentro del cono.
 
+### Huellas y ventisca
+
+- **Huellas:** las de bota y las de perro son calcomanías (`Decal`) sobre la nieve vieja.
+  - Sus texturas (`huella_bota.png` y `huella_perro.png`) las genera `tools/textures/generate_textures.py`: nieve pisada, más oscura, con el borde algo levantado y el dibujo de la suela en espiga.
+  - Funcionan con el shader propio y sobre los montones de nieve.
+  - Son información: tú ves las de los demás y ellos ven las tuyas.
+- **Ventisca:** el diorama `diorama_patio_ventisca` muestra el clima.
+  - Mucha más nieve, rápida y de lado.
+  - Ráfagas como trazos casi horizontales.
+  - Niebla cerrada y gris.
+
+![Ventisca](capturas/fase1_patio_ventisca.jpg)
+![Huellas de bota y de perro](capturas/fase1_patio_dia_huellas.jpg)
+
 ## 4. Reglas de modelado (recetas)
 
 - **Biseles** de 3 a 20 mm según el tamaño. Las piezas sin bisel se sombrean planas.
@@ -91,19 +139,48 @@ De noche la luz ambiente y la de la luna son casi nulas (`tinta_negro` = 1): el 
 - **Destrucción** (superficie): hollín de incendio sobre las ventanas quemadas (`scorch`), paneles caídos con el hueco oscuro y varillas, balcones desplomados que cuelgan de la bisagra, cornisas rotas, escombros al pie de la fachada y puertas tapiadas con tablones.
 - **Nombres de material**: `metal` (rampa de metal), `vidrio`, `bombilla` (emite luz), `nevado` (nieve vieja) y `lejano_*` (siluetas del horizonte). El resto usa el material base.
 
-## 5. Herramientas de revisión
+## 5. Interfaz y tipografías
+
+**Interfaz:** las primeras piezas en el estilo final están en `scenes/ui/prueba_interfaz.tscn`.
+
+- Las ilustraciones son SVG dibujados con rough.js (`tools/svg/generate.mjs`). Los textos los pone Godot con las fuentes del juego, a partir del `.json` que acompaña a cada SVG ([D-007](DECISIONES.md)).
+- Las piezas:
+  - El cuaderno de cuadros con el mapa a lápiz de La Plaza. Sale del plano de la ciudad, con colores de lápiz: rojo para el peligro, azul para la ruta, verde para el refugio.
+  - La etiqueta de precio.
+  - El recibo del impuesto, a máquina, con el sello violeta **PAGADO**.
+  - La ficha de encargo clavada con una chincheta, con el peligro en puntos rojos.
+
+![Piezas de interfaz](capturas/fase1_interfaz.jpg)
+
+**Tipografías** (`scripts/ui/ui_fonts.gd`): todas OFL, con español y cirílico.
+
+| Uso | Familia | Mínimo a 1080p |
+|---|---|---|
+| Manuscrita: cuaderno, notas, etiquetas | Caveat | 30 px |
+| A máquina: recibos e impresos | PT Mono | 20 px |
+| Rótulos: carteles, sellos, cabeceras | Oswald | 20 px |
+| Texto: textos largos y opciones | PT Sans | 18 px |
+
+La prueba de legibilidad está en `scenes/ui/prueba_tipografia.tscn`:
+
+![Tipografías](capturas/fase1_tipografias.jpg)
+
+## 6. Herramientas de revisión
 
 - `tools/capture.sh escena salida.png [ancho] [alto] [fotogramas]` hace una captura por cada cámara del grupo `capture_camera`.
 - `CAPTURE_ARGS="--hide=InkPost"` captura sin post-proceso.
 - `CAPTURE_ARGS="--post=debug_view=N"` muestra una capa del post-proceso: 1 profundidad, 2 normales, 3 contorno, 4 tramado, 5 color de entrada, 6 relleno.
-- Escenas de revisión en `scenes/style/`: `diorama_deposito_limpio`, `diorama_deposito_abandonado`, `diorama_patio_dia`, `diorama_patio_anochecer`, `diorama_patio_noche` y `prueba_estilo`. El visor (`visor_estilo`, la escena principal) las recorre todas.
+- `CAPTURE_ARGS="--call=Nodo:metodo[:valor]"` llama a un método antes de capturar (por ejemplo, `--call=PanelDepuracion:toggle`).
+- Escenas de revisión en `scenes/style/`:
+  - Depósito: `diorama_deposito_limpio` y `diorama_deposito_abandonado`.
+  - Patio: `diorama_patio_dia`, `diorama_patio_anochecer`, `diorama_patio_noche`, `diorama_patio_noche_linterna` y `diorama_patio_ventisca`.
+  - `prueba_estilo`.
+- El visor (`visor_estilo`, la escena principal) recorre todas esas escenas.
+- **Panel de depuración** (F1 en el visor): miedo, radiación, hora del día, clima, linterna, trazo reducido y estilo de zona, en vivo.
+- **Vídeo:** `tools/video.sh salida.mp4` graba los dioramas con el modo película de Godot (`scenes/debug/video_dioramas.tscn`) y lo convierte con ffmpeg.
 
-## 6. Pendiente en la Fase 1
+![Panel de depuración](capturas/fase1_panel_depuracion.jpg)
 
-- Contorno por casco invertido para personajes y criaturas (F1-03).
-- Huellas en la nieve y ventisca (F1-07).
-- Más detalle en las ruinas del horizonte y en la silueta de la Zona Cero.
-- Panel de depuración dentro del juego para mover miedo, hora y zona (F1-11).
-- Piezas de interfaz en el estilo final y tipografías (F1-12, F1-13).
-- Vídeo corto de los dioramas (F1-14).
-- Ajustes que salgan de tu revisión de las capturas.
+## 7. Fase 1: lo que falta
+
+Nada, salvo tu aprobación. Lo que se ajuste a partir de tu revisión se apuntará aquí.

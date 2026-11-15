@@ -14,6 +14,9 @@ fijas). Se guardan en assets/textures/ y las usan los shaders de assets/shaders/
 - grano.png      grano fino de película.
 - nubes.png      ruido de nubes para el cielo: R forma grande, G detalle, B luz.
 - humo.png       bocanada de humo, con borde irregular, para las partículas.
+- madera_mesa.png tablero de madera oscura (fondo de las pruebas de interfaz).
+- huella_bota.png y huella_perro.png  huellas en la nieve vieja (calcomanías):
+                 el color es nieve pisada, más oscura; el alfa, la forma.
 """
 
 from __future__ import annotations
@@ -161,6 +164,74 @@ def smoke_puff(size: int = 256) -> Image.Image:
     return Image.fromarray((rgba * 255.0).astype(np.uint8), "RGBA")
 
 
+def _footprint(size: tuple[int, int], shapes, seed: int, tread: bool) -> Image.Image:
+    """Huella en nieve vieja: hundida (más oscura) con el borde algo levantado."""
+    from PIL import ImageFilter
+
+    w, h = size
+    mask = Image.new("L", size, 0)
+    draw = ImageDraw.Draw(mask)
+    for kind, box in shapes:
+        if kind == "ellipse":
+            draw.ellipse(box, fill=255)
+        else:
+            draw.polygon(box, fill=255)
+    mask = mask.filter(ImageFilter.GaussianBlur(2.2))
+    rng = np.random.default_rng(seed)
+    noise = fft_noise(max(w, h), 1.6, seed)[:h, :w]
+    alpha = np.asarray(mask).astype(np.float32) / 255.0
+    if tread:
+        yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+        chevron = np.sin(yy * 0.5 + np.abs(xx - w / 2) * 0.32) > 0.15
+        alpha = alpha * (0.72 + 0.28 * chevron)
+    alpha = np.clip(alpha * (0.75 + 0.5 * noise) - rng.uniform(0, 0.05), 0, 1)
+    rim = np.asarray(mask.filter(ImageFilter.GaussianBlur(6))).astype(np.float32) / 255.0
+    rim = np.clip(rim - alpha, 0, 1)
+    color = np.zeros((h, w, 4), np.float32)
+    base = np.array([0.42, 0.40, 0.37])
+    color[..., :3] = base * (0.85 + 0.3 * noise[..., None])
+    color[..., :3] += rim[..., None] * 0.25
+    color[..., 3] = np.clip(alpha * 0.85 + rim * 0.35, 0, 1)
+    return Image.fromarray((color * 255).astype(np.uint8), "RGBA")
+
+
+def table_wood(size: int = 512) -> Image.Image:
+    """Tablero de madera oscura: vetas alargadas en horizontal y tablas separadas."""
+    rng = np.random.default_rng(311)
+    grain = fft_noise(size, 2.2, 312)
+    fine = fft_noise(size, 1.2, 313)
+    yy = np.arange(size, dtype=np.float32)[:, None]
+    narrow = Image.fromarray((grain[:, :: size // 32] * 255).astype(np.uint8), "L")
+    stretched = np.asarray(narrow.resize((size, size), Image.BICUBIC)).astype(np.float32) / 255.0
+    rings = 0.5 + 0.5 * np.sin(yy * 0.35 + stretched * 9.0)
+    tone = 0.55 + 0.25 * rings + 0.15 * fine
+    board = (yy // (size / 4)).astype(int)
+    tone *= 0.9 + 0.1 * rng.random(4)[board % 4]
+    seams = (np.mod(yy, size / 4) < 2).astype(np.float32)
+    tone *= 1.0 - 0.6 * seams
+    base = np.array([0.36, 0.24, 0.16])
+    rgb = np.clip(base * tone[..., None] * 1.15, 0, 1)
+    return Image.fromarray((rgb * 255).astype(np.uint8), "RGB")
+
+
+def boot_print() -> Image.Image:
+    w, h = 128, 320
+    shapes = [
+        ("ellipse", (20, 8, 108, 158)),
+        ("polygon", [(30, 118), (100, 118), (92, 206), (40, 206)]),
+        ("ellipse", (34, 196, 96, 306)),
+    ]
+    return _footprint((w, h), shapes, seed=301, tread=True)
+
+
+def paw_print() -> Image.Image:
+    w, h = 128, 128
+    shapes = [("ellipse", (36, 58, 92, 110))]
+    for cx, cy in ((30, 40), (52, 22), (78, 22), (100, 40)):
+        shapes.append(("ellipse", (cx - 11, cy - 13, cx + 11, cy + 13)))
+    return _footprint((w, h), shapes, seed=302, tread=False)
+
+
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     outputs = {
@@ -171,6 +242,9 @@ def main() -> None:
         "grano.png": grain,
         "nubes.png": clouds,
         "humo.png": smoke_puff,
+        "madera_mesa.png": table_wood,
+        "huella_bota.png": boot_print,
+        "huella_perro.png": paw_print,
     }
     for name, build in outputs.items():
         image = build()

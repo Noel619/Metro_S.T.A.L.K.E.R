@@ -77,3 +77,15 @@ Antes de construir nada se fija el plano entero ([docs/CIUDAD.md](CIUDAD.md)). L
 ## D-019 · Los daños se calculan, no se reparten al azar
 
 El nivel de daño de cada edificio sale de su distancia a la Zona Cero (cuatro anillos), con una variación fija por edificio y excepciones a mano. Los escombros caen del lado contrario a la bomba y los árboles tumbados apuntan lejos de ella, así que la destrucción tiene dirección y sirve para orientarse. La lluvia radiactiva cae en una franja hacia el sureste.
+
+## D-020 · Contorno de casco construido en el juego
+
+El casco invertido de los objetos clave no se exporta desde Blender: `InkHull` lo construye al cargar el objeto, a partir de su propia malla, con las normales suavizadas por posición y en caché. Así cualquier modelo, actual o futuro, puede llevarlo sin tocar su receta. El grosor se mide en píxeles (en el shader), no en metros, para que el trazo sea igual de cerca que de lejos, como el del post-proceso.
+
+## D-021 · Tipografías
+
+Caveat (manuscrita), PT Mono (a máquina), Oswald (rótulos) y PT Sans (texto). Las cuatro tienen licencia OFL, español completo y cirílico. Las de ParaType (PT) nacieron para el ruso y encajan con el diseño soviético. Se guardan en `assets/fonts/` con su licencia; vienen de los paquetes de npm `@expo-google-fonts`, que traen los TTF originales de Google Fonts.
+
+## D-022 · Vídeo con el modo película de Godot
+
+El vídeo de revisión se graba con `--write-movie`, a fotogramas fijos (12 por segundo, que casa con el trazo vivo a saltos), y luego se convierte con ffmpeg. Sin GPU es lento (unos dos minutos para 33 segundos a 720p), pero sale exactamente lo que se ve en el juego.

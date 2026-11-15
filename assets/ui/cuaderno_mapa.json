@@ -1,0 +1,249 @@
+{
+ "ancho": 1600,
+ "alto": 1040,
+ "rotulos": [
+  {
+   "text": "LA PLAZA",
+   "x": 120,
+   "y": 70,
+   "size": 70,
+   "rot": -2,
+   "font": "manuscrita_negrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "(desde la salida, 2.º día)",
+   "x": 124,
+   "y": 128,
+   "size": 34,
+   "rot": -2,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "N",
+   "x": 690,
+   "y": 58,
+   "size": 44,
+   "rot": 0,
+   "font": "manuscrita_negrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "50 pasos",
+   "x": 96,
+   "y": 996,
+   "size": 31,
+   "rot": 0,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "salida",
+   "x": 274,
+   "y": 801,
+   "size": 36,
+   "rot": -4,
+   "font": "manuscrita_negrita",
+   "color": "#2F6B45"
+  },
+  {
+   "text": "plaza",
+   "x": 436,
+   "y": 630,
+   "size": 34,
+   "rot": -6,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "¡INQUILINO!",
+   "x": 52,
+   "y": 649,
+   "size": 39,
+   "rot": -3,
+   "font": "manuscrita_negrita",
+   "color": "#A8352E"
+  },
+  {
+   "text": "farmacia",
+   "x": 129,
+   "y": 590,
+   "size": 31,
+   "rot": -2,
+   "font": "manuscrita",
+   "color": "#3A5A8C"
+  },
+  {
+   "text": "banco: cámara",
+   "x": 483,
+   "y": 557,
+   "size": 31,
+   "rot": -3,
+   "font": "manuscrita",
+   "color": "#2F6B45"
+  },
+  {
+   "text": "= refugio",
+   "x": 493,
+   "y": 581,
+   "size": 31,
+   "rot": -3,
+   "font": "manuscrita",
+   "color": "#2F6B45"
+  },
+  {
+   "text": "quioscos: vacíos",
+   "x": 380,
+   "y": 330,
+   "size": 29,
+   "rot": 2,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "perros",
+   "x": 150,
+   "y": 870,
+   "size": 31,
+   "rot": -8,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "avenida →",
+   "x": 520,
+   "y": 470,
+   "size": 36,
+   "rot": -42,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "Mineros",
+   "x": 130,
+   "y": 735,
+   "size": 34,
+   "rot": 0,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "Mineros 7 (de frente)",
+   "x": 930,
+   "y": 560,
+   "size": 39,
+   "rot": -1,
+   "font": "manuscrita_negrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "farmacia: abajo a la izquierda",
+   "x": 940,
+   "y": 915,
+   "size": 31,
+   "rot": -1,
+   "font": "manuscrita",
+   "color": "#A8352E"
+  },
+  {
+   "text": "ruido en el hueco del ascensor →",
+   "x": 1150,
+   "y": 860,
+   "size": 29,
+   "rot": -2,
+   "font": "manuscrita",
+   "color": "#A8352E"
+  },
+  {
+   "text": "peligro",
+   "x": 930,
+   "y": 344,
+   "size": 31,
+   "rot": 0,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "refugio",
+   "x": 930,
+   "y": 394,
+   "size": 31,
+   "rot": 0,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "botín",
+   "x": 930,
+   "y": 444,
+   "size": 31,
+   "rot": 0,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "ruta buena",
+   "x": 930,
+   "y": 494,
+   "size": 31,
+   "rot": 0,
+   "font": "manuscrita",
+   "color": "#3A5A8C"
+  },
+  {
+   "text": "Día 2",
+   "x": 900,
+   "y": 60,
+   "size": 52,
+   "rot": -1,
+   "font": "manuscrita_negrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "· los perros cruzan la playa a las 18:10",
+   "x": 900,
+   "y": 120,
+   "size": 34,
+   "rot": -1,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "· de noche nunca por Mineros",
+   "x": 900,
+   "y": 160,
+   "size": 34,
+   "rot": -1,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "· la farmacia se ve desde el patio: 3 ventanas",
+   "x": 900,
+   "y": 200,
+   "size": 34,
+   "rot": -1,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "· el banco cierra por dentro",
+   "x": 900,
+   "y": 240,
+   "size": 34,
+   "rot": -1,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "¿y si papá entró por el sótano?",
+   "x": 980,
+   "y": 290,
+   "size": 34,
+   "rot": -3,
+   "font": "manuscrita",
+   "color": "#3A5A8C"
+  }
+ ]
+}

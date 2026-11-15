@@ -1,0 +1,78 @@
+{
+ "ancho": 520,
+ "alto": 640,
+ "rotulos": [
+  {
+   "text": "ADMINISTRACIÓN DE LA ESTACIÓN",
+   "x": 40,
+   "y": 60,
+   "size": 24,
+   "rot": 0,
+   "font": "maquina",
+   "color": "#1B1A22"
+  },
+  {
+   "text": "RECIBO Nº 0417",
+   "x": 40,
+   "y": 100,
+   "size": 30,
+   "rot": 0,
+   "font": "maquina",
+   "color": "#1B1A22"
+  },
+  {
+   "text": "Concepto: impuesto diario",
+   "x": 40,
+   "y": 172,
+   "size": 24,
+   "rot": 0,
+   "font": "maquina",
+   "color": "#1B1A22"
+  },
+  {
+   "text": "por el local del depósito",
+   "x": 40,
+   "y": 206,
+   "size": 24,
+   "rot": 0,
+   "font": "maquina",
+   "color": "#1B1A22"
+  },
+  {
+   "text": "Día ......... 14",
+   "x": 40,
+   "y": 270,
+   "size": 26,
+   "rot": 0,
+   "font": "maquina",
+   "color": "#1B1A22"
+  },
+  {
+   "text": "Importe ..... 35 ₽",
+   "x": 40,
+   "y": 330,
+   "size": 26,
+   "rot": 0,
+   "font": "maquina",
+   "color": "#1B1A22"
+  },
+  {
+   "text": "Debe ........ 0 ₽",
+   "x": 40,
+   "y": 390,
+   "size": 26,
+   "rot": 0,
+   "font": "maquina",
+   "color": "#1B1A22"
+  },
+  {
+   "text": "Firma del encargado:",
+   "x": 40,
+   "y": 520,
+   "size": 22,
+   "rot": 0,
+   "font": "maquina",
+   "color": "#1B1A22"
+  }
+ ]
+}

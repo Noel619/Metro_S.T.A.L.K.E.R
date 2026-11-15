@@ -3,7 +3,7 @@ GODOT ?= godot
 PYTHON ?= python3
 GD_DIRS := scripts tests tools/godot tools/capture
 
-.PHONY: help setup assets textures svg models import test test-net lint format capture ciudad ciudad-comprobar
+.PHONY: help setup assets textures svg models import test test-net lint format capture video ciudad ciudad-comprobar
 
 help: ## muestra esta ayuda
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  %-10s %s\n", $$1, $$2}'
@@ -50,3 +50,10 @@ capture: import ## capturas de las escenas de revisión (en capturas/, sin versi
 	tools/capture.sh res://scenes/style/diorama_deposito_abandonado.tscn capturas/deposito_abandonado.png
 	tools/capture.sh res://scenes/style/diorama_patio_dia.tscn capturas/patio_dia.png
 	tools/capture.sh res://scenes/style/diorama_patio_anochecer.tscn capturas/patio_anochecer.png
+	tools/capture.sh res://scenes/style/diorama_patio_noche.tscn capturas/patio_noche.png
+	tools/capture.sh res://scenes/style/diorama_patio_ventisca.tscn capturas/patio_ventisca.png
+	tools/capture.sh res://scenes/ui/prueba_interfaz.tscn capturas/interfaz.png
+	tools/capture.sh res://scenes/ui/prueba_tipografia.tscn capturas/tipografias.png
+
+video: import ## vídeo de los dioramas (capturas/dioramas.mp4)
+	tools/video.sh capturas/dioramas.mp4

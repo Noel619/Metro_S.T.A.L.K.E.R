@@ -72,9 +72,14 @@ func _build_clean() -> void:
 	var bench_top: float = FLOOR + 0.9
 	_place("lata", Vector3(0.05, bench_top, -1.3), Vector3(0, 20, 0))
 	_place("lata", Vector3(0.14, bench_top, -1.42))
-	_place("botella_verde", Vector3(0.9, bench_top, -1.5))
-	_place("caja_carton_pequena", Vector3(0.62, bench_top, -1.45), Vector3(0, -8, 0))
+	_place("botella_verde", Vector3(0.78, bench_top, -1.62))
+	_place("caja_carton_pequena", Vector3(0.6, bench_top, -1.5), Vector3(0, -8, 0))
 	_place("cubo", Vector3(1.05, FLOOR + 0.22, -1.45))
+	# Las herramientas del oficio: objetos clave, con contorno de casco invertido.
+	_key(_place("dosimetro", Vector3(-0.12, bench_top, -1.3), Vector3(0, 18, 0)))
+	_key(_place("linterna", Vector3(0.3, bench_top, -1.16), Vector3(0, -28, 0)))
+	_key(_place("mascara_gas", Vector3(0.32, bench_top + 0.09, -1.5), Vector3(-90, 160, 0)))
+	_key(_place("bascula", Vector3(1.02, bench_top, -1.42), Vector3(0, -12, 0)))
 	_place("estanteria_metalica", Vector3(-1.95, FLOOR, -0.95), Vector3(0, 90, 0))
 	_place("estanteria_metalica", Vector3(-1.95, FLOOR, 0.2), Vector3(0, 90, 0))
 	_shelf_box("caja_carton", -0.95, 0, 0.0)
@@ -114,6 +119,8 @@ func _build_abandoned() -> void:
 	_place("botella_verde", Vector3(0.2, bench_top + 0.038, -1.3), Vector3(90, 30, 0))
 	_place("lata", Vector3(0.75, bench_top, -1.45), Vector3(0, 0, 0))
 	_place("caja_carton_pequena", Vector3(0.95, bench_top, -1.5), Vector3(0, 25, 0))
+	_key(_place("dosimetro", Vector3(0.45, bench_top, -1.32), Vector3(0, -24, 0)))
+	_key(_place("mascara_gas", Vector3(-0.55, FLOOR + 0.09, 0.62), Vector3(-90, 40, 0)))
 	_place("estanteria_metalica", Vector3(-1.95, FLOOR, -0.95), Vector3(0, 90, 0))
 	_shelf_box("caja_carton_pequena", -1.1, 1, 0.0, 27.0)
 	_shelf_box("lata", -0.7, 3, 0.0)
@@ -172,6 +179,12 @@ func _place(model: String, position: Vector3, rotation_deg: Vector3 = Vector3.ZE
 	node.rotation_degrees = rotation_deg
 	_props.add_child(node)
 	return node
+
+
+## Marca un objeto clave: contorno de casco invertido, más grueso que el del resto.
+func _key(node: Node3D) -> void:
+	if not Engine.is_editor_hint():
+		InkHull.add_to(node)
 
 
 ## Coloca algo en una balda de la estantería de la pared izquierda.

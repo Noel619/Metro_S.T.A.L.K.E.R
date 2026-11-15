@@ -11,11 +11,12 @@ Cómo poner en marcha el proyecto, generar los assets y comprobar que todo funci
 
 | Tecla | Qué hace |
 |---|---|
-| ← → | Cambia de diorama (depósito limpio, depósito abandonado y patio de día, al anochecer y de noche) |
+| ← → | Cambia de diorama (depósito limpio, depósito abandonado y patio de día, al anochecer, de noche y con ventisca) |
 | C | Cambia de cámara |
 | ↑ ↓ | Sube o baja el miedo: el trazo tiembla más y el tramado invade la imagen |
 | R | Activa o quita la radiación (más grano) |
 | L | Enciende o apaga la linterna (imprescindible de noche) |
+| F1 | Panel de depuración: miedo, radiación, hora del día, clima, linterna, trazo reducido y estilo |
 
 Los modelos, las texturas y las ilustraciones ya vienen generados en el repositorio: no hace falta instalar nada más para jugar o abrir las escenas.
 
@@ -32,6 +33,7 @@ Solo hacen falta para cambiar recetas o generadores.
 | `shapely` | 2.2 | Plano de la ciudad (geometría) |
 | `gdtoolkit` | 4.5.0 | Revisar y formatear GDScript |
 | Node.js | 20 o superior | Ilustraciones 2D (rough.js) |
+| ffmpeg | Cualquiera reciente | Vídeo de revisión |
 
 ## Órdenes
 
@@ -45,7 +47,8 @@ Solo hacen falta para cambiar recetas o generadores.
 | `make test` | Tests unitarios, sin pantalla |
 | `make test-net` | Prueba de red: un anfitrión y un invitado en la misma máquina |
 | `make lint` | Revisa el estilo del código GDScript |
-| `make capture` | Capturas de las escenas de revisión en `docs/capturas/` |
+| `make capture` | Capturas de las escenas de revisión en `capturas/` |
+| `make video` | Vídeo de los dioramas en `capturas/dioramas.mp4` |
 | `make setup` | Reescribe controles, capas y buses de audio en `project.godot` |
 | `make ciudad` | Valida el plano de la ciudad, exporta `data/ciudad/` y dibuja las hojas de `docs/ciudad/` |
 | `make ciudad-comprobar` | Solo valida y exporta el plano (lo que hace la CI) |
@@ -101,7 +104,17 @@ Opciones extra con la variable `CAPTURE_ARGS`:
 - `--hide=InkPost`: captura sin el post-proceso del estilo.
 - `--post=debug_view=N`: muestra una capa del post-proceso (ver `docs/ESTILO.md`).
 
-Las escenas de revisión del estilo están en `scenes/style/` y se describen en [ESTILO.md](ESTILO.md).
+Las escenas de revisión del estilo están en `scenes/style/` y se describen en [ESTILO.md](ESTILO.md). Las de interfaz (`scenes/ui/prueba_interfaz.tscn` y `prueba_tipografia.tscn`) son 2D: se capturan igual, sin cámara.
+
+Con `CAPTURE_ARGS="--call=Nodo:metodo[:valor]"` se llama a un método antes de capturar; por ejemplo, el panel de depuración abierto a las 18:45:
+
+```bash
+CAPTURE_ARGS="--call=VisorEstilo:_load:3 --call=DioramaPatio:set_hour:18.75 --call=PanelDepuracion:toggle" tools/capture.sh res://scenes/style/visor_estilo.tscn panel.png
+```
+
+## Vídeo
+
+`tools/video.sh salida.mp4 [ancho] [alto] [fps]` graba `scenes/debug/video_dioramas.tscn` con el modo película de Godot y lo convierte a MP4 con ffmpeg. El director (`scripts/debug/video_director.gd`) encadena los planos: cada uno carga un diorama, mueve su cámara entre dos puntos y anima la hora, el miedo o la linterna.
 
 ## Cooperativo
 

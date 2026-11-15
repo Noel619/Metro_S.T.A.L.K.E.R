@@ -2,10 +2,11 @@ class_name Atmosphere
 extends RefCounted
 ## Ambiente de la superficie para cada hora del día: cielo, luz, niebla y estilo.
 ##
-## De momento son tres momentos fijos (día, anochecer, noche). El reloj del
-## mundo (Fase 4) y el clima (Fase 5) interpolarán entre ellos. Los colores van
-## en sRGB. Reglas: el cielo nunca es negro del todo, pero la noche es muy
-## oscura: sin linterna prácticamente no se ve nada.
+## Tres momentos de referencia (día, anochecer, noche) y una interpolación por
+## horas entre ellos (el amanecer reutiliza el anochecer con el sol al este), que
+## usará el reloj del mundo (Fase 4). El clima se aplica encima: con ventisca, la
+## niebla se cierra. Los colores van en sRGB. Reglas: el cielo nunca es negro del
+## todo, pero la noche es muy oscura: sin linterna prácticamente no se ve nada.
 
 const SKY_SHADER: String = "res://assets/shaders/cielo.gdshader"
 const CLOUD_NOISE: String = "res://assets/textures/nubes.png"
@@ -74,10 +75,89 @@ const MOODS: Dictionary = {
 	},
 }
 
+## Horas de referencia: entre dos seguidas se interpola.
+const HOURS: Array = [
+	[0.0, "noche"],
+	[5.0, "noche"],
+	[6.5, "amanecer"],
+	[8.0, "dia"],
+	[16.5, "dia"],
+	[18.0, "anochecer"],
+	[19.5, "noche"],
+	[24.0, "noche"],
+]
+## Con ventisca: la niebla se cierra y se vuelve gris (nunca blanca).
+const BLIZZARD: Dictionary = {
+	"fog_density": 0.055,
+	"fog": Color("#7d7c78"),
+	"fog_night": Color("#16181d"),
+	"ambient_energy": 0.85,
+	"sun_energy": 0.55,
+}
+
 
 ## Aplica un momento del día al entorno y a la luz principal.
-static func apply(environment: Environment, sun: DirectionalLight3D, mood: String) -> void:
-	var values: Dictionary = MOODS.get(mood, MOODS["dia"])
+static func apply(
+	environment: Environment, sun: DirectionalLight3D, mood: String, weather: String = "despejado"
+) -> void:
+	apply_values(environment, sun, _with_weather(values_for(mood), weather))
+
+
+## Aplica la hora del día (0 a 24), interpolando entre los momentos de referencia.
+static func apply_hour(
+	environment: Environment, sun: DirectionalLight3D, hour: float, weather: String = "despejado"
+) -> void:
+	apply_values(environment, sun, _with_weather(values_at(hour), weather))
+
+
+## Valores de un momento de referencia ("amanecer" es el anochecer con el sol al este).
+static func values_for(mood: String) -> Dictionary:
+	if mood == "amanecer":
+		var dawn: Dictionary = MOODS["anochecer"].duplicate()
+		dawn["sun_rotation"] = Vector3(-7.0, 150.0, 0.0)
+		return dawn
+	return MOODS.get(mood, MOODS["dia"])
+
+
+## Valores interpolados para una hora del día.
+static func values_at(hour: float) -> Dictionary:
+	var h: float = fposmod(hour, 24.0)
+	for i: int in HOURS.size() - 1:
+		var from_hour: float = HOURS[i][0]
+		var to_hour: float = HOURS[i + 1][0]
+		if h >= from_hour and h <= to_hour:
+			var t: float = smoothstep(from_hour, to_hour, h)
+			return _blend(values_for(HOURS[i][1]), values_for(HOURS[i + 1][1]), t)
+	return values_for("noche")
+
+
+static func _blend(a: Dictionary, b: Dictionary, t: float) -> Dictionary:
+	var result: Dictionary = {}
+	for key: String in a:
+		if a[key] is StringName or a[key] is String:
+			result[key] = a[key] if t < 0.5 else b[key]
+		else:
+			result[key] = lerp(a[key], b[key], t)
+	return result
+
+
+static func _with_weather(values: Dictionary, weather: String) -> Dictionary:
+	if weather != "ventisca":
+		return values
+	var result: Dictionary = values.duplicate()
+	var night: float = 1.0 - clampf(values["sun_energy"] / 0.85, 0.0, 1.0)
+	result["fog_density"] = BLIZZARD["fog_density"]
+	result["fog"] = BLIZZARD["fog"].lerp(BLIZZARD["fog_night"], night)
+	result["ambient_energy"] = values["ambient_energy"] * BLIZZARD["ambient_energy"]
+	result["sun_energy"] = values["sun_energy"] * BLIZZARD["sun_energy"]
+	result["coverage"] = 1.0
+	return result
+
+
+## Aplica un conjunto de valores (de [method values_for] o [method values_at]).
+static func apply_values(
+	environment: Environment, sun: DirectionalLight3D, values: Dictionary
+) -> void:
 	var material: ShaderMaterial = ShaderMaterial.new()
 	material.shader = load(SKY_SHADER)
 	material.set_shader_parameter("cloud_noise", load(CLOUD_NOISE))
@@ -107,4 +187,6 @@ static func apply(environment: Environment, sun: DirectionalLight3D, mood: Strin
 	sun.light_energy = values["sun_energy"]
 	sun.rotation_degrees = values["sun_rotation"]
 	RenderingServer.global_shader_parameter_set("tinta_horizonte", values["horizon"])
-	StyleDirector.set_zone(values["style"], true)
+	if StyleDirector.zone != values["style"]:
+		StyleDirector.set_zone(values["style"], not environment.has_meta(&"aplicado"))
+	environment.set_meta(&"aplicado", true)

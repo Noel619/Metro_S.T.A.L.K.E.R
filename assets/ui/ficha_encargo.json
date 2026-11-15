@@ -1,0 +1,78 @@
+{
+ "ancho": 640,
+ "alto": 420,
+ "rotulos": [
+  {
+   "text": "ENCARGO",
+   "x": 34,
+   "y": 34,
+   "size": 40,
+   "rot": 0,
+   "font": "rotulo",
+   "color": "#B4423A"
+  },
+  {
+   "text": "de: Vera, la del puesto de té",
+   "x": 250,
+   "y": 46,
+   "size": 26,
+   "rot": 0,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "Antibióticos (los que haya).",
+   "x": 40,
+   "y": 98,
+   "size": 34,
+   "rot": -1,
+   "font": "manuscrita_negrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "Dice que en la farmacia de Mineros 7",
+   "x": 40,
+   "y": 142,
+   "size": 30,
+   "rot": -1,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "aún queda algo. Es para su nieta.",
+   "x": 40,
+   "y": 186,
+   "size": 30,
+   "rot": -1,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "Paga: 300 ₽ + té una semana",
+   "x": 40,
+   "y": 250,
+   "size": 30,
+   "rot": -1,
+   "font": "manuscrita_negrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "Antes del día 20",
+   "x": 40,
+   "y": 330,
+   "size": 28,
+   "rot": -1,
+   "font": "manuscrita",
+   "color": "#3B3A40"
+  },
+  {
+   "text": "peligro",
+   "x": 330,
+   "y": 334,
+   "size": 26,
+   "rot": 0,
+   "font": "manuscrita",
+   "color": "#A8352E"
+  }
+ ]
+}

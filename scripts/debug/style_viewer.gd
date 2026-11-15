@@ -2,7 +2,8 @@ extends Node
 ## Visor del estilo: herramienta de desarrollo, no interfaz del juego.
 ##
 ## Flecha izquierda y derecha: cambia de diorama · C: cambia de cámara ·
-## Flecha arriba y abajo: sube o baja el miedo · R: radiación sí/no · L: linterna.
+## Flecha arriba y abajo: sube o baja el miedo · R: radiación sí/no · L: linterna ·
+## F1: panel de depuración (hora, clima, miedo, radiación, estilo).
 
 const SCENES: PackedStringArray = [
 	"res://scenes/style/diorama_deposito_limpio.tscn",
@@ -10,17 +11,23 @@ const SCENES: PackedStringArray = [
 	"res://scenes/style/diorama_patio_dia.tscn",
 	"res://scenes/style/diorama_patio_anochecer.tscn",
 	"res://scenes/style/diorama_patio_noche.tscn",
+	"res://scenes/style/diorama_patio_ventisca.tscn",
 ]
+const DEBUG_PANEL: Script = preload("res://scripts/debug/debug_panel.gd")
 
-const HELP: String = "← → diorama · C cámara · ↑ ↓ miedo · R radiación · L linterna"
+const HELP: String = "← → diorama · C cámara · ↑ ↓ miedo · R radiación · L linterna · F1 panel"
 
 var _index: int = 0
 var _camera_index: int = 0
 var _current: Node
 var _label: Label
+var _panel: CanvasLayer
 
 
 func _ready() -> void:
+	_panel = DEBUG_PANEL.new()
+	_panel.name = "PanelDepuracion"
+	add_child(_panel)
 	var layer: CanvasLayer = CanvasLayer.new()
 	add_child(layer)
 	_label = Label.new()
@@ -53,6 +60,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			var camera: Camera3D = get_viewport().get_camera_3d()
 			if camera != null:
 				Flashlight.toggle(camera)
+	_panel.call(&"sync")
 	_update_label()
 
 
@@ -64,6 +72,7 @@ func _load(index: int) -> void:
 	_current = load(SCENES[_index]).instantiate()
 	add_child(_current)
 	_activate_camera(0)
+	_panel.call(&"set_target", _current)
 	_update_label()
 
 

@@ -575,8 +575,52 @@ def build_ground_zero() -> bpy.types.Object:
     return root
 
 
+def build_kiosk() -> bpy.types.Object:
+    """Quiosco de prensa: caseta de chapa y cristal con tejadillo y letrero.
+
+    El frente mira hacia -Y. Los cristales, casi todos rotos; hollín sobre uno."""
+    rng = random.Random(113)
+    root = tb.empty("quiosco-estatico")
+    width, depth, height = 2.4, 1.8, 2.5
+    paint = "#4C6470"
+    frame = "#3E525C"
+    mb = tb.MeshBuilder(seed=113)
+    mb.box((width, depth, 0.8), (0.0, 0.0, 0.4), paint, bevel=0.02, cuts=2, jitter=0.03)
+    for x in (-width / 2 + 0.04, width / 2 - 0.04):
+        for y in (-depth / 2 + 0.04, depth / 2 - 0.04):
+            mb.box((0.08, 0.08, height - 0.8), (x, y, 0.8 + (height - 0.8) / 2), frame, bevel=0.008)
+    mb.box((width, 0.05, height - 0.8), (0.0, depth / 2 - 0.025, 0.8 + (height - 0.8) / 2), paint, cuts=2, jitter=0.03)
+    panes = 3
+    for i in range(panes):
+        x = -width / 2 + (i + 0.5) * width / panes
+        broken = rng.random() < 0.7
+        mb.box((width / panes - 0.07, 0.02, 1.15), (x, -depth / 2 + 0.03, 1.45), BURNT_GLASS if broken else GLASS)
+        mb.box((0.04, 0.05, 1.2), (x - width / panes / 2 + 0.02, -depth / 2 + 0.03, 1.45), frame)
+    for side in (-1.0, 1.0):
+        for j in range(2):
+            y = -depth / 2 + (j + 0.5) * depth / 2
+            broken = rng.random() < 0.6
+            mb.box((0.02, depth / 2 - 0.07, 1.15), (side * (width / 2 - 0.03), y, 1.45), BURNT_GLASS if broken else GLASS)
+    mb.box((width + 0.02, 0.06, 0.06), (0.0, -depth / 2 + 0.02, 0.84), frame, bevel=0.006)
+    mb.box((0.5, 0.25, 0.04), (0.35, -depth / 2 - 0.1, 0.95), frame, bevel=0.006)
+    mb.box((width + 0.12, 0.07, 0.34), (0.0, -depth / 2 - 0.02, 2.26), "#B8A980", bevel=0.01, cuts=3)
+    mb.box((width + 0.12, 0.07, 0.04), (0.0, -depth / 2 - 0.03, 2.09), frame, bevel=0.004)
+    mb.box((width + 0.5, depth + 0.5, 0.12), (0.0, 0.0, height + 0.06), "#3A4B54", bevel=0.02, cuts=2)
+    for k in range(5):
+        mb.box((0.38, 0.28, 0.06 + 0.02 * k), (-0.6 + rng.uniform(-0.1, 0.1), 0.3 + rng.uniform(-0.1, 0.1), 0.86 + 0.08 * k),
+               "#C9BFA4", rotation=(0, 0, rng.uniform(-15, 15)), jitter=0.08)
+    kiosk = mb.finish("quiosco", _snow_material(), root)
+    tb.stain(kiosk, RUST, amount=0.7, scale=1.6, coverage=0.35, seed=113)
+    tb.stain(kiosk, "#3E3A36", amount=0.6, scale=0.8, coverage=0.4, seed=114, stretch_z=0.3)
+    tb.scorch(kiosk, [((0.8, -depth / 2, 2.0), 0.8, 0.6)], SOOT)
+    tb.collision_box("quiosco", (width, depth, height), (0.0, 0.0, height / 2), root)
+    tb.paint({kiosk: None}, samples=12, seed=113)
+    return root
+
+
 def models() -> dict:
     return {
+        "quiosco": build_kiosk,
         "bloque_paneles": lambda: build_block("bloque_paneles", 2, 5, 89, damage=0.45),
         "bloque_paneles_b": lambda: build_block("bloque_paneles_b", 1, 5, 97, damage=0.6),
         "farola": lambda: build_street_lamp("farola", 61, 0.0),

@@ -73,4 +73,12 @@ fov = 64.0
 top_level = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 0.8, 1.7)
 
+[node name="CamaraBanco" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.7, 1.45, -0.38)
+fov = 52.0
+
+[node name="Mira" type="Marker3D" parent="CamaraBanco"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.42, 0.95, -1.4)
+
 [node name="InkPost" parent="." instance=ExtResource("2_post")]

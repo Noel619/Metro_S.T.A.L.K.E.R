@@ -11,6 +11,8 @@ extends SceneTree
 ##   --frames=30                      fotogramas de espera antes de capturar
 ##   --hide=Nodo                      oculta los nodos con ese nombre (p. ej. InkPost)
 ##   --post=parametro=valor           fija un parámetro del post-proceso (p. ej. debug_view=3)
+##   --call=Nodo:metodo[:valor]       llama a un método de los nodos con ese nombre
+##                                    (p. ej. PanelDepuracion:toggle o DioramaPatio:set_hour:18.5)
 
 const CAMERA_GROUP: StringName = &"capture_camera"
 
@@ -19,6 +21,7 @@ var _out_path: String = ""
 var _frames: int = 30
 var _hidden: PackedStringArray = []
 var _post_params: Dictionary = {}
+var _calls: PackedStringArray = []
 
 
 func _initialize() -> void:
@@ -32,6 +35,8 @@ func _initialize() -> void:
 			_frames = maxi(1, value.to_int())
 		elif arg.begins_with("--hide="):
 			_hidden.append(value)
+		elif arg.begins_with("--call="):
+			_calls.append(arg.trim_prefix("--call="))
 		elif arg.begins_with("--post="):
 			var pair: String = arg.trim_prefix("--post=")
 			_post_params[pair.get_slice("=", 0)] = pair.get_slice("=", 1).to_float()
@@ -61,11 +66,15 @@ func _capture() -> void:
 		for node: Node in scene.find_children(node_name, "", true, false):
 			if node is Node3D:
 				(node as Node3D).visible = false
+	for call: String in _calls:
+		_call_on(scene, call)
 	var cameras: Array[Node] = get_nodes_in_group(CAMERA_GROUP)
 	if cameras.is_empty():
+		# Sin cámaras del grupo: la cámara activa o, en escenas 2D, ninguna.
 		cameras = [root.get_camera_3d()]
 	for camera: Node in cameras:
-		(camera as Camera3D).make_current()
+		if camera != null:
+			(camera as Camera3D).make_current()
 		for _i in _frames:
 			await process_frame
 		await RenderingServer.frame_post_draw
@@ -80,3 +89,23 @@ func _capture() -> void:
 			return
 		print("Captura: %s (%dx%d)" % [path, image.get_width(), image.get_height()])
 	quit(0)
+
+
+func _call_on(scene: Node, call: String) -> void:
+	var parts: PackedStringArray = call.split(":")
+	if parts.size() < 2:
+		printerr("--call necesita Nodo:metodo")
+		return
+	var targets: Array[Node] = scene.find_children(parts[0], "", true, false)
+	if scene.name == parts[0]:
+		targets.append(scene)
+	for node: Node in targets:
+		if parts.size() > 2:
+			var value: Variant = parts[2]
+			if parts[2].is_valid_int():
+				value = parts[2].to_int()
+			elif parts[2].is_valid_float():
+				value = parts[2].to_float()
+			node.call(parts[1], value)
+		else:
+			node.call(parts[1])

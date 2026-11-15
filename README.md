@@ -45,7 +45,7 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 
 | | |
 |---|---|
-| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) en curso |
+| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) completa, a falta de tu aprobación |
 | **Motor** | Godot 4.7.2 |
 | **Plataforma** | PC (Windows; la build de Linux sale casi gratis) |
 | **Idioma** | Solo español |
@@ -54,9 +54,9 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 | **Siguiente hito** | H1 · *Prueba de Tinta* (Fase 1) |
 | **La ciudad** | Plano completo fijado: [docs/CIUDAD.md](docs/CIUDAD.md) |
 
-**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre el visor del estilo: ← → cambian de diorama, C de cámara, ↑ ↓ suben o bajan el miedo y L enciende la linterna. Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
+**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre el visor del estilo: ← → cambian de diorama, C de cámara, ↑ ↓ suben o bajan el miedo, L enciende la linterna y F1 abre el panel de depuración (hora, clima, miedo, radiación y estilo). Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
 
-### Así se ve ahora (Prueba de Tinta, segunda pasada)
+### Así se ve ahora (Prueba de Tinta, completa)
 
 | | |
 |---|---|
@@ -64,6 +64,10 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 | ![Patio de Los Bloques, de día](docs/capturas/fase1_patio_dia.jpg) | ![Patio de Los Bloques, al anochecer](docs/capturas/fase1_patio_anochecer.jpg) |
 | ![De noche, sin linterna](docs/capturas/fase1_patio_noche.jpg) | ![De noche, con linterna](docs/capturas/fase1_patio_noche_linterna.jpg) |
 | ![Hacia la Zona Cero, entre los bloques](docs/capturas/fase1_patio_dia_horizonte.jpg) | ![El depósito, hacia el pasillo de la estación](docs/capturas/fase1_deposito_limpio_persiana.jpg) |
+| ![Ventisca](docs/capturas/fase1_patio_ventisca.jpg) | ![Huellas de bota y de perro en la nieve](docs/capturas/fase1_patio_dia_huellas.jpg) |
+| ![Las herramientas del oficio, con contorno de casco](docs/capturas/fase1_deposito_limpio_banco.jpg) | ![Las primeras piezas de interfaz](docs/capturas/fase1_interfaz.jpg) |
+
+Vídeo de 33 segundos con todos los dioramas: [docs/capturas/fase1_dioramas.mp4](docs/capturas/fase1_dioramas.mp4).
 
 Todo lo que se ve (estanterías, cajas, persiana, bloques dañados, escombros, coches, ruinas del horizonte) está generado por código. La guía de estilo con los valores actuales está en [docs/ESTILO.md](docs/ESTILO.md).
 
@@ -110,7 +114,7 @@ Todo está explicado en [docs/CIUDAD.md](docs/CIUDAD.md), con cuatro hojas: [gen
 
 ### Próximos pasos
 
-1. **Fase 1**: cerrar la *Prueba de Tinta* (lo que queda está en la [Fase 1](#fase-1-la-prueba-de-tinta-puerta-de-estilo--tamaño-m)).
+1. **Fase 1**: revisar las capturas, el [vídeo](docs/capturas/fase1_dioramas.mp4) y las piezas de interfaz, y aprobar el estilo. Con eso empiezan las Fases 2 y 3.
 2. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan.
 
 ---
@@ -670,11 +674,16 @@ Regla: **el rojo** se reserva para lo importante (peligro, confirmaciones, lo ur
 
 ### 10.3 Tipografía
 
-Candidatas con licencia libre (OFL); se validan en la Fase 1.
+Elegidas en la Fase 1 (F1-13). Las cuatro tienen licencia OFL, español completo y cirílico. Están en `assets/fonts/` con su licencia, y la prueba de legibilidad está en [docs/ESTILO.md](docs/ESTILO.md).
 
-- **Manuscrita** (notas, etiquetas, tu cuaderno): una familia del tipo *Caveat* o *Kalam*, con una letra distinta para cada cliente.
-- **Máquina de escribir** (documentos oficiales, recibos): del tipo *Courier Prime*.
-- **Rotulación** (carteles de la ciudad y de la estación): condensada y geométrica, de estilo soviético, del tipo *Oswald*, pero siempre en español.
+| Uso | Familia | Tamaño mínimo a 1080p |
+|---|---|---|
+| **Manuscrita**: tu cuaderno, notas, etiquetas, fichas | *Caveat* (normal y negrita). Más adelante, otra letra distinta para cada cliente | 30 px |
+| **Máquina de escribir**: recibos, impresos, la administración | *PT Mono* | 20 px |
+| **Rotulación**: carteles, sellos, cabeceras, de estilo soviético y siempre en español | *Oswald* | 20 px |
+| **Texto**: textos largos y opciones | *PT Sans* | 18 px |
+
+![Las primeras piezas de interfaz](docs/capturas/fase1_interfaz.jpg)
 
 ---
 
@@ -856,23 +865,23 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 - [x] **F1-01** Shader de sombreado por bandas con rampas por material: luz cálida, sombra fría y luz de borde.
 - [x] **F1-02** Contorno por post-proceso (profundidad y normales), con grosor variable y trazo irregular. Se hace con un rectángulo a pantalla completa ([D-008](docs/DECISIONES.md)).
-- [ ] **F1-03** Contorno por casco invertido para objetos clave, personas y criaturas.
+- [x] **F1-03** Contorno por casco invertido para objetos clave, personas y criaturas (`InkHull`: normales suavizadas, grosor en píxeles, trazo vivo y miedo).
 - [x] **F1-04** Tramado en las sombras (*tonal art maps*), con densidad controlable.
 - [x] **F1-05** Trazo vivo a saltos (4, 8 y 12 fps), controlado por `StyleDirector`.
 - [x] **F1-06** Papel, grano, viñeta y gradación de color por zona (por parámetros en lugar de LUT, [D-011](docs/DECISIONES.md)).
-- [ ] **F1-07** Nieve acumulada, huellas, niebla y ventisca. *(Hechas la nieve vieja, la niebla, la nieve y la ceniza que caen y el humo; faltan las huellas y la ventisca.)*
-- [ ] **F1-08** Kit inicial de props por receta. *(Hechos 34 modelos: los del depósito, bloques de paneles con daños (ventanas quemadas, paneles caídos, balcones desplomados), escombros, coche y coche quemado, farolas, postes con cables caídos, árboles, columpio, contenedor, suelo nevado, ruinas del horizonte y la Zona Cero. Faltan la báscula, la máscara, el dosímetro, la linterna y el quiosco.)*
+- [x] **F1-07** Nieve acumulada, huellas, niebla y ventisca (huellas de bota y de perro como calcomanías; ventisca con niebla cerrada y ráfagas).
+- [x] **F1-08** Kit inicial de props por receta: 39 modelos. Los del depósito; bloques de paneles con daños (ventanas quemadas, paneles caídos, balcones desplomados); escombros, coches, farolas, postes, árboles, columpio y contenedor; el suelo nevado, las ruinas del horizonte y la Zona Cero; y la báscula, la máscara antigás, el dosímetro, la linterna y el quiosco.
 - [x] **F1-09** Diorama A: *El depósito*, en dos estados (abandonado y limpio).
 - [x] **F1-10** Diorama B: *Un patio de Los Bloques bajo la nieve*, de día, al anochecer y de noche, con el cielo pintado y la Zona Cero en el horizonte.
-- [ ] **F1-11** Panel de depuración para cambiar en vivo el miedo, la radiación, la hora y el clima, y ver cómo reacciona el estilo.
-- [ ] **F1-12** Primeras piezas de interfaz en el estilo final: una página de cuaderno con un mapa dibujado, una etiqueta de precio, un recibo con sello y una ficha de encargo.
-- [ ] **F1-13** Selección de tipografías y prueba de legibilidad.
-- [ ] **F1-14** Guía de estilo con los parámetros definitivos, más capturas y un vídeo corto. *(Hechas la guía y las capturas; falta el vídeo.)*
+- [x] **F1-11** Panel de depuración (F1 en el visor) para cambiar en vivo el miedo, la radiación, la hora (interpolada entre día, anochecer y noche), el clima, la linterna, el trazo reducido y el estilo de zona.
+- [x] **F1-12** Primeras piezas de interfaz en el estilo final: una página de cuaderno con un mapa dibujado (sale del plano de la ciudad), una etiqueta de precio, un recibo con sello y una ficha de encargo.
+- [x] **F1-13** Selección de tipografías (Caveat, PT Mono, Oswald y PT Sans) y prueba de legibilidad.
+- [x] **F1-14** Guía de estilo con los parámetros definitivos, más capturas y un [vídeo corto](docs/capturas/fase1_dioramas.mp4) de 33 segundos con los dioramas.
 - [x] **F1-15** Plano completo de la ciudad: calles, manzanas, cada edificio, relieve, subsuelo, amenazas, peligros y rutas, como datos validados y cuatro hojas de desarrollo ([docs/CIUDAD.md](docs/CIUDAD.md)).
 
 **Entregable**: dos dioramas a calidad final y la guía de estilo con los valores fijados.
 **Criterio de salida**: **tú apruebas el estilo**. Si no convence, se itera aquí; nunca se produce contenido sobre un estilo sin aprobar.
-**Estado**: 🟨 segunda pasada lista para revisar. Revisión 1: aprobados el contorno, el tramado y los colores cálidos del depósito; el exterior estaba demasiado blanco y pálido, sin ambiente posapocalíptico, y el cielo no podía ser negro. En la segunda pasada el exterior pasa a ser sucio y gris, con cielo pintado de día, al anochecer y de noche, destrucción y ruinas en el horizonte. Revisión 2: transmite la sensación; hay que mantener ese nivel en toda la ciudad, la noche tiene que ser mucho más oscura y el anochecer, un poco más contenido ([docs/ESTILO.md](docs/ESTILO.md)).
+**Estado**: 🟨 todas las tareas hechas; falta tu aprobación final del estilo. Revisión 1: aprobados el contorno, el tramado y los colores cálidos del depósito; el exterior estaba demasiado blanco y pálido, sin ambiente posapocalíptico, y el cielo no podía ser negro. Revisión 2: el exterior ya transmite la sensación; la noche, mucho más oscura, y el anochecer, algo más contenido. Cierre: contorno de casco, huellas y ventisca, los cinco objetos que faltaban, el panel de depuración, las piezas de interfaz, las tipografías, el vídeo y el plano de la ciudad ([docs/ESTILO.md](docs/ESTILO.md), [docs/CIUDAD.md](docs/CIUDAD.md)).
 
 ### Fase 2: El Depósito jugable · tamaño L
 
