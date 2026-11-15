@@ -31,11 +31,21 @@ PLANK_PAINT = "#7C93A0"
 KNOT = "#55463A"
 CROWBAR_PAINT = "#46535A"
 CROWBAR_STEEL = "#868B88"
+CUTTER_PAINT = "#4F5E52"
+CUTTER_STEEL = "#4A5357"
+RUBBER = "#2A2725"
+BOLT = "#8C918D"
 
 
 def _grip(root: bpy.types.Object, at: tuple[float, float, float]) -> None:
     marker = tb.empty("agarre", root)
     marker.location = at
+
+
+def _ccw(points: list[tuple[float, float]]) -> list[tuple[float, float]]:
+    """Devuelve el contorno en sentido antihorario, que es el que pide ``MeshBuilder.prism``."""
+    area = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(points, points[1:] + points[:1]))
+    return points if area > 0.0 else list(reversed(points))
 
 
 def build_hammer() -> bpy.types.Object:
@@ -198,9 +208,77 @@ def build_crowbar() -> bpy.types.Object:
     return root
 
 
+def build_bolt_cutter() -> bpy.types.Object:
+    """Cizalla de dos manos para cadenas y alambradas, tumbada: las bocas hacia +X y los mangos, entreabiertos, hacia -X.
+
+    Lleva dos nodos vacíos, ``agarre`` y ``agarre_2``, uno por empuñadura.
+    """
+    rng = random.Random(293)
+    root = tb.empty("cizalla-fisico")
+    mid_z = 0.016
+
+    mb = tb.MeshBuilder(seed=293)
+    for side in (-1.0, 1.0):
+        # Mango: barra redonda con su empuñadura de goma; entra en un casquillo de la cabeza.
+        grip_end = Vector((-0.45, side * 0.088, mid_z))
+        along = (Vector((0.03, side * 0.025, mid_z)) - grip_end).normalized()
+        span = 0.458
+        rings = 16
+        mb.tube([grip_end + along * (span * index / rings) for index in range(rings + 1)], 0.0105, CUTTER_PAINT, segments=10, jitter=0.04)
+        mb.tube([grip_end + along * (span - 0.022), grip_end + along * (span - 0.018), grip_end + along * (span + 0.012), grip_end + along * (span + 0.016)], [0.0115, 0.0132, 0.0132, 0.0115], CUTTER_STEEL, segments=10)
+        mb.tube([grip_end - along * 0.004, grip_end + along * 0.002, grip_end + along * 0.15, grip_end + along * 0.154], [0.011, 0.0138, 0.0138, 0.012], RUBBER, segments=12)
+        for index in range(4):
+            mb.tube([grip_end + along * (0.03 + index * 0.03), grip_end + along * (0.036 + index * 0.03)], 0.0147, RUBBER, segments=12)
+        # Cabeza del mango: pletina que lleva al eje central y al de su boca.
+        mb.prism(
+            _ccw([(0.0, side * 0.037), (0.0, side * 0.014), (0.07, side * 0.0022), (0.112, side * 0.004), (0.112, side * 0.024), (0.06, side * 0.035)]),
+            0.012,
+            (0.0, 0.0, mid_z),
+            CUTTER_STEEL,
+            bevel=0.002,
+            jitter=0.05,
+        )
+        # Boca: pico corto y grueso, con el filo en bisel.
+        mb.prism(
+            _ccw([(0.094, side * 0.003), (0.186, side * 0.0016), (0.207, side * 0.0042), (0.201, side * 0.019), (0.172, side * 0.031), (0.13, side * 0.035), (0.094, side * 0.029)]),
+            0.016,
+            (0.0, 0.0, mid_z),
+            CUTTER_STEEL,
+            bevel=0.0025,
+            jitter=0.05,
+        )
+        mb.box((0.088, 0.0026, 0.0166), (0.142, side * 0.0032, mid_z), BOLT, rotation=(0.0, 0.0, side * -0.9))
+        # Tornillos de los ejes de las bocas.
+        for x in (0.108, 0.148):
+            bolt_y = side * (0.016 if x < 0.12 else 0.017)
+            mb.cylinder(0.0062, 0.005, (x, bolt_y, mid_z + 0.0135), BOLT, rotation=(0.0, 0.0, rng.uniform(0.0, 60.0)), segments=6)
+            mb.cylinder(0.006, 0.004, (x, bolt_y, mid_z - 0.013), BOLT, rotation=(0.0, 0.0, rng.uniform(0.0, 60.0)), segments=6)
+    # Bridas que unen las dos bocas, arriba y abajo.
+    for z in (mid_z + 0.0095, mid_z - 0.0095):
+        mb.box((0.026, 0.062, 0.003), (0.148, 0.0, z), CUTTER_STEEL, bevel=0.001, jitter=0.05)
+    # Eje central de los mangos y tornillo de tope.
+    mb.lathe(((0.0, -0.0072), (0.0125, -0.0072), (0.0125, 0.0072), (0.0, 0.0072)), (0.072, 0.0, mid_z), CUTTER_STEEL, segments=14)
+    mb.cylinder(0.0075, 0.005, (0.072, 0.0, mid_z + 0.0095), BOLT, rotation=(0.0, 0.0, 20.0), segments=6)
+    mb.cylinder(0.0072, 0.004, (0.072, 0.0, mid_z - 0.009), BOLT, segments=6)
+    mb.bar((0.012, 0.029, mid_z), (0.012, 0.009, mid_z), 0.003, BOLT, 6)
+    mb.cylinder(0.0055, 0.004, (0.012, 0.0125, mid_z), BOLT, rotation=(90.0, 0.0, 0.0), segments=6)
+    cutter = mb.finish("cizalla", tb.material("metal", CUTTER_PAINT), root)
+    tb.stain(cutter, RUST, amount=0.7, scale=11.0, coverage=0.3, seed=293)
+    tb.stain(cutter, STEEL_WORN, amount=0.45, scale=18.0, coverage=0.25, seed=294)
+
+    _grip(root, (-0.375, 0.077, mid_z))
+    second = tb.empty("agarre_2", root)
+    second.location = (-0.375, -0.077, mid_z)
+    tb.collision_box("cizalla_mangos", (0.48, 0.2, 0.03), (-0.215, 0.0, mid_z), root)
+    tb.collision_box("cizalla_cabeza", (0.21, 0.078, 0.032), (0.105, 0.0, mid_z), root)
+    tb.paint({cutter: None}, ao_distance=0.03, ao=0.5, seed=293)
+    return root
+
+
 def models() -> dict:
     return {
         "martillo": build_hammer,
         "tablon": build_plank,
         "palanca": build_crowbar,
+        "cizalla": build_bolt_cutter,
     }
