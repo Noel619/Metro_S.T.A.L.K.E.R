@@ -35,6 +35,8 @@ CUTTER_PAINT = "#4F5E52"
 CUTTER_STEEL = "#4A5357"
 RUBBER = "#2A2725"
 BOLT = "#8C918D"
+HEMP = "#B39B6E"
+HEMP_DARK = "#8A744C"
 
 
 def _grip(root: bpy.types.Object, at: tuple[float, float, float]) -> None:
@@ -275,10 +277,115 @@ def build_bolt_cutter() -> bpy.types.Object:
     return root
 
 
+def build_rope() -> bpy.types.Object:
+    """Rollo de cuerda de cáñamo de 12 mm, adujado en tres capas, con un cabo suelto por el suelo.
+
+    La cuerda es una sola pieza, de punta a punta: cada capa es una espiral y
+    las vueltas se apoyan unas en otras sin cruzarse.
+    """
+    rng = random.Random(307)
+    root = tb.empty("cuerda-fisico")
+    radius = 0.006
+    pitch = radius * 2.06  # separación entre vueltas vecinas de una misma capa
+    layer_h = radius * 2.03  # una capa descansa justo encima de la otra
+    step = 0.01  # un anillo cada centímetro de cuerda
+
+    path: list[Vector] = []
+
+    def spiral(start_r: float, end_r: float, start_a: float, turns: float, z: float) -> float:
+        """Añade una espiral plana y devuelve el ángulo en el que acaba."""
+        length = abs(turns) * 2.0 * math.pi * (start_r + end_r) / 2.0
+        count = max(2, int(length / step))
+        for index in range(count + 1):
+            t = index / count
+            angle = start_a + turns * 2.0 * math.pi * t
+            distance = start_r + (end_r - start_r) * t
+            path.append(Vector((distance * math.cos(angle), distance * math.sin(angle), z + rng.uniform(-0.0004, 0.0004))))
+        return start_a + turns * 2.0 * math.pi
+
+    def climb(distance: float, start_a: float, sweep: float, z0: float, z1: float) -> float:
+        """Sube de una capa a la siguiente por fuera (o por dentro) de las vueltas ya puestas."""
+        count = max(3, int(distance * abs(sweep) / step))
+        for index in range(1, count):
+            t = index / count
+            angle = start_a + sweep * t
+            path.append(Vector((distance * math.cos(angle), distance * math.sin(angle), z0 + (z1 - z0) * (0.5 - 0.5 * math.cos(math.pi * t)))))
+        return start_a + sweep
+
+    inner, turns_1 = 0.1, 4.25
+    outer = inner + pitch * turns_1
+    z1, z2, z3, z4 = (radius + layer * layer_h for layer in range(4))
+    nudge = radius * 0.3
+    # El chicote de dentro asoma en el hueco del rollo.
+    path.append(Vector((inner - 0.05, -0.012, z1)))
+    path.append(Vector((inner - 0.028, -0.014, z1)))
+    angle = spiral(inner, outer, 0.0, turns_1, z1)
+    # Segunda capa hacia dentro, tercera hacia fuera y cuarta hacia dentro otra vez.
+    angle = climb(outer + nudge, angle, math.radians(55.0), z1, z2)
+    inner_2 = outer + nudge - pitch * 3.5
+    angle = spiral(outer + nudge, inner_2, angle, 3.5, z2)
+    angle = climb(inner_2 - nudge, angle, math.radians(60.0), z2, z3)
+    outer_3 = inner_2 - nudge + pitch * 2.6
+    angle = spiral(inner_2 - nudge, outer_3, angle, 2.6, z3)
+    angle = climb(outer_3 + nudge, angle, math.radians(55.0), z3, z4)
+    inner_4 = outer_3 + nudge - pitch * 1.5
+    angle = spiral(outer_3 + nudge, inner_4, angle, 1.5, z4)
+    # El cabo se levanta, cruza por encima del rollo, baja al suelo por fuera y se aleja culebreando.
+    top = z4 + layer_h
+    angle = climb(inner_4 - nudge, angle, math.radians(50.0), z4, top)
+    crossing = []
+    for index in range(1, 9):
+        t = index / 8.0
+        distance = inner_4 - nudge + (outer + 0.035 - inner_4 + nudge) * t
+        turn = angle + math.radians(55.0) * t
+        crossing.append(Vector((distance * math.cos(turn), distance * math.sin(turn), top)))
+    angle += math.radians(55.0)
+    out = Vector((math.cos(angle), math.sin(angle), 0.0))
+    side = Vector((-out.y, out.x, 0.0))
+    last = crossing[-1]
+    floor = Vector((0.0, 0.0, z1 - top))
+    tail = [
+        last + side * 0.035 + out * 0.02 + floor * 0.25,
+        last + side * 0.07 + out * 0.045 + floor * 0.8,
+        last + side * 0.11 + out * 0.075 + floor,
+        last + side * 0.19 + out * 0.11 + floor,
+        last + side * 0.28 + out * 0.09 + floor,
+        last + side * 0.36 + out * 0.13 + floor,
+        last + side * 0.42 + out * 0.19 + floor,
+    ]
+    path.extend(crossing)
+    path.extend(tb.smooth_path([last, *tail], 8)[1:])
+
+    mb = tb.MeshBuilder(seed=307)
+    segments = 6
+    faces = mb.tube(path, radius, HEMP, segments=segments, jitter=0.0)
+    # Los tres cordones retorcidos: el color alterna de vértice en vértice y avanza un
+    # paso por anillo, así que las bandas oscuras dan la vuelta a la cuerda en diagonal.
+    value = HEMP_DARK.lstrip("#")
+    strand = (*(int(value[i : i + 2], 16) / 255.0 for i in (0, 2, 4)), 1.0)
+    for index, face in enumerate(faces[: (len(path) - 1) * segments]):
+        ring, around = index // segments, index % segments
+        for loop, (r, a) in zip(face.loops, ((ring, around), (ring, around + 1), (ring + 1, around + 1), (ring + 1, around))):
+            if (r + a) % 2 == 0:
+                loop[mb.base] = strand
+    # Falcaceados: una ligada oscura en cada punta, para que no se deshilache.
+    for end, towards in ((path[0], path[1]), (path[-1], path[-2])):
+        along = (towards - end).normalized()
+        mb.tube([end + along * 0.004, end + along * 0.022], radius * 1.12, "#4A3F2E", segments=8)
+    rope = mb.finish("cuerda", tb.material("cuerda", HEMP), root)
+    tb.stain(rope, "#6E6048", amount=0.45, scale=9.0, coverage=0.35, seed=307)
+
+    extent = outer + radius * 1.4
+    tb.collision_box("cuerda_rollo", (2.0 * extent, 2.0 * extent, z3 + radius), (0.0, 0.0, (z3 + radius) / 2.0), root)
+    tb.paint({rope: None}, samples=12, ao_distance=0.03, ao=0.55, cavity_dark=0.2, seed=307)
+    return root
+
+
 def models() -> dict:
     return {
         "martillo": build_hammer,
         "tablon": build_plank,
         "palanca": build_crowbar,
         "cizalla": build_bolt_cutter,
+        "cuerda": build_rope,
     }
