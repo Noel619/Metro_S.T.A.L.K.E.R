@@ -60,16 +60,18 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 
 | | |
 |---|---|
-| ![El depósito, limpio](docs/capturas/fase1_deposito_limpio.jpg) | ![El depósito, el primer día](docs/capturas/fase1_deposito_abandonado_persiana.jpg) |
+| ![El depósito, desde el pasillo de la estación: el mostrador con la báscula](docs/capturas/fase1_deposito_limpio_pasillo.jpg) | ![El depósito, el primer día](docs/capturas/fase1_deposito_abandonado_persiana.jpg) |
+| ![El equipo del stalker, cada pieza con su etiqueta](docs/capturas/fase1_equipo.jpg) | ![El depósito por dentro: almacén, banco, estufa, catre y pila](docs/capturas/fase1_deposito_limpio.jpg) |
+| ![El rincón para dormir: la estufa y el catre](docs/capturas/fase1_deposito_limpio_rincon.jpg) | ![El banco: el cuaderno y las herramientas del oficio, con contorno de casco](docs/capturas/fase1_deposito_limpio_banco.jpg) |
 | ![Patio de Los Bloques, de día](docs/capturas/fase1_patio_dia.jpg) | ![Patio de Los Bloques, al anochecer](docs/capturas/fase1_patio_anochecer.jpg) |
 | ![De noche, sin linterna](docs/capturas/fase1_patio_noche.jpg) | ![De noche, con linterna](docs/capturas/fase1_patio_noche_linterna.jpg) |
-| ![Hacia la Zona Cero, entre los bloques](docs/capturas/fase1_patio_dia_horizonte.jpg) | ![El depósito, hacia el pasillo de la estación](docs/capturas/fase1_deposito_limpio_persiana.jpg) |
+| ![Hacia la Zona Cero, entre los bloques](docs/capturas/fase1_patio_dia_horizonte.jpg) | ![El quiosco de prensa](docs/capturas/fase1_patio_dia_quiosco.jpg) |
 | ![Ventisca](docs/capturas/fase1_patio_ventisca.jpg) | ![Huellas de bota y de perro en la nieve](docs/capturas/fase1_patio_dia_huellas.jpg) |
-| ![Las herramientas del oficio, con contorno de casco](docs/capturas/fase1_deposito_limpio_banco.jpg) | ![Las primeras piezas de interfaz](docs/capturas/fase1_interfaz.jpg) |
+| ![El dosímetro, la máscara y la brújula, de cerca](docs/capturas/fase1_equipo_detalle.jpg) | ![Las primeras piezas de interfaz](docs/capturas/fase1_interfaz.jpg) |
 
 Vídeo de 33 segundos con todos los dioramas: [docs/capturas/fase1_dioramas.mp4](docs/capturas/fase1_dioramas.mp4).
 
-Todo lo que se ve (estanterías, cajas, persiana, bloques dañados, escombros, coches, ruinas del horizonte) está generado por código. La guía de estilo con los valores actuales está en [docs/ESTILO.md](docs/ESTILO.md).
+Todo lo que se ve (los muebles y el equipo, estanterías, cajas, persiana, bloques dañados, escombros, coches, ruinas del horizonte) está generado por código: 57 modelos, cada uno a partir de su receta. La guía de estilo con los valores actuales está en [docs/ESTILO.md](docs/ESTILO.md).
 
 ### El plano de la ciudad
 
@@ -870,8 +872,8 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [x] **F1-05** Trazo vivo a saltos (4, 8 y 12 fps), controlado por `StyleDirector`.
 - [x] **F1-06** Papel, grano, viñeta y gradación de color por zona (por parámetros en lugar de LUT, [D-011](docs/DECISIONES.md)).
 - [x] **F1-07** Nieve acumulada, huellas, niebla y ventisca (huellas de bota y de perro como calcomanías; ventisca con niebla cerrada y ráfagas).
-- [x] **F1-08** Kit inicial de props por receta: 39 modelos. Los del depósito; bloques de paneles con daños (ventanas quemadas, paneles caídos, balcones desplomados); escombros, coches, farolas, postes, árboles, columpio y contenedor; el suelo nevado, las ruinas del horizonte y la Zona Cero; y la báscula, la máscara antigás, el dosímetro, la linterna y el quiosco.
-- [x] **F1-09** Diorama A: *El depósito*, en dos estados (abandonado y limpio).
+- [x] **F1-08** Kit inicial de props por receta: 57 modelos. En el depósito: la sala, cajas de cartón y de madera, estantería metálica, banco de trabajo, lámpara de taller, persianas, bidón, cubo, botellas, lata, escoba, báscula, máscara, dosímetro y linterna (las telarañas son láminas con un SVG). En el exterior: bloques de paneles con daños (ventanas quemadas, paneles caídos, balcones desplomados), escombros, coches, farolas, postes con cables, árboles, columpio, contenedor, banco de parque y quiosco; el suelo nevado, las ruinas del horizonte y la Zona Cero. *(Además, adelantados para la Fase 2: estufa, radio, catre, mostrador y pila de descontaminación; y para la Fase 3: cuaderno (cerrado y abierto), lápiz, brújula, prismáticos, linterna de dinamo, martillo, palanca, cizalla, cuerda, tablón, navaja y despertador. Sus piezas móviles, en [DESARROLLO.md](docs/DESARROLLO.md#piezas-móviles).)*
+- [x] **F1-09** Diorama A: *El depósito*, en dos estados (abandonado y limpio), con sus rincones: el mostrador con la báscula tras la persiana, el almacén, el banco de trabajo con el cuaderno, el catre y la estufa, y la pila de descontaminación. Aparte, la mesa del equipo, con cada pieza y su etiqueta.
 - [x] **F1-10** Diorama B: *Un patio de Los Bloques bajo la nieve*, de día, al anochecer y de noche, con el cielo pintado y la Zona Cero en el horizonte.
 - [x] **F1-11** Panel de depuración (F1 en el visor) para cambiar en vivo el miedo, la radiación, la hora (interpolada entre día, anochecer y noche), el clima, la linterna, el trazo reducido y el estilo de zona.
 - [x] **F1-12** Primeras piezas de interfaz en el estilo final: una página de cuaderno con un mapa dibujado (sale del plano de la ciudad), una etiqueta de precio, un recibo con sello y una ficha de encargo.
@@ -881,7 +883,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Entregable**: dos dioramas a calidad final y la guía de estilo con los valores fijados.
 **Criterio de salida**: **tú apruebas el estilo**. Si no convence, se itera aquí; nunca se produce contenido sobre un estilo sin aprobar.
-**Estado**: 🟨 todas las tareas hechas; falta tu aprobación final del estilo. Revisión 1: aprobados el contorno, el tramado y los colores cálidos del depósito; el exterior estaba demasiado blanco y pálido, sin ambiente posapocalíptico, y el cielo no podía ser negro. Revisión 2: el exterior ya transmite la sensación; la noche, mucho más oscura, y el anochecer, algo más contenido. Cierre: contorno de casco, huellas y ventisca, los cinco objetos que faltaban, el panel de depuración, las piezas de interfaz, las tipografías, el vídeo y el plano de la ciudad ([docs/ESTILO.md](docs/ESTILO.md), [docs/CIUDAD.md](docs/CIUDAD.md)).
+**Estado**: 🟨 todas las tareas hechas; falta tu aprobación final del estilo. Revisión 1: aprobados el contorno, el tramado y los colores cálidos del depósito; el exterior estaba demasiado blanco y pálido, sin ambiente posapocalíptico, y el cielo no podía ser negro. Revisión 2: el exterior ya transmite la sensación; la noche, mucho más oscura, y el anochecer, algo más contenido. Cierre: contorno de casco, huellas y ventisca, el kit completo de modelos (con el equipo y los muebles de la rama de modelos), el panel de depuración, las piezas de interfaz, las tipografías, el vídeo y el plano de la ciudad ([docs/ESTILO.md](docs/ESTILO.md), [docs/CIUDAD.md](docs/CIUDAD.md)).
 
 ### Fase 2: El Depósito jugable · tamaño L
 

@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://ba0o0abox04il"
-path="res://.godot/imported/mascara_gas.glb-5dbd94696c3a132a040a646583100655.scn"
+uid="uid://co0plyfoc0m8"
+path="res://.godot/imported/despertador.glb-25b98841d286706bfdbf44427ef13db7.scn"
 
 [deps]
 
-source_file="res://assets/models/mascara_gas.glb"
-dest_files=["res://.godot/imported/mascara_gas.glb-5dbd94696c3a132a040a646583100655.scn"]
+source_file="res://assets/models/despertador.glb"
+dest_files=["res://.godot/imported/despertador.glb-25b98841d286706bfdbf44427ef13db7.scn"]
 
 [params]
 

@@ -6,25 +6,39 @@ extends Node
 
 const SHOTS: Array[Dictionary] = [
 	{
-		"scene": "res://scenes/style/diorama_deposito_limpio.tscn",
-		"title": "El depósito",
-		"seconds": 5.0,
-		"from": [Vector3(1.7, 1.6, 1.5), Vector3(-0.6, 1.0, -1.0)],
-		"to": [Vector3(0.95, 1.42, -0.2), Vector3(0.4, 0.95, -1.4)],
-	},
-	{
 		"scene": "res://scenes/style/diorama_deposito_abandonado.tscn",
 		"title": "El primer día",
-		"seconds": 4.0,
+		"seconds": 4.5,
 		"from": [Vector3(1.75, 1.62, 1.5), Vector3(-0.7, 0.9, -0.9)],
 		"to": [Vector3(1.35, 1.5, 0.95), Vector3(-1.0, 0.7, -0.6)],
 	},
 	{
+		"scene": "res://scenes/style/diorama_deposito_limpio.tscn",
+		"title": "El depósito",
+		"seconds": 6.0,
+		"from": [Vector3(1.15, 1.72, 3.3), Vector3(0.3, 1.0, -0.6)],
+		"to": [Vector3(0.95, 1.55, 0.45), Vector3(-0.5, 0.95, -1.3)],
+	},
+	{
+		"scene": "res://scenes/style/diorama_deposito_limpio.tscn",
+		"title": "El rincón",
+		"seconds": 4.5,
+		"from": [Vector3(-0.7, 1.55, 0.85), Vector3(1.7, 0.85, -0.2)],
+		"to": [Vector3(-0.3, 1.5, 0.2), Vector3(1.75, 0.95, -1.2)],
+	},
+	{
+		"scene": "res://scenes/style/diorama_equipo.tscn",
+		"title": "El equipo",
+		"seconds": 6.0,
+		"from": [Vector3(-0.75, 1.25, 0.95), Vector3(-0.55, 0.74, 0.0)],
+		"to": [Vector3(0.6, 1.3, 0.95), Vector3(0.45, 0.74, -0.05)],
+	},
+	{
 		"scene": "res://scenes/style/diorama_patio_dia.tscn",
 		"title": "Los Bloques, de día",
-		"seconds": 5.0,
-		"from": [Vector3(1.2, 1.65, 10.5), Vector3(-0.5, 4.6, -6.0)],
-		"to": [Vector3(-1.2, 1.65, 7.6), Vector3(1.0, 4.0, -6.0)],
+		"seconds": 5.5,
+		"from": [Vector3(-4.6, 1.65, 8.4), Vector3(-7.6, 1.3, 2.4)],
+		"to": [Vector3(-0.8, 1.65, 9.2), Vector3(0.5, 4.0, -6.0)],
 	},
 	{
 		"scene": "res://scenes/style/diorama_patio_dia.tscn",

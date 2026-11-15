@@ -52,3 +52,11 @@ fov = 55.0
 [node name="Mira" type="Marker3D" parent="CamaraHuellas"]
 top_level = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, 0.0, -0.4)
+
+[node name="CamaraQuiosco" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.9, 1.65, 7.9)
+fov = 56.0
+
+[node name="Mira" type="Marker3D" parent="CamaraQuiosco"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.7, 1.35, 2.4)

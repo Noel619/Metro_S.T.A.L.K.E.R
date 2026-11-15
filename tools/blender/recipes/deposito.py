@@ -14,7 +14,6 @@ import math
 import random
 
 import bpy
-from mathutils import Vector
 
 import tumansk_bpy as tb
 
@@ -366,120 +365,6 @@ def build_broom() -> bpy.types.Object:
     return root
 
 
-# --------------------------------------------------------------------------
-# Herramientas y objetos del oficio (F1-08)
-# --------------------------------------------------------------------------
-
-
-def build_scale() -> bpy.types.Object:
-    """Báscula de mostrador con esfera, como las de las tiendas de la época.
-
-    La esfera mira hacia -Y (hacia la cámara; en Godot, hacia +Z)."""
-    root = tb.empty("bascula-fisico")
-    green = "#4F5F55"
-    mb = tb.MeshBuilder(seed=59)
-    mb.box((0.42, 0.30, 0.09), (0.0, 0.0, 0.045), green, bevel=0.012, jitter=0.03)
-    mb.box((0.06, 0.06, 0.02), (0.0, -0.03, 0.098), "#3A3E3B", bevel=0.004)
-    mb.box((0.34, 0.24, 0.012), (0.0, -0.03, 0.112), "#A9ABA4", bevel=0.004)
-    mb.box((0.11, 0.07, 0.22), (0.0, 0.11, 0.19), green, bevel=0.01, jitter=0.03)
-    center = Vector((0.0, 0.11, 0.37))
-    mb.cylinder(0.145, 0.08, center, green, rotation=(90, 0, 0), segments=28)
-    mb.cylinder(0.153, 0.014, center + Vector((0.0, -0.041, 0.0)), "#8D9089", rotation=(90, 0, 0), segments=28)
-    mb.cylinder(0.128, 0.004, center + Vector((0.0, -0.043, 0.0)), "#E6DEC6", rotation=(90, 0, 0), segments=28)
-    for k in range(21):
-        angle = math.radians(-120 + k * 12)
-        outer = 0.12 if k % 5 == 0 else 0.113
-        a = center + Vector((0.104 * math.sin(angle), -0.046, 0.104 * math.cos(angle)))
-        b = center + Vector((outer * math.sin(angle), -0.046, outer * math.cos(angle)))
-        mb.bar(a, b, 0.0018, "#2A2A28", 4)
-    needle = math.radians(28)
-    mb.box((0.005, 0.003, 0.095), center + Vector((0.042 * math.sin(needle), -0.048, 0.042 * math.cos(needle))), "#A03028", rotation=(0, 28, 0))
-    mb.cylinder(0.009, 0.006, center + Vector((0.0, -0.049, 0.0)), "#2A2A28", rotation=(90, 0, 0), segments=10)
-    body = mb.finish("bascula", tb.material("metal", green), root)
-    tb.stain(body, RUST, amount=0.5, scale=4.0, coverage=0.25, seed=59)
-    tb.collision_box("bascula", (0.42, 0.30, 0.52), (0.0, 0.02, 0.26), root)
-    tb.paint({body: None}, ao=0.35, seed=59)
-    return root
-
-
-def build_gas_mask() -> bpy.types.Object:
-    """Máscara antigás de goma (de capucha), con dos visores y el filtro enroscado.
-
-    De pie, como puesta: los visores miran hacia -Y."""
-    root = tb.empty("mascara_gas-fisico")
-    rubber = "#3F4641"
-    mb = tb.MeshBuilder(seed=61)
-    mb.sphere(0.1, (0.0, 0.0, 0.15), rubber, segments=22, scale=(0.95, 0.88, 1.28))
-    for x in (-0.043, 0.043):
-        mb.cylinder(0.034, 0.014, (x, -0.081, 0.18), "#6A6E69", rotation=(98, 0, 0), segments=18)
-    mb.cylinder(0.026, 0.034, (0.0, -0.082, 0.08), "#2E3330", rotation=(112, 0, 0), segments=14)
-    mb.cylinder(0.05, 0.085, (0.0, -0.12, 0.035), "#5A6340", rotation=(122, 0, 0), segments=20)
-    mb.cylinder(0.052, 0.012, (0.0, -0.096, 0.05), "#474D33", rotation=(122, 0, 0), segments=20)
-    for side in (-1.0, 1.0):
-        mb.bar((side * 0.09, 0.0, 0.19), (side * 0.07, 0.07, 0.25), 0.007, "#2A2C28", 6)
-        mb.bar((side * 0.07, 0.07, 0.25), (0.0, 0.09, 0.27), 0.007, "#2A2C28", 6)
-    mask = mb.finish("mascara", tb.material("base", rubber), root)
-    tb.stain(mask, "#2B2E2B", amount=0.6, scale=6.0, coverage=0.4, seed=61)
-    glass = tb.MeshBuilder(seed=62)
-    for x in (-0.043, 0.043):
-        glass.cylinder(0.027, 0.012, (x, -0.083, 0.18), "#2A3238", rotation=(98, 0, 0), segments=18)
-    lenses = glass.finish("visores", tb.material("vidrio", "#2A3238"), root)
-    tb.collision_box("mascara_gas", (0.2, 0.26, 0.3), (0.0, -0.03, 0.15), root)
-    tb.paint({mask: None, lenses: None}, ao=0.4, seed=61)
-    return root
-
-
-def build_dosimeter() -> bpy.types.Object:
-    """Dosímetro de campaña: caja caqui con esfera y mando, y la sonda unida por un cable."""
-    root = tb.empty("dosimetro-fisico")
-    khaki = "#6A6A48"
-    mb = tb.MeshBuilder(seed=67)
-    mb.box((0.20, 0.11, 0.09), (0.0, 0.0, 0.045), khaki, bevel=0.01, jitter=0.03)
-    mb.box((0.205, 0.115, 0.022), (0.0, 0.0, 0.1), "#58583B", bevel=0.006)
-    mb.cylinder(0.036, 0.01, (-0.045, -0.008, 0.114), "#2A2A26", segments=22)
-    mb.cylinder(0.03, 0.006, (-0.045, -0.008, 0.118), "#E3DCC2", segments=22)
-    mb.box((0.003, 0.026, 0.002), (-0.05, -0.012, 0.1215), "#1E1E1C", rotation=(0, 0, 35))
-    mb.cylinder(0.015, 0.02, (0.05, -0.01, 0.12), "#1E1E1C", segments=12)
-    mb.box((0.004, 0.02, 0.004), (0.05, -0.01, 0.131), "#C8C0A8")
-    for x in (-0.08, 0.08):
-        mb.box((0.02, 0.008, 0.07), (x, 0.06, 0.07), "#3B3A2A", bevel=0.002)
-    probe_z = 0.02
-    mb.cylinder(0.018, 0.16, (0.01, -0.12, probe_z), "#3B3D38", rotation=(0, 90, 0), segments=14)
-    mb.cylinder(0.021, 0.03, (0.095, -0.12, probe_z), "#2A2B28", rotation=(0, 90, 0), segments=14)
-    cable = [(-0.07, -0.12, probe_z), (-0.115, -0.1, 0.012), (-0.13, -0.05, 0.01), (-0.11, -0.01, 0.03)]
-    for a, b in zip(cable, cable[1:]):
-        mb.bar(a, b, 0.004, "#1E1E1C", 6)
-    device = mb.finish("dosimetro", tb.material("metal", khaki), root)
-    tb.stain(device, "#4C4B33", amount=0.5, scale=5.0, coverage=0.35, seed=67)
-    tb.collision_box("dosimetro", (0.24, 0.26, 0.13), (0.0, -0.05, 0.065), root)
-    tb.paint({device: None}, ao=0.35, seed=67)
-    return root
-
-
-def build_flashlight() -> bpy.types.Object:
-    """Linterna de pilas de cuerpo metálico, tumbada. La cabeza mira hacia +X."""
-    root = tb.empty("linterna-fisico")
-    body = "#3B403C"
-    r = 0.019
-    z = r * 1.55
-    mb = tb.MeshBuilder(seed=71)
-    mb.cylinder(r, 0.14, (0.0, 0.0, z), body, rotation=(0, 90, 0), segments=16, jitter=0.03)
-    mb.cylinder(r, 0.045, (0.092, 0.0, z), body, rotation=(0, 90, 0), radius_top=r * 1.55, segments=16)
-    mb.cylinder(r * 1.6, 0.012, (0.118, 0.0, z), "#8C8F88", rotation=(0, 90, 0), segments=16)
-    mb.cylinder(r * 1.04, 0.012, (-0.072, 0.0, z), "#2A2D2A", rotation=(0, 90, 0), segments=16)
-    mb.box((0.022, 0.012, 0.008), (0.02, 0.0, z + r + 0.003), "#7A3A30", bevel=0.002)
-    for k in range(6):
-        mb.cylinder(r * 1.02, 0.003, (-0.05 + k * 0.012, 0.0, z), "#2E322F", rotation=(0, 90, 0), segments=16)
-    torch = mb.finish("linterna", tb.material("metal", body), root)
-    tb.stain(torch, "#6E6A5E", amount=0.4, scale=8.0, coverage=0.3, seed=71)
-    lens = tb.MeshBuilder(seed=72)
-    lens.cylinder(r * 1.45, 0.004, (0.125, 0.0, z), "#E8E0B8", rotation=(0, 90, 0), segments=16)
-    glass = lens.finish("cristal", tb.material("vidrio", "#E8E0B8"), root)
-    tb.collision_box("linterna", (0.26, 0.06, 0.06), (0.02, 0.0, z), root)
-    tb.paint({torch: None, glass: None}, ao=0.3, seed=71)
-    return root
-
-
 def models() -> dict:
     return {
         "deposito_sala": build_room,
@@ -496,8 +381,4 @@ def models() -> dict:
         "botella_marron": lambda: build_bottle("botella_marron", "#6B4A2B", 53),
         "lata": build_can,
         "escoba": build_broom,
-        "bascula": build_scale,
-        "mascara_gas": build_gas_mask,
-        "dosimetro": build_dosimeter,
-        "linterna": build_flashlight,
     }

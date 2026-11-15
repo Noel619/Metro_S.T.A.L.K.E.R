@@ -10,13 +10,13 @@ Estado: **Fase 1 completa**, pendiente de tu aprobación final. Los valores de e
 
 - Contorno de casco invertido para los objetos clave.
 - Huellas en la nieve y ventisca.
-- Los cinco objetos que faltaban.
+- El kit de modelos completo (57), con el equipo y los muebles de la rama de modelos: el depósito amueblado por rincones y la mesa del equipo.
 - La hora del día continua.
 - El panel de depuración.
 - Las primeras piezas de interfaz y las tipografías.
 - Un [vídeo de 33 segundos](capturas/fase1_dioramas.mp4) con todos los dioramas.
 
-![Depósito limpio](capturas/fase1_deposito_limpio.jpg)
+![El depósito, desde el pasillo de la estación](capturas/fase1_deposito_limpio_pasillo.jpg)
 
 ## 1. Cómo se construye la imagen
 
@@ -135,6 +135,7 @@ De noche la luz ambiente y la de la luna son casi nulas (`tinta_negro` = 1): el 
 - **Biseles** de 3 a 20 mm según el tamaño. Las piezas sin bisel se sombrean planas.
 - **Imperfección** siempre con semilla: `wobble` (ondulación de 2 a 6 mm en objetos, hasta 22 cm en montones de nieve), `dent` (abolladuras), `apply_bulge` (cartón hinchado), giros de 0,5 a 2° en baldosas y tablones.
 - **Variación de color** por pieza de un 4 a un 10 % (`jitter`), más manchas (`stain`). Con `stretch_z` < 1 las manchas se alargan en vertical, como chorretones bajo los balcones.
+- **Subdivisión**: las manchas y las abolladuras se pintan por vértice. Una cara grande necesita `cuts` (en las cajas) o más pasos en el perfil (en las piezas de torno) para recogerlas.
 - **Pintura** (`paint`): oclusión de 8 a 32 muestras según el tamaño, cavidades oscuras y aristas algo más claras.
 - **Destrucción** (superficie): hollín de incendio sobre las ventanas quemadas (`scorch`), paneles caídos con el hueco oscuro y varillas, balcones desplomados que cuelgan de la bisagra, cornisas rotas, escombros al pie de la fachada y puertas tapiadas con tablones.
 - **Nombres de material**: `metal` (rampa de metal), `vidrio`, `bombilla` (emite luz), `nevado` (nieve vieja) y `lejano_*` (siluetas del horizonte). El resto usa el material base.
@@ -173,11 +174,13 @@ La prueba de legibilidad está en `scenes/ui/prueba_tipografia.tscn`:
 - `CAPTURE_ARGS="--call=Nodo:metodo[:valor]"` llama a un método antes de capturar (por ejemplo, `--call=PanelDepuracion:toggle`).
 - Escenas de revisión en `scenes/style/`:
   - Depósito: `diorama_deposito_limpio` y `diorama_deposito_abandonado`.
+  - Equipo: `diorama_equipo`, la mesa con el equipo del stalker y las herramientas, cada pieza con su etiqueta.
   - Patio: `diorama_patio_dia`, `diorama_patio_anochecer`, `diorama_patio_noche`, `diorama_patio_noche_linterna` y `diorama_patio_ventisca`.
   - `prueba_estilo`.
 - El visor (`visor_estilo`, la escena principal) recorre todas esas escenas.
 - **Panel de depuración** (F1 en el visor): miedo, radiación, hora del día, clima, linterna, trazo reducido y estilo de zona, en vivo.
 - **Vídeo:** `tools/video.sh salida.mp4` graba los dioramas con el modo película de Godot (`scenes/debug/video_dioramas.tscn`) y lo convierte con ffmpeg.
+- **Capturas de la documentación:** `tools/capturas_docs.sh [filtro]` rehace todas las de `docs/capturas/` (1600×900) con las mismas cámaras y nombres.
 
 ![Panel de depuración](capturas/fase1_panel_depuracion.jpg)
 

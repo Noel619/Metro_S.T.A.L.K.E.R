@@ -84,6 +84,79 @@ def empty(name: str, parent: bpy.types.Object | None = None) -> bpy.types.Object
     return obj
 
 
+def _snap(bm: bmesh.types.BMesh) -> None:
+    """Redondea las posiciones a 0,01 mm.
+
+    La rejilla va desplazada para que las medidas "redondas" (0,6625 m,
+    2,5 mm...) no caigan justo en una frontera, donde el ruido de la última
+    cifra las haría saltar de casilla.
+    """
+    for vert in bm.verts:
+        vert.co = Vector(round(c + 3.7e-6, 5) for c in vert.co)
+
+
+def _weld(bm: bmesh.types.BMesh) -> None:
+    """Funde los vértices que coinciden (piezas que se tocan).
+
+    ``remove_doubles`` hace lo mismo, pero cuál de los dos vértices sobrevive
+    cambia de una ejecución a otra. Aquí sobrevive siempre el primero que se creó.
+    """
+    _snap(bm)
+    first: dict[tuple, bmesh.types.BMVert] = {}
+    targets = {}
+    for vert in bm.verts:
+        keep = first.setdefault(tuple(vert.co), vert)
+        if keep is not vert:
+            targets[vert] = keep
+    if targets:
+        bmesh.ops.weld_verts(bm, targetmap=targets)
+
+
+def _sort_geometry(bm: bmesh.types.BMesh) -> None:
+    """Deja vértices, aristas y caras en un orden que solo depende de la forma.
+
+    El biselado de Blender no devuelve las caras siempre en el mismo orden ni
+    empezando por la misma esquina; sin esto, dos ejecuciones darían archivos
+    distintos del mismo modelo.
+    """
+
+    def by_vertices(element) -> tuple:
+        return tuple(sorted(v.index for v in element.verts))
+
+    def reorder(sequence, key) -> None:
+        # Las secuencias de bmesh solo ordenan con claves numéricas: se pasa el puesto.
+        rank = {element: place for place, element in enumerate(sorted(sequence, key=key))}
+        sequence.sort(key=rank.__getitem__)
+        sequence.index_update()
+
+    _snap(bm)
+    reorder(bm.verts, lambda v: tuple(v.co))
+    # Cada cara empieza por su vértice de menor índice: así se triangula siempre igual.
+    colors = [*bm.loops.layers.color.values(), *bm.loops.layers.float_color.values()]
+    uvs = list(bm.loops.layers.uv.values())
+    for face in list(bm.faces):
+        verts = list(face.verts)
+        start = min(range(len(verts)), key=lambda i: verts[i].index)
+        if start == 0:
+            continue
+        loops = list(face.loops)
+        order = [*range(start, len(verts)), *range(start)]
+        color_values = [[tuple(loops[i][layer]) for i in order] for layer in colors]
+        uv_values = [[loops[i][layer].uv.copy() for i in order] for layer in uvs]
+        smooth, material_index = face.smooth, face.material_index
+        bm.faces.remove(face)
+        face = bm.faces.new([verts[i] for i in order])
+        face.smooth, face.material_index = smooth, material_index
+        for layer, values in zip(colors, color_values):
+            for loop, value in zip(face.loops, values):
+                loop[layer] = value
+        for layer, values in zip(uvs, uv_values):
+            for loop, value in zip(face.loops, values):
+                loop[layer].uv = value
+    reorder(bm.edges, by_vertices)
+    reorder(bm.faces, by_vertices)
+
+
 def mesh_object(
     name: str,
     bm: bmesh.types.BMesh,
@@ -91,6 +164,7 @@ def mesh_object(
     parent: bpy.types.Object | None = None,
     smooth: bool = True,
 ) -> bpy.types.Object:
+    _sort_geometry(bm)
     mesh = bpy.data.meshes.new(name)
     bm.to_mesh(mesh)
     bm.free()
@@ -147,6 +221,40 @@ def collision_box(
     return box(f"{name}-colcaja", size, center, parent=parent)
 
 
+def set_origin(obj: bpy.types.Object, pivot: Iterable[float]) -> None:
+    """Lleva el origen de la pieza a ``pivot`` sin moverla (agujas, tapas, manivelas).
+
+    En Godot la pieza es un nodo propio que gira alrededor de ese punto.
+    """
+    point = Vector(pivot)
+    obj.data.transform(Matrix.Translation(-point))
+    obj.location = point
+    bpy.context.view_layer.update()
+
+
+def smooth_path(points: Iterable[Iterable[float]], steps: int = 4) -> list[Vector]:
+    """Curva suave (Catmull-Rom) que pasa por ``points``: cables, mangueras, asas."""
+    path = [Vector(p) for p in points]
+    if len(path) < 3:
+        return path
+    result = []
+    for i in range(len(path) - 1):
+        p0, p1, p2, p3 = path[max(i - 1, 0)], path[i], path[i + 1], path[min(i + 2, len(path) - 1)]
+        for k in range(steps):
+            t = k / steps
+            result.append(
+                0.5
+                * (
+                    2.0 * p1
+                    + (p2 - p0) * t
+                    + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t * t
+                    + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t * t * t
+                )
+            )
+    result.append(path[-1])
+    return result
+
+
 class MeshBuilder:
     """Construye una malla con muchas piezas (baldosas, tablones, barras...).
 
@@ -188,25 +296,26 @@ class MeshBuilder:
     ) -> list:
         """Caja; ``rotation`` en grados (X, Y, Z) y ``jitter`` varía el color.
 
-        Con ``cuts`` las caras se subdividen: hace falta para que las manchas y el
-        hollín (``stain``, ``scorch``) puedan variar dentro de una misma pieza.
+        ``cuts`` subdivide las caras: las manchas y las abolladuras se pintan
+        por vértice, así que una cara grande sin subdividir no las recoge.
         """
         before = set(self.bm.faces)
         matrix = Matrix.LocRotScale(
             Vector(center), Euler([math.radians(a) for a in rotation]).to_quaternion(), Vector(size)
         )
         result = bmesh.ops.create_cube(self.bm, size=1.0, matrix=matrix, calc_uvs=True)
+        # Sin conjuntos: su orden cambia de una ejecución a otra y el modelo dejaría de ser idéntico.
+        edges = list(dict.fromkeys(edge for vert in result["verts"] for edge in vert.link_edges))
         if cuts > 0:
-            edges = list({edge for vert in result["verts"] for edge in vert.link_edges})
             bmesh.ops.subdivide_edges(self.bm, edges=edges, cuts=cuts, use_grid_fill=True)
-        if bevel > 0.0:
             self.bm.normal_update()
-            piece_edges = {edge for face in self.bm.faces if face not in before for edge in face.edges}
+            faces = [f for f in self.bm.faces if f not in before]
             edges = [
                 edge
-                for edge in piece_edges
+                for edge in dict.fromkeys(edge for face in faces for edge in face.edges)
                 if len(edge.link_faces) == 2 and edge.calc_face_angle(0.0) > 0.5
             ]
+        if bevel > 0.0:
             bmesh.ops.bevel(
                 self.bm, geom=edges, offset=bevel, segments=segments, profile=0.5,
                 affect="EDGES", clamp_overlap=True,
@@ -259,6 +368,185 @@ class MeshBuilder:
         )
         return self._finish_piece(before, color, jitter, smooth=True)
 
+    def lathe(
+        self,
+        profile: Iterable[tuple[float, float]],
+        center: Iterable[float],
+        color: str,
+        *,
+        rotation: Iterable[float] = (0.0, 0.0, 0.0),
+        segments: int = 20,
+        sharp_angle: float = 40.0,
+        jitter: float = 0.0,
+    ) -> list:
+        """Sólido de revolución alrededor de su eje Z local (platos, pomos, cuencos).
+
+        ``profile`` es una lista de (radio, z). De abajo arriba las caras miran
+        hacia fuera; de arriba abajo, hacia dentro (el interior de un cuenco).
+        Un radio 0 cierra la pieza. Los quiebros de más de ``sharp_angle`` grados
+        quedan como arista viva.
+        """
+        before = set(self.bm.faces)
+        points = [(float(r), float(z)) for r, z in profile]
+        matrix = Matrix.LocRotScale(
+            Vector(center), Euler([math.radians(a) for a in rotation]).to_quaternion(), None
+        )
+        angles = [2.0 * math.pi * j / segments for j in range(segments)]
+        rings = []
+        for radius, z in points:
+            if radius <= 1e-6:
+                rings.append([self.bm.verts.new(matrix @ Vector((0.0, 0.0, z)))])
+            else:
+                rings.append(
+                    [self.bm.verts.new(matrix @ Vector((radius * math.cos(a), radius * math.sin(a), z))) for a in angles]
+                )
+        for lower, upper in zip(rings, rings[1:]):
+            if len(lower) == 1 and len(upper) == 1:
+                continue
+            for j in range(segments):
+                k = (j + 1) % segments
+                if len(lower) == 1:
+                    self.bm.faces.new((lower[0], upper[k], upper[j]))
+                elif len(upper) == 1:
+                    self.bm.faces.new((lower[j], lower[k], upper[0]))
+                else:
+                    self.bm.faces.new((lower[j], lower[k], upper[k], upper[j]))
+        faces = self._finish_piece(before, color, jitter, smooth=True)
+        for i in range(1, len(points) - 1):
+            if len(rings[i]) == 1:
+                continue
+            a = Vector(points[i]) - Vector(points[i - 1])
+            b = Vector(points[i + 1]) - Vector(points[i])
+            if a.length < 1e-9 or b.length < 1e-9 or math.degrees(a.angle(b)) < sharp_angle:
+                continue
+            for j in range(segments):
+                edge = self.bm.edges.get((rings[i][j], rings[i][(j + 1) % segments]))
+                if edge is not None:
+                    edge.smooth = False
+        return faces
+
+    def prism(
+        self,
+        outline: Iterable[tuple[float, float]],
+        thickness: float,
+        center: Iterable[float],
+        color: str,
+        *,
+        rotation: Iterable[float] = (0.0, 0.0, 0.0),
+        bevel: float = 0.0,
+        segments: int = 1,
+        jitter: float = 0.0,
+    ) -> list:
+        """Placa con el contorno ``outline`` extruida a lo largo de su eje Z local.
+
+        ``outline`` son puntos (x, y) en sentido antihorario. Con ``rotation``
+        (90, 0, 0) el contorno queda de pie: su Y pasa a ser la Z del modelo.
+        """
+        before = set(self.bm.faces)
+        matrix = Matrix.LocRotScale(
+            Vector(center), Euler([math.radians(a) for a in rotation]).to_quaternion(), None
+        )
+        points = [(float(x), float(y)) for x, y in outline]
+        half = thickness / 2.0
+        bottom = [self.bm.verts.new(matrix @ Vector((x, y, -half))) for x, y in points]
+        top = [self.bm.verts.new(matrix @ Vector((x, y, half))) for x, y in points]
+        self.bm.faces.new(top)
+        self.bm.faces.new(list(reversed(bottom)))
+        count = len(points)
+        for i in range(count):
+            j = (i + 1) % count
+            self.bm.faces.new((bottom[i], bottom[j], top[j], top[i]))
+        if bevel > 0.0:
+            edges = list(dict.fromkeys(edge for vert in (*bottom, *top) for edge in vert.link_edges))
+            bmesh.ops.bevel(
+                self.bm, geom=edges, offset=bevel, segments=segments, profile=0.5,
+                affect="EDGES", clamp_overlap=True,
+            )
+        return self._finish_piece(before, color, jitter, smooth=bevel > 0.0)
+
+    def tube(
+        self,
+        points: Iterable[Iterable[float]],
+        radius: float | Iterable[float],
+        color: str,
+        *,
+        segments: int = 8,
+        caps: bool = True,
+        jitter: float = 0.0,
+    ) -> list:
+        """Tubo que sigue una línea de puntos (mangueras, asas, cables).
+
+        ``radius`` puede ser un número o una lista con un radio por punto.
+        """
+        before = set(self.bm.faces)
+        path = [Vector(p) for p in points]
+        radii = [radius] * len(path) if isinstance(radius, (int, float)) else list(radius)
+        tangents = []
+        for i in range(len(path)):
+            tangents.append((path[min(i + 1, len(path) - 1)] - path[max(i - 1, 0)]).normalized())
+        normal = tangents[0].orthogonal().normalized()
+        rings = []
+        for i, point in enumerate(path):
+            if i > 0:
+                normal = tangents[i - 1].rotation_difference(tangents[i]) @ normal
+                normal = (normal - tangents[i] * normal.dot(tangents[i])).normalized()
+            binormal = tangents[i].cross(normal)
+            rings.append(
+                [
+                    self.bm.verts.new(
+                        point
+                        + (normal * math.cos(2.0 * math.pi * j / segments) + binormal * math.sin(2.0 * math.pi * j / segments))
+                        * radii[i]
+                    )
+                    for j in range(segments)
+                ]
+            )
+        for lower, upper in zip(rings, rings[1:]):
+            for j in range(segments):
+                k = (j + 1) % segments
+                self.bm.faces.new((lower[j], lower[k], upper[k], upper[j]))
+        faces = self._finish_piece(before, color, jitter, smooth=True)
+        if caps:
+            before = set(self.bm.faces)
+            self.bm.faces.new(list(reversed(rings[0])))
+            self.bm.faces.new(rings[-1])
+            faces += self._finish_piece(before, color, 0.0, smooth=False)
+        return faces
+
+    def ribbon(
+        self,
+        points: Iterable[Iterable[float]],
+        width: float,
+        thickness: float,
+        color: str,
+        *,
+        center: Iterable[float],
+        jitter: float = 0.0,
+    ) -> list:
+        """Cinta plana que sigue una línea de puntos (correas, cinturones, tiras de tela).
+
+        La cara ancha mira hacia fuera de ``center`` (la cabeza, el cuerpo o el
+        bulto que rodea la correa).
+        """
+        before = set(self.bm.faces)
+        path = [Vector(p) for p in points]
+        middle = Vector(center)
+        rings = []
+        for i, point in enumerate(path):
+            tangent = (path[min(i + 1, len(path) - 1)] - path[max(i - 1, 0)]).normalized()
+            outward = point - middle
+            outward = (outward - tangent * outward.dot(tangent)).normalized()
+            side = tangent.cross(outward) * (width / 2.0)
+            lift = outward * (thickness / 2.0)
+            rings.append([self.bm.verts.new(point + a + b) for a, b in ((-side, -lift), (side, -lift), (side, lift), (-side, lift))])
+        for lower, upper in zip(rings, rings[1:]):
+            for j in range(4):
+                k = (j + 1) % 4
+                self.bm.faces.new((lower[j], lower[k], upper[k], upper[j]))
+        self.bm.faces.new(list(reversed(rings[0])))
+        self.bm.faces.new(rings[-1])
+        return self._finish_piece(before, color, jitter, smooth=False)
+
     def flip(self, faces: list) -> None:
         """Da la vuelta a las caras (para el interior de pantallas y cubos)."""
         bmesh.ops.reverse_faces(self.bm, faces=faces)
@@ -279,7 +567,8 @@ class MeshBuilder:
         mat: bpy.types.Material | None = None,
         parent: bpy.types.Object | None = None,
     ) -> bpy.types.Object:
-        bmesh.ops.remove_doubles(self.bm, verts=list(self.bm.verts), dist=0.00001)
+        _weld(self.bm)
+        _sort_geometry(self.bm)
         mesh = bpy.data.meshes.new(name)
         self.bm.to_mesh(mesh)
         self.bm.free()

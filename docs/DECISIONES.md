@@ -89,3 +89,7 @@ Caveat (manuscrita), PT Mono (a máquina), Oswald (rótulos) y PT Sans (texto). 
 ## D-022 · Vídeo con el modo película de Godot
 
 El vídeo de revisión se graba con `--write-movie`, a fotogramas fijos (12 por segundo, que casa con el trazo vivo a saltos), y luego se convierte con ffmpeg. Sin GPU es lento (unos dos minutos para 33 segundos a 720p), pero sale exactamente lo que se ve en el juego.
+
+## D-023 · Un solo kit de modelos, con el generador reproducible
+
+Los modelos se hicieron en dos ramas a la vez. Al juntarlas, de los objetos que estaban en las dos (la báscula, el dosímetro, la linterna, la máscara y el quiosco) se quedan los de la rama de modelos, más trabajados, y los otros se borran con sus recetas: no hay dos versiones del mismo objeto. El generador es el reproducible de esa rama (sin conjuntos en el orden de las aristas, vértices soldados y geometría ordenada), así que la misma receta da siempre el mismo archivo, byte a byte: un `.glb` solo cambia cuando cambia su receta. Los muebles y el equipo que esa rama adelantó para las Fases 2 y 3 ya se usan en el depósito y en la mesa del equipo.

@@ -86,7 +86,7 @@ func _build() -> void:
 	_place("escombros", Vector3(-13.5, 0.0, -1.0), 70.0)
 	_place("escombros", Vector3(13.8, 0.0, 4.5), 150.0)
 	_place("caja_carton_grande", Vector3(9.3, 0.0, -8.0), 30.0)
-	_place("quiosco", Vector3(-7.4, 0.0, 2.6), 62.0)
+	_place("quiosco", Vector3(-7.4, 0.0, 2.6), -10.0)
 	_smoke(Vector3(-40.0, 10.0, -95.0), 1.0)
 	_smoke(Vector3(55.0, 8.0, -120.0), 1.4)
 	_smoke(Vector3(95.0, 40.0, -190.0), 2.2)

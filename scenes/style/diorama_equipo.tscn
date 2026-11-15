@@ -1,0 +1,53 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/gear_diorama.gd" id="1_mesa"]
+[ext_resource type="PackedScene" path="res://scenes/style/ink_post.tscn" id="2_post"]
+
+[sub_resource type="Environment" id="Environment_equipo"]
+background_mode = 1
+background_color = Color(0.105882, 0.101961, 0.133333, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.36, 0.3, 0.36, 1)
+ambient_light_energy = 0.55
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.35
+glow_bloom = 0.02
+glow_hdr_threshold = 1.2
+
+[node name="MesaEquipo" type="Node3D"]
+script = ExtResource("1_mesa")
+
+[node name="Entorno" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_equipo")
+
+[node name="Lampara" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.35, 1.85, -0.25)
+light_color = Color(1, 0.84, 0.6, 1)
+light_energy = 2.2
+shadow_enabled = true
+omni_range = 4.5
+
+[node name="Relleno" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2, 1.4, 1.6)
+light_color = Color(0.7, 0.75, 0.95, 1)
+light_energy = 0.5
+omni_range = 4.0
+
+[node name="CamaraMesa" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 1.78, 1.12)
+fov = 50.0
+
+[node name="Mira" type="Marker3D" parent="CamaraMesa"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0, 0.66, -0.06)
+
+[node name="CamaraDetalle" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.38, 1.16, 0.78)
+fov = 46.0
+
+[node name="Mira" type="Marker3D" parent="CamaraDetalle"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.36, 0.74, 0.1)
+
+[node name="InkPost" parent="." instance=ExtResource("2_post")]

@@ -58,12 +58,12 @@ shadow_enabled = true
 omni_range = 4.0
 
 [node name="CamaraFondo" type="Camera3D" parent="." groups=["capture_camera"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6, 1.62, 1.4)
-fov = 64.0
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.0, 2.3, 1.6)
+fov = 68.0
 
 [node name="Mira" type="Marker3D" parent="CamaraFondo"]
 top_level = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.85, -1.0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.55, -0.95)
 
 [node name="CamaraPersiana" type="Camera3D" parent="." groups=["capture_camera"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.35, 1.6, -0.45)
@@ -80,5 +80,21 @@ fov = 52.0
 [node name="Mira" type="Marker3D" parent="CamaraBanco"]
 top_level = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.42, 0.95, -1.4)
+
+[node name="CamaraRincon" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 1.55, 0.75)
+fov = 60.0
+
+[node name="Mira" type="Marker3D" parent="CamaraRincon"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.75, 0.75, -0.75)
+
+[node name="CamaraPasillo" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 1.7, 3.1)
+fov = 60.0
+
+[node name="Mira" type="Marker3D" parent="CamaraPasillo"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25, 1.0, -0.7)
 
 [node name="InkPost" parent="." instance=ExtResource("2_post")]
