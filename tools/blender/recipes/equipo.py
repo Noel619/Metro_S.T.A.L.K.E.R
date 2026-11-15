@@ -246,7 +246,7 @@ def build_mask() -> bpy.types.Object:
     ``cristales`` son un nodo propio, para poder empañarlos y agrietarlos.
     """
     root = tb.empty("mascara-fisico")
-    rim_y, face_z = 0.04, 0.166
+    rim_y, face_z = 0.04, 0.172
     face_r, face_d, wall = 0.098, 0.136, 0.0045
 
     def shape(x: float, y: float, z: float) -> Vector:
@@ -272,9 +272,10 @@ def build_mask() -> bpy.types.Object:
     for vert in dict.fromkeys(v for face in faces for v in face.verts):
         vert.co = shape(*vert.co)
     # Válvula de voz, al frente y abajo.
-    snout = Vector((0.0, rim_y - 0.09, face_z - 0.052))
-    rubber.lathe(((0.039, -0.012), (0.038, 0.022), (0.035, 0.036), (0.031, 0.04), (0.027, 0.037), (0.0, 0.037)), snout, RUBBER_GREY, rotation=(90.0, 0.0, 0.0), segments=20, sharp_angle=50.0)
-    rubber.lathe(((0.03, -0.004), (0.031, 0.03), (0.027, 0.04), (0.0, 0.04)), snout + Vector((0.0, -0.004, -0.028)), RUBBER_GREY, rotation=(180.0, 0.0, 0.0), segments=18)
+    # La válvula sobresale de la careta: su base queda enterrada dentro y su frente, por delante de la nariz.
+    snout = Vector((0.0, rim_y - 0.118, face_z - 0.058))
+    rubber.lathe(((0.039, -0.06), (0.038, 0.022), (0.035, 0.036), (0.031, 0.04), (0.027, 0.037), (0.0, 0.037)), snout, RUBBER_GREY, rotation=(90.0, 0.0, 0.0), segments=20, sharp_angle=50.0)
+    rubber.lathe(((0.03, -0.004), (0.031, 0.03), (0.027, 0.04), (0.0, 0.04)), snout + Vector((0.0, -0.016, -0.028)), RUBBER_GREY, rotation=(180.0, 0.0, 0.0), segments=18)
     # Correas: dos de sien, dos de mejilla y una de coronilla, unidas en la nuca.
     nape = Vector((0.0, rim_y + 0.092, face_z + 0.012))
     head = Vector((0.0, rim_y + 0.01, face_z))
@@ -295,13 +296,13 @@ def build_mask() -> bpy.types.Object:
     for side in (-1.0, 1.0):
         around = 90.0 - side * 58.0
         eye, facing = surface(29.0, around), normal(29.0, around)
-        metal.lathe(((0.03, -0.008), (0.032, 0.0), (0.032, 0.007), (0.0285, 0.011), (0.025, 0.009), (0.025, 0.003)), eye, STEEL_DARK, rotation=_aim(facing), segments=20, sharp_angle=50.0)
-        glass.lathe(((0.0255, 0.004), (0.014, 0.0066), (0.0, 0.0074)), eye, GLASS, rotation=_aim(facing), segments=20)
+        metal.lathe(((0.03, -0.008), (0.032, 0.0), (0.032, 0.011), (0.0285, 0.015), (0.025, 0.013), (0.025, 0.007)), eye, STEEL_DARK, rotation=_aim(facing), segments=20, sharp_angle=50.0)
+        glass.lathe(((0.0255, 0.008), (0.014, 0.0106), (0.0, 0.0114)), eye, GLASS, rotation=_aim(facing), segments=20)
     metal.lathe(((0.0275, 0.0), (0.0275, 0.004), (0.0, 0.004)), snout + Vector((0.0, -0.036, 0.0)), STEEL, rotation=(90.0, 0.0, 0.0), segments=20)
     for radius in (0.021, 0.013):
         metal.lathe(((radius - 0.0025, 0.0), (radius - 0.0025, 0.003), (radius, 0.003), (radius, 0.0)), snout + Vector((0.0, -0.04, 0.0)), STEEL_DARK, rotation=(90.0, 0.0, 0.0), segments=20, sharp_angle=30.0)
     metal.cylinder(0.005, 0.005, snout + Vector((0.0, -0.042, 0.0)), STEEL_DARK, rotation=(90.0, 0.0, 0.0), segments=8)
-    can = Vector((0.0, snout.y - 0.004, 0.0))
+    can = Vector((0.0, snout.y - 0.016, 0.0))
     metal.lathe(
         ((0.0, 0.0), (0.045, 0.0), (0.051, 0.005), (0.051, 0.064), (0.047, 0.07), (0.026, 0.074), (0.026, 0.09), (0.0, 0.09)),
         can,
