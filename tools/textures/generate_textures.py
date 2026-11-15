@@ -12,6 +12,8 @@ fijas). Se guardan en assets/textures/ y las usan los shaders de assets/shaders/
 - rampas.png     rampas del sombreado por bandas: una fila por tipo de material.
 - ruido_trazo.png ruido suave en R y G para hacer temblar el contorno.
 - grano.png      grano fino de película.
+- pagina_cuadriculada.png  una página del cuaderno: cuadrícula de 5 mm trazada algo
+                 suelta. No se enlosa: cubre la página entera (UV de 0 a 1).
 """
 
 from __future__ import annotations
@@ -141,6 +143,31 @@ def grain(size: int = 256) -> Image.Image:
     return Image.fromarray((noise * 255.0).astype(np.uint8), "L")
 
 
+def grid_page(width: int = 544, height: int = 808) -> Image.Image:
+    """Página cuadriculada (136 × 202 mm a 4 px/mm). Casi blanca: el color del papel lo pone el modelo."""
+    rng = np.random.default_rng(31)
+    scale = 3  # se dibuja más grande y se reduce, para que las líneas queden suaves
+    cell = 20 * scale
+    ink = Image.new("L", (width * scale, height * scale), 0)
+    draw = ImageDraw.Draw(ink)
+    left, top = 2 * scale, 4 * scale
+    for column in range(width * scale // cell + 1):
+        x = left + column * cell + rng.uniform(-0.6, 0.6)
+        tone = int(rng.uniform(165, 225))
+        draw.line([(x + rng.uniform(-0.5, 0.5), 0), (x + rng.uniform(-0.5, 0.5), height * scale)], fill=tone, width=scale)
+    for row in range(height * scale // cell + 1):
+        y = top + row * cell + rng.uniform(-0.6, 0.6)
+        tone = int(rng.uniform(165, 225))
+        draw.line([(0, y + rng.uniform(-0.5, 0.5)), (width * scale, y + rng.uniform(-0.5, 0.5))], fill=tone, width=scale)
+    lines = np.asarray(ink.resize((width, height), Image.LANCZOS), dtype=np.float64) / 255.0
+    size = 1024
+    fibre = fft_noise(size, 1.6, seed=32)[:height, :width]
+    paper_tone = 0.94 + 0.06 * fibre
+    blue = np.array([0.42, 0.55, 0.68])
+    rgb = paper_tone[..., None] * (1.0 - lines[..., None] * (1.0 - blue[None, None, :]))
+    return Image.fromarray((np.clip(rgb, 0.0, 1.0) * 255.0).astype(np.uint8), "RGB")
+
+
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     outputs = {
@@ -149,6 +176,7 @@ def main() -> None:
         "rampas.png": ramps,
         "ruido_trazo.png": boil_noise,
         "grano.png": grain,
+        "pagina_cuadriculada.png": grid_page,
     }
     for name, build in outputs.items():
         image = build()
