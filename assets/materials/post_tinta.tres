@@ -1,0 +1,16 @@
+[gd_resource type="ShaderMaterial" load_steps=6 format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/post_tinta.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://assets/textures/tramado.png" id="2_hatching"]
+[ext_resource type="Texture2D" path="res://assets/textures/papel.png" id="3_paper"]
+[ext_resource type="Texture2D" path="res://assets/textures/ruido_trazo.png" id="4_boil"]
+[ext_resource type="Texture2D" path="res://assets/textures/grano.png" id="5_grain"]
+
+[resource]
+resource_name = "post_tinta"
+render_priority = -128
+shader = ExtResource("1_shader")
+shader_parameter/hatching = ExtResource("2_hatching")
+shader_parameter/paper = ExtResource("3_paper")
+shader_parameter/boil_noise = ExtResource("4_boil")
+shader_parameter/grain = ExtResource("5_grain")

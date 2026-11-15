@@ -9,12 +9,16 @@ extends SceneTree
 ##   --scene=res://ruta/escena.tscn   escena que se captura
 ##   --out=ruta/salida.png            imagen; con varias cámaras, se añade el nombre
 ##   --frames=30                      fotogramas de espera antes de capturar
+##   --hide=Nodo                      oculta los nodos con ese nombre (p. ej. InkPost)
+##   --post=parametro=valor           fija un parámetro del post-proceso (p. ej. debug_view=3)
 
 const CAMERA_GROUP: StringName = &"capture_camera"
 
 var _scene_path: String = ""
 var _out_path: String = ""
 var _frames: int = 30
+var _hidden: PackedStringArray = []
+var _post_params: Dictionary = {}
 
 
 func _initialize() -> void:
@@ -26,6 +30,11 @@ func _initialize() -> void:
 			_out_path = value
 		elif arg.begins_with("--frames="):
 			_frames = maxi(1, value.to_int())
+		elif arg.begins_with("--hide="):
+			_hidden.append(value)
+		elif arg.begins_with("--post="):
+			var pair: String = arg.trim_prefix("--post=")
+			_post_params[pair.get_slice("=", 0)] = pair.get_slice("=", 1).to_float()
 	if _scene_path.is_empty() or _out_path.is_empty():
 		printerr("Uso: --scene=res://... --out=salida.png [--frames=30]")
 		quit(1)
@@ -41,6 +50,17 @@ func _capture() -> void:
 		return
 	var scene: Node = packed.instantiate()
 	root.add_child(scene)
+	if not _post_params.is_empty():
+		for post: Node in scene.find_children("InkPost", "MeshInstance3D", true, false):
+			var mesh: MeshInstance3D = post as MeshInstance3D
+			var material: ShaderMaterial = mesh.get_surface_override_material(0).duplicate()
+			for param: String in _post_params:
+				material.set_shader_parameter(param, _post_params[param])
+			mesh.set_surface_override_material(0, material)
+	for node_name: String in _hidden:
+		for node: Node in scene.find_children(node_name, "", true, false):
+			if node is Node3D:
+				(node as Node3D).visible = false
 	var cameras: Array[Node] = get_nodes_in_group(CAMERA_GROUP)
 	if cameras.is_empty():
 		cameras = [root.get_camera_3d()]

@@ -13,7 +13,7 @@ config_version=5
 config/name="Tumansk"
 config/description="Supervivencia táctica en primera persona en una ciudad soviética arrasada."
 config/version="0.1.0"
-run/main_scene="res://scenes/debug/hola_tumansk.tscn"
+run/main_scene="res://scenes/style/visor_estilo.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -21,6 +21,7 @@ config/icon="res://icon.svg"
 
 EventBus="*res://scripts/core/event_bus.gd"
 Settings="*res://scripts/core/settings.gd"
+StyleDirector="*res://scripts/core/style_director.gd"
 SaveSystem="*res://scripts/core/save_system.gd"
 GameState="*res://scripts/core/game_state.gd"
 NetSession="*res://scripts/net/net_session.gd"
@@ -39,6 +40,11 @@ window/stretch/aspect="expand"
 
 scene={
 "import_script/path": "res://tools/godot/post_import.gd"
+}
+texture={
+"compress/mode": 0,
+"detect_3d/compress_to": 0,
+"mipmaps/generate": true
 }
 
 [input]
@@ -194,3 +200,70 @@ pause={
 [rendering]
 
 environment/defaults/default_clear_color=Color(0.105882, 0.101961, 0.133333, 1)
+
+[shader_globals]
+
+tinta_miedo={
+"type": "float",
+"value": 0.0
+}
+tinta_radiacion={
+"type": "float",
+"value": 0.0
+}
+tinta_trazo_fps={
+"type": "float",
+"value": 4.0
+}
+tinta_trazo_amplitud={
+"type": "float",
+"value": 0.6
+}
+tinta_grosor={
+"type": "float",
+"value": 1.6
+}
+tinta_tramado={
+"type": "float",
+"value": 0.6
+}
+tinta_tramado_umbral={
+"type": "float",
+"value": 0.14
+}
+tinta_relleno={
+"type": "float",
+"value": 0.012
+}
+tinta_saturacion={
+"type": "float",
+"value": 1.0
+}
+tinta_contraste={
+"type": "float",
+"value": 1.05
+}
+tinta_papel={
+"type": "float",
+"value": 0.3
+}
+tinta_grano={
+"type": "float",
+"value": 0.025
+}
+tinta_vineta={
+"type": "float",
+"value": 0.3
+}
+tinta_rampa={
+"type": "int",
+"value": 1
+}
+tinta_color={
+"type": "color",
+"value": Color(0.105882354, 0.101960786, 0.13333334, 1)
+}
+tinta_tinte={
+"type": "color",
+"value": Color(1, 0.97, 0.92, 1)
+}

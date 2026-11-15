@@ -1,0 +1,47 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/courtyard_diorama.gd" id="1_patio"]
+[ext_resource type="PackedScene" path="res://scenes/style/ink_post.tscn" id="2_post"]
+
+[sub_resource type="Environment" id="Environment_patio"]
+background_mode = 1
+background_color = Color(0.64, 0.68, 0.7, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.58, 0.64, 0.72, 1)
+ambient_light_energy = 0.75
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.66, 0.7, 0.74, 1)
+fog_density = 0.022
+fog_sky_affect = 0.0
+
+[node name="DioramaPatio" type="Node3D"]
+script = ExtResource("1_patio")
+
+[node name="Entorno" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_patio")
+
+[node name="Sol" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.82, 0.25, -0.51, 0, 0.9, 0.44, 0.57, -0.36, 0.73, 0, 20, 0)
+light_color = Color(0.86, 0.9, 0.98, 1)
+light_energy = 1.1
+shadow_enabled = true
+directional_shadow_max_distance = 60.0
+
+[node name="CamaraPatio" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.2, 1.65, 10.5)
+fov = 62.0
+
+[node name="Mira" type="Marker3D" parent="CamaraPatio"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.5, 4.6, -6.0)
+
+[node name="CamaraBanco" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6, 1.5, 3.2)
+fov = 60.0
+
+[node name="Mira" type="Marker3D" parent="CamaraBanco"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.5, 2.2, -8.0)
+
+[node name="InkPost" parent="." instance=ExtResource("2_post")]

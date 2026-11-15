@@ -13,7 +13,7 @@ from mathutils import Vector
 
 import tumansk_bpy as tb
 
-CARDBOARD = "#B9773F"
+CARDBOARD = "#A8794E"
 TAPE = "#D8B26A"
 
 VARIANTS = {

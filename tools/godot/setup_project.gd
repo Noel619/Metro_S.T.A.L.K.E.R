@@ -41,6 +41,34 @@ const ACTIONS: Array[Dictionary] = [
 	{"name": "pause", "keys": [KEY_ESCAPE], "buttons": [JOY_BUTTON_START]},
 ]
 
+## Parámetros globales de los shaders del estilo (los mueve StyleDirector).
+## Valores iniciales: los del depósito.
+const SHADER_GLOBALS: Dictionary = {
+	"tinta_miedo": ["float", 0.0],
+	"tinta_radiacion": ["float", 0.0],
+	"tinta_trazo_fps": ["float", 4.0],
+	"tinta_trazo_amplitud": ["float", 0.6],
+	"tinta_grosor": ["float", 1.6],
+	"tinta_tramado": ["float", 0.6],
+	"tinta_tramado_umbral": ["float", 0.14],
+	"tinta_relleno": ["float", 0.012],
+	"tinta_saturacion": ["float", 1.0],
+	"tinta_contraste": ["float", 1.05],
+	"tinta_papel": ["float", 0.3],
+	"tinta_grano": ["float", 0.025],
+	"tinta_vineta": ["float", 0.3],
+	"tinta_rampa": ["int", 1],
+	"tinta_color": ["color", Color("#1b1a22")],
+	"tinta_tinte": ["color", Color(1.0, 0.97, 0.92)],
+}
+
+## Valores por defecto al importar. Las texturas del estilo (rampas, tramados)
+## no admiten compresión con pérdidas.
+const IMPORTER_DEFAULTS: Dictionary = {
+	"scene": {"import_script/path": "res://tools/godot/post_import.gd"},
+	"texture": {"compress/mode": 0, "detect_3d/compress_to": 0, "mipmaps/generate": true},
+}
+
 const LAYER_NAMES: Dictionary = {
 	"3d_physics/layer_1": "mundo",
 	"3d_physics/layer_2": "jugadores",
@@ -57,6 +85,8 @@ const LAYER_NAMES: Dictionary = {
 func _initialize() -> void:
 	_write_actions()
 	_write_layer_names()
+	_write_shader_globals()
+	_write_importer_defaults()
 	var err: Error = ProjectSettings.save()
 	var bus_err: Error = _write_bus_layout()
 	if err != OK or bus_err != OK:
@@ -105,6 +135,19 @@ func _write_actions() -> void:
 func _write_layer_names() -> void:
 	for key: String in LAYER_NAMES:
 		ProjectSettings.set_setting("layer_names/" + key, LAYER_NAMES[key])
+
+
+func _write_shader_globals() -> void:
+	for global_name: String in SHADER_GLOBALS:
+		var spec: Array = SHADER_GLOBALS[global_name]
+		ProjectSettings.set_setting(
+			"shader_globals/" + global_name, {"type": spec[0], "value": spec[1]}
+		)
+
+
+func _write_importer_defaults() -> void:
+	for importer: String in IMPORTER_DEFAULTS:
+		ProjectSettings.set_setting("importer_defaults/" + importer, IMPORTER_DEFAULTS[importer])
 
 
 func _write_bus_layout() -> Error:

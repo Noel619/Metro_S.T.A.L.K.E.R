@@ -38,5 +38,9 @@ lint: ## revisa el estilo del código GDScript
 format: ## formatea el código GDScript
 	gdformat $(GD_DIRS)
 
-capture: import ## capturas de las escenas de revisión (docs/capturas/)
-	tools/capture.sh res://scenes/debug/hola_tumansk.tscn docs/capturas/fase0_hola_tumansk.png
+capture: import ## capturas de las escenas de revisión (en capturas/, sin versionar)
+	tools/capture.sh res://scenes/debug/hola_tumansk.tscn capturas/hola_tumansk.png
+	tools/capture.sh res://scenes/style/diorama_deposito_limpio.tscn capturas/deposito_limpio.png
+	tools/capture.sh res://scenes/style/diorama_deposito_abandonado.tscn capturas/deposito_abandonado.png
+	tools/capture.sh res://scenes/style/diorama_patio_dia.tscn capturas/patio_dia.png
+	tools/capture.sh res://scenes/style/diorama_patio_anochecer.tscn capturas/patio_anochecer.png

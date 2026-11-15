@@ -101,15 +101,18 @@ def hatching(size: int = 512) -> Image.Image:
 def ramps(width: int = 256) -> Image.Image:
     """Una fila por tipo de material: de sombra (izquierda) a luz (derecha).
 
-    Cada banda lleva su tinte: sombras frías, luces cálidas.
+    Filas: 0 neutro, 1 depósito, 2 superficie, 3 piel, 4 metal. Los tonos medios
+    llevan tinte (más fríos o más cálidos según la fila).
     """
     rows = {
         # nombre: [(posición donde empieza la banda, color multiplicador)]
-        "neutro": [(0.00, (0.42, 0.42, 0.50)), (0.38, (0.74, 0.73, 0.76)), (0.66, (1.00, 0.98, 0.95))],
-        "deposito": [(0.00, (0.36, 0.33, 0.48)), (0.36, (0.70, 0.62, 0.62)), (0.64, (1.00, 0.95, 0.86))],
-        "superficie": [(0.00, (0.38, 0.43, 0.52)), (0.40, (0.66, 0.70, 0.74)), (0.70, (0.96, 0.97, 0.98))],
-        "piel": [(0.00, (0.55, 0.38, 0.40)), (0.30, (0.82, 0.66, 0.62)), (0.62, (1.00, 0.95, 0.90))],
-        "metal": [(0.00, (0.30, 0.32, 0.38)), (0.45, (0.62, 0.64, 0.68)), (0.85, (1.10, 1.08, 1.04))],
+        # La primera banda es 0: ahí solo llega la luz ambiente (el color de la
+        # sombra), así que las sombras propias y las proyectadas coinciden.
+        "neutro": [(0.00, (0.0, 0.0, 0.0)), (0.40, (0.50, 0.50, 0.54)), (0.64, (1.00, 0.98, 0.95))],
+        "deposito": [(0.00, (0.0, 0.0, 0.0)), (0.38, (0.56, 0.47, 0.50)), (0.62, (1.00, 0.95, 0.86))],
+        "superficie": [(0.00, (0.0, 0.0, 0.0)), (0.42, (0.46, 0.52, 0.60)), (0.70, (0.96, 0.97, 0.98))],
+        "piel": [(0.00, (0.0, 0.0, 0.0)), (0.30, (0.70, 0.52, 0.50)), (0.58, (1.00, 0.94, 0.88))],
+        "metal": [(0.00, (0.0, 0.0, 0.0)), (0.45, (0.45, 0.48, 0.54)), (0.80, (1.00, 1.00, 1.00)), (0.95, (1.60, 1.55, 1.45))],
     }
     softness = 0.025
     image = np.zeros((len(rows), width, 3), dtype=np.float64)

@@ -53,7 +53,16 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 | **Equipo de referencia** | Ryzen 7 8700G con su gráfica integrada (Radeon 780M) |
 | **Siguiente hito** | H1 · *Prueba de Tinta* (Fase 1) |
 
-**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
+**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre el visor del estilo: ← → cambian de diorama, C de cámara y ↑ ↓ suben o bajan el miedo. Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
+
+### Así se ve ahora (Prueba de Tinta, primera pasada)
+
+| | |
+|---|---|
+| ![El depósito, limpio](docs/capturas/fase1_deposito_limpio.jpg) | ![El depósito, el primer día](docs/capturas/fase1_deposito_abandonado_persiana.jpg) |
+| ![Patio de Los Bloques, de día](docs/capturas/fase1_patio_dia_banco.jpg) | ![Patio al anochecer, con miedo](docs/capturas/fase1_patio_anochecer_banco.jpg) |
+
+Todo lo que se ve (estanterías, cajas, persiana, bloques de paneles, árboles, coche) está generado por código. La guía de estilo con los valores actuales está en [docs/ESTILO.md](docs/ESTILO.md).
 
 ### Decisiones tomadas
 
@@ -482,11 +491,11 @@ Partimos de esa base (formas robustas, calidez, ilustraciones sobre objetos) y l
 | Capa | Qué es | Cómo se hace en Godot 4 |
 |---|---|---|
 | Sombreado por bandas (*cel shading*) | 2 o 3 tonos por material, con rampas de color. Luz cálida, sombra fría | Shader `spatial` propio con función `light()` y una textura de rampa |
-| Contorno de tinta | Líneas en siluetas y pliegues, de grosor variable y trazo irregular | Post-proceso a partir de profundidad y normales (`CompositorEffect`), más casco invertido en personajes y objetos clave |
+| Contorno de tinta | Líneas en siluetas y pliegues, de grosor variable y trazo irregular | Post-proceso a partir de profundidad y normales, en un rectángulo a pantalla completa ([D-008](docs/DECISIONES.md)), más casco invertido en personajes y objetos clave |
 | Tramado | Sombras hechas con rayas, como un grabado. Más densas cuanto más oscuro y cuanto más miedo | Texturas de tramado (*tonal art maps*) mezcladas según la iluminación |
 | Trazo vivo (*line boil*) | El contorno tiembla como en una animación dibujada a mano | Ruido animado a 4–12 fps, a saltos y no de forma continua |
 | Papel y grano | Grano de papel sutil sobre toda la imagen y viñeta en los bordes; con mucha radiación, el grano se intensifica | Post-proceso final |
-| Color por zona | Paletas limitadas y gradación propia de cada zona | LUT por zona, mezcladas en las transiciones |
+| Color por zona | Paletas limitadas y gradación propia de cada zona | Saturación, contraste y tinte por zona, interpolados en las transiciones ([D-011](docs/DECISIONES.md)) |
 | Nieve y huellas | La nieve se acumula en lo que mira hacia arriba; las huellas quedan marcadas y la nieve que cae las borra | Shader según la orientación de la superficie, más decals de huellas, que también son datos para la IA |
 | Niebla y ventisca | Niebla posterizada y nieve que cruza el aire | Niebla ligera, partículas y shader propio |
 | Ilustraciones sobre objetos | Etiquetas, carteles, rótulos, envases | Nodos `Decal` y texturas generadas por código (SVG) |
@@ -776,23 +785,24 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Objetivo**: fijar y aprobar el aspecto final antes de producir contenido. Es la fase más importante, porque todo lo demás se construye encima.
 
-- [ ] **F1-01** Shader de sombreado por bandas con rampas por material: luz cálida, sombra fría y luz de borde.
-- [ ] **F1-02** Contorno por post-proceso (profundidad y normales), con grosor variable y trazo irregular.
+- [x] **F1-01** Shader de sombreado por bandas con rampas por material: luz cálida, sombra fría y luz de borde.
+- [x] **F1-02** Contorno por post-proceso (profundidad y normales), con grosor variable y trazo irregular. Se hace con un rectángulo a pantalla completa ([D-008](docs/DECISIONES.md)).
 - [ ] **F1-03** Contorno por casco invertido para objetos clave, personas y criaturas.
-- [ ] **F1-04** Tramado en las sombras (*tonal art maps*), con densidad controlable.
-- [ ] **F1-05** Trazo vivo a saltos (4, 8 y 12 fps), controlado por `StyleDirector`.
-- [ ] **F1-06** Papel, grano, viñeta y gradación de color por zona (LUT).
-- [ ] **F1-07** Nieve acumulada, huellas, niebla y ventisca.
-- [ ] **F1-08** Kit inicial de props por receta: cajas de cartón y de madera, estantería metálica, banco de trabajo, lámpara de taller, báscula, telarañas, máscara, dosímetro y linterna; y en el exterior, un módulo de bloque de paneles, una farola apagada, un coche oxidado, un quiosco y un banco.
-- [ ] **F1-09** Diorama A: *El depósito*, en dos estados (abandonado y limpio).
-- [ ] **F1-10** Diorama B: *Un patio de Los Bloques bajo la nieve*.
+- [x] **F1-04** Tramado en las sombras (*tonal art maps*), con densidad controlable.
+- [x] **F1-05** Trazo vivo a saltos (4, 8 y 12 fps), controlado por `StyleDirector`.
+- [x] **F1-06** Papel, grano, viñeta y gradación de color por zona (por parámetros en lugar de LUT, [D-011](docs/DECISIONES.md)).
+- [ ] **F1-07** Nieve acumulada, huellas, niebla y ventisca. *(Hechas la nieve y la niebla; faltan las huellas y la ventisca.)*
+- [ ] **F1-08** Kit inicial de props por receta: cajas de cartón y de madera, estantería metálica, banco de trabajo, lámpara de taller, báscula, telarañas, máscara, dosímetro y linterna; y en el exterior, un módulo de bloque de paneles, una farola apagada, un coche oxidado, un quiosco y un banco. *(Hechos 27 modelos: cajas, estanterías, banco, lámpara, persiana, bidón, cubo, botellas, latas, escoba, bloques de paneles, farola, banco de parque, árboles, coche, columpio y contenedor. Faltan la báscula, la máscara, el dosímetro, la linterna y el quiosco.)*
+- [x] **F1-09** Diorama A: *El depósito*, en dos estados (abandonado y limpio).
+- [x] **F1-10** Diorama B: *Un patio de Los Bloques bajo la nieve*.
 - [ ] **F1-11** Panel de depuración para cambiar en vivo el miedo, la radiación, la hora y el clima, y ver cómo reacciona el estilo.
 - [ ] **F1-12** Primeras piezas de interfaz en el estilo final: una página de cuaderno con un mapa dibujado, una etiqueta de precio, un recibo con sello y una ficha de encargo.
 - [ ] **F1-13** Selección de tipografías y prueba de legibilidad.
-- [ ] **F1-14** Guía de estilo con los parámetros definitivos, más capturas y un vídeo corto.
+- [ ] **F1-14** Guía de estilo con los parámetros definitivos, más capturas y un vídeo corto. *(Hechas la guía y las capturas; falta el vídeo.)*
 
 **Entregable**: dos dioramas a calidad final y la guía de estilo con los valores fijados.
 **Criterio de salida**: **tú apruebas el estilo**. Si no convence, se itera aquí; nunca se produce contenido sobre un estilo sin aprobar.
+**Estado**: 🟨 primera pasada lista para que la revises ([docs/ESTILO.md](docs/ESTILO.md)).
 
 ### Fase 2: El Depósito jugable · tamaño L
 

@@ -7,7 +7,14 @@ Cómo poner en marcha el proyecto, generar los assets y comprobar que todo funci
 1. Descarga **Godot 4.7.2** (versión estándar, no la de .NET) desde [godotengine.org](https://godotengine.org/download/windows/). Tiene que ser esa versión exacta.
 2. Descarga o clona este repositorio.
 3. Abre Godot, pulsa **Importar** y elige el archivo `project.godot`.
-4. Pulsa **F5** para ejecutar la escena principal.
+4. Pulsa **F5**. Se abre el **visor del estilo**, con los dioramas de la Fase 1 en movimiento:
+
+| Tecla | Qué hace |
+|---|---|
+| ← → | Cambia de diorama (depósito limpio, depósito abandonado, patio de día, patio al anochecer) |
+| C | Cambia de cámara |
+| ↑ ↓ | Sube o baja el miedo: el trazo tiembla más y el tramado invade la imagen |
+| R | Activa o quita la radiación (más grano) |
 
 Los modelos, las texturas y las ilustraciones ya vienen generados en el repositorio: no hace falta instalar nada más para jugar o abrir las escenas.
 
@@ -70,6 +77,13 @@ El nombre del material elige el material de Godot si existe `assets/materials/<n
 ## Capturas
 
 `tools/capture.sh res://escena.tscn salida.png [ancho] [alto] [fotogramas]` renderiza con el render real (Forward+) sin pantalla: usa un servidor X virtual y, si no hay GPU, Vulkan por software. Las cámaras del grupo `capture_camera` generan una imagen cada una.
+
+Opciones extra con la variable `CAPTURE_ARGS`:
+
+- `--hide=InkPost`: captura sin el post-proceso del estilo.
+- `--post=debug_view=N`: muestra una capa del post-proceso (ver `docs/ESTILO.md`).
+
+Las escenas de revisión del estilo están en `scenes/style/` y se describen en [ESTILO.md](ESTILO.md).
 
 ## Cooperativo
 

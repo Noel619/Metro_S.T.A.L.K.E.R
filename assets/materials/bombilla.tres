@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" load_steps=3 format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/tinta.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://assets/textures/rampas.png" id="2_ramps"]
+
+[resource]
+resource_name = "bombilla"
+shader = ExtResource("1_shader")
+shader_parameter/ramps = ExtResource("2_ramps")
+shader_parameter/emission_color = Color(1, 0.82, 0.5, 1)
+shader_parameter/emission_energy = 6.0

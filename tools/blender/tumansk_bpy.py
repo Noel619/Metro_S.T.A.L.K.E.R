@@ -33,7 +33,7 @@ from pathlib import Path
 # bpy tiene que importarse antes que bmesh y mathutils: es quien los hace visibles.
 import bpy  # isort: skip
 import bmesh  # isort: skip
-from mathutils import Quaternion, Vector, noise
+from mathutils import Euler, Matrix, Quaternion, Vector, noise
 from mathutils.bvhtree import BVHTree
 
 COLLISION_SUFFIXES = ("-colcaja", "-colconvexa")
@@ -147,6 +147,136 @@ def collision_box(
     return box(f"{name}-colcaja", size, center, parent=parent)
 
 
+class MeshBuilder:
+    """Construye una malla con muchas piezas (baldosas, tablones, barras...).
+
+    Cada pieza lleva su propio color base, que se guarda por esquina en el
+    atributo "Base"; ``paint`` lo usa después como color de partida. Las piezas
+    con bisel se sombrean suaves; las demás, planas.
+    """
+
+    def __init__(self, seed: int = 0) -> None:
+        self.bm = bmesh.new()
+        self.base = self.bm.loops.layers.color.new("Base")
+        self.rng = random.Random(seed)
+
+    def _finish_piece(self, before: set, color: str, jitter: float, smooth: bool) -> list:
+        faces = [f for f in self.bm.faces if f not in before]
+        # Las capas de color de bmesh guardan sRGB (no lineal).
+        hex_value = color.lstrip("#")
+        srgb = Vector(int(hex_value[i : i + 2], 16) / 255.0 for i in (0, 2, 4))
+        if jitter > 0.0:
+            srgb *= 1.0 + self.rng.uniform(-jitter, jitter)
+        value = (min(1.0, srgb.x), min(1.0, srgb.y), min(1.0, srgb.z), 1.0)
+        for face in faces:
+            face.smooth = smooth
+            for loop in face.loops:
+                loop[self.base] = value
+        return faces
+
+    def box(
+        self,
+        size: Iterable[float],
+        center: Iterable[float],
+        color: str,
+        *,
+        rotation: Iterable[float] = (0.0, 0.0, 0.0),
+        bevel: float = 0.0,
+        segments: int = 1,
+        jitter: float = 0.0,
+    ) -> list:
+        """Caja; ``rotation`` en grados (X, Y, Z) y ``jitter`` varía el color."""
+        before = set(self.bm.faces)
+        matrix = Matrix.LocRotScale(
+            Vector(center), Euler([math.radians(a) for a in rotation]).to_quaternion(), Vector(size)
+        )
+        result = bmesh.ops.create_cube(self.bm, size=1.0, matrix=matrix, calc_uvs=True)
+        if bevel > 0.0:
+            edges = list({edge for vert in result["verts"] for edge in vert.link_edges})
+            bmesh.ops.bevel(
+                self.bm, geom=edges, offset=bevel, segments=segments, profile=0.5,
+                affect="EDGES", clamp_overlap=True,
+            )
+        return self._finish_piece(before, color, jitter, smooth=bevel > 0.0)
+
+    def cylinder(
+        self,
+        radius: float,
+        depth: float,
+        center: Iterable[float],
+        color: str,
+        *,
+        rotation: Iterable[float] = (0.0, 0.0, 0.0),
+        radius_top: float | None = None,
+        segments: int = 16,
+        caps: bool = True,
+        jitter: float = 0.0,
+    ) -> list:
+        """Cilindro (o tronco de cono) a lo largo de su eje Z local."""
+        before = set(self.bm.faces)
+        matrix = Matrix.LocRotScale(
+            Vector(center), Euler([math.radians(a) for a in rotation]).to_quaternion(), None
+        )
+        bmesh.ops.create_cone(
+            self.bm, cap_ends=caps, cap_tris=False, segments=segments, radius1=radius,
+            radius2=radius if radius_top is None else radius_top, depth=depth, matrix=matrix,
+        )
+        faces = self._finish_piece(before, color, jitter, smooth=True)
+        axis = (matrix.to_3x3() @ Vector((0.0, 0.0, 1.0))).normalized()
+        for face in faces:
+            face.normal_update()
+            if abs(face.normal.dot(axis)) > 0.99:
+                face.smooth = False
+        return faces
+
+    def sphere(
+        self,
+        radius: float,
+        center: Iterable[float],
+        color: str,
+        segments: int = 16,
+        scale: Iterable[float] = (1.0, 1.0, 1.0),
+        jitter: float = 0.0,
+    ) -> list:
+        before = set(self.bm.faces)
+        matrix = Matrix.LocRotScale(Vector(center), None, Vector(scale))
+        bmesh.ops.create_uvsphere(
+            self.bm, u_segments=segments, v_segments=max(6, segments // 2), radius=radius, matrix=matrix
+        )
+        return self._finish_piece(before, color, jitter, smooth=True)
+
+    def flip(self, faces: list) -> None:
+        """Da la vuelta a las caras (para el interior de pantallas y cubos)."""
+        bmesh.ops.reverse_faces(self.bm, faces=faces)
+
+    def bar(self, start: Iterable[float], end: Iterable[float], radius: float, color: str, segments: int = 8) -> list:
+        """Barra cilíndrica entre dos puntos (tubos, cables, varillas)."""
+        a, b = Vector(start), Vector(end)
+        direction = b - a
+        rotation = Vector((0.0, 0.0, 1.0)).rotation_difference(direction.normalized()).to_euler()
+        return self.cylinder(
+            radius, direction.length, (a + b) / 2.0, color,
+            rotation=[math.degrees(r) for r in rotation], segments=segments,
+        )
+
+    def finish(
+        self,
+        name: str,
+        mat: bpy.types.Material | None = None,
+        parent: bpy.types.Object | None = None,
+    ) -> bpy.types.Object:
+        bmesh.ops.remove_doubles(self.bm, verts=list(self.bm.verts), dist=0.00001)
+        mesh = bpy.data.meshes.new(name)
+        self.bm.to_mesh(mesh)
+        self.bm.free()
+        if mat is not None:
+            mesh.materials.append(mat)
+        obj = bpy.data.objects.new(name, mesh)
+        bpy.context.scene.collection.objects.link(obj)
+        obj.parent = parent
+        return obj
+
+
 # --------------------------------------------------------------------------
 # Imperfección controlada
 # --------------------------------------------------------------------------
@@ -184,6 +314,35 @@ def wobble(obj: bpy.types.Object, amount: float, scale: float = 3.0, seed: int =
     for v in obj.data.vertices:
         p = v.co * scale + offset
         v.co += Vector(noise.noise(p + s) for s in shifts) * amount
+
+
+def stain(
+    obj: bpy.types.Object,
+    hex_color: str,
+    *,
+    amount: float = 0.6,
+    scale: float = 3.0,
+    coverage: float = 0.3,
+    seed: int = 0,
+    stretch_z: float = 1.0,
+) -> None:
+    """Manchas (óxido, humedad, suciedad) sobre el color base del atributo "Base".
+
+    Con ``stretch_z`` < 1 las manchas se alargan en vertical, como chorretones.
+    """
+    mesh = obj.data
+    layer = mesh.color_attributes.get("Base")
+    if layer is None:
+        raise ValueError(f"{obj.name} no tiene colores base: créalo con MeshBuilder")
+    target = Vector(hex_to_linear(hex_color))
+    offset = Vector((seed * 3.1, seed * 1.3, seed * 2.7))
+    for loop in mesh.loops:
+        co = mesh.vertices[loop.vertex_index].co
+        position = Vector((co.x, co.y, co.z * stretch_z)) * scale + offset
+        value = noise.noise(position) * 0.5 + 0.5
+        weight = min(1.0, max(0.0, (value - (1.0 - coverage)) / 0.15)) * amount
+        color = Vector(layer.data[loop.index].color[:3]).lerp(target, weight)
+        layer.data[loop.index].color = (*color, 1.0)
 
 
 def dent(obj: bpy.types.Object, center: Iterable[float], radius: float, depth: float) -> None:
@@ -234,8 +393,17 @@ def _world_bvh(objects: list[bpy.types.Object], ground_z: float | None) -> BVHTr
     return BVHTree.FromPolygons(vertices, polygons)
 
 
+def _base_colors(mesh: bpy.types.Mesh, hex_color: str | None) -> list[tuple[float, float, float]]:
+    """Color base de cada esquina: el atributo "Base" si existe (MeshBuilder), si no ``hex_color``."""
+    layer = mesh.color_attributes.get("Base")
+    if layer is not None and layer.domain == "CORNER":
+        return [tuple(layer.data[i].color[:3]) for i in range(len(mesh.loops))]
+    base = hex_to_linear(hex_color or "#ffffff")
+    return [base] * len(mesh.loops)
+
+
 def paint(
-    colors: dict[bpy.types.Object, str],
+    colors: dict[bpy.types.Object, str | None],
     *,
     ao: float = 0.55,
     ao_distance: float = 0.25,
@@ -259,7 +427,7 @@ def paint(
     for obj, hex_color in colors.items():
         mesh = obj.data
         mesh.update()
-        base = Vector(hex_to_linear(hex_color))
+        corner_base = _base_colors(mesh, hex_color)
         matrix = obj.matrix_world
         normal_matrix = matrix.to_3x3()
         count = len(mesh.vertices)
@@ -297,12 +465,19 @@ def paint(
             shade *= 1.0 - cavity_dark * max(0.0, cavity[i]) * 4.0
             shade *= 1.0 + edge_light * max(0.0, -cavity[i]) * 4.0
             shade *= 1.0 + mottling * noise.noise(position * 4.0 + noise_offset)
-            values.append(tuple(min(1.0, max(0.0, c * shade)) for c in base))
+            values.append(shade)
         attribute = mesh.color_attributes.get("Color") or mesh.color_attributes.new(
             name="Color", type="BYTE_COLOR", domain="CORNER"
         )
         for loop in mesh.loops:
-            attribute.data[loop.index].color = (*values[loop.vertex_index], 1.0)
+            shade = values[loop.vertex_index]
+            color = tuple(min(1.0, max(0.0, c * shade)) for c in corner_base[loop.index])
+            attribute.data[loop.index].color = (*color, 1.0)
+        # El color base ya está dentro de "Color": se quita para que solo se exporte uno.
+        base_layer = mesh.color_attributes.get("Base")
+        if base_layer is not None:
+            mesh.color_attributes.remove(base_layer)
+        attribute = mesh.color_attributes["Color"]
         mesh.color_attributes.active_color = attribute
         mesh.color_attributes.render_color_index = mesh.color_attributes.active_color_index
 

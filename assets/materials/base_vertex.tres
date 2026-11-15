@@ -1,7 +1,9 @@
-[gd_resource type="StandardMaterial3D" format=3]
+[gd_resource type="ShaderMaterial" load_steps=3 format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/tinta.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://assets/textures/rampas.png" id="2_ramps"]
 
 [resource]
 resource_name = "base_vertex"
-vertex_color_use_as_albedo = true
-roughness = 1.0
-metallic_specular = 0.2
+shader = ExtResource("1_shader")
+shader_parameter/ramps = ExtResource("2_ramps")

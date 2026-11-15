@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Material" path="res://assets/materials/post_tinta.tres" id="1_post"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_post"]
+size = Vector2(2, 2)
+
+[node name="InkPost" type="MeshInstance3D"]
+cast_shadow = 0
+extra_cull_margin = 16384.0
+gi_mode = 0
+mesh = SubResource("QuadMesh_post")
+surface_material_override/0 = ExtResource("1_post")

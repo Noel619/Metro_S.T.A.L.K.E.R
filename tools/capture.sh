@@ -15,6 +15,6 @@ mkdir -p "$(dirname "$OUT")"
 xvfb-run -a -s "-screen 0 ${WIDTH}x${HEIGHT}x24" \
     "$GODOT" --path . --rendering-driver vulkan --audio-driver Dummy \
     --resolution "${WIDTH}x${HEIGHT}" \
-    -s tools/capture/capture.gd -- --scene="$SCENE" --out="$OUT" --frames="$FRAMES" 2>&1 \
+    -s tools/capture/capture.gd -- --scene="$SCENE" --out="$OUT" --frames="$FRAMES" ${CAPTURE_ARGS:-} 2>&1 \
     | grep -E "^Captura|ERROR|SCRIPT ERROR|No se pudo" || true
 test -f "$OUT" || ls "$(dirname "$OUT")" | grep -q "$(basename "${OUT%.png}")"
