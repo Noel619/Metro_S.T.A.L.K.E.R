@@ -12,6 +12,8 @@ fijas). Se guardan en assets/textures/ y las usan los shaders de assets/shaders/
 - rampas.png     rampas del sombreado por bandas: una fila por tipo de material.
 - ruido_trazo.png ruido suave en R y G para hacer temblar el contorno.
 - grano.png      grano fino de película.
+- nubes.png      ruido de nubes para el cielo: R forma grande, G detalle, B luz.
+- humo.png       bocanada de humo, con borde irregular, para las partículas.
 """
 
 from __future__ import annotations
@@ -141,6 +143,24 @@ def grain(size: int = 256) -> Image.Image:
     return Image.fromarray((noise * 255.0).astype(np.uint8), "L")
 
 
+def clouds(size: int = 512) -> Image.Image:
+    """Tres capas de ruido para las nubes del cielo (sin costuras)."""
+    channels = [fft_noise(size, beta, seed) for beta, seed in ((3.6, 31), (2.6, 32), (3.0, 33))]
+    rgb = np.stack(channels, axis=-1)
+    return Image.fromarray((rgb * 255.0).astype(np.uint8), "RGB")
+
+
+def smoke_puff(size: int = 256) -> Image.Image:
+    """Bocanada de humo: mancha redonda de borde irregular, blanca con alfa."""
+    yy, xx = np.mgrid[0:size, 0:size] / (size - 1) * 2.0 - 1.0
+    radius = np.sqrt(xx * xx + yy * yy)
+    detail = fft_noise(size, 2.0, seed=41) - 0.5
+    alpha = np.clip(1.0 - (radius + detail * 0.45) / 0.85, 0.0, 1.0) ** 1.6
+    shade = 0.75 + 0.25 * fft_noise(size, 1.6, seed=42)
+    rgba = np.stack([shade, shade, shade, alpha], axis=-1)
+    return Image.fromarray((rgba * 255.0).astype(np.uint8), "RGBA")
+
+
 def main() -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     outputs = {
@@ -149,6 +169,8 @@ def main() -> None:
         "rampas.png": ramps,
         "ruido_trazo.png": boil_noise,
         "grano.png": grain,
+        "nubes.png": clouds,
+        "humo.png": smoke_puff,
     }
     for name, build in outputs.items():
         image = build()

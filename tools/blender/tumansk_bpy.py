@@ -184,15 +184,29 @@ class MeshBuilder:
         bevel: float = 0.0,
         segments: int = 1,
         jitter: float = 0.0,
+        cuts: int = 0,
     ) -> list:
-        """Caja; ``rotation`` en grados (X, Y, Z) y ``jitter`` varía el color."""
+        """Caja; ``rotation`` en grados (X, Y, Z) y ``jitter`` varía el color.
+
+        Con ``cuts`` las caras se subdividen: hace falta para que las manchas y el
+        hollín (``stain``, ``scorch``) puedan variar dentro de una misma pieza.
+        """
         before = set(self.bm.faces)
         matrix = Matrix.LocRotScale(
             Vector(center), Euler([math.radians(a) for a in rotation]).to_quaternion(), Vector(size)
         )
         result = bmesh.ops.create_cube(self.bm, size=1.0, matrix=matrix, calc_uvs=True)
-        if bevel > 0.0:
+        if cuts > 0:
             edges = list({edge for vert in result["verts"] for edge in vert.link_edges})
+            bmesh.ops.subdivide_edges(self.bm, edges=edges, cuts=cuts, use_grid_fill=True)
+        if bevel > 0.0:
+            self.bm.normal_update()
+            piece_edges = {edge for face in self.bm.faces if face not in before for edge in face.edges}
+            edges = [
+                edge
+                for edge in piece_edges
+                if len(edge.link_faces) == 2 and edge.calc_face_angle(0.0) > 0.5
+            ]
             bmesh.ops.bevel(
                 self.bm, geom=edges, offset=bevel, segments=segments, profile=0.5,
                 affect="EDGES", clamp_overlap=True,
@@ -343,6 +357,40 @@ def stain(
         weight = min(1.0, max(0.0, (value - (1.0 - coverage)) / 0.15)) * amount
         color = Vector(layer.data[loop.index].color[:3]).lerp(target, weight)
         layer.data[loop.index].color = (*color, 1.0)
+
+
+def scorch(
+    obj: bpy.types.Object,
+    regions: list[tuple[Iterable[float], float, float]],
+    hex_color: str = "#141211",
+    strength: float = 0.9,
+) -> None:
+    """Hollín de incendio sobre el color base: sale de cada región y sube.
+
+    Cada región es ``(punto, ancho, alto)``: el punto es el borde superior de
+    una ventana quemada; la mancha se ensancha un poco al subir y se desvanece.
+    """
+    mesh = obj.data
+    layer = mesh.color_attributes.get("Base")
+    if layer is None:
+        raise ValueError(f"{obj.name} no tiene colores base: créalo con MeshBuilder")
+    target = Vector(hex_to_linear(hex_color))
+    sources = [(Vector(point), width, height) for point, width, height in regions]
+    for loop in mesh.loops:
+        co = mesh.vertices[loop.vertex_index].co
+        weight = 0.0
+        for point, width, height in sources:
+            rise = co.z - point.z
+            if rise < -0.25 or rise > height:
+                continue
+            spread = width * (0.5 + 0.35 * max(rise, 0.0) / height)
+            side = abs(co.x - point.x) / max(spread, 0.01)
+            wiggle = 0.25 * noise.noise(Vector((co.x * 3.0, co.z * 1.5, point.x)))
+            fade = (1.0 - max(rise, 0.0) / height) * (1.0 - min(1.0, side + wiggle))
+            weight = max(weight, fade)
+        if weight > 0.0:
+            color = Vector(layer.data[loop.index].color[:3]).lerp(target, min(1.0, weight * strength * 1.6))
+            layer.data[loop.index].color = (*color, 1.0)
 
 
 def dent(obj: bpy.types.Object, center: Iterable[float], radius: float, depth: float) -> None:

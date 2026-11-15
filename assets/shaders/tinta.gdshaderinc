@@ -52,7 +52,11 @@ void fragment() {
 	if (snow_amount > 0.0) {
 		float n = value_noise(world_position * 3.0) * 0.6 + value_noise(world_position * 11.0) * 0.4;
 		float snow = smoothstep(0.55, 0.8, normalize(world_normal).y + (n - 0.5) * 0.35) * snow_amount;
-		base = mix(base, snow_color.rgb, snow);
+		// Nieve vieja: ceniza, hollín y pisadas, nunca blanca del todo.
+		float dirt = value_noise(world_position * 1.7) * 0.7 + value_noise(world_position * 23.0) * 0.3;
+		float soot = smoothstep(0.7, 0.82, value_noise(world_position * 5.0 + 17.0));
+		vec3 old_snow = snow_color.rgb * mix(0.84, 1.03, dirt) * (1.0 - soot * 0.18);
+		base = mix(base, old_snow, snow);
 	}
 	ALBEDO = base;
 #ifdef TINTA_RECORTE

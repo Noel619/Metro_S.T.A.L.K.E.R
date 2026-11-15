@@ -9,6 +9,7 @@ const SCENES: PackedStringArray = [
 	"res://scenes/style/diorama_deposito_abandonado.tscn",
 	"res://scenes/style/diorama_patio_dia.tscn",
 	"res://scenes/style/diorama_patio_anochecer.tscn",
+	"res://scenes/style/diorama_patio_noche.tscn",
 ]
 
 var _index: int = 0

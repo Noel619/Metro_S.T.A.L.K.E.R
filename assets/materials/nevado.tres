@@ -7,4 +7,5 @@
 resource_name = "nevado"
 shader = ExtResource("1_shader")
 shader_parameter/ramps = ExtResource("2_ramps")
-shader_parameter/snow_amount = 0.9
+shader_parameter/snow_amount = 0.85
+shader_parameter/snow_color = Color(0.74, 0.72, 0.67, 1)

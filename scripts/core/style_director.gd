@@ -10,6 +10,7 @@ signal zone_changed(zone: StringName)
 
 const ZONE_DEPOT: StringName = &"deposito"
 const ZONE_SURFACE: StringName = &"superficie"
+const ZONE_SURFACE_NIGHT: StringName = &"superficie_noche"
 
 ## Valores de cada zona (ver docs/ESTILO.md). "rampa" es la fila de rampas.png.
 const PRESETS: Dictionary = {
@@ -34,16 +35,32 @@ const PRESETS: Dictionary = {
 		"trazo_fps": 8.0,
 		"trazo_amplitud": 1.0,
 		"grosor": 2.2,
-		"tramado": 0.8,
-		"tramado_umbral": 0.2,
-		"relleno": 0.02,
-		"saturacion": 0.55,
-		"contraste": 1.12,
+		"tramado": 0.85,
+		"tramado_umbral": 0.3,
+		"relleno": 0.018,
+		"saturacion": 0.62,
+		"contraste": 1.18,
 		"papel": 0.4,
-		"grano": 0.05,
+		"grano": 0.06,
+		"vineta": 0.5,
+		"rampa": 2,
+		"tinte": Color(0.97, 0.95, 0.9),
+	},
+	ZONE_SURFACE_NIGHT:
+	{
+		"trazo_fps": 8.0,
+		"trazo_amplitud": 1.0,
+		"grosor": 2.2,
+		"tramado": 0.75,
+		"tramado_umbral": 0.1,
+		"relleno": 0.002,
+		"saturacion": 0.7,
+		"contraste": 1.1,
+		"papel": 0.35,
+		"grano": 0.07,
 		"vineta": 0.45,
 		"rampa": 2,
-		"tinte": Color(0.93, 0.97, 1.0),
+		"tinte": Color(0.9, 0.95, 1.0),
 	},
 }
 

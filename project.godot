@@ -267,3 +267,7 @@ tinta_tinte={
 "type": "color",
 "value": Color(1, 0.97, 0.92, 1)
 }
+tinta_horizonte={
+"type": "color",
+"value": Color(0.66, 0.63, 0.54, 1)
+}

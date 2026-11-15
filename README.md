@@ -55,14 +55,15 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 
 **Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre el visor del estilo: ← → cambian de diorama, C de cámara y ↑ ↓ suben o bajan el miedo. Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
 
-### Así se ve ahora (Prueba de Tinta, primera pasada)
+### Así se ve ahora (Prueba de Tinta, segunda pasada)
 
 | | |
 |---|---|
 | ![El depósito, limpio](docs/capturas/fase1_deposito_limpio.jpg) | ![El depósito, el primer día](docs/capturas/fase1_deposito_abandonado_persiana.jpg) |
-| ![Patio de Los Bloques, de día](docs/capturas/fase1_patio_dia_banco.jpg) | ![Patio al anochecer, con miedo](docs/capturas/fase1_patio_anochecer_banco.jpg) |
+| ![Patio de Los Bloques, de día](docs/capturas/fase1_patio_dia.jpg) | ![Patio de Los Bloques, al anochecer](docs/capturas/fase1_patio_anochecer.jpg) |
+| ![Patio de Los Bloques, de noche](docs/capturas/fase1_patio_noche_banco.jpg) | ![Hacia la Zona Cero, entre los bloques](docs/capturas/fase1_patio_dia_horizonte.jpg) |
 
-Todo lo que se ve (estanterías, cajas, persiana, bloques de paneles, árboles, coche) está generado por código. La guía de estilo con los valores actuales está en [docs/ESTILO.md](docs/ESTILO.md).
+Todo lo que se ve (estanterías, cajas, persiana, bloques dañados, escombros, coches, ruinas del horizonte) está generado por código. La guía de estilo con los valores actuales está en [docs/ESTILO.md](docs/ESTILO.md).
 
 ### Decisiones tomadas
 
@@ -70,8 +71,10 @@ Todo lo que se ve (estanterías, cajas, persiana, bloques de paneles, árboles, 
 |---|---|
 | Título | **Tumansk** (título de trabajo) |
 | Premisa | Subes a la superficie a **saquear**. Lo que encuentras lo limpias, lo reparas, lo guardas y lo vendes en tu **depósito**, dentro de una estación de metro |
-| Objetivo final | **Llegar a la zona más lejana y saber qué le pasó a tu padre.** Es muy difícil: exige el mejor equipo (máscaras, muchos filtros), conocer bien los caminos y llegar al final de la partida |
+| Objetivo final | **Llegar a la zona más lejana y saber qué le pasó a tu padre.** Es la Zona Cero, donde cayó la bomba: no se va al cráter, sino a un edificio partido por la mitad que está muy cerca. Es muy difícil: exige el mejor equipo (máscaras, muchos filtros), conocer bien los caminos y llegar al final de la partida |
+| Refugios | **Los construyes tú.** Con martillo y tablas clavas, tapias puertas y ventanas y mueves cajas y muebles. Casi cualquier sitio puede convertirse en refugio, pero no todos serán seguros. El juego no hace refugios por ti |
 | Clima | **Invierno largo, con nieve.** Las huellas son información: tú ves las de los demás y ellos ven las tuyas |
+| Cielo | **Siempre visible**, de día, al anochecer y de noche. Nunca es negro |
 | Mundo | Posapocalipsis tras una **guerra atómica**, en **Tumansk**, una gran ciudad soviética inspirada en Moscú. Sin año |
 | Historia | Mínima. No se nombra la estación ni hay facciones |
 | Protagonista | Hijo o hija de un stalker, de los que suben a buscar lo que queda. Demasiado joven para el oficio. Se llama como tú, y eliges si es chico o chica al firmar la escritura |
@@ -266,7 +269,7 @@ Lo que en Cat Mail Co. es pesar, sellar y etiquetar paquetes, aquí es preparar 
 - **Planificar o morir.** Antes de entrar en una zona nueva hay que observarla desde lejos y desde arriba.
 - **Incertidumbre.** Sin minimapa, sin marcadores, sin barras de vida. La información llega por la vista, el oído y tu cuaderno.
 - **Mostrar poco.** Las amenazas se intuyen antes de verse: huellas, ruidos, restos.
-- **Tensión y alivio.** Hay pocos sitios donde respirar y dibujar: un piso que cierras con llave, una azotea sin accesos.
+- **Tensión y alivio.** Los sitios donde respirar y dibujar no te los da el juego: los preparas tú (ver [6.12](#612-refugios-hechos-a-mano)).
 - **La ciudad cambia entre salidas.** El mapa base es fijo, pero lo que hay en él no: clima, hora, patrullas, la jauría que se desplaza, campamentos nuevos.
 
 ### 6.2 Tu mapa lo dibujas tú
@@ -326,8 +329,8 @@ No hay armas. No hay magia. Hay oficio.
 | | **Palanca** | Forzar puertas y cajas. No es un arma: no se puede golpear con ella | Mucho ruido |
 | | **Cizalla** | Cortar cadenas y alambradas | Pesa |
 | | **Cuerda** | Bajar por huecos y fachadas, atar puertas | Se puede dejar puesta como atajo |
-| | **Tablón** | Puentes entre azoteas y sobre suelos hundidos | Voluminoso |
-| | **Martillo y clavos** | Condenar trampillas y puertas, reparar escalones | Ruido |
+| | **Tablón** | Puentes entre azoteas y sobre suelos hundidos; tapiar huecos | Voluminoso |
+| | **Martillo y clavos** | Tapiar puertas y ventanas, condenar trampillas, montar refugios, reparar escalones | Mucho ruido, y vibra por la estructura |
 | | **Navaja** | Cortar hilos trampa, cuerdas y telas. No sirve para atacar | — |
 | Sigilo | **Lanzables** (latas, botellas, piedras) | Distraer con ruido | — |
 | | **Despertador de cuerda** | Lo dejas, te alejas… y suena donde tú ya no estás | Ocupa sitio |
@@ -376,16 +379,26 @@ Las zonas se hacen **a mano**, sin generación procedural, con mucha densidad y 
 | 3 | **La Avenida y el Mercado** | 30–60 min | Avenida de ocho carriles, grandes almacenes, mercado cubierto, pasos subterráneos | Saqueadores, el Llamador, la Jauría | Ropa, comida, electrónica |
 | 4 | **La Zona Industrial** | 45–60 min | Fábrica, playa de vías, almacenes | Un campamento de saqueadores, radiación alta | Herramientas, combustible, componentes |
 | 5 | **El Hospital** | Unos 60 min | Un hospital de varias plantas | El Inquilino, el Llamador, saqueadores | Medicinas valiosas |
-| 6 | **La Zona Cero** *(nombre provisional)* | La gran expedición | La zona más lejana, donde cayó la bomba: radiación extrema y aire irrespirable. Aquí está la respuesta sobre tu padre | Todas, más el entorno | El final del juego |
+| 6 | **La Zona Cero** | La gran expedición: de 60 minutos a 2 o 3 horas | Donde cayó la bomba. No se va al cráter: el destino es un edificio partido por la mitad que está muy cerca. Radiación extrema y aire irrespirable. Aquí está la respuesta sobre tu padre | Todas, más el entorno | El final del juego |
 | — | **Los túneles** | Variable | Túneles hacia estaciones abandonadas: rutas alternativas para llegar a otras zonas | Oscuridad, agua, el Llamador | — |
 
 ### 6.11 La gran expedición
 
-Llegar a la zona más lejana es el objetivo del juego y tiene que costar muchísimo. No se consigue en una salida improvisada, sino al final de la partida y tras mucha preparación:
+Llegar a la Zona Cero, al edificio partido por la mitad junto al cráter, es el objetivo del juego y tiene que costar muchísimo. No se consigue en una salida improvisada, sino al final de la partida y tras mucha preparación. Según lo bien preparado que vayas, dura **de 60 minutos a 2 o 3 horas**:
 
 - **Equipo**: la mejor máscara, muchos filtros, ropa de abrigo, pastillas antirradiación y todo lo que hayas ido consiguiendo.
 - **Conocimiento**: tus mapas, las rutas que te sabes de memoria, los horarios de las patrullas y dónde viven las amenazas.
-- **Escondites** *(propuesta)*: en salidas anteriores puedes dejar provisiones escondidas a lo largo del camino (filtros, comida, vendas) para recogerlas durante la gran expedición. Los saqueadores también pueden encontrarlas.
+- **Refugios y escondites**: en salidas anteriores preparas tus propios refugios a lo largo del camino (ver [6.12](#612-refugios-hechos-a-mano)) y dejas en ellos provisiones (filtros, comida, vendas) para recogerlas durante la gran expedición. Los saqueadores también pueden encontrarlos.
+
+### 6.12 Refugios hechos a mano
+
+El juego no hace refugios por ti. **Casi cualquier sitio puede convertirse en uno, pero no todos serán seguros.** Tú decides dónde, con qué y cuánto ruido estás dispuesto a hacer.
+
+- **Cómo se monta**: clavas tablas en puertas y ventanas, mueves cajas y muebles para bloquear la entrada, atas una puerta con cuerda, tapas las rendijas por donde se escapa la luz y cuelgas campanillas en el pasillo para saber si algo se acerca.
+- **De qué depende que sea seguro**: cuántas entradas tiene y cómo de bien las has cerrado, de qué materiales, si se ve tu luz desde fuera, si el viento lleva tu olor y si está en el territorio de algo (un bloque con Inquilino nunca es buena idea).
+- **El precio**: clavar hace mucho ruido y la vibración viaja por el edificio. Montar un refugio en el sitio equivocado puede atraer justo lo que querías evitar.
+- **Para qué sirve**: descansar, dibujar el mapa con calma, curarte, esperar a que pase la noche o la ventisca y guardar provisiones para la gran expedición.
+- **La ciudad lo recuerda**: los refugios siguen ahí en las salidas siguientes. Los saqueadores pueden encontrarlos y saquearlos, y lo que vive en la niebla puede forzarlos.
 
 ---
 
@@ -791,10 +804,10 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [x] **F1-04** Tramado en las sombras (*tonal art maps*), con densidad controlable.
 - [x] **F1-05** Trazo vivo a saltos (4, 8 y 12 fps), controlado por `StyleDirector`.
 - [x] **F1-06** Papel, grano, viñeta y gradación de color por zona (por parámetros en lugar de LUT, [D-011](docs/DECISIONES.md)).
-- [ ] **F1-07** Nieve acumulada, huellas, niebla y ventisca. *(Hechas la nieve y la niebla; faltan las huellas y la ventisca.)*
-- [ ] **F1-08** Kit inicial de props por receta: cajas de cartón y de madera, estantería metálica, banco de trabajo, lámpara de taller, báscula, telarañas, máscara, dosímetro y linterna; y en el exterior, un módulo de bloque de paneles, una farola apagada, un coche oxidado, un quiosco y un banco. *(Hechos 27 modelos: cajas, estanterías, banco, lámpara, persiana, bidón, cubo, botellas, latas, escoba, bloques de paneles, farola, banco de parque, árboles, coche, columpio y contenedor. Faltan la báscula, la máscara, el dosímetro, la linterna y el quiosco.)*
+- [ ] **F1-07** Nieve acumulada, huellas, niebla y ventisca. *(Hechas la nieve vieja, la niebla, la nieve y la ceniza que caen y el humo; faltan las huellas y la ventisca.)*
+- [ ] **F1-08** Kit inicial de props por receta. *(Hechos 34 modelos: los del depósito, bloques de paneles con daños (ventanas quemadas, paneles caídos, balcones desplomados), escombros, coche y coche quemado, farolas, postes con cables caídos, árboles, columpio, contenedor, suelo nevado, ruinas del horizonte y la Zona Cero. Faltan la báscula, la máscara, el dosímetro, la linterna y el quiosco.)*
 - [x] **F1-09** Diorama A: *El depósito*, en dos estados (abandonado y limpio).
-- [x] **F1-10** Diorama B: *Un patio de Los Bloques bajo la nieve*.
+- [x] **F1-10** Diorama B: *Un patio de Los Bloques bajo la nieve*, de día, al anochecer y de noche, con el cielo pintado y la Zona Cero en el horizonte.
 - [ ] **F1-11** Panel de depuración para cambiar en vivo el miedo, la radiación, la hora y el clima, y ver cómo reacciona el estilo.
 - [ ] **F1-12** Primeras piezas de interfaz en el estilo final: una página de cuaderno con un mapa dibujado, una etiqueta de precio, un recibo con sello y una ficha de encargo.
 - [ ] **F1-13** Selección de tipografías y prueba de legibilidad.
@@ -802,7 +815,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Entregable**: dos dioramas a calidad final y la guía de estilo con los valores fijados.
 **Criterio de salida**: **tú apruebas el estilo**. Si no convence, se itera aquí; nunca se produce contenido sobre un estilo sin aprobar.
-**Estado**: 🟨 primera pasada lista para que la revises ([docs/ESTILO.md](docs/ESTILO.md)).
+**Estado**: 🟨 segunda pasada lista para revisar. Revisión 1: aprobados el contorno, el tramado y los colores cálidos del depósito; el exterior estaba demasiado blanco y pálido, sin ambiente posapocalíptico, y el cielo no podía ser negro. En la segunda pasada el exterior pasa a ser sucio y gris, con cielo pintado de día, al anochecer y de noche, destrucción y ruinas en el horizonte ([docs/ESTILO.md](docs/ESTILO.md)).
 
 ### Fase 2: El Depósito jugable · tamaño L
 
@@ -1001,10 +1014,7 @@ Cada pregunta lleva una propuesta. Si te parece bien, basta con decir "ok".
 
 | # | Pregunta | Propuesta |
 |---|---|---|
-| 1 | ¿La zona más lejana es la **Zona Cero**, donde cayó la bomba? ¿O prefieres otro nombre? | Zona Cero |
-| 2 | ¿Te gustan los **escondites** para preparar la gran expedición (dejar provisiones por el camino en salidas anteriores)? | Sí |
-| 3 | ¿La gran expedición puede durar **más de 60 minutos**, con un refugio a mitad de camino? | Sí, con un único refugio intermedio |
-| 4 | ¿Convierto la Hoja de Desarrollo en **Issues de GitHub**? | Sí |
+| 1 | ¿Pasamos la Hoja de Desarrollo a **Issues de GitHub**? Una "issue" es una ficha por tarea dentro de GitHub, con su estado y sus comentarios, y todas juntas se pueden ver como un tablero (pendiente, en curso, hecho). Es opcional: el README ya cumple esa función | No por ahora: seguimos con el README |
 
 ### Respondidas
 
@@ -1020,6 +1030,10 @@ Cada pregunta lleva una propuesta. Si te parece bien, basta con decir "ok".
 | Muerte en cooperativo | Quien muere queda fuera; la partida sigue mientras quede alguien vivo |
 | Amenazas | La Jauría, el Inquilino, el Llamador y los Saqueadores, por ahora |
 | Gráfica | Integrada (Radeon 780M): 1080p a 60 fps, con escalado si hace falta |
+| Zona más lejana | La Zona Cero: un edificio partido por la mitad muy cerca del cráter, no el cráter |
+| Escondites y refugios | Sí, y los refugios los construyes tú, en casi cualquier sitio |
+| Duración de la gran expedición | De 60 minutos a 2 o 3 horas, según lo preparado que vayas |
+| Estilo, revisión 1 | Contorno y tramado, bien. Depósito cálido, muy bien. Exterior demasiado blanco y pálido; el cielo nunca negro |
 
 ---
 
