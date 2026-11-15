@@ -2,7 +2,7 @@ extends Node
 ## Visor del estilo: herramienta de desarrollo, no interfaz del juego.
 ##
 ## Flecha izquierda y derecha: cambia de diorama · C: cambia de cámara ·
-## Flecha arriba y abajo: sube o baja el miedo · R: radiación sí/no.
+## Flecha arriba y abajo: sube o baja el miedo · R: radiación sí/no · L: linterna.
 
 const SCENES: PackedStringArray = [
 	"res://scenes/style/diorama_deposito_limpio.tscn",
@@ -11,6 +11,8 @@ const SCENES: PackedStringArray = [
 	"res://scenes/style/diorama_patio_anochecer.tscn",
 	"res://scenes/style/diorama_patio_noche.tscn",
 ]
+
+const HELP: String = "← → diorama · C cámara · ↑ ↓ miedo · R radiación · L linterna"
 
 var _index: int = 0
 var _camera_index: int = 0
@@ -47,6 +49,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			StyleDirector.fear = maxf(0.0, StyleDirector.fear - 0.1)
 		KEY_R:
 			StyleDirector.radiation = 0.0 if StyleDirector.radiation > 0.0 else 1.0
+		KEY_L:
+			var camera: Camera3D = get_viewport().get_camera_3d()
+			if camera != null:
+				Flashlight.toggle(camera)
 	_update_label()
 
 
@@ -71,11 +77,12 @@ func _activate_camera(index: int) -> void:
 
 func _update_label() -> void:
 	_label.text = (
-		"%s · cámara %d · miedo %d%% · radiación %s\n← → diorama · C cámara · ↑ ↓ miedo · R radiación"
+		"%s · cámara %d · miedo %d%% · radiación %s\n%s"
 		% [
 			SCENES[_index].get_file().get_basename().trim_prefix("diorama_"),
 			_camera_index + 1,
 			roundi(StyleDirector.fear * 100.0),
 			"sí" if StyleDirector.radiation > 0.0 else "no",
+			HELP,
 		]
 	)

@@ -12,6 +12,8 @@ const SMOKE_TEXTURE: String = "res://assets/textures/humo.png"
 
 @export_enum("dia", "anochecer", "noche") var mood: String = "dia"
 @export_range(0.0, 1.0) var fear: float = 0.0
+## Enciende una linterna en cada cámara (para ver la noche como la verá el jugador).
+@export var flashlight: bool = false
 
 var _props: Node3D
 
@@ -25,6 +27,8 @@ func _ready() -> void:
 			var target: Node3D = camera.get_node_or_null("Mira")
 			if target != null:
 				(camera as Camera3D).look_at(target.global_position)
+			if flashlight:
+				Flashlight.attach(camera as Camera3D)
 
 
 func _build() -> void:
@@ -113,10 +117,14 @@ func _falling(color: Color, flake_size: float, amount: int) -> void:
 	process.gravity = Vector3(0.0, -0.4, 0.0)
 	process.turbulence_enabled = true
 	process.turbulence_noise_strength = 0.3
+	# Copos con luz propia de la escena: de noche solo se ven dentro de la linterna.
 	var flake: StandardMaterial3D = StandardMaterial3D.new()
-	flake.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	flake.albedo_texture = load(SMOKE_TEXTURE)
 	flake.albedo_color = color
+	flake.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	flake.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	flake.roughness = 1.0
+	flake.metallic_specular = 0.0
 	var quad: QuadMesh = QuadMesh.new()
 	quad.size = Vector2(flake_size, flake_size)
 	quad.material = flake

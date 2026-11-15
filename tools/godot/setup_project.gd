@@ -57,6 +57,7 @@ const SHADER_GLOBALS: Dictionary = {
 	"tinta_papel": ["float", 0.3],
 	"tinta_grano": ["float", 0.025],
 	"tinta_vineta": ["float", 0.3],
+	"tinta_negro": ["float", 0.0],
 	"tinta_rampa": ["int", 1],
 	"tinta_color": ["color", Color("#1b1a22")],
 	"tinta_tinte": ["color", Color(1.0, 0.97, 0.92)],

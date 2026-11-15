@@ -2,9 +2,10 @@ class_name Atmosphere
 extends RefCounted
 ## Ambiente de la superficie para cada hora del día: cielo, luz, niebla y estilo.
 ##
-## De momento son tres momentos fijos (día, anochecer, noche). El sistema de
-## hora y clima de la Fase 4 interpolará entre ellos. Los colores van en sRGB.
-## Regla: el cielo nunca es negro.
+## De momento son tres momentos fijos (día, anochecer, noche). El reloj del
+## mundo (Fase 4) y el clima (Fase 5) interpolarán entre ellos. Los colores van
+## en sRGB. Reglas: el cielo nunca es negro del todo, pero la noche es muy
+## oscura: sin linterna prácticamente no se ve nada.
 
 const SKY_SHADER: String = "res://assets/shaders/cielo.gdshader"
 const CLOUD_NOISE: String = "res://assets/textures/nubes.png"
@@ -34,17 +35,17 @@ const MOODS: Dictionary = {
 	"anochecer":
 	{
 		"zenith": Color("#2e3040"),
-		"horizon": Color("#b47a55"),
+		"horizon": Color("#a8775a"),
 		"ground": Color("#2b2725"),
-		"cloud_light": Color("#c58560"),
+		"cloud_light": Color("#b9876a"),
 		"cloud_dark": Color("#3e3541"),
-		"glow": Color("#ff9450"),
-		"glow_strength": 1.4,
+		"glow": Color("#f29a66"),
+		"glow_strength": 1.2,
 		"glow_size": 4.0,
 		"coverage": 0.62,
 		"ambient": Color("#5a5262"),
 		"ambient_energy": 0.6,
-		"fog": Color("#6a5348"),
+		"fog": Color("#5e4d45"),
 		"fog_density": 0.012,
 		"sun": Color("#ffa06a"),
 		"sun_energy": 0.8,
@@ -53,21 +54,21 @@ const MOODS: Dictionary = {
 	},
 	"noche":
 	{
-		"zenith": Color("#1a2133"),
-		"horizon": Color("#3c4458"),
-		"ground": Color("#15171d"),
-		"cloud_light": Color("#68748f"),
-		"cloud_dark": Color("#262c3d"),
-		"glow": Color("#b9c9ef"),
-		"glow_strength": 0.6,
-		"glow_size": 12.0,
-		"coverage": 0.55,
-		"ambient": Color("#3f4a66"),
-		"ambient_energy": 0.95,
-		"fog": Color("#262c3a"),
-		"fog_density": 0.014,
-		"sun": Color("#9fb1dc"),
-		"sun_energy": 0.65,
+		"zenith": Color("#0a0d14"),
+		"horizon": Color("#161b25"),
+		"ground": Color("#07080b"),
+		"cloud_light": Color("#2a3142"),
+		"cloud_dark": Color("#0e1118"),
+		"glow": Color("#8fa0c8"),
+		"glow_strength": 0.35,
+		"glow_size": 14.0,
+		"coverage": 0.6,
+		"ambient": Color("#1c2333"),
+		"ambient_energy": 0.22,
+		"fog": Color("#0b0d12"),
+		"fog_density": 0.02,
+		"sun": Color("#7d8db5"),
+		"sun_energy": 0.08,
 		"sun_rotation": Vector3(-35.0, 35.0, 0.0),
 		"style": &"superficie_noche",
 	},

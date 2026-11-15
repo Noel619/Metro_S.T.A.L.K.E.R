@@ -11,10 +11,11 @@ Cómo poner en marcha el proyecto, generar los assets y comprobar que todo funci
 
 | Tecla | Qué hace |
 |---|---|
-| ← → | Cambia de diorama (depósito limpio, depósito abandonado, patio de día, patio al anochecer) |
+| ← → | Cambia de diorama (depósito limpio, depósito abandonado y patio de día, al anochecer y de noche) |
 | C | Cambia de cámara |
 | ↑ ↓ | Sube o baja el miedo: el trazo tiembla más y el tramado invade la imagen |
 | R | Activa o quita la radiación (más grano) |
+| L | Enciende o apaga la linterna (imprescindible de noche) |
 
 Los modelos, las texturas y las ilustraciones ya vienen generados en el repositorio: no hace falta instalar nada más para jugar o abrir las escenas.
 

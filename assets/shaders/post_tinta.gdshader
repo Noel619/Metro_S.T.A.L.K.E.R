@@ -28,6 +28,8 @@ global uniform float tinta_contraste;
 global uniform float tinta_papel;
 global uniform float tinta_grano;
 global uniform float tinta_vineta;
+// Cuánto se oscurece el relleno de tinta (0 = color de la tinta, 1 = casi negro). De noche, 1.
+global uniform float tinta_negro;
 // Los colores globales llegan en sRGB: se pasan a lineal en el fragmento.
 global uniform vec4 tinta_color;
 global uniform vec4 tinta_tinte;
@@ -130,8 +132,10 @@ void fragment() {
 	color = mix(color, ink, (1.0 - hatch) * tinta_tramado);
 
 	// --- Relleno de tinta en los negros ---
+	// De noche (tinta_negro = 1) el relleno es casi negro: sin luz no se ve nada.
+	vec3 deep_ink = ink * mix(1.0, 0.18, tinta_negro);
 	float fill = 1.0 - smoothstep(tinta_relleno * 0.5, tinta_relleno, luma);
-	color = mix(color, ink, fill * float(!is_sky));
+	color = mix(color, deep_ink, fill * float(!is_sky));
 
 	// --- Contorno ---
 	float center_depth = linear_depth(line_uv, INV_PROJECTION_MATRIX);
@@ -150,6 +154,8 @@ void fragment() {
 		line = max(line, smoothstep(line_normal_threshold, line_normal_threshold + 0.3, normal_edge));
 	}
 	line *= 1.0 - smoothstep(line_fade_start, line_fade_end, center_depth);
+	// En la oscuridad total no se ven ni los contornos: solo donde llega algo de luz.
+	line *= mix(1.0, smoothstep(tinta_relleno * 0.5, tinta_relleno * 3.0, luma), tinta_negro);
 	vec3 line_color = mix(ink, min(color, vec3(1.0)) * 0.3, line_tint);
 	color = mix(color, line_color, line * line_opacity);
 

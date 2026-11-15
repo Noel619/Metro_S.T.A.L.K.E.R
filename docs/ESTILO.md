@@ -4,6 +4,8 @@ Estado: **segunda pasada de la Fase 1**, pendiente de tu aprobación. Los valore
 
 **Revisión 1** (tu respuesta): contorno y tramado, bien; el depósito cálido, muy bien; el exterior estaba demasiado blanco y pálido, sin ambiente posapocalíptico, y el cielo no podía ser negro. La segunda pasada cambia el exterior (secciones 2, 3, 5 y 6).
 
+**Revisión 2**: el exterior transmite la sensación; hay que mantener ese nivel en toda la ciudad. La noche, mucho más oscura (sin linterna casi no se ve). El anochecer, bien, con un ligero retoque: ahora es algo más marrón y menos saturado.
+
 ![Depósito limpio](capturas/fase1_deposito_limpio.jpg)
 
 ## 1. Cómo se construye la imagen
@@ -36,6 +38,7 @@ El post-proceso es un rectángulo que cubre la pantalla (`scenes/style/ink_post.
 | `vineta` | 0,3 | 0,5 | 0,45 | Oscurecimiento de los bordes |
 | `rampa` | 1 | 2 | 2 | Fila de `rampas.png` |
 | `tinte` | `#FFF7EB` | `#F7F2E6` | `#E6F2FF` | Tinte de la imagen |
+| `negro` | 0 | 0 | 1 | Cuánto se oscurece el relleno de tinta; con 1 casi negro, y los contornos desaparecen donde no llega la luz |
 
 **Miedo** (`StyleDirector.fear`, de 0 a 1): el trazo tiembla hasta 3,5 veces más y más deprisa, el contorno engorda hasta 1,5 px, el color pierde saturación y el tramado invade la imagen desde los bordes. **Radiación** (`StyleDirector.radiation`): el grano crece. Con la opción de accesibilidad "trazo vivo reducido", el temblor baja al 30 % y no pasa de 4 fps.
 
@@ -65,15 +68,19 @@ El post-proceso es un rectángulo que cubre la pantalla (`scenes/style/ink_post.
 | Óxido | `#7E4128` |
 | Corteza | `#34302C` |
 
-**Cielo** (`scripts/surface/atmosphere.gd`). Nunca es negro.
+**Cielo** (`scripts/surface/atmosphere.gd`). Nunca es negro del todo, pero la noche es muy oscura: sin linterna solo se distinguen el cielo y las siluetas (revisión 2).
 
 | Momento | Cénit | Horizonte | Nubes (claro / oscuro) | Luz |
 |---|---|---|---|---|
 | Día | `#6E7273` | `#9A968C` | `#AEABA2` / `#6A6967` | Sol velado `#F2E6CC` |
 | Anochecer | `#2E3040` | `#B47A55` | `#C58560` / `#3E3541` | Sol bajo `#FFA06A` |
-| Noche | `#1A2133` | `#3C4458` | `#68748F` / `#262C3D` | Luna `#9FB1DC` |
+| Noche | `#0A0D14` | `#161B25` | `#2A3142` / `#0E1118` | Luna muy débil `#7D8DB5` |
 
 Regla: el rojo (`#C8323C`) se reserva para lo importante.
+
+### La noche y la linterna
+
+De noche la luz ambiente y la de la luna son casi nulas (`tinta_negro` = 1): el relleno de tinta es casi negro y los contornos solo se dibujan donde llega algo de luz. La linterna (`scripts/surface/flashlight.gd`) es un foco de luz cálida que sale de la mano: dentro de su cono vuelven el color, el tramado y la tinta. Los copos de nieve reciben la luz de la escena, así que de noche solo se ven dentro del cono.
 
 ## 4. Reglas de modelado (recetas)
 

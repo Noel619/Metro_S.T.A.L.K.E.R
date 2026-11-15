@@ -53,7 +53,7 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 | **Equipo de referencia** | Ryzen 7 8700G con su gráfica integrada (Radeon 780M) |
 | **Siguiente hito** | H1 · *Prueba de Tinta* (Fase 1) |
 
-**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre el visor del estilo: ← → cambian de diorama, C de cámara y ↑ ↓ suben o bajan el miedo. Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
+**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre el visor del estilo: ← → cambian de diorama, C de cámara, ↑ ↓ suben o bajan el miedo y L enciende la linterna. Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
 
 ### Así se ve ahora (Prueba de Tinta, segunda pasada)
 
@@ -61,7 +61,8 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 |---|---|
 | ![El depósito, limpio](docs/capturas/fase1_deposito_limpio.jpg) | ![El depósito, el primer día](docs/capturas/fase1_deposito_abandonado_persiana.jpg) |
 | ![Patio de Los Bloques, de día](docs/capturas/fase1_patio_dia.jpg) | ![Patio de Los Bloques, al anochecer](docs/capturas/fase1_patio_anochecer.jpg) |
-| ![Patio de Los Bloques, de noche](docs/capturas/fase1_patio_noche_banco.jpg) | ![Hacia la Zona Cero, entre los bloques](docs/capturas/fase1_patio_dia_horizonte.jpg) |
+| ![De noche, sin linterna](docs/capturas/fase1_patio_noche.jpg) | ![De noche, con linterna](docs/capturas/fase1_patio_noche_linterna.jpg) |
+| ![Hacia la Zona Cero, entre los bloques](docs/capturas/fase1_patio_dia_horizonte.jpg) | ![El depósito, hacia el pasillo de la estación](docs/capturas/fase1_deposito_limpio_persiana.jpg) |
 
 Todo lo que se ve (estanterías, cajas, persiana, bloques dañados, escombros, coches, ruinas del horizonte) está generado por código. La guía de estilo con los valores actuales está en [docs/ESTILO.md](docs/ESTILO.md).
 
@@ -74,9 +75,9 @@ Todo lo que se ve (estanterías, cajas, persiana, bloques dañados, escombros, c
 | Objetivo final | **Llegar a la zona más lejana y saber qué le pasó a tu padre.** Es la Zona Cero, donde cayó la bomba: no se va al cráter, sino a un edificio partido por la mitad que está muy cerca. Es muy difícil: exige el mejor equipo (máscaras, muchos filtros), conocer bien los caminos y llegar al final de la partida |
 | Refugios | **Los construyes tú.** Con martillo y tablas clavas, tapias puertas y ventanas y mueves cajas y muebles. Casi cualquier sitio puede convertirse en refugio, pero no todos serán seguros. El juego no hace refugios por ti |
 | Clima | **Invierno largo, con nieve.** Las huellas son información: tú ves las de los demás y ellos ven las tuyas |
-| Cielo | **Siempre visible**, de día, al anochecer y de noche. Nunca es negro |
-| Mundo | Posapocalipsis tras una **guerra atómica**, en **Tumansk**, una gran ciudad soviética inspirada en Moscú. Sin año |
-| Historia | Mínima. No se nombra la estación ni hay facciones |
+| Cielo y noche | El cielo nunca es negro del todo, pero **la noche es muy oscura**: sin linterna prácticamente no se ve nada |
+| Mundo | Posapocalipsis tras una **guerra atómica**, en **Tumansk**, una gran ciudad soviética inspirada en Moscú. Han pasado **dos años** desde la Noche de la Caída de las Bombas (sin año en el calendario) |
+| Historia | Mínima. Bajo tierra se formó un **gobierno civil** en la red de túneles, y por eso las instalaciones de dentro están en buen estado. No se nombra la estación ni hay facciones |
 | Protagonista | Hijo o hija de un stalker, de los que suben a buscar lo que queda. Demasiado joven para el oficio. Se llama como tú, y eliges si es chico o chica al firmar la escritura |
 | Tu padre | En la superficie hay pocos rastros suyos, y ambiguos. La respuesta está al final |
 | Estación | Siempre segura. Solo se recorre un trozo pequeño: el depósito, el pasillo de delante y la salida |
@@ -87,6 +88,8 @@ Todo lo que se ve (estanterías, cajas, persiana, bloques dañados, escombros, c
 | Rutas | **Siempre hay varias** para llegar a un mismo sitio |
 | Defensa | **Herramientas, no armas.** No se puede matar |
 | Enemigos | **Pocos y de gran calidad.** Los humanos son muy inteligentes, pero nunca saben nada que no hayan percibido. Los saqueadores matan |
+| Mundo vivo | Como en *Rain World*: **el mundo funciona sin el jugador**. Saqueadores y criaturas tienen rutinas de día y de noche, se cazan y se enfrentan entre ellos. El jugador es un organismo más |
+| Ciudad | Una ciudad de verdad, con lógica: los edificios se recorren por dentro y la calidad es la misma en toda la parte explorable |
 | Cooperativo | **Arquitectura preparada desde el primer día**, de 2 a 4 jugadores |
 | Motor | **Godot 4.7.2** con GDScript tipado |
 | Estilo visual | **Ilustración entintada** |
@@ -103,7 +106,7 @@ Todo lo que se ve (estanterías, cajas, persiana, bloques dañados, escombros, c
 
 ### Premisa
 
-Después de la guerra, la gente de Tumansk se refugió en el metro. Arriba quedó una ciudad de avenidas anchas, bloques de hormigón y nieve sucia, donde el aire y la radiación matan despacio y lo que vive entre las ruinas mata rápido.
+Hace dos años, en la Noche de la Caída de las Bombas, la gente de Tumansk se refugió en el metro. Bajo tierra se organizó un gobierno civil que mantiene las estaciones en pie: hay luz, agua y orden. Arriba quedó una ciudad de avenidas anchas, bloques de hormigón y nieve sucia, donde el aire y la radiación matan despacio y lo que vive entre las ruinas mata rápido.
 
 Algunos suben de todos modos. En la estación los llaman **stalkers**: buscan lo que queda (medicinas, comida, herramientas, piezas) y lo venden abajo. Tu padre era uno de ellos. Cuando enfermó tuvo que dejarlo, pero un día subió una última vez y no volvió. No sabes nada de él.
 
@@ -128,8 +131,9 @@ Lo único que heredas es un **depósito** en la estación: un local que él comp
 4. **Siempre hay otra ruta.** A cada objetivo se llega de varias formas: por la calle, por dentro de los edificios, por los tejados o por debajo.
 5. **Eres frágil.** No hay armas y no se mata. Hay información, preparación, sigilo y huida.
 6. **Enemigos justos.** Pocos, de gran calidad, y nunca hacen trampa: solo saben lo que ven, oyen o huelen.
-7. **Pequeño pero impecable.** Poco espacio, muy bien hecho. Calidad antes que cantidad, en todo.
-8. **Sin cajas de texto.** Toda la interfaz es un objeto del mundo.
+7. **El mundo está vivo.** Como en *Rain World*, todo sigue funcionando aunque no estés: los saqueadores duermen en sus guaridas, unas criaturas salen a cazar mientras otras descansan, y se pelean entre ellas. Tú eres un organismo más.
+8. **Pequeño pero impecable.** Poco espacio, muy bien hecho, y la misma calidad en toda la ciudad que se explora. Calidad antes que cantidad, en todo.
+9. **Sin cajas de texto.** Toda la interfaz es un objeto del mundo.
 
 ---
 
@@ -184,7 +188,7 @@ flowchart LR
 
 ### Encargos y peligro
 
-Cuanto más peligroso es un encargo, más paga y más difícil es volver. *(Valores iniciales; se equilibran en la Fase 7.)*
+Cuanto más peligroso es un encargo, más paga y más difícil es volver. *(Valores iniciales; se equilibran en la Fase 8.)*
 
 | Peligro | Ejemplo | Paga relativa |
 |---|---|---|
@@ -248,7 +252,7 @@ Lo que en Cat Mail Co. es pesar, sellar y etiquetar paquetes, aquí es preparar 
 ### 5.6 Economía
 
 - **Rublos.**
-- **Impuesto diario** a la estación por el local. Es suave, pero si la deuda se acumula, la estación precinta el depósito (no puedes vender) hasta que pagues.
+- **Impuesto diario** al gobierno civil por el local. Es suave, pero si la deuda se acumula, la estación precinta el depósito (no puedes vender) hasta que pagues.
 - **Comida**: hay que comer cada día, lo que compres en el puesto de al lado o lo que encuentres arriba. Sin comer te debilitas: menos aliento y más temblor. Varios días sin comer, y mueres.
 - **Precios**: dependen del estado del objeto, de su contaminación y de la demanda. Los encargos pagan más que la venta suelta.
 
@@ -270,7 +274,7 @@ Lo que en Cat Mail Co. es pesar, sellar y etiquetar paquetes, aquí es preparar 
 - **Incertidumbre.** Sin minimapa, sin marcadores, sin barras de vida. La información llega por la vista, el oído y tu cuaderno.
 - **Mostrar poco.** Las amenazas se intuyen antes de verse: huellas, ruidos, restos.
 - **Tensión y alivio.** Los sitios donde respirar y dibujar no te los da el juego: los preparas tú (ver [6.12](#612-refugios-hechos-a-mano)).
-- **La ciudad cambia entre salidas.** El mapa base es fijo, pero lo que hay en él no: clima, hora, patrullas, la jauría que se desplaza, campamentos nuevos.
+- **La ciudad cambia entre salidas, porque está viva.** El mapa base es fijo, pero lo que hay en él no: clima, hora, patrullas, la jauría que se desplaza, campamentos nuevos, lo que otros se han llevado (ver [7.6](#76-el-mundo-vivo)).
 
 ### 6.2 Tu mapa lo dibujas tú
 
@@ -290,6 +294,7 @@ Reglas de diseño de niveles:
 - Hay puntos altos desde los que observar antes de entrar.
 - Hay pocos pasos obligados, y son peligrosos: los saqueadores también los conocen.
 - Puedes crear tus propios atajos (una cuerda que dejas colgada, un tablón entre azoteas, una puerta forzada)… y otros también pueden usarlos.
+- **Una ciudad de verdad.** Todo tiene lógica urbana: calles, patios, servicios, comercios en los bajos, sótanos y tejados. Los edificios se recorren por dentro (portales, escaleras, pisos, sótanos) y la calidad es la misma en toda la parte explorable.
 
 ### 6.4 Sigilo: qué te delata
 
@@ -350,7 +355,7 @@ No hay armas. No hay magia. Hay oficio.
 - **Radiación**: zonas calientes y objetos contaminados. El dosímetro cruje. La dosis se acumula y trae náuseas, debilidad y, al final, la muerte. Se combate con pastillas y con tiempo.
 - **Aire**: en algunas zonas hace falta la máscara. Los filtros duran poco, y con la máscara puesta ves menos, oyes menos y tu respiración se oye.
 - **Frío**: un invierno largo te quita aliento y te hace temblar.
-- **La noche**: más oscura, más fría y con más movimiento. Volver de noche casi nunca es buena idea.
+- **La noche**: muy oscura. Sin linterna prácticamente no se ve nada, y una linterna se ve desde muy lejos. Hace más frío y sale otra vida: lo que de día duerme, de noche caza. Volver de noche casi nunca es buena idea.
 - **Estructuras**: suelos podridos, escaleras rotas, techos que ceden.
 
 ### 6.8 Tu cuerpo es la interfaz
@@ -421,6 +426,7 @@ Son pocas y de gran calidad. Cada una se trata como un pequeño proyecto propio:
 - **Cómo cazan.** Te tantean desde lejos, te rodean y te cortan la huida. Si corres, te persiguen. Un rastro de sangre lo siguen sin descanso.
 - **Señales.** Huellas y excrementos, huesos roídos, aullidos al atardecer, cuervos sobre un cadáver.
 - **Cómo sobrevivir.** Avanzar con el viento de cara, no correr nunca delante de ellos, subir a un piso alto y cerrar la puerta, cruzar agua para cortar el rastro, sacrificar comida como cebo.
+- **Rutina.** Caza al amanecer y al atardecer; de noche duerme en su madriguera (garajes, sótanos) y de día recorre su territorio.
 - **Por qué da miedo.** Nunca está sola. Cuando ves un perro, los demás ya te están rodeando.
 
 ### 7.2 El Inquilino
@@ -431,6 +437,7 @@ Son pocas y de gran calidad. Cada una se trata como un pequeño proyecto propio:
 - **Cómo caza.** Se mueve por las tripas del edificio: el hueco del ascensor, los bajantes de basura, los conductos y las cámaras entre muros. Sale cerca de donde te ha sentido y espera.
 - **Señales.** Arañazos dentro de las paredes, trampillas del bajante arrancadas, despensas vaciadas, polvo removido en las escaleras, un silencio repentino.
 - **Cómo sobrevivir.** Escuchar las paredes con el estetoscopio, pisar suave, condenar trampillas con martillo y clavos, provocar vibraciones en otra planta (dejar caer algo pesado, dejar un despertador), entrar y salir por la fachada y los balcones con una cuerda.
+- **Rutina.** No sale de su edificio. De día se queda quieto en los huecos; de noche recorre las plantas. Come lo que entra: perros, ratas, personas.
 - **Por qué da miedo.** No está en la habitación: está en las paredes. Y oye cada paso que das en su edificio.
 
 ### 7.3 El Llamador
@@ -441,6 +448,7 @@ Son pocas y de gran calidad. Cada una se trata como un pequeño proyecto propio:
 - **Cómo caza.** Atrae a sus presas hacia un sitio cerrado y espera a que entren. Aprende: imita también los sonidos de sus presas, incluidos los tuyos y las voces de los saqueadores.
 - **Señales.** La llamada se repite idéntica, como una grabación. No hay huellas de personas, solo las suyas. Los restos se acumulan siempre en el mismo punto.
 - **Cómo sobrevivir.** Reconocer la repetición, no acudir nunca, rodear su zona y lanzar algo para que se delate al moverse.
+- **Rutina.** Nocturno. De día duerme en lo más hondo (sótanos, túneles); al anochecer sale a cazar.
 - **Por qué da miedo.** Lo que oyes no siempre es lo que parece. La próxima vez que alguien pida ayuda de verdad, dudarás.
 
 ### 7.4 Los Saqueadores
@@ -457,6 +465,7 @@ Son pocas y de gran calidad. Cada una se trata como un pequeño proyecto propio:
 - **Señales.** Latas colgadas como alarma, hilos trampa, humo de campamento, voces, colillas, huellas de botas.
 - **Cómo sobrevivir.** Observar sus rutinas con los prismáticos y el reloj, escuchar lo que dicen, evitar sus trampas (la navaja corta los hilos), despistarlos con ruidos o con marcas de tiza falsas y tener siempre una vía de escape.
 - **Si te pillan, te matan.** No hay rendición posible.
+- **Rutina.** Salen de día a saquear, cazar y patrullar; de noche se encierran en sus guaridas, con guardias y fuego.
 - **Por qué dan miedo.** Piensan como tú. Y tienen armas.
 
 ### 7.5 Cuando se cruzan
@@ -465,7 +474,29 @@ Son pocas y de gran calidad. Cada una se trata como un pequeño proyecto propio:
 - El Llamador imita las voces de los saqueadores, y también los atrae a ellos.
 - El Inquilino no sale de su edificio. Es una frontera que ni los saqueadores se atreven a cruzar.
 
-### 7.6 Cómo se construye cada amenaza
+| Quién | Caza a | Evita a | Se pelea con |
+|---|---|---|---|
+| La Jauría | Fauna menor, personas solas, carroña | El Inquilino, la luz del fuego | Los saqueadores |
+| El Inquilino | Todo lo que entra en su edificio | — (nunca sale) | Lo que entre |
+| El Llamador | Perros y personas, de noche | La luz fuerte, los grupos grandes | — (embosca, no pelea) |
+| Los Saqueadores | Perros (para comer), otros supervivientes | Los edificios con inquilino, la noche | La Jauría |
+| Tú | Nadie | Todos | Nadie: no puedes matar |
+
+### 7.6 El mundo vivo
+
+Como en *Rain World*, la ciudad funciona sin ti. Nada espera a que llegues.
+
+- **Rutinas.** Cada especie tiene su horario: de noche los saqueadores duermen en sus guaridas y la Jauría en su madriguera, mientras el Llamador sale a cazar; de día, al revés.
+- **Necesidades.** Todos comen, descansan y se ponen a salvo. Un perro con hambre se arriesga más; un saqueador herido vuelve a la guarida.
+- **Enfrentamientos.** Se cazan y se pelean entre ellos aunque no estés. Al volver a una zona puedes encontrar los restos de algo que pasó sin ti.
+- **El mundo recuerda.** Los cadáveres, los campamentos que se mueven, el botín que se llevan otros y los refugios forzados quedan en el mapa.
+- **Dos niveles de simulación.** Cerca de ti, todo se simula al detalle. Lejos, el mundo sigue en una versión abstracta (las zonas como un grafo y los encuentros resueltos sin dibujarlos), y al llegar lo encuentras tal cual.
+- **Tú eres un organismo más.** Cada especie te trata como trata a los demás: presa, competidor o amenaza. Aprender sus horarios y sus relaciones es tu mejor herramienta.
+- **Fauna menor** *(propuesta)*: ratas y cuervos. No atacan: son comida para otros y también señales (los cuervos marcan dónde hay un cadáver).
+
+Tiene una fase propia en el plan ([Fase 4](#fase-4-el-mundo-vivo--tamaño-l)), antes del vertical slice, porque todas las amenazas se construyen encima.
+
+### 7.7 Cómo se construye cada amenaza
 
 1. **Ficha de diseño**: biología, sentidos, comportamiento y señales.
 2. **Animación propia**: ciclos generados por código con movimiento "a saltos", como en el dibujo animado, más ajustes procedurales (pies que se apoyan en el suelo, cabeza que sigue el sonido).
@@ -477,7 +508,8 @@ Son pocas y de gran calidad. Cada una se trata como un pequeño proyecto propio:
 
 ## 8. Mundo y narrativa
 
-- **Guerra atómica.** Sin año y sin explicaciones largas.
+- **Guerra atómica**: la Noche de la Caída de las Bombas, hace dos años. Sin año en el calendario y sin explicaciones largas.
+- **Gobierno civil**: bajo tierra, la ciudad formó un gobierno civil en la red de túneles. No se profundiza en él, pero explica que las estaciones estén en buen estado, que haya orden y que el depósito pague impuesto.
 - **Tumansk**: una ciudad soviética ficticia inspirada en Moscú, con avenidas anchas, microdistritos de bloques de paneles y un metro monumental y frío. Todo el texto del juego está en español, carteles incluidos, pero el diseño es soviético.
 - **Sin facciones** y **sin nombre de estación**.
 - **Tu padre**: era stalker, enfermó, subió una última vez y no volvió. No sabes nada de él. En la superficie hay pocos rastros suyos, y ambiguos.
@@ -530,6 +562,7 @@ Partimos de esa base (formas robustas, calidez, ilustraciones sobre objetos) y l
 - **Composición por planos**, como una ilustración: primer plano oscuro, plano medio iluminado y fondo perdido en la niebla.
 - **La luz guía**: la luz cálida atrae; la luz fría, o la ausencia de luz, avisa de peligro.
 - **Verticalidad**: azoteas, escaleras y sótanos que abren rutas distintas.
+- **Lógica de ciudad**: cada manzana tiene sentido (por dónde se entraba, dónde estaban las tiendas, las calderas, los garajes) y los interiores son coherentes con su exterior.
 - **Un depósito que crece**: del abandono a la vida, mejora a mejora.
 
 ### 9.5 Paletas
@@ -581,6 +614,7 @@ Regla: **el rojo** se reserva para lo importante (peligro, confirmaciones, lo ur
 - **Carteles y diseño gráfico soviético**: señalética, tipografía, composición de la interfaz.
 - **Grabado y xilografía**: sombras hechas de líneas.
 - **Mike Mignola**: negros masivos y siluetas para el terror.
+- ***Rain World***: no por el arte, sino por su ecosistema, que funciona sin el jugador.
 
 ---
 
@@ -714,15 +748,17 @@ Candidatas con licencia libre (OFL); se validan en la Fase 1.
 | `HumanAI` | Saqueadores: patrullas, investigación, búsqueda en grupo y, más adelante, planificación |
 | `Tracks` | Huellas, rastros de olor y de sangre |
 | `Survival` | Hambre, heridas, radiación, aire, frío, miedo |
+| `WorldSim` | El mundo vivo: reloj, necesidades, rutinas, territorios, relaciones entre especies y simulación en dos niveles |
 
 ### 13.4 Inteligencia artificial
 
 - **Percepción → conocimiento → decisión.** Nadie decide nada a partir de información que no haya percibido o que no le hayan comunicado.
 - **Criaturas**: máquinas de estados con sentidos propios (olfato con viento para la Jauría, vibración por la estructura del edificio para el Inquilino, oído para el Llamador).
-- **Humanos**: IA por utilidad para las decisiones del momento y un planificador (GOAP o HTN, se decide en la Fase 6) para emboscadas, cebos y trampas.
+- **Humanos**: IA por utilidad para las decisiones del momento y un planificador (GOAP o HTN, se decide en la Fase 7) para emboscadas, cebos y trampas.
 - **Puntos tácticos** marcados en los niveles: coberturas, miradores, pasos obligados, lugares de emboscada.
 - **Prueba de justicia automática**: cualquier decisión de la IA que tenga que ver con tu posición debe poder rastrearse hasta un estímulo percibido. Si no se puede, el test falla.
 - **Visualización de depuración**: lo que ve, oye, huele y sabe cada agente, en tiempo real.
+- **Mundo vivo** (`WorldSim`): cada agente tiene necesidades y una rutina, y vive en una de dos simulaciones. Cerca de los jugadores, la completa: física, percepción y animación. En el resto del mapa, una abstracta y barata: las zonas son nodos de un grafo, los agentes se mueven entre ellos y los encuentros se resuelven con reglas. Al acercarse un jugador, el agente abstracto se convierte en uno completo en el mismo estado. El anfitrión simula todo; los invitados reciben lo que tienen cerca.
 
 ### 13.5 El cuaderno
 
@@ -764,12 +800,13 @@ flowchart LR
     F0["Fase 0<br/>Cimientos"] --> F1["Fase 1<br/>Prueba de Tinta"]
     F1 -->|estilo aprobado| F2["Fase 2<br/>Depósito jugable"]
     F1 -->|estilo aprobado| F3["Fase 3<br/>Superficie jugable"]
-    F2 --> F4["Fase 4<br/>Los primeros días<br/>(vertical slice)"]
-    F3 --> F4
-    F4 --> F5["Fase 5<br/>Producción (alfa)"]
-    F5 --> F6["Fase 6<br/>Saqueadores tácticos"]
-    F6 --> F7["Fase 7<br/>Pulido (beta)"]
-    F7 --> F8["Fase 8<br/>Versión 1.0"]
+    F3 --> F4["Fase 4<br/>El mundo vivo"]
+    F2 --> F5["Fase 5<br/>Los primeros días<br/>(vertical slice)"]
+    F4 --> F5
+    F5 --> F6["Fase 6<br/>Producción (alfa)"]
+    F6 --> F7["Fase 7<br/>Saqueadores tácticos"]
+    F7 --> F8["Fase 8<br/>Pulido (beta)"]
+    F8 --> F9["Fase 9<br/>Versión 1.0"]
 ```
 
 Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la [Hoja de Desarrollo](#15-hoja-de-desarrollo)), un **entregable** y un **criterio de salida**. No se pasa a la fase siguiente sin cumplir el criterio. **Todo se construye en red desde la Fase 0**, aunque se juegue en solitario.
@@ -815,7 +852,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Entregable**: dos dioramas a calidad final y la guía de estilo con los valores fijados.
 **Criterio de salida**: **tú apruebas el estilo**. Si no convence, se itera aquí; nunca se produce contenido sobre un estilo sin aprobar.
-**Estado**: 🟨 segunda pasada lista para revisar. Revisión 1: aprobados el contorno, el tramado y los colores cálidos del depósito; el exterior estaba demasiado blanco y pálido, sin ambiente posapocalíptico, y el cielo no podía ser negro. En la segunda pasada el exterior pasa a ser sucio y gris, con cielo pintado de día, al anochecer y de noche, destrucción y ruinas en el horizonte ([docs/ESTILO.md](docs/ESTILO.md)).
+**Estado**: 🟨 segunda pasada lista para revisar. Revisión 1: aprobados el contorno, el tramado y los colores cálidos del depósito; el exterior estaba demasiado blanco y pálido, sin ambiente posapocalíptico, y el cielo no podía ser negro. En la segunda pasada el exterior pasa a ser sucio y gris, con cielo pintado de día, al anochecer y de noche, destrucción y ruinas en el horizonte. Revisión 2: transmite la sensación; hay que mantener ese nivel en toda la ciudad, la noche tiene que ser mucho más oscura y el anochecer, un poco más contenido ([docs/ESTILO.md](docs/ESTILO.md)).
 
 ### Fase 2: El Depósito jugable · tamaño L
 
@@ -861,76 +898,98 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 **Entregable**: una salida de 10 a 20 minutos: subir por la escalera, llegar a un objetivo y volver.
 **Criterio de salida**: en las pruebas, los jugadores planifican antes de salir, dibujan su mapa, usan al menos dos rutas distintas y ninguna muerte se siente injusta.
 
-### Fase 4: Los primeros días (vertical slice) · tamaño XL
+### Fase 4: El mundo vivo · tamaño L
+
+**Objetivo**: que la ciudad funcione sin el jugador, como en *Rain World*. Lo que pasa ahí fuera no depende de que estés mirando: tú eres un organismo más. Va antes del vertical slice porque todas las amenazas se construyen encima de este sistema.
+
+- [ ] **F4-01** Reloj del mundo: amanecer, día, anochecer y noche, compartido por todos los agentes.
+- [ ] **F4-02** Agentes con necesidades (comer, descansar, ponerse a salvo) y rutinas de día y de noche.
+- [ ] **F4-03** Territorios, guaridas y madrigueras: dónde duerme cada uno y por dónde se mueve.
+- [ ] **F4-04** Relaciones: quién caza a quién, quién evita a quién, carroña, peleas y huidas (ver [7.5](#75-cuando-se-cruzan)).
+- [ ] **F4-05** Simulación en dos niveles: completa cerca del jugador y abstracta en el resto del mapa (las zonas son un grafo y los encuentros se resuelven sin dibujarlos).
+- [ ] **F4-06** Paso sin costuras entre los dos niveles: lo que estaba pasando "en abstracto" aparece tal cual al llegar.
+- [ ] **F4-07** Rastros del mundo: cadáveres, restos, campamentos que se mueven, botín que se llevan otros, refugios forzados.
+- [ ] **F4-08** El jugador como un organismo más: cada especie lo trata como presa, competidor o amenaza, igual que a los demás.
+- [ ] **F4-09** Herramienta de observación: un mapa de depuración con todos los agentes y un registro de sucesos.
+- [ ] **F4-10** Pruebas de estabilidad: el mundo simula 30 días sin el jugador sin que ninguna especie desaparezca ni se descontrole, y en ese tiempo pasan cosas.
+- [ ] **F4-11** Red: el anfitrión simula el mundo; cada invitado recibe lo que tiene cerca.
+
+**Entregable**: las zonas 1 y 2 funcionando solas durante días: la Jauría caza y duerme en su madriguera, unos saqueadores básicos salen a saquear y vuelven a su guarida, y todo queda en el registro.
+**Criterio de salida**: al entrar en una zona, lo que ves cuadra con lo que el registro dice que pasó, y en las pruebas los jugadores ven peleas y rutinas que no han provocado.
+
+### Fase 5: Los primeros días (vertical slice) · tamaño XL
 
 **Objetivo**: el juego completo en miniatura, a calidad final.
 
-- [ ] **F4-01** El día completo: depósito → planificación → subida → salida → regreso → procesar → vender → impuesto, comida y sueño.
-- [ ] **F4-02** Muerte permanente y guardado único (al dormir; salir del juego a mitad de una salida guarda en ese punto; morir borra la partida).
-- [ ] **F4-03** Radiación (dosis, enfermedad, pastillas) y aire (máscara, filtros, empañado).
-- [ ] **F4-04** **El Inquilino**, completo: territorio, vibraciones por la estructura, huecos y bajantes, señales.
-- [ ] **F4-05** Estetoscopio, martillo y clavos (para condenar trampillas) y cuerda por fachada.
-- [ ] **F4-06** **Zona 2, Los Bloques**, parcial: dos bloques, la farmacia y la escuela.
-- [ ] **F4-07** Encargos con pistas, 3 clientes y una reputación sencilla.
-- [ ] **F4-08** Tablero de planificación en el depósito (páginas e hilo).
-- [ ] **F4-09** Clima (nieve, viento, ventisca) y luz del día.
-- [ ] **F4-10** La escalera mecánica: transición gradual del estilo, el sonido y la música.
-- [ ] **F4-11** Menú principal, firma de la escritura, opciones en la radio y pantalla final.
-- [ ] **F4-12** **Cooperativo de prueba**: dos jugadores, por red local o IP, durante todo el bucle.
-- [ ] **F4-13** Rendimiento en tu Ryzen 7 8700G y accesibilidad básica.
+- [ ] **F5-01** El día completo: depósito → planificación → subida → salida → regreso → procesar → vender → impuesto, comida y sueño.
+- [ ] **F5-02** Muerte permanente y guardado único (al dormir; salir del juego a mitad de una salida guarda en ese punto; morir borra la partida).
+- [ ] **F5-03** Radiación (dosis, enfermedad, pastillas) y aire (máscara, filtros, empañado).
+- [ ] **F5-04** **El Inquilino**, completo: territorio, vibraciones por la estructura, huecos y bajantes, señales.
+- [ ] **F5-05** Estetoscopio, martillo y clavos (para condenar trampillas) y cuerda por fachada.
+- [ ] **F5-06** **Zona 2, Los Bloques**, parcial: dos bloques, la farmacia y la escuela.
+- [ ] **F5-07** Encargos con pistas, 3 clientes y una reputación sencilla.
+- [ ] **F5-08** Tablero de planificación en el depósito (páginas e hilo).
+- [ ] **F5-09** Clima (nieve, viento, ventisca) y luz del día.
+- [ ] **F5-10** La escalera mecánica: transición gradual del estilo, el sonido y la música.
+- [ ] **F5-11** Menú principal, firma de la escritura, opciones en la radio y pantalla final.
+- [ ] **F5-12** **Cooperativo de prueba**: dos jugadores, por red local o IP, durante todo el bucle.
+- [ ] **F5-13** Rendimiento en tu Ryzen 7 8700G y accesibilidad básica.
+- [ ] **F5-14** El mundo vivo en las zonas 1 y 2: rutinas de la Jauría y del Inquilino, y saqueadores básicos que salen y vuelven a su guarida.
 
 **Contenido**: la estación (depósito, pasillo y escalera), las zonas 1 y 2 (esta parcial), la Jauría y el Inquilino, 12 herramientas, unos 30 objetos de botín y 3 clientes.
 **Entregable**: una demo de 60 a 90 minutos, con varias salidas.
 **Criterio de salida**: se puede completar sin errores bloqueantes, va a 60 fps en tu PC, la prueban de 3 a 5 personas y las muertes se sienten justas.
 
-### Fase 5: Producción (alfa) · tamaño XXL
+### Fase 6: Producción (alfa) · tamaño XXL
 
 **Objetivo**: todo el contenido dentro del juego.
 
-- [ ] **F5-01** Zonas: Los Bloques completa, La Avenida y el Mercado, La Zona Industrial y El Hospital.
-- [ ] **F5-02** Los túneles como rutas alternativas.
-- [ ] **F5-03** **El Llamador**, completo.
-- [ ] **F5-04** **Los Saqueadores**, primera versión: patrullas, vigías, investigación, búsqueda en grupo, comunicación audible y memoria.
-- [ ] **F5-05** Catálogo completo: unas 25 herramientas y unos 100 objetos de botín.
-- [ ] **F5-06** Unas 15 mejoras del depósito, más la personalización.
-- [ ] **F5-07** Unos 8 clientes con sus encargos.
-- [ ] **F5-08** Variación entre salidas: patrullas, desplazamientos de la Jauría, campamentos nuevos, botín.
-- [ ] **F5-09** La Zona Cero y la gran expedición: escondites, el final y qué le pasó a tu padre.
+- [ ] **F6-01** Zonas: Los Bloques completa, La Avenida y el Mercado, La Zona Industrial y El Hospital.
+- [ ] **F6-02** Los túneles como rutas alternativas.
+- [ ] **F6-03** **El Llamador**, completo.
+- [ ] **F6-04** **Los Saqueadores**, primera versión: patrullas, vigías, investigación, búsqueda en grupo, comunicación audible y memoria.
+- [ ] **F6-05** Catálogo completo: unas 25 herramientas y unos 100 objetos de botín.
+- [ ] **F6-06** Unas 15 mejoras del depósito, más la personalización.
+- [ ] **F6-07** Unos 8 clientes con sus encargos.
+- [ ] **F6-08** Variación entre salidas: patrullas, desplazamientos de la Jauría, campamentos nuevos, botín.
+- [ ] **F6-09** La Zona Cero y la gran expedición: escondites, el final y qué le pasó a tu padre.
+- [ ] **F6-10** Rutinas y relaciones de todas las amenazas en el mundo vivo, más la fauna menor.
+- [ ] **F6-11** Una ciudad con lógica: portales, escaleras, pisos, sótanos y bajos comerciales que se recorren por dentro, con la misma calidad en toda la parte explorable.
 
 **Entregable**: el juego, completable de principio a fin.
 **Criterio de salida**: todo el contenido está dentro, aunque falte pulido.
 
-### Fase 6: Saqueadores tácticos · tamaño L
+### Fase 7: Saqueadores tácticos · tamaño L
 
 **Objetivo**: humanos que piensan, planifican y tienden emboscadas, sin hacer trampa nunca.
 
-- [ ] **F6-01** Razonamiento sobre evidencias: huellas, puertas abiertas, marcas de tiza, objetos que faltan.
-- [ ] **F6-02** Planificador (GOAP o HTN): emboscadas en pasos obligados, cebos y trampas.
-- [ ] **F6-03** Coordinación de grupo: cerrar salidas, rodear, relevos.
-- [ ] **F6-04** Memoria a largo plazo: aprenden tus rutas habituales.
-- [ ] **F6-05** Comportamiento humano: miedo, cansancio, discusiones, retirada.
-- [ ] **F6-06** Validación: la prueba de justicia automática cubre todas sus decisiones.
+- [ ] **F7-01** Razonamiento sobre evidencias: huellas, puertas abiertas, marcas de tiza, objetos que faltan.
+- [ ] **F7-02** Planificador (GOAP o HTN): emboscadas en pasos obligados, cebos y trampas.
+- [ ] **F7-03** Coordinación de grupo: cerrar salidas, rodear, relevos.
+- [ ] **F7-04** Memoria a largo plazo: aprenden tus rutas habituales.
+- [ ] **F7-05** Comportamiento humano: miedo, cansancio, discusiones, retirada.
+- [ ] **F7-06** Validación: la prueba de justicia automática cubre todas sus decisiones.
 
 **Criterio de salida**: en las pruebas, los jugadores caen en emboscadas y, al revisarlas, las entienden y las consideran justas.
 
-### Fase 7: Pulido (beta) · tamaño L
+### Fase 8: Pulido (beta) · tamaño L
 
-- [ ] **F7-01** Equilibrio: economía, impuesto, hambre, peligro y duración de las salidas.
-- [ ] **F7-02** Rendimiento y opciones gráficas.
-- [ ] **F7-03** Accesibilidad completa.
-- [ ] **F7-04** Mezcla final de audio y música.
-- [ ] **F7-05** Cooperativo de hasta 4 jugadores, pulido.
-- [ ] **F7-06** Introducción integrada: el primer día de limpieza como tutorial.
-- [ ] **F7-07** Pruebas externas y corrección de errores.
+- [ ] **F8-01** Equilibrio: economía, impuesto, hambre, peligro y duración de las salidas.
+- [ ] **F8-02** Rendimiento y opciones gráficas.
+- [ ] **F8-03** Accesibilidad completa.
+- [ ] **F8-04** Mezcla final de audio y música.
+- [ ] **F8-05** Cooperativo de hasta 4 jugadores, pulido.
+- [ ] **F8-06** Introducción integrada: el primer día de limpieza como tutorial.
+- [ ] **F8-07** Pruebas externas y corrección de errores.
 
 **Criterio de salida**: sin errores graves conocidos y con el rendimiento objetivo.
 
-### Fase 8: Versión 1.0 · tamaño M
+### Fase 9: Versión 1.0 · tamaño M
 
-- [ ] **F8-01** Ejecutables e instalador para Windows (y Linux).
-- [ ] **F8-02** Última ronda de control de calidad.
-- [ ] **F8-03** Material de presentación (arte, capturas, tráiler) por si algún día se publica.
-- [ ] **F8-04** Documentación final del proyecto.
+- [ ] **F9-01** Ejecutables e instalador para Windows (y Linux).
+- [ ] **F9-02** Última ronda de control de calidad.
+- [ ] **F9-03** Material de presentación (arte, capturas, tráiler) por si algún día se publica.
+- [ ] **F9-04** Documentación final del proyecto.
 
 **Criterio de salida**: el juego está listo para publicarse, aunque no se publique.
 
@@ -946,17 +1005,18 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 | **H1 · Prueba de Tinta** | 1 | 2 dioramas y guía de estilo | Estilo aprobado por ti | M | 🟨 |
 | **H2 · El depósito abre** | 2 | Depósito jugable | Del depósito sucio a la primera venta, sin cajas de texto | L | ⬜ |
 | **H3 · Primera salida** | 3 | La Plaza, el cuaderno y la Jauría | Se planifica, se dibuja, se usan rutas distintas; muertes justas | L | ⬜ |
-| **H4 · Los primeros días** | 4 | Vertical slice | Bucle completo, 60 fps en tu PC, cooperativo de 2 | XL | ⬜ |
-| **H5 · Alfa** | 5 | Contenido completo | Completable de principio a fin | XXL | ⬜ |
-| **H6 · Saqueadores tácticos** | 6 | IA humana avanzada | Emboscadas que se entienden y se sienten justas | L | ⬜ |
-| **H7 · Beta** | 7 | Juego pulido | Sin errores graves; cooperativo de 4 | L | ⬜ |
-| **H8 · 1.0** | 8 | Versión final | Lista para publicarse | M | ⬜ |
+| **H4 · El mundo vivo** | 4 | Las zonas 1 y 2 funcionando sin el jugador | Lo que ves al llegar cuadra con lo que pasó; rutinas y peleas que nadie provoca | L | ⬜ |
+| **H5 · Los primeros días** | 5 | Vertical slice | Bucle completo, 60 fps en tu PC, cooperativo de 2 | XL | ⬜ |
+| **H6 · Alfa** | 6 | Contenido completo | Completable de principio a fin | XXL | ⬜ |
+| **H7 · Saqueadores tácticos** | 7 | IA humana avanzada | Emboscadas que se entienden y se sienten justas | L | ⬜ |
+| **H8 · Beta** | 8 | Juego pulido | Sin errores graves; cooperativo de 4 | L | ⬜ |
+| **H9 · 1.0** | 9 | Versión final | Lista para publicarse | M | ⬜ |
 
 **Leyenda.** Estado: ⬜ pendiente · 🟨 en curso · ✅ hecho · ⛔ bloqueado. El tamaño es relativo (S, M, L, XL, XXL); se convertirá a semanas cuando hayamos medido el ritmo real en las Fases 0 y 1.
 
 ### 15.2 Contenido objetivo
 
-| Elemento | Vertical slice (Fase 4) | Versión 1.0 |
+| Elemento | Vertical slice (Fase 5) | Versión 1.0 |
 |---|---|---|
 | Zonas | 1 completa y 1 parcial | 6, más los túneles |
 | Amenazas | La Jauría y el Inquilino | La Jauría, el Inquilino, el Llamador y los Saqueadores |
@@ -964,6 +1024,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 | Objetos de botín distintos | Unos 30 | Unos 100 |
 | Clientes | 3 | Unos 8 |
 | Mejoras del depósito | 4 | Unas 15 |
+| Mundo vivo | Rutinas de la Jauría, el Inquilino y saqueadores básicos en las zonas 1 y 2 | Todas las amenazas y la fauna menor, en toda la ciudad |
 | Jugadores | 1–2 | 1–4 |
 
 ### 15.3 Lista de recortes
@@ -976,7 +1037,7 @@ Si hay que reducir el alcance, se recorta en este orden:
 4. El cooperativo de 4 (se quedaría en 2).
 5. El clima variable (se quedaría solo la nieve).
 
-**No se recortan nunca**: el estilo, el cuaderno, la calidad de cada amenaza, la muerte permanente, la tactilidad del depósito y el sonido.
+**No se recortan nunca**: el estilo, el cuaderno, la calidad de cada amenaza, el mundo vivo, la muerte permanente, la tactilidad del depósito y el sonido.
 
 ### 15.4 Cómo trabajamos
 
@@ -994,6 +1055,7 @@ Si hay que reducir el alcance, se recorta en este orden:
 
 | Riesgo | Impacto | Mitigación |
 |---|---|---|
+| Mundo vivo: estabilidad, rendimiento y depuración | Alto | Fase propia, simulación en dos niveles, mapa de observación con registro de sucesos y pruebas de 30 días simulados |
 | IA humana creíble, inteligente y justa | Alto | Una fase dedicada, construcción por capas, la prueba de justicia automática y herramientas de depuración |
 | Que el arte generado por código no alcance la calidad buscada | Alto | Puerta de estilo en la Fase 1. El shader hace buena parte del trabajo. Iteración a base de capturas. Si un asset clave no llega al nivel, se modela a mano en Blender o se encarga |
 | Animar criaturas (sobre todo cuadrúpedos) | Alto | Pocas amenazas, así que cada una recibe tiempo de sobra; animación "a saltos", que perdona imperfecciones; ajustes procedurales |
@@ -1034,12 +1096,15 @@ Cada pregunta lleva una propuesta. Si te parece bien, basta con decir "ok".
 | Escondites y refugios | Sí, y los refugios los construyes tú, en casi cualquier sitio |
 | Duración de la gran expedición | De 60 minutos a 2 o 3 horas, según lo preparado que vayas |
 | Estilo, revisión 1 | Contorno y tramado, bien. Depósito cálido, muy bien. Exterior demasiado blanco y pálido; el cielo nunca negro |
+| Estilo, revisión 2 | El exterior transmite la sensación. Mantener esa calidad, con lógica de ciudad, en toda la parte explorable. Noche mucho más oscura (sin linterna casi no se ve). Anochecer, bien, con un ligero retoque. La silueta de la Zona Cero se queda así por ahora |
+| Historia de fondo | Gobierno civil en la red de túneles; dos años desde la Noche de la Caída de las Bombas |
+| Mundo vivo | Como en *Rain World*: el mundo funciona sin el jugador, con fase propia en el plan |
 
 ---
 
 ## 18. Propiedad intelectual
 
-*Metro 2033*, *S.T.A.L.K.E.R.* y *Fallout* son marcas registradas de sus propietarios, y *Cat Mail Co.* es obra de sus autores. Aquí funcionan como referencias de tono, mecánicas y estilo. Este juego tiene nombre, ciudad, personajes, criaturas, arte y música propios: no usa sus nombres, personajes, criaturas, logotipos, música, mapas ni assets. "Stalker" se usa como nombre común del oficio, no como marca. El nombre del repositorio puede quedarse como nombre de trabajo interno.
+*Metro 2033*, *S.T.A.L.K.E.R.*, *Fallout* y *Rain World* son marcas registradas de sus propietarios, y *Cat Mail Co.* es obra de sus autores. Aquí funcionan como referencias de tono, mecánicas y estilo. Este juego tiene nombre, ciudad, personajes, criaturas, arte y música propios: no usa sus nombres, personajes, criaturas, logotipos, música, mapas ni assets. "Stalker" se usa como nombre común del oficio, no como marca. El nombre del repositorio puede quedarse como nombre de trabajo interno.
 
 ---
 
@@ -1054,7 +1119,10 @@ Cada pregunta lleva una propuesta. Si te parece bien, basta con decir "ok".
 | **La superficie** | La ciudad, arriba |
 | **La compuerta** | La puerta hermética entre la estación y la superficie |
 | **Rublos** | La moneda |
-| **Impuesto** | Lo que pagas cada día a la estación por el local |
+| **Impuesto** | Lo que pagas cada día al gobierno civil por el local |
+| **Noche de la Caída de las Bombas** | La noche de la guerra atómica, hace dos años |
+| **Gobierno civil** | El gobierno que se formó en la red de túneles del metro |
+| **Mundo vivo** | La ciudad funcionando por su cuenta: rutinas, caza y peleas, estés o no |
 | **Encargo** | El pedido de un cliente: algo que hay que encontrar arriba |
 | **La Jauría** | Perros asilvestrados y deformados que cazan en manada |
 | **El Inquilino** | La criatura que vive dentro de un edificio |
