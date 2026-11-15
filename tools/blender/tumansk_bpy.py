@@ -487,6 +487,40 @@ class MeshBuilder:
             faces += self._finish_piece(before, color, 0.0, smooth=False)
         return faces
 
+    def ribbon(
+        self,
+        points: Iterable[Iterable[float]],
+        width: float,
+        thickness: float,
+        color: str,
+        *,
+        center: Iterable[float],
+        jitter: float = 0.0,
+    ) -> list:
+        """Cinta plana que sigue una línea de puntos (correas, cinturones, tiras de tela).
+
+        La cara ancha mira hacia fuera de ``center`` (la cabeza, el cuerpo o el
+        bulto que rodea la correa).
+        """
+        before = set(self.bm.faces)
+        path = [Vector(p) for p in points]
+        middle = Vector(center)
+        rings = []
+        for i, point in enumerate(path):
+            tangent = (path[min(i + 1, len(path) - 1)] - path[max(i - 1, 0)]).normalized()
+            outward = point - middle
+            outward = (outward - tangent * outward.dot(tangent)).normalized()
+            side = tangent.cross(outward) * (width / 2.0)
+            lift = outward * (thickness / 2.0)
+            rings.append([self.bm.verts.new(point + a + b) for a, b in ((-side, -lift), (side, -lift), (side, lift), (-side, lift))])
+        for lower, upper in zip(rings, rings[1:]):
+            for j in range(4):
+                k = (j + 1) % 4
+                self.bm.faces.new((lower[j], lower[k], upper[k], upper[j]))
+        self.bm.faces.new(list(reversed(rings[0])))
+        self.bm.faces.new(rings[-1])
+        return self._finish_piece(before, color, jitter, smooth=False)
+
     def flip(self, faces: list) -> None:
         """Da la vuelta a las caras (para el interior de pantallas y cubos)."""
         bmesh.ops.reverse_faces(self.bm, faces=faces)

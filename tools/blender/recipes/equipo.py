@@ -14,6 +14,7 @@ import math
 import random
 
 import bpy
+from mathutils import Vector
 
 import tumansk_bpy as tb
 
@@ -34,6 +35,11 @@ MUSTARD_DARK = "#786537"
 CHROME = "#A2A7A3"
 BRASS = "#B59A5A"
 BULB_OFF = "#D9D2B8"
+RUBBER_GREY = "#646B63"
+RUBBER_DARK = "#474C46"
+STRAP = "#3D403B"
+GLASS = "#262A30"
+LABEL = "#D9CDB0"
 
 # Dosímetro: la aguja recorre METER_SWEEP grados a cada lado del centro.
 METER_SWEEP = 45.0
@@ -227,8 +233,101 @@ def build_flashlight() -> bpy.types.Object:
     return root
 
 
+def _aim(direction: Vector) -> tuple[float, float, float]:
+    """Giro (en grados) que lleva el eje Z de una pieza a ``direction``."""
+    rotation = Vector((0.0, 0.0, 1.0)).rotation_difference(direction.normalized()).to_euler()
+    return tuple(math.degrees(a) for a in rotation)
+
+
+def build_mask() -> bpy.types.Object:
+    """Máscara antigás: careta de goma, dos oculares, válvula y filtro de bote.
+
+    Se apoya sobre el filtro, mirando hacia -Y (en Godot, hacia +Z). Los
+    ``cristales`` son un nodo propio, para poder empañarlos y agrietarlos.
+    """
+    root = tb.empty("mascara-fisico")
+    rim_y, face_z = 0.04, 0.166
+    face_r, face_d, wall = 0.098, 0.136, 0.0045
+
+    def shape(x: float, y: float, z: float) -> Vector:
+        """De la careta de revolución (eje hacia el frente) a la careta real: más estrecha y con barbilla."""
+        chin = min(1.0, max(0.0, -y / face_r))
+        return Vector((x * 0.86 * (1.0 - 0.2 * chin), rim_y - z, face_z + y * 1.12))
+
+    def surface(polar: float, around: float, lift: float = 0.0) -> Vector:
+        """Punto de la careta: ``polar`` grados desde la nariz y ``around`` grados sobre la horizontal."""
+        p, a = math.radians(polar), math.radians(around)
+        radius = (face_r + lift) * math.sin(p) ** 0.75
+        return shape(radius * math.cos(a), radius * math.sin(a), (face_d + lift) * math.cos(p))
+
+    def normal(polar: float, around: float) -> Vector:
+        return (surface(polar, around, 0.01) - surface(polar, around)).normalized()
+
+    # Careta: por dentro de la nariz al borde, y por fuera del borde a la nariz.
+    rubber = tb.MeshBuilder(seed=101)
+    steps = 9
+    inner = [((face_r - wall) * math.sin(math.radians(90.0 * i / steps)) ** 0.75, (face_d - wall) * math.cos(math.radians(90.0 * i / steps))) for i in range(steps + 1)]
+    outer = [(face_r * math.sin(math.radians(90.0 * i / steps)) ** 0.75, face_d * math.cos(math.radians(90.0 * i / steps))) for i in range(steps, -1, -1)]
+    faces = rubber.lathe([*inner, (face_r - wall / 2.0, -0.004), *outer], (0.0, 0.0, 0.0), RUBBER_GREY, segments=28, sharp_angle=75.0)
+    for vert in dict.fromkeys(v for face in faces for v in face.verts):
+        vert.co = shape(*vert.co)
+    # Válvula de voz, al frente y abajo.
+    snout = Vector((0.0, rim_y - 0.09, face_z - 0.052))
+    rubber.lathe(((0.039, -0.012), (0.038, 0.022), (0.035, 0.036), (0.031, 0.04), (0.027, 0.037), (0.0, 0.037)), snout, RUBBER_GREY, rotation=(90.0, 0.0, 0.0), segments=20, sharp_angle=50.0)
+    rubber.lathe(((0.03, -0.004), (0.031, 0.03), (0.027, 0.04), (0.0, 0.04)), snout + Vector((0.0, -0.004, -0.028)), RUBBER_GREY, rotation=(180.0, 0.0, 0.0), segments=18)
+    # Correas: dos de sien, dos de mejilla y una de coronilla, unidas en la nuca.
+    nape = Vector((0.0, rim_y + 0.092, face_z + 0.012))
+    head = Vector((0.0, rim_y + 0.01, face_z))
+    for side in (-1.0, 1.0):
+        rubber.ribbon(tb.smooth_path((surface(88.0, 90.0 - side * 68.0, 0.001), (side * 0.07, rim_y + 0.05, face_z + 0.05), nape + Vector((side * 0.014, 0.0, 0.016))), 5), 0.018, 0.003, STRAP, center=head)
+        rubber.ribbon(tb.smooth_path((surface(88.0, 90.0 - side * 128.0, 0.001), (side * 0.062, rim_y + 0.052, face_z - 0.045), nape + Vector((side * 0.014, 0.0, -0.018))), 5), 0.018, 0.003, STRAP, center=head)
+        for z in (0.016, -0.018):
+            rubber.box((0.006, 0.006, 0.022), nape + Vector((side * 0.02, -0.002, z)), STEEL_DARK, bevel=0.001)
+    rubber.ribbon(tb.smooth_path((surface(88.0, 90.0, 0.001), (0.0, rim_y + 0.055, face_z + 0.098), nape + Vector((0.0, 0.0, 0.03))), 5), 0.018, 0.003, STRAP, center=head)
+    rubber.box((0.05, 0.005, 0.066), nape, STRAP, bevel=0.002)
+    rubber_obj = rubber.finish("careta", tb.material("goma", RUBBER_GREY), root)
+    tb.stain(rubber_obj, RUBBER_DARK, amount=0.5, scale=13.0, coverage=0.35, seed=101)
+    tb.wobble(rubber_obj, amount=0.0018, scale=11.0, seed=101)
+
+    # Piezas de metal: cercos de los oculares, rejilla de la válvula y filtro.
+    metal = tb.MeshBuilder(seed=103)
+    glass = tb.MeshBuilder(seed=107)
+    for side in (-1.0, 1.0):
+        around = 90.0 - side * 58.0
+        eye, facing = surface(29.0, around), normal(29.0, around)
+        metal.lathe(((0.03, -0.008), (0.032, 0.0), (0.032, 0.007), (0.0285, 0.011), (0.025, 0.009), (0.025, 0.003)), eye, STEEL_DARK, rotation=_aim(facing), segments=20, sharp_angle=50.0)
+        glass.lathe(((0.0255, 0.004), (0.014, 0.0066), (0.0, 0.0074)), eye, GLASS, rotation=_aim(facing), segments=20)
+    metal.lathe(((0.0275, 0.0), (0.0275, 0.004), (0.0, 0.004)), snout + Vector((0.0, -0.036, 0.0)), STEEL, rotation=(90.0, 0.0, 0.0), segments=20)
+    for radius in (0.021, 0.013):
+        metal.lathe(((radius - 0.0025, 0.0), (radius - 0.0025, 0.003), (radius, 0.003), (radius, 0.0)), snout + Vector((0.0, -0.04, 0.0)), STEEL_DARK, rotation=(90.0, 0.0, 0.0), segments=20, sharp_angle=30.0)
+    metal.cylinder(0.005, 0.005, snout + Vector((0.0, -0.042, 0.0)), STEEL_DARK, rotation=(90.0, 0.0, 0.0), segments=8)
+    can = Vector((0.0, snout.y - 0.004, 0.0))
+    metal.lathe(
+        ((0.0, 0.0), (0.045, 0.0), (0.051, 0.005), (0.051, 0.064), (0.047, 0.07), (0.026, 0.074), (0.026, 0.09), (0.0, 0.09)),
+        can,
+        OLIVE,
+        segments=24,
+        sharp_angle=30.0,
+        jitter=0.04,
+    )
+    for z in (0.008, 0.052, 0.06):
+        metal.lathe(((0.051, z), (0.0535, z + 0.002), (0.0535, z + 0.004), (0.051, z + 0.006)), can, OLIVE_DARK, segments=24)
+    metal.lathe(((0.0515, 0.019), (0.0515, 0.046)), can, LABEL, segments=24)
+    for index in range(3):
+        metal.lathe(((0.052, 0.025 + index * 0.006), (0.052, 0.0275 + index * 0.006)), can, INK, segments=24)
+    metal_obj = metal.finish("metal", tb.material("metal", OLIVE), root)
+    tb.stain(metal_obj, RUST, amount=0.6, scale=14.0, coverage=0.22, seed=103)
+    tb.dent(metal_obj, (0.05, can.y, 0.035), radius=0.03, depth=0.004)
+    glass_obj = glass.finish("cristales", tb.material("vidrio", GLASS), root)
+
+    tb.collision_box("mascara", (0.18, 0.26, face_z + 0.11), (0.0, 0.01, (face_z + 0.11) / 2.0), root)
+    tb.paint({rubber_obj: None, metal_obj: None, glass_obj: None}, ao_distance=0.08, ao=0.6, seed=101)
+    return root
+
+
 def models() -> dict:
     return {
         "dosimetro": build_dosimeter,
         "linterna": build_flashlight,
+        "mascara": build_mask,
     }
