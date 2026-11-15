@@ -34,6 +34,13 @@ DIAL_CREAM = "#E9E2CC"
 LEATHER = "#6B4A2B"
 SIGNAL_RED = "#C8323C"
 
+BED_PAINT = "#6F8C7E"
+TICKING = "#B9AE94"
+LINEN = "#CFC8B4"
+WOOL = "#4F565C"
+WOOL_LIGHT = "#636A70"
+WOOL_STRIPE = "#2C343C"
+
 # Radio: la aguja del dial se desliza DIAL_TRAVEL metros a cada lado del centro.
 DIAL_TRAVEL = 0.066
 
@@ -229,8 +236,96 @@ def build_radio() -> bpy.types.Object:
     return root
 
 
+def build_cot() -> bpy.types.Object:
+    """Catre de tubo de hierro, con colchón hundido, almohada y manta de lana.
+
+    El largo va a lo largo de X, con la cabecera en -X; el costado que se ve
+    desde la sala mira hacia -Y.
+    """
+    rng = random.Random(157)
+    root = tb.empty("catre-estatico")
+    length, width = 1.9, 0.74
+    half_l, half_w = length / 2.0, width / 2.0
+    rail_z, head_h, foot_h = 0.3, 0.86, 0.62
+    bed_l, bed_w = length - 0.08, width - 0.05
+
+    frame = tb.MeshBuilder(seed=157)
+    for x, post_h in ((-half_l, head_h), (half_l, foot_h)):
+        for y in (-half_w, half_w):
+            frame.bar((x, y, 0.0), (x, y, post_h), 0.017, BED_PAINT, 10)
+            frame.sphere(0.024, (x, y, post_h + 0.012), BED_PAINT, segments=10)
+            frame.cylinder(0.022, 0.012, (x, y, 0.006), IRON_DARK, segments=10)
+        frame.bar((x, -half_w, post_h - 0.03), (x, half_w, post_h - 0.03), 0.014, BED_PAINT, 8)
+        frame.bar((x, -half_w, rail_z + 0.1), (x, half_w, rail_z + 0.1), 0.012, BED_PAINT, 8)
+        bars = 6 if post_h == head_h else 5
+        for index in range(bars):
+            y = -half_w + (index + 1) * width / (bars + 1)
+            frame.bar((x, y + rng.uniform(-0.006, 0.006), rail_z + 0.1), (x, y, post_h - 0.03), 0.007, BED_PAINT, 6)
+    for y in (-half_w, half_w):
+        frame.box((length, 0.03, 0.045), (0.0, y, rail_z), IRON, rotation=(rng.uniform(-1.5, 1.5), 0.0, 0.0), bevel=0.004, cuts=3)
+    # Somier: fleje metálico cruzado, que asoma por los costados.
+    for index in range(9):
+        x = -half_l + 0.1 + index * (length - 0.2) / 8.0
+        frame.box((0.03, width, 0.004), (x, 0.0, rail_z + 0.018), IRON_WORN, cuts=2)
+    for y in (-0.18, 0.0, 0.18):
+        frame.box((length - 0.04, 0.03, 0.004), (0.0, y, rail_z + 0.022), IRON_WORN, cuts=3)
+    frame_obj = frame.finish("armazon", tb.material("metal", BED_PAINT), root)
+    tb.stain(frame_obj, RUST, amount=0.75, scale=6.0, coverage=0.35, seed=157)
+
+    def settle(obj: bpy.types.Object, drape: bool = False) -> None:
+        """Hunde la ropa de cama por el centro y, si ``drape``, la deja caer por los costados."""
+        for vert in obj.data.vertices:
+            x, y = vert.co.x, vert.co.y
+            sag = max(0.0, 1.0 - (x / (bed_l / 2.0)) ** 2) * max(0.0, 1.0 - (y / (bed_w / 2.0)) ** 2)
+            vert.co.z -= 0.035 * sag
+            over = abs(y) - bed_w / 2.0
+            if drape and over > 0.0:
+                vert.co.z -= over * 1.7
+                vert.co.y = math.copysign(bed_w / 2.0 + 0.014 + over * 0.2, y)
+
+    mattress_z = rail_z + 0.085
+    mattress = tb.box("colchon", (bed_l, bed_w, 0.11), (0.0, 0.0, mattress_z), cuts=7, bevel=0.03, segments=3, mat=tb.material("tela", TICKING), parent=root)
+    tb.apply_bulge(mattress, (0.0, 0.0, mattress_z), (bed_l / 2.0, bed_w / 2.0, 0.055), 0.012)
+    settle(mattress)
+    tb.wobble(mattress, amount=0.006, scale=5.0, seed=157)
+    top = mattress_z + 0.067
+    pillow_at = (-half_l + 0.34, rng.uniform(-0.03, 0.03), top + 0.04)
+    pillow = tb.box("almohada", (0.46, 0.4, 0.1), pillow_at, cuts=5, bevel=0.035, segments=3, mat=tb.material("tela", LINEN), parent=root)
+    tb.apply_bulge(pillow, pillow_at, (0.23, 0.2, 0.05), 0.022)
+    tb.dent(pillow, (pillow_at[0] + 0.03, pillow_at[1], pillow_at[2] + 0.07), radius=0.16, depth=0.03)
+    pillow.rotation_euler = (0.0, 0.0, math.radians(rng.uniform(-7.0, 7.0)))
+    tb.wobble(pillow, amount=0.005, scale=8.0, seed=158)
+    # Manta: cubre de medio cuerpo a los pies, con la vuelta doblada y dos listas.
+    blanket_x = 0.3
+    blanket = tb.box("manta", (bed_l - 0.62, bed_w + 0.3, 0.022), (blanket_x, 0.0, top + 0.012), cuts=9, bevel=0.007, mat=tb.material("tela", WOOL), parent=root)
+    fold = tb.box("manta_vuelta", (0.2, bed_w + 0.28, 0.02), (blanket_x - (bed_l - 0.62) / 2.0 + 0.07, 0.0, top + 0.034), cuts=9, bevel=0.007, mat=tb.material("tela", WOOL_LIGHT), parent=root)
+    stripes = []
+    for index, x in enumerate((half_l - 0.3, half_l - 0.2)):
+        stripes.append(tb.box(f"manta_lista_{index}", (0.055, bed_w + 0.302, 0.004), (x, 0.0, top + 0.0245), cuts=9, mat=tb.material("tela", WOOL_STRIPE), parent=root))
+    for index, piece in enumerate((blanket, fold, *stripes)):
+        settle(piece, drape=True)
+        tb.wobble(piece, amount=0.007 if piece in (blanket, fold) else 0.0, scale=7.0, seed=159)
+    # Las listas siguen las arrugas de la manta.
+    for piece in stripes:
+        tb.wobble(piece, amount=0.007, scale=7.0, seed=159)
+    bpy.context.view_layer.update()
+
+    tb.collision_box("catre", (length, width, rail_z + 0.2), (0.0, 0.0, (rail_z + 0.2) / 2.0), root)
+    tb.collision_box("catre_cabecera", (0.06, width + 0.04, head_h), (-half_l, 0.0, head_h / 2.0), root)
+    tb.collision_box("catre_piecero", (0.06, width + 0.04, foot_h), (half_l, 0.0, foot_h / 2.0), root)
+    tb.paint(
+        {frame_obj: None, mattress: TICKING, pillow: LINEN, blanket: WOOL, fold: WOOL_LIGHT, **{piece: WOOL_STRIPE for piece in stripes}},
+        samples=20,
+        ao_distance=0.2,
+        mottling=0.1,
+        seed=157,
+    )
+    return root
+
+
 def models() -> dict:
     return {
         "estufa": build_stove,
         "radio": build_radio,
+        "catre": build_cot,
     }
