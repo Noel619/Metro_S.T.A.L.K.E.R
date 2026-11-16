@@ -113,7 +113,7 @@ Las 138 viviendas del plano ya tienen sus modelos 3D: se montan con un kit de pi
 - **Las familias:** los bloques de paneles (jrushchovka, bloque de 9 plantas y torre de 16), las casas de muros de carga (la estalinista, la casa obrera y la casa de ladrillo de antes de la revolución) y las de madera (la isba y el barracón).
 - **Muros y materiales:** hormigón pintado, plaqueta, ladrillo visto y estuco que se cae alrededor de los huecos y deja ver el ladrillo; suciedad, chorretones y hollín sobre las ventanas quemadas. Cada casa tiene su tono y cada panel el suyo.
 - **Daños como en la maqueta:** el extremo que mira a la bomba se hunde, cascarones, muñones con su escombro, balcones caídos, ventanas rotas, tapiadas o quemadas, y las casas de madera ardidas.
-- **Hechos para la tinta:** molduras con perfil y cantos en derrame, juntas enrasadas y nada plano y estrecho, para que el contorno se dibuje limpio de cerca, de lejos y a ras ([D-031](docs/DECISIONES.md)).
+- **Hechos para la tinta:** molduras con perfil y cantos en derrame, juntas enrasadas y nada plano y estrecho, para que el contorno se dibuje limpio de cerca, de lejos y a ras ([D-036](docs/DECISIONES.md)).
 - **Para verlos:** en Godot, `scenes/style/diorama_edificios.tscn` (cada tipo con cada daño), `diorama_plaza.tscn` y `diorama_mercaderes.tscn` (las casas del plano tal cual), con **F6**. Cómo funciona y cómo se añaden piezas, en [DESARROLLO.md](docs/DESARROLLO.md#el-kit-de-arquitectura-f3-16); las reglas de estilo, en [ESTILO.md](docs/ESTILO.md#9-los-edificios-del-kit-f3-16).
 
 ### Decisiones tomadas

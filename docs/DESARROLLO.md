@@ -56,14 +56,14 @@ Es una herramienta de desarrollo: lee `data/ciudad/` directamente (ver [D-024](D
 
 ## El kit de arquitectura (F3-16)
 
-Los edificios de la superficie se montan con piezas: cada familia es una biblioteca (un `.glb` con una malla por pieza) que genera su receta, y Godot coloca las piezas de cada casa según su ficha del plano. Cada pieza se repite con una `MultiMesh`: una llamada de dibujo por pieza y edificio ([D-029](DECISIONES.md)).
+Los edificios de la superficie se montan con piezas: cada familia es una biblioteca (un `.glb` con una malla por pieza) que genera su receta, y Godot coloca las piezas de cada casa según su ficha del plano. Cada pieza se repite con una `MultiMesh`: una llamada de dibujo por pieza y edificio ([D-034](DECISIONES.md)).
 
 | Biblioteca | Receta | Tipos del plano |
 |---|---|---|
 | `kit_paneles` | `tools/blender/recipes/kit_paneles.py` | Jrushchovka, bloque de 9 plantas y torre de 16 (estos dos, con plaqueta) |
 | `kit_estalinka` | `tools/blender/recipes/kit_estalinka.py` | Estalinista y casa obrera |
 | `kit_ladrillo` | `tools/blender/recipes/kit_ladrillo.py` | Casa anterior a la revolución (usa las carpinterías, interiores y cubierta de la estalinista) |
-| `kit_madera` | `tools/blender/recipes/kit_madera.py` | Isba y barracón: casas enteras, una por estado ([D-032](DECISIONES.md)) |
+| `kit_madera` | `tools/blender/recipes/kit_madera.py` | Isba y barracón: casas enteras, una por estado ([D-037](DECISIONES.md)) |
 
 **Para verlos**, en Godot, con **F6**:
 
