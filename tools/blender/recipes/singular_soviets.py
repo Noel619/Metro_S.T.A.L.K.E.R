@@ -20,8 +20,9 @@ Coordenadas: las del plano, con el origen en el «centro» de los dos (el mismo)
 Se construye en un marco propio: u a lo largo de la fachada principal (hacia el sureste), v
 de través (hacia el noreste: la dirección de la avenida) y z arriba; ``_to_plan`` lo gira.
 
-Modelos (KitSingular): "soviets" (el bloque: "soviets", "soviets_detalle", "soviets_boquete"
-y "soviets_colision") y "torre_soviets" (la torre: "torre_soviets", "torre_soviets_aguja",
+Modelos (KitSingular): "soviets" (el bloque: una pieza por fachada de fuera, una por patio,
+"soviets" con las esquinas, el pórtico y lo de dentro, "soviets_boquete" y
+"soviets_colision") y "torre_soviets" (la torre: un cuerpo por pieza, "torre_soviets_aguja",
 "torre_soviets_vigia" y "torre_soviets_colision").
 """
 
@@ -105,7 +106,7 @@ def _facing(mb: tb.MeshBuilder, corners: list, color: str, outward: Vector, *, c
 def _frame(origin: tuple, normal: tuple) -> Matrix:
     """El marco de una fachada: x a lo largo (de izquierda a derecha, vista desde fuera), y
     hacia dentro y z arriba, con el origen en su plano (``normal`` mira afuera)."""
-    n = Vector(normal).normalized()
+    n = Vector((normal[0], normal[1], 0.0)).normalized()
     x = Vector((0.0, 0.0, 1.0)).cross(n)
     return Matrix(((x.x, -n.x, 0.0, origin[0]), (x.y, -n.y, 0.0, origin[1]), (0.0, 0.0, 1.0, 0.0), (0.0, 0.0, 0.0, 1.0)))
 
@@ -571,65 +572,81 @@ def _wear(position: Vector, normal: Vector) -> float:
     return 0.2 + 0.45 * low
 
 
-def build_kit() -> object:
-    lib = kit.KitLibrary("singular_soviets", columns=4, spacing=140.0)
-    rng = random.Random(701)
-    # El bloque: los muros con sus huecos, el almohadillado, el orden, las ventanas.
-    mb = tb.MeshBuilder(seed=701)
-    for name, origin, normal, length, exterior in _facades():
-        frame = _frame(origin, normal)
+def _facade_piece(lib: kit.KitLibrary, piece: str, group: list, rng: random.Random, seed: int) -> None:
+    """Una pieza con una o varias fachadas (en mallas aparte: cada primitiva del constructor
+    recorre las caras que ya tiene, y el bloque entero en una sola malla tardaría horas)."""
+    mb = tb.MeshBuilder(seed=seed)
+    for name, origin, normal, length, exterior in group:
 
         def build(builder: tb.MeshBuilder, name=name, length=length, exterior=exterior) -> None:
             holes = _facade_wall(builder, name, length, exterior, rng)
-            visible = [h for h in holes if not (name == "noreste" and -BREACH[1] < (h[0] + h[2]) / 2.0 < -BREACH[0] and h[1] > BASE_TOP - 1.0)]
+            breach = _gaps(name)
+            visible = [h for h in holes if not any(g[0] < (h[0] + h[2]) / 2.0 < g[2] and h[1] > BASE_TOP - 1.0 for g in breach)]
             with builder.material(3):
                 if exterior:
                     _rustication(builder, length, visible, name)
                     _order(builder, length, name)
-            with builder.material(3):
                 _window_dressing(builder, visible, exterior, rng)
 
-        _placed(mb, frame, build)
+        _placed(mb, _frame(origin, normal), build)
+    _to_plan(mb)
+    obj = mb.finish(piece, kit.materials("nevado", "vidrio", "interior", "estuco", "metal"))
+    tb.stain(obj, "#1E1A17", amount=0.55, scale=0.5, coverage=0.45, seed=seed, stretch_z=0.3)
+    lib.add(obj, [], alpha=_wear, samples=5, ao=0.45, ao_distance=1.0, ground_z=0.0, seed=seed)
+
+
+def build_kit() -> object:
+    lib = kit.KitLibrary("singular_soviets", columns=4, spacing=140.0)
+    rng = random.Random(701)
+    # El bloque: cada fachada de fuera, una pieza; los dos patios, otra cada uno.
+    facades = _facades()
+    for k, facade in enumerate(facades[:4]):
+        _facade_piece(lib, "soviets_" + facade[0], [facade], rng, 701 + k)
+    for k in range(2):
+        _facade_piece(lib, "soviets_patio%d" % (k + 1), facades[4 + 4 * k : 8 + 4 * k], rng, 706 + k)
+    # Las esquinas, el pórtico con el escudo y lo de dentro de las alas, con sus tejados.
+    mb = tb.MeshBuilder(seed=708)
     with mb.material(3):
         _corners(mb)
         _portico(mb)
     _wings(mb)
     _to_plan(mb)
     piece = mb.finish("soviets", kit.materials("nevado", "vidrio", "interior", "estuco", "metal"))
-    tb.stain(piece, "#1E1A17", amount=0.55, scale=0.5, coverage=0.45, seed=701, stretch_z=0.3)
-    lib.add(piece, [], alpha=_wear, samples=6, ao=0.45, ao_distance=1.0, ground_z=0.0, seed=701)
+    tb.stain(piece, "#1E1A17", amount=0.45, scale=0.6, coverage=0.4, seed=708, stretch_z=0.3)
+    lib.add(piece, [], alpha=_wear, samples=5, ao=0.45, ao_distance=1.0, ground_z=0.0, seed=708)
     # El boquete.
     mb = tb.MeshBuilder(seed=702)
     _breach(mb, random.Random(702))
     _to_plan(mb)
     piece = mb.finish("soviets_boquete", kit.materials("nevado"))
-    lib.add(piece, [], samples=6, ao=0.55, ao_distance=1.0, ground_z=0.0, seed=702)
+    lib.add(piece, [], samples=5, ao=0.55, ao_distance=1.0, ground_z=0.0, seed=702)
     mb = tb.MeshBuilder(seed=703)
     _block_outline_collision(mb)
     _to_plan(mb)
     lib.add(mb.finish("soviets_colision", kit.materials("colision")), [], samples=1, seed=703)
-    # La torre.
+    # La torre: un cuerpo por pieza, la aguja y el vigía.
     rng = random.Random(711)
-    mb = tb.MeshBuilder(seed=711)
     for tier, (radius, z0, z1, sides) in enumerate(TIERS):
+        mb = tb.MeshBuilder(seed=711 + tier)
         _tier(mb, radius, z0, z1, sides, rng, tier)
-    _to_plan(mb)
-    piece = mb.finish("torre_soviets", kit.materials("nevado", "vidrio", "interior", "estuco", "metal"))
-    tb.stain(piece, "#1E1A17", amount=0.5, scale=0.6, coverage=0.4, seed=711, stretch_z=0.3)
-    lib.add(piece, [], alpha=_wear, samples=6, ao=0.45, ao_distance=1.0, seed=711)
-    mb = tb.MeshBuilder(seed=712)
+        _to_plan(mb)
+        name = "torre_soviets" if tier == 0 else "torre_soviets_cuerpo%d" % (tier + 1)
+        piece = mb.finish(name, kit.materials("nevado", "vidrio", "interior", "estuco", "metal"))
+        tb.stain(piece, "#1E1A17", amount=0.5, scale=0.6, coverage=0.4, seed=711 + tier, stretch_z=0.3)
+        lib.add(piece, [], alpha=_wear, samples=5, ao=0.45, ao_distance=1.0, seed=711 + tier)
+    mb = tb.MeshBuilder(seed=715)
     _spire(mb)
     _to_plan(mb)
     piece = mb.finish("torre_soviets_aguja", kit.materials("nevado"))
-    lib.add(piece, [], samples=6, ao=0.4, ao_distance=0.8, seed=712)
-    mb = tb.MeshBuilder(seed=713)
-    _lookout(mb, random.Random(713))
+    lib.add(piece, [], samples=6, ao=0.4, ao_distance=0.8, seed=715)
+    mb = tb.MeshBuilder(seed=716)
+    _lookout(mb, random.Random(716))
     _to_plan(mb)
-    lib.add(mb.finish("torre_soviets_vigia", kit.materials("nevado")), [], samples=6, seed=713)
-    mb = tb.MeshBuilder(seed=714)
+    lib.add(mb.finish("torre_soviets_vigia", kit.materials("nevado")), [], samples=6, seed=716)
+    mb = tb.MeshBuilder(seed=717)
     _tower_collision(mb)
     _to_plan(mb)
-    lib.add(mb.finish("torre_soviets_colision", kit.materials("colision")), [], samples=1, seed=714)
+    lib.add(mb.finish("torre_soviets_colision", kit.materials("colision")), [], samples=1, seed=717)
     return lib.root
 
 

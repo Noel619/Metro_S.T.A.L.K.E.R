@@ -33,12 +33,12 @@ top_level = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.14, 36.05, 3.09)
 
 [node name="CamaraCasa" type="Camera3D" parent="." groups=["capture_camera"]]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.35, 35.05, -14.93)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.05, 36.05, -10.73)
 fov = 66.0
 
 [node name="Mira" type="Marker3D" parent="CamaraCasa"]
 top_level = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.28, 35.05, 2.58)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.14, 35.05, 3.09)
 
 [node name="CamaraEsquina" type="Camera3D" parent="." groups=["capture_camera"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.76, 15.75, 34.49)
