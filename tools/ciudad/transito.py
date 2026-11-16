@@ -446,6 +446,9 @@ def _fuera_de_las_vias(t: Trazado) -> None:
     una calzada): lo demás que llega a ella (una esquina de acera, un retal de plaza) se
     recorta a 3 m de su eje, lo que la losa del paso. En el paso, una losa de hormigón a ras
     del carril cruza la calle de lado a lado (las aceras bajan a ella por su bordillo)."""
+    import vias as V
+
+    V.red()
     vias = unary_union([banda(v["puntos"], ANCHO_PASO_NIVEL) for v in D.VIAS])
     pasos = vias.intersection(t.superficies["calzada"]).buffer(8.0)
     fuera = vias.difference(pasos)
@@ -1571,12 +1574,16 @@ def _exportar_ferrocarril(t: Trazado, alturas: Alturas) -> dict:
 
     if not alturas.ferrocarril:
         return {}
+    import vias as V
+
     transito = unary_union([g.forma for g in t.grupos if not g.elevado])
+    detalles = V.detalles(alturas.ferrocarril, F.z_en, F.CARRIL)
     return {
-        "vias": F.tramos(alturas.ferrocarril, transito),
+        "vias": F.tramos(alturas.ferrocarril, transito, detalles),
         "tranvias": F.tranvias(transito.union(unary_union([g.forma for g in t.grupos if g.elevado]))),
         "puente_ferrocarril": F.puente(alturas.ferrocarril),
-        "ferrocarril": {"carril": F.CARRIL, "anden": F.ANDEN_ALTO},
+        "ferrocarril": {"carril": F.CARRIL, "anden": F.ANDEN_ALTO, "desvios": detalles["desvios"],
+                        "topes": detalles["topes"]},
     }
 
 

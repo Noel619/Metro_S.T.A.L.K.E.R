@@ -27,8 +27,8 @@ var instances: Dictionary = {}
 var stats: Dictionary = {}
 var edge_stats: Dictionary = {}
 ## Lo que le toca: pares (grupo, primer índice del triángulo), triángulos del relleno,
-## aristas, muros, barandillas, ejes, pasos de cebra y pares (vía, tramo de la vía) de las
-## vías del tren y del tranvía (CityTransit.tracks).
+## aristas, muros, barandillas, ejes, pasos de cebra, pares (vía, tramo de la vía) de las
+## vías del tren y del tranvía (CityTransit.tracks), y los desvíos y los topes.
 var triangles: PackedInt32Array = PackedInt32Array()
 var fills: PackedInt32Array = PackedInt32Array()
 var edges: PackedInt32Array = PackedInt32Array()
@@ -37,6 +37,8 @@ var rails: PackedInt32Array = PackedInt32Array()
 var axes: PackedInt32Array = PackedInt32Array()
 var crossings: PackedInt32Array = PackedInt32Array()
 var tracks: PackedInt32Array = PackedInt32Array()
+var turnouts: PackedInt32Array = PackedInt32Array()
+var stops: PackedInt32Array = PackedInt32Array()
 
 var _center: Vector2
 var _origin: Vector2i

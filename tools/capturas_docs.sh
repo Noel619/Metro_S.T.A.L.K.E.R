@@ -95,6 +95,8 @@ if want maqueta; then
     keep maqueta_vista_playa fase3_transito_playa
     keep maqueta_vista_paso_nivel fase3_transito_paso_nivel
     keep maqueta_vista_tranvia fase3_transito_tranvia
+    keep maqueta_vista_desvio fase3_transito_desvio
+    keep maqueta_vista_topes fase3_transito_topes
     capture debug/maqueta_ciudad ciegos \
         "--call=MaquetaCiudad:survey_landmarks --call=MaquetaCiudad:capture_only:aerea" 10
     keep ciegos fase3_maqueta_hitos

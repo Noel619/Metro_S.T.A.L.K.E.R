@@ -39,6 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import datos as D  # noqa: E402
 import relieve as R  # noqa: E402
 import ferrocarril as F  # noqa: E402
+import vias as V  # noqa: E402
 import transito as T  # noqa: E402
 from geo import ALTO, ANCHO, SECTOR, banda, coords, distancia, sector_de  # noqa: E402
 
@@ -456,7 +457,8 @@ def exportar_json(escombros: list[dict], meta_relieve: dict, meta_suelo: dict, c
         "transito": meta_transito,
         "calles": [{**c, "puntos": pts(c["puntos"])} for c in D.CALLES],
         "plazas": [{**{k: v for k, v in p.items() if k != "forma"}, "forma": coords(p["forma"])} for p in D.PLAZAS],
-        "vias": [{**v, "puntos": pts(v["puntos"])} for v in D.VIAS],
+        "vias": [{"id": v["id"], "nombre": v["nombre"], "tipo": v["tipo"], "puntos": pts(v["puntos"])}
+                 for v in D.VIAS],
         "puente_ferrocarril": D.PUENTE_FERROCARRIL,
         "terraplenes": D.TERRAPLENES,
         "tranvias": [{**t, "puntos": pts(t["puntos"])} for t in D.TRANVIAS],
@@ -505,6 +507,9 @@ def exportar_json(escombros: list[dict], meta_relieve: dict, meta_suelo: dict, c
 def main() -> int:
     SALIDA_DATOS.mkdir(parents=True, exist_ok=True)
     SALIDA_DOCS.mkdir(parents=True, exist_ok=True)
+    # El trazado final de las vías (desvíos y curvas) antes que nada: lo usan el relieve,
+    # el tránsito, el suelo y los planos. Pone también los vagones de la playa.
+    V.red()
     calles = calles_poligono()
     problemas = validar(calles)
     calcular_danos()

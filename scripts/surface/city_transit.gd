@@ -371,7 +371,11 @@ func _prepare_tracks() -> void:
 			track["carril"] = TransitRails.RAIL_OFFSET
 			if not open:
 				track["carriles"] = _rails(line, TransitRails.RAIL_OFFSET)
-			track["puntas"] = [_is_loose(ends, line[0]), _is_loose(ends, line[line.size() - 1])]
+			track["puntas"] = stretch.get(
+				"puntas", [_is_loose(ends, line[0]), _is_loose(ends, line[line.size() - 1])]
+			)
+			track["huecos"] = stretch.get("huecos", [])
+			track["sin_traviesas"] = stretch.get("sin_traviesas", [])
 			tracks.append(track)
 	for item: Dictionary in plan.transit.get("tranvias", []):
 		var line: PackedVector2Array = PackedVector2Array()
@@ -453,6 +457,25 @@ func _assign() -> void:
 		for sector: TransitSector in _sectors_in(Rect2(center, Vector2.ZERO).grow(40.0)):
 			sector.add_item("crossings", index)
 	_assign_tracks()
+	_assign_turnouts_and_stops()
+
+
+## Los desvíos, a los sectores que tocan sus traviesas; los topes, al suyo.
+func _assign_turnouts_and_stops() -> void:
+	var railway: Dictionary = plan.transit.get("ferrocarril", {})
+	var turnouts: Array = railway.get("desvios", [])
+	for index: int in turnouts.size():
+		var timbers: Array = turnouts[index]["maderas"]
+		var box: Rect2 = Rect2(Vector2(timbers[0][0], timbers[0][1]), Vector2.ZERO)
+		for timber: Array in timbers:
+			box = box.expand(Vector2(timber[0], timber[1]))
+		for sector: TransitSector in _sectors_in(box.grow(4.0)):
+			sector.add_item("turnouts", index)
+	var stops: Array = railway.get("topes", [])
+	for index: int in stops.size():
+		var point: Vector2 = Vector2(stops[index]["pos"][0], stops[index]["pos"][1])
+		for sector: TransitSector in _sectors_in(Rect2(point, Vector2.ZERO)):
+			sector.add_item("stops", index)
 
 
 ## Reparte los tramos de las vías por sus segmentos: cada sector recibe, en orden, los

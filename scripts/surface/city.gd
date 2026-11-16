@@ -415,24 +415,28 @@ func _load_models() -> void:
 	_load_detail_models()
 
 
-## Los detalles del tránsito: tapas de registro y sumideros de fundición, a ras del suelo.
+## Los detalles del tránsito (modelos de tools/blender/recipes/transito.py): tapas de
+## registro y sumideros de fundición (sin nieve: el calor de la alcantarilla la funde),
+## traviesas de hormigón y de madera, corazones y palancas de los desvíos y topes.
 func _load_detail_models() -> void:
-	var cast_iron: ShaderMaterial = _shader_material("tinta", load(RAMPS) as Texture2D, 0.35)
-	cast_iron.set_shader_parameter("albedo_color", Color(0.34, 0.33, 0.31))
-	cast_iron.set_shader_parameter("ramp_row", 4)
-	var round_lid: CylinderMesh = CylinderMesh.new()
-	round_lid.top_radius = 0.33
-	round_lid.bottom_radius = 0.33
-	round_lid.height = 0.03
-	round_lid.radial_segments = 20
-	round_lid.rings = 1
-	var square_lid: BoxMesh = BoxMesh.new()
-	square_lid.size = Vector3(0.62, 0.03, 0.62)
-	var drain: BoxMesh = BoxMesh.new()
-	drain.size = Vector3(0.75, 0.03, 0.4)
-	_models["tapa_redonda"] = [round_lid, cast_iron]
-	_models["tapa_cuadrada"] = [square_lid, cast_iron]
-	_models["sumidero"] = [drain, cast_iron]
-	var concrete: ShaderMaterial = _shader_material("tinta", load(RAMPS) as Texture2D, 0.6)
-	concrete.set_shader_parameter("albedo_color", TransitRails.SLEEPER_COLOR)
-	_models["traviesa"] = [TransitRails.sleeper_mesh(), concrete]
+	var snow: Dictionary = {
+		"tapa_redonda": 0.0,
+		"tapa_cuadrada": 0.0,
+		"sumidero": 0.0,
+		"traviesa": 0.6,
+		"traviesa_madera": 0.6,
+		"corazon_1_9": 0.35,
+		"corazon_1_6": 0.35,
+		"palanca_aguja": 0.5,
+		"tope": 0.6,
+	}
+	for model: String in snow:
+		var scene: Node = (load(MODELS_DIR + model + ".glb") as PackedScene).instantiate()
+		var found: Array[Node] = scene.find_children("*", "MeshInstance3D", true, false)
+		var material: ShaderMaterial = _shader_material(
+			"tinta", load(RAMPS) as Texture2D, float(snow[model])
+		)
+		if model.begins_with("tapa") or model.begins_with("corazon") or model == "sumidero":
+			material.set_shader_parameter("ramp_row", 4)
+		_models[model] = [(found[0] as MeshInstance3D).mesh, material]
+		scene.free()

@@ -133,8 +133,22 @@ const VIEWS: Array[Dictionary] = [
 	{
 		"name": "paso_nivel",
 		"title": "Un paso a nivel del apartadero de la fábrica",
-		"from": Vector3(909.0, 163.5, 1.7),
-		"to": Vector3(919.5, 184.0, -0.4),
+		"from": Vector3(920.6, 156.0, 1.7),
+		"to": Vector3(925.6, 182.0, -0.4),
+		"fov": 62.0,
+	},
+	{
+		"name": "desvio",
+		"title": "Un desvío del escape de la playa de vías: agujas, corazón y palanca",
+		"from": Vector3(927.0, 66.0, 1.7),
+		"to": Vector3(950.1, 73.6, -0.5),
+		"fov": 62.0,
+	},
+	{
+		"name": "topes",
+		"title": "El tope al final de una vía de la playa",
+		"from": Vector3(1224.0, 111.2, 1.7),
+		"to": Vector3(1245.0, 109.6, 0.4),
 		"fov": 62.0,
 	},
 	{

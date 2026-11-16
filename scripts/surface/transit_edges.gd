@@ -356,7 +356,7 @@ func _build_wall(wall: Dictionary) -> void:
 	var along: PackedFloat32Array = arc_lengths(line)
 	var fine_along: PackedFloat32Array = arc_lengths(fine)
 	for n: int in fine.size():
-		var z_pitch: float = _interpolate(along, pitch, fine_along[n])
+		var z_pitch: float = value_at(along, pitch, fine_along[n])
 		var ground: float = transit.terrain_z(fine[n])
 		var top: float = maxf(
 			ground + float(wall["sobre_terreno"]), z_pitch + float(wall["pretil"])
@@ -466,8 +466,8 @@ func _paint_stripe(
 	var s: float = start
 	while s < end - 1e-3:
 		var t: float = minf(end, s + step)
-		var a: Vector2 = _point_at(line, lengths, s)
-		var b: Vector2 = _point_at(line, lengths, t)
+		var a: Vector2 = point_at(line, lengths, s)
+		var b: Vector2 = point_at(line, lengths, t)
 		var side: Vector2 = (b - a).orthogonal().normalized() * AXIS_WIDTH * 0.5
 		_paint(PackedVector2Array([a + side, a - side, b - side, b + side]), level)
 		s = t
@@ -656,7 +656,7 @@ static func arc_lengths(line: PackedVector2Array) -> PackedFloat32Array:
 	return result
 
 
-static func _interpolate(along: PackedFloat32Array, values: PackedFloat32Array, s: float) -> float:
+static func value_at(along: PackedFloat32Array, values: PackedFloat32Array, s: float) -> float:
 	for k: int in range(1, along.size()):
 		if s <= along[k] or k == along.size() - 1:
 			var span: float = along[k] - along[k - 1]
@@ -665,7 +665,7 @@ static func _interpolate(along: PackedFloat32Array, values: PackedFloat32Array, 
 	return values[0]
 
 
-static func _point_at(line: PackedVector2Array, lengths: PackedFloat32Array, s: float) -> Vector2:
+static func point_at(line: PackedVector2Array, lengths: PackedFloat32Array, s: float) -> Vector2:
 	for k: int in range(1, lengths.size()):
 		if s <= lengths[k] or k == lengths.size() - 1:
 			var span: float = lengths[k] - lengths[k - 1]
