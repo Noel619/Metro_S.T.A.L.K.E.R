@@ -23,7 +23,7 @@ from __future__ import annotations
 import math
 import random
 
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 import kit_bpy as kit
 import tumansk_bpy as tb
@@ -68,6 +68,13 @@ BEAM = "#3A3028"
 
 WINDOW_STATES = ("intacta", "cortina", "rota", "tapiada", "plastico", "quemada", "vacia")
 SHORT_STATES = ("intacta", "rota", "tapiada", "quemada", "vacia")
+
+# Secciones de las molduras corridas: puntos (y, z), con y < 0 hacia fuera. Ninguna cara
+# de arriba o de abajo es plana y estrecha: vistas a ras se dibujarían a puntos.
+IMPOST = [(0.0, 0.2), (-0.18, 0.14), (-0.18, 0.04), (-0.1, -0.04), (-0.1, -0.08), (0.0, -0.14)]
+FRIEZE = [(0.0, -0.06), (-0.1, 0.02), (-0.1, 0.42), (-0.2, 0.46), (-0.2, 0.52), (0.0, 0.52)]
+EAVES = [(0.0, -0.06), (-0.1, 0.02), (-0.1, 0.16), (-0.42, 0.2), (-0.42, 0.32), (0.0, 0.36)]
+PLINTH_CAP = [(0.0, P + 0.03), (-0.08, P - 0.01), (-0.08, P - 0.06), (0.0, P - 0.06)]
 
 
 # --------------------------------------------------------------------------
@@ -120,49 +127,50 @@ def _frames(openings: list) -> list:
 
 
 def _surround(mb: tb.MeshBuilder, opening: tuple, *, width: float = 0.15, depth: float = 0.085) -> None:
-    """Recercado: el marco de molduras alrededor de un hueco, algo más claro que el muro.
+    """Recercado: el marco de molduras alrededor de un hueco, algo más claro que el muro,
+    con orejetas arriba, a la manera clásica.
 
-    Las molduras sobresalen más que en la realidad: con 4 cm, su canto ocupa menos de un
-    píxel a veinte metros y el contorno de tinta lo dibujaría a trozos."""
+    Sale más que en la realidad y con el canto de fuera en derrame: con 4 cm y a escuadra,
+    su canto ocuparía menos de un píxel a veinte metros y el contorno de tinta lo dibujaría
+    a trozos."""
     x0, z0, x1, z1 = opening
-    mb.slab((x0 - width, x1 + width), (z0 - (0.0 if z0 < 0.1 else width), z1 + width), (-depth, 0.0), DETAIL, holes=[opening], jitter=0.02, back=False)
-    # Orejetas: el recercado se ensancha arriba, a la manera clásica.
-    for side in (-1.0, 1.0):
-        x = (x0 - width - 0.05) if side < 0 else (x1 + width + 0.05)
-        mb.box((0.1, depth, 0.16), (x, -depth / 2.0, z1 + width - 0.08), DETAIL)
+    kit.outline(mb, [(x0, z0), (x1, z0), (x1, z1), (x0, z1)], [(0.0, 0.0), (0.0, depth), (width - 0.05, depth), (width, 0.0)], DETAIL)
+    top = z1 + width
+    for side in (-1.0, 1.0):  # orejetas: el recercado se ensancha arriba
+        edge = x0 - width if side < 0 else x1 + width
+        a, b = sorted((edge - side * 0.05, edge + side * 0.08))
+        kit.block(mb, (a, top - 0.15, b, top - 0.03), depth, DETAIL, splay=0.03)
 
 
 def _sill(mb: tb.MeshBuilder, opening: tuple) -> None:
-    """Alféizar moldurado bajo una ventana (dos escalones de molduras)."""
+    """Alféizar moldurado bajo una ventana, sobre dos ménsulas: vierteaguas arriba y, abajo,
+    dos escalones en derrame."""
     x0, z0, x1, _ = opening
-    mb.box((x1 - x0 + 0.5, 0.13, 0.09), ((x0 + x1) / 2.0, -0.065, z0 - 0.17), DETAIL, jitter=0.02)
-    mb.box((x1 - x0 + 0.3, 0.08, 0.07), ((x0 + x1) / 2.0, -0.04, z0 - 0.25), MOULD_SHADOW, jitter=0.02)
-    for side in (-1.0, 1.0):  # ménsulas bajo el alféizar
-        x = (x0 + 0.1) if side < 0 else (x1 - 0.1)
-        mb.box((0.1, 0.1, 0.22), (x, -0.05, z0 - 0.4), DETAIL)
+    section = [(0.0, z0 - 0.1), (-0.15, z0 - 0.14), (-0.15, z0 - 0.22), (-0.08, z0 - 0.27), (-0.08, z0 - 0.3), (0.0, z0 - 0.35)]
+    kit.moulding(mb, (x0 - 0.27, x1 + 0.27), section, DETAIL, jitter=0.02, mitre=True)
+    for x in (x0 + 0.1, x1 - 0.1):
+        kit.block(mb, (x - 0.05, z0 - 0.52, x + 0.05, z0 - 0.33), 0.09, DETAIL, splay=0.03)
 
 
 def _cornice_above(mb: tb.MeshBuilder, opening: tuple) -> None:
     """Cornisilla (sandrik) recta sobre una ventana, con su friso."""
     x0, _, x1, z1 = opening
-    mb.box((x1 - x0 + 0.2, 0.05, 0.14), ((x0 + x1) / 2.0, -0.025, z1 + 0.2), DETAIL)
-    mb.box((x1 - x0 + 0.55, 0.18, 0.1), ((x0 + x1) / 2.0, -0.09, z1 + 0.32), DETAIL, jitter=0.02)
+    kit.block(mb, (x0 - 0.07, z1 + 0.17, x1 + 0.07, z1 + 0.25), 0.05, DETAIL, splay=0.03)
+    section = [(0.0, z1 + 0.25), (-0.18, z1 + 0.3), (-0.18, z1 + 0.37), (0.0, z1 + 0.44)]
+    kit.moulding(mb, (x0 - 0.3, x1 + 0.3), section, DETAIL, jitter=0.02, mitre=True)
 
 
 def _pediment(mb: tb.MeshBuilder, opening: tuple) -> None:
-    """Frontón triangular sobre una ventana principal, sobre dos ménsulas."""
+    """Frontón triangular sobre una ventana principal, sobre dos ménsulas: un marco de
+    molduras con los cantos en derrame alrededor del tímpano."""
     x0, _, x1, z1 = opening
     base = z1 + 0.2
-    rise = 0.42
     left, right = x0 - 0.3, x1 + 0.3
-    middle = (left + right) / 2.0
-    outline = [(left, base), (right, base), (middle, base + rise)]
-    mb.prism(kit.ccw(outline), 0.1, (0.0, -0.05, 0.0), DETAIL, rotation=(90.0, 0.0, 0.0), jitter=0.02)
-    inner = [(left + 0.22, base + 0.05), (right - 0.22, base + 0.05), (middle, base + rise - 0.12)]
-    mb.prism(kit.ccw(inner), 0.02, (0.0, -0.11, 0.0), MOULD_SHADOW, rotation=(90.0, 0.0, 0.0))
-    mb.box((right - left + 0.06, 0.16, 0.09), (middle, -0.08, base - 0.02), DETAIL)
+    outer = [(left, base), (right, base), ((left + right) / 2.0, base + 0.52)]
+    inner = [(p.x, p.y) for p in kit.offset_polygon(outer, -0.13)]
+    kit.outline(mb, inner, [(0.0, 0.0), (0.0, 0.11), (0.08, 0.11), (0.13, 0.0)], DETAIL)
     for x in (x0 - 0.12, x1 + 0.12):
-        mb.box((0.12, 0.13, 0.32), (x, -0.065, base - 0.2), DETAIL)
+        kit.block(mb, (x - 0.06, base - 0.34, x + 0.06, base - 0.03), 0.11, DETAIL, splay=0.03)
 
 
 # --------------------------------------------------------------------------
@@ -199,7 +207,8 @@ def build_walls(lib: kit.KitLibrary) -> None:
 
     # Ciego: un panel rehundido con su moldura, para que el muro no quede desnudo.
     def blind_panel(mb: tb.MeshBuilder) -> None:
-        mb.slab((0.75, 2.45), (0.75, 2.95), (-0.08, 0.0), DETAIL, holes=[(0.92, 0.92, 2.28, 2.78)], back=False)
+        panel = [(0.92, 0.92), (2.28, 0.92), (2.28, 2.78), (0.92, 2.78)]
+        kit.outline(mb, panel, [(0.0, 0.0), (0.04, 0.07), (0.13, 0.07), (0.17, 0.0)], DETAIL)
 
     _wall_piece(lib, "estuco_ciego", [], 15, extras=[blind_panel])
     _wall_piece(lib, "patio_ventana", [(YARD_WINDOW, "alta")], 16, color=YARD)
@@ -225,9 +234,8 @@ def _ground_piece(lib: kit.KitLibrary, name: str, opening: tuple | None, seed: i
     holes = [opening] if opening else []
     # Zócalo de granito y, encima, las bandas del almohadillado hasta la imposta.
     granite_holes = [(a, b, c, min(d, P)) for a, b, c, d in holes if b < P]
-    mb.slab((0.0, W), (-BELOW, P), (-0.08, T), GRANITE, holes=granite_holes, step=0.8, jitter=0.03, back=False)
-    if not granite_holes:
-        mb.box((W, 0.1, 0.06), (W / 2.0, -0.05, P + 0.03), GRANITE_DARK)
+    mb.slab((0.0, W), (-BELOW, P - 0.06), (-0.08, T), GRANITE, holes=granite_holes, step=0.8, jitter=0.03, back=False)
+    kit.moulding_run(mb, (0.0, W), PLINTH_CAP, GRANITE_DARK, holes=granite_holes, jitter=0.03)  # el vierteaguas
     kit.banded_wall(mb, (0.0, W), (P, GROUND), (0.0, T), RUSTIC, holes=[(a, max(b, P), c, d) for a, b, c, d in holes if d > P])
     for extra in extras:
         extra(mb)
@@ -238,16 +246,17 @@ def _ground_piece(lib: kit.KitLibrary, name: str, opening: tuple | None, seed: i
 def build_ground_floor(lib: kit.KitLibrary) -> None:
     def shop_frame(mb: tb.MeshBuilder) -> None:
         x0, z0, x1, z1 = SHOP
-        mb.slab((x0 - 0.12, x1 + 0.12), (z0 - 0.05, z1 + 0.12), (-0.05, 0.0), GRANITE_DARK, holes=[SHOP], back=False)
+        kit.outline(mb, [(x0, z0), (x1, z0), (x1, z1), (x0, z1)], [(0.0, 0.0), (0.0, 0.05), (0.08, 0.05), (0.12, 0.0)], GRANITE_DARK)
         # El rótulo encima (el texto lo pondrá Godot): una tabla de chapa pintada.
-        mb.box((x1 - x0 + 0.1, 0.04, 0.32), ((x0 + x1) / 2.0, -0.07, z1 + 0.32), "#5B4E3E")
+        kit.block(mb, (x0 - 0.02, z1 + 0.19, x1 + 0.02, z1 + 0.45), 0.05, "#5B4E3E", splay=0.03, cuts=2)
 
     def portal_frame(mb: tb.MeshBuilder) -> None:
         x0, z0, x1, z1 = PORTAL
         for x in (x0 - 0.2, x1 + 0.2):
-            mb.box((0.3, 0.14, z1 - z0 + 0.3), (x, -0.07, (z0 + z1) / 2.0 + 0.05), DETAIL, jitter=0.02)
-        mb.box((x1 - x0 + 0.95, 0.24, 0.16), ((x0 + x1) / 2.0, -0.12, z1 + 0.3), DETAIL, jitter=0.02)
-        mb.box((x1 - x0 + 0.6, 0.1, 0.22), ((x0 + x1) / 2.0, -0.05, z1 + 0.12), DETAIL)
+            kit.block(mb, (x - 0.11, z0 - 0.06, x + 0.11, z1 + 0.16), 0.14, DETAIL, splay=0.04)
+        section = [(0.0, z1 + 0.2), (-0.24, z1 + 0.26), (-0.24, z1 + 0.38), (0.0, z1 + 0.46)]
+        kit.moulding(mb, (x0 - 0.48, x1 + 0.48), section, DETAIL, jitter=0.02, mitre=True)
+        kit.block(mb, (x0 - 0.27, z1 + 0.04, x1 + 0.27, z1 + 0.2), 0.1, DETAIL, splay=0.03)
         # Escalones de granito hasta la puerta.
         for k in range(2):
             mb.box((x1 - x0 + 0.9 - k * 0.3, 0.45 - k * 0.15, 0.15), ((x0 + x1) / 2.0, -0.22 + k * 0.075, 0.075 + k * 0.15), GRANITE, jitter=0.04)
@@ -257,8 +266,8 @@ def build_ground_floor(lib: kit.KitLibrary) -> None:
 
     # El zócalo liso del patio y de la casa obrera (sin almohadillado).
     mb = tb.MeshBuilder(seed=30)
-    mb.slab((0.0, W), (-BELOW, P), (-0.05, T), GRANITE_DARK, step=0.8, jitter=0.03, back=False)
-    mb.box((W, 0.08, 0.05), (W / 2.0, -0.04, P + 0.025), MOULD_SHADOW)
+    mb.slab((0.0, W), (-BELOW, P - 0.03), (-0.05, T), GRANITE_DARK, step=0.8, jitter=0.03, back=False)
+    kit.moulding(mb, (0.0, W), [(0.0, P + 0.04), (-0.05, P + 0.01), (-0.05, P - 0.03), (0.0, P - 0.03)], MOULD_SHADOW)
     piece = mb.finish("zocalo_patio", kit.materials("estuco"))
     lib.add(piece, [], alpha=wear_mask([], bottom=0.0), ground_z=0.0, seed=30)
     _ground_piece(lib, "bajo_escaparate", SHOP, 31, extras=[shop_frame])
@@ -273,18 +282,23 @@ def build_ground_floor(lib: kit.KitLibrary) -> None:
     top = spring + 2.55 + radius
     mb = tb.MeshBuilder(seed=35)
     opening = (x0, -BELOW, x1, top)
-    mb.slab((0.0, W), (-BELOW, P), (-0.08, T), GRANITE, holes=[opening], jitter=0.03, back=False)
+    mb.slab((0.0, W), (-BELOW, P - 0.06), (-0.08, T), GRANITE, holes=[opening], jitter=0.03, back=False)
+    kit.moulding_run(mb, (0.0, W), PLINTH_CAP, GRANITE_DARK, holes=[opening], jitter=0.03)
     kit.banded_wall(mb, (0.0, W), (P, GROUND), (0.0, T), RUSTIC, holes=[(x0, P, x1, top)])
     arc_base = spring + 2.55
     arc = [(xc + radius * math.cos(math.pi * k / 16), arc_base + radius * math.sin(math.pi * k / 16)) for k in range(16, -1, -1)]
     infill = kit.ccw([(x1, arc_base), (x1, top), (x0, top), (x0, arc_base), *arc[1:-1]])
     mb.prism(infill, T, (0.0, T / 2.0, 0.0), RUSTIC, rotation=(90.0, 0.0, 0.0))
-    # Archivolta y clave.
-    for k in range(17):
-        angle = math.pi * k / 16
-        inner = Vector((xc + (radius + 0.02) * math.cos(angle), 0.0, arc_base + (radius + 0.02) * math.sin(angle)))
-        mb.box((0.2, 0.06, 0.12), (inner.x + 0.08 * math.cos(angle), -0.03, inner.z + 0.08 * math.sin(angle)), DETAIL, rotation=(0.0, -math.degrees(angle), 0.0))
-    mb.box((0.34, 0.1, 0.42), (xc, -0.05, arc_base + radius + 0.12), DETAIL)
+    # Archivolta de dovelas (con las juntas en V) y la clave.
+    middle = radius + 0.12
+    span = math.pi * middle / 15
+    for k in range(15):
+        angle = math.pi * (k + 0.5) / 15
+        before = set(mb.bm.faces)
+        kit.block(mb, (-0.1 + 0.025, -span / 2.0 + 0.025, 0.1 - 0.025, span / 2.0 - 0.025), 0.07, DETAIL, splay=0.025)
+        place = Matrix.Translation((xc + middle * math.cos(angle), 0.0, arc_base + middle * math.sin(angle))) @ Matrix.Rotation(-angle, 4, "Y")
+        kit.transform_faces([f for f in mb.bm.faces if f not in before], place)
+    kit.block(mb, (xc - 0.14, arc_base + radius - 0.06, xc + 0.14, arc_base + radius + 0.32), 0.11, DETAIL, splay=0.03)
     with mb.material(1):
         mb.box((x1 - x0, 7.0, top - 0.05 + 0.2), (xc, T + 3.5, (top - 0.2) / 2.0), DARK)
     piece = mb.finish("bajo_arco", kit.materials("estuco", "interior"))
@@ -315,12 +329,12 @@ def build_ground_floor(lib: kit.KitLibrary) -> None:
 
 
 def _cornice_profile(mb: tb.MeshBuilder, x_range: tuple[float, float], *, brackets: bool = True) -> None:
-    """La cornisa principal: friso, canecillos, corona en vuelo y cimacio."""
+    """La cornisa principal: friso y filete (con la cara de abajo en derrame), canecillos,
+    corona en vuelo y cimacio."""
     x0, x1 = x_range
     mid = (x0 + x1) / 2.0
     length = x1 - x0
-    mb.box((length, 0.1, 0.42), (mid, -0.05, 0.21), DETAIL, jitter=0.02)  # friso
-    mb.box((length, 0.2, 0.08), (mid, -0.1, 0.46), MOULD_SHADOW)  # filete
+    kit.moulding(mb, (x0, x1), FRIEZE, DETAIL, jitter=0.02)
     mb.box((length, CORNICE + 0.05, 0.16), (mid, -(CORNICE + 0.05) / 2.0 + 0.05, 0.6), DETAIL, jitter=0.02)  # corona
     mb.box((length, 0.14, 0.1), (mid, -CORNICE + 0.02, 0.72), DETAIL)  # cimacio
     if brackets:
@@ -328,18 +342,41 @@ def _cornice_profile(mb: tb.MeshBuilder, x_range: tuple[float, float], *, bracke
         for k in range(count):
             x = x0 + length * (k + 0.5) / count
             mb.box((0.1, CORNICE - 0.15, 0.1), (x, -(CORNICE - 0.15) / 2.0, 0.47), DETAIL)
-            mb.box((0.1, 0.12, 0.16), (x, -0.06, 0.4), DETAIL)
+            kit.block(mb, (x - 0.04, 0.3, x + 0.04, 0.44), 0.14, DETAIL, splay=0.02)
+
+
+def _vertical(mb: tb.MeshBuilder, length: float, section: list, color: str, at: Matrix) -> None:
+    """Una moldura que sube (z de 0 a ``length``) en vez de correr a lo largo de x: la
+    sección son puntos (y, x), con y < 0 hacia fuera. La lleva a ``at``."""
+    before = set(mb.bm.faces)
+    kit.moulding(mb, (0.0, length), [(y, -x) for y, x in section], color, jitter=0.02)
+    kit.transform_faces([f for f in mb.bm.faces if f not in before], at @ Matrix.Rotation(math.radians(-90.0), 4, "Y"))
+
+
+def _quoin(mb: tb.MeshBuilder, z_range: tuple[float, float], here: float, there: float, color: str) -> None:
+    """Una hilada de la cadena de esquina: un sillar en cada fachada, a inglete en la arista,
+    con los cantos en derrame (las juntas entre hiladas quedan en V). La esquina está en el
+    origen, como en kit.corner."""
+    z0, z1 = z_range
+    section = [(0.0, z0), (-0.06, z0 + 0.03), (-0.06, z1 - 0.03), (0.0, z1)]
+    kit.corner(mb, section, color)
+    kit.moulding(mb, (0.0, here), section, color, jitter=0.03, mitre=(False, True))
+    # El de la otra fachada, que sigue hacia +y: el mismo, reflejado en la diagonal.
+    before = set(mb.bm.faces)
+    kit.moulding(mb, (0.0, there), section, color, jitter=0.03, mitre=(False, True))
+    faces = [f for f in mb.bm.faces if f not in before]
+    kit.transform_faces(faces, Matrix(((0.0, 1.0, 0.0, 0.0), (1.0, 0.0, 0.0, 0.0), (0.0, 0.0, 1.0, 0.0), (0.0, 0.0, 0.0, 1.0))))
+    mb.flip(faces)
 
 
 def build_mouldings(lib: kit.KitLibrary) -> None:
     # Imposta sobre los bajos.
     mb = tb.MeshBuilder(seed=41)
-    mb.box((W, 0.18, 0.2), (W / 2.0, -0.09, 0.1), DETAIL, jitter=0.02)
-    mb.box((W, 0.1, 0.1), (W / 2.0, -0.05, -0.05), MOULD_SHADOW)
+    kit.moulding(mb, (0.0, W), IMPOST, DETAIL, jitter=0.02)
     piece = mb.finish("imposta", kit.materials("estuco"))
     lib.add(piece, _neighbours(), seed=41)
     mb = tb.MeshBuilder(seed=42)
-    mb.box((0.18, 0.18, 0.2), (-0.09, -0.09, 0.1), DETAIL)
+    kit.corner(mb, IMPOST, DETAIL)
     lib.add(mb.finish("imposta_esquina", kit.materials("estuco")), [], seed=42)
     # Cornisa principal y su esquina.
     mb = tb.MeshBuilder(seed=43)
@@ -347,44 +384,40 @@ def build_mouldings(lib: kit.KitLibrary) -> None:
     piece = mb.finish("cornisa", kit.materials("estuco"))
     lib.add(piece, _neighbours(), seed=43)
     mb = tb.MeshBuilder(seed=44)
+    kit.corner(mb, FRIEZE, DETAIL)
     mb.box((CORNICE + 0.05, CORNICE + 0.05, 0.16), (-(CORNICE + 0.05) / 2.0 + 0.05, -(CORNICE + 0.05) / 2.0 + 0.05, 0.6), DETAIL)
     mb.box((CORNICE - 0.0, CORNICE - 0.0, 0.1), (-CORNICE / 2.0 + 0.02, -CORNICE / 2.0 + 0.02, 0.72), DETAIL)
-    mb.box((0.25, 0.25, 0.42), (-0.06, -0.06, 0.21), DETAIL)
     lib.add(mb.finish("cornisa_esquina", kit.materials("estuco")), [], seed=44)
     # Alero sencillo del patio y de la casa obrera.
     mb = tb.MeshBuilder(seed=45)
-    mb.box((W, 0.42, 0.14), (W / 2.0, -0.16, 0.25), DETAIL, jitter=0.02)
-    mb.box((W, 0.1, 0.2), (W / 2.0, -0.05, 0.1), MOULD_SHADOW)
+    kit.moulding(mb, (0.0, W), EAVES, DETAIL, jitter=0.02)
     lib.add(mb.finish("alero", kit.materials("estuco")), _neighbours(), seed=45)
     mb = tb.MeshBuilder(seed=46)
-    mb.box((0.42, 0.42, 0.14), (-0.16, -0.16, 0.25), DETAIL)
+    kit.corner(mb, EAVES, DETAIL)
     lib.add(mb.finish("alero_esquina", kit.materials("estuco")), [], seed=46)
-    # Pilastras de orden gigante: fuste, basa y capitel (centradas en la junta entre vanos).
+    # Pilastras de orden gigante: fuste con los cantos en derrame, basa y capitel (centradas
+    # en la junta entre vanos).
     for name, base, capital, seed in (("pilastra", False, False, 47), ("pilastra_basa", True, False, 48), ("pilastra_capitel", False, True, 49)):
         mb = tb.MeshBuilder(seed=seed)
-        mb.box((0.52, 0.15, H), (0.0, -0.075, H / 2.0), DETAIL, cuts=2, jitter=0.02)
+        _vertical(mb, H, [(0.0, -0.26), (-0.15, -0.21), (-0.15, 0.21), (0.0, 0.26)], DETAIL, Matrix())
         if base:
-            mb.box((0.66, 0.23, 0.3), (0.0, -0.115, 0.15), DETAIL)
+            # Sobre la imposta, sin colgar por delante de ella.
+            kit.moulding(mb, (-0.33, 0.33), [(0.0, 0.5), (-0.23, 0.44), (-0.23, 0.2), (-0.18, 0.14), (0.0, 0.14)], DETAIL, mitre=True)
         if capital:
-            mb.box((0.68, 0.25, 0.18), (0.0, -0.125, H - 0.09), DETAIL)
-            mb.box((0.6, 0.2, 0.12), (0.0, -0.1, H - 0.25), MOULD_SHADOW)
+            kit.moulding(mb, (-0.34, 0.34), [(0.0, H - 0.4), (-0.2, H - 0.3), (-0.25, H - 0.2), (-0.25, H), (0.0, H)], DETAIL, mitre=True)
         lib.add(mb.finish(name, kit.materials("estuco")), _neighbours(), seed=seed)
     # Esquina: sillares alternos del almohadillado (bajos) y cadena de esquina arriba.
     for name, height, seed in (("esquina_bajos", GROUND + BELOW, 50), ("esquina_planta", H, 51)):
         mb = tb.MeshBuilder(seed=seed)
         z0 = -BELOW if name == "esquina_bajos" else 0.0
-        z = z0
-        k = 0
-        while z < z0 + height - 0.05:
-            size = 0.42
+        color = RUSTIC if name == "esquina_bajos" else DETAIL
+        # Hiladas de unos 42 cm que llenan la pieza entera: la de arriba sigue en la de
+        # la planta siguiente, sin hueco. Un número par, para que se alternen al seguir.
+        count = 2 * round(height / 0.84)
+        for k in range(count):
             # Soga en una cara y tizón en la otra, alternando en cada hilada.
-            here, there = (0.62, 0.4) if k % 2 == 0 else (0.4, 0.62)
-            color = RUSTIC if name == "esquina_bajos" else DETAIL
-            top = min(z + size - 0.03, z0 + height)
-            mb.box((here, 0.06, top - z), (here / 2.0 - 0.06, -0.03, (z + top) / 2.0), color, jitter=0.03)
-            mb.box((0.06, there, top - z), (-0.03, there / 2.0 - 0.06, (z + top) / 2.0), color, jitter=0.03)
-            z += size
-            k += 1
+            here, there = (0.56, 0.34) if k % 2 == 0 else (0.34, 0.56)
+            _quoin(mb, (z0 + height * k / count, z0 + height * (k + 1) / count), here, there, color)
         lib.add(mb.finish(name, kit.materials("estuco")), [], seed=seed)
 
 
@@ -393,14 +426,19 @@ def build_mouldings(lib: kit.KitLibrary) -> None:
 # --------------------------------------------------------------------------
 
 
+def _rail(y: float) -> list:
+    """La sección del pasamanos de un balcón, centrada en ``y``: arriba y abajo en derrame."""
+    return [(y + 0.1, 0.8), (y + 0.1, 0.88), (y, 0.92), (y - 0.1, 0.88), (y - 0.1, 0.8), (y, 0.78)]
+
+
 def build_balconies(lib: kit.KitLibrary) -> None:
     """Balcón de losa moldurada sobre ménsulas, con balaustres torneados."""
     for name, broken, seed in (("balcon_balaustre", False, 61), ("balcon_balaustre_roto", True, 62)):
         rng = random.Random(seed)
         mb = tb.MeshBuilder(seed=seed)
         x0, x1 = 0.35, W - 0.35
-        mb.box((x1 - x0, 0.85, 0.16), (W / 2.0, -0.425, -0.08), DETAIL, cuts=2, jitter=0.02)
-        mb.box((x1 - x0 + 0.08, 0.12, 0.08), (W / 2.0, -0.86, -0.14), MOULD_SHADOW)
+        # La losa, con el canto de abajo en derrame (un goterón plano se vería a puntos).
+        kit.moulding(mb, (x0, x1), [(0.0, 0.0), (-0.88, 0.0), (-0.88, -0.12), (-0.8, -0.18), (0.0, -0.18)], DETAIL, jitter=0.02)
         for x in (x0 + 0.25, W / 2.0, x1 - 0.25):
             outline = kit.ccw([(0.0, 0.0), (-0.75, 0.0), (-0.75, -0.08), (-0.25, -0.18), (0.0, -0.5)])
             mb.prism([(y, z) for y, z in outline], 0.14, (x, 0.0, 0.0), DETAIL, rotation=(90.0, 0.0, 90.0))
@@ -413,15 +451,19 @@ def build_balconies(lib: kit.KitLibrary) -> None:
             if broken:
                 cut = start.lerp(end, rng.uniform(0.35, 0.6))
                 kit.balusters(mb, start, cut, 0.0, 0.78, DETAIL)
-                mb.box(((cut - start).length, 0.18, 0.12), ((start.x + cut.x) / 2.0, start.y, 0.85), DETAIL)
+                kit.moulding(mb, (start.x, cut.x), _rail(start.y), DETAIL, jitter=0.02)
                 for _ in range(4):
                     kit.chunk(mb, (rng.uniform(cut.x, end.x), rng.uniform(-0.7, -0.3), 0.08), 0.14, DETAIL, rng)
             else:
                 kit.balusters(mb, start, end, 0.0, 0.78, DETAIL)
-                mb.box(((end - start).length + 0.24, 0.2, 0.12), ((start.x + end.x) / 2.0, start.y, 0.85), DETAIL, jitter=0.02)
+                kit.moulding(mb, (start.x - 0.12, end.x + 0.12), _rail(start.y), DETAIL, jitter=0.02)
         for x in (x0 + 0.08, x1 - 0.08):
             kit.balusters(mb, Vector((x, -0.62, 0.0)), Vector((x, -0.08, 0.0)), 0.0, 0.78, DETAIL)
-            mb.box((0.16, 0.6, 0.12), (x, -0.38, 0.85), DETAIL)
+            # El pasamanos de los lados, que va hacia el muro: el mismo, girado.
+            before = set(mb.bm.faces)
+            kit.moulding(mb, (-0.68, -0.08), _rail(0.0), DETAIL, jitter=0.02)
+            turn = Matrix.Translation((x, 0.0, 0.0)) @ Matrix.Rotation(math.radians(90.0), 4, "Z")
+            kit.transform_faces([f for f in mb.bm.faces if f not in before], turn)
         piece = mb.finish(name, kit.materials("estuco"))
         lib.add(piece, _neighbours(), samples=10, seed=seed)
 

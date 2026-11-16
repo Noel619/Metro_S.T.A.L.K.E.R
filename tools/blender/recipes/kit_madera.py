@@ -438,7 +438,7 @@ def _barrack_wall(mb: tb.MeshBuilder, facing: str, length: float, windows: list,
         reach = length / 2.0 - (0.2 if long_side else 0.0)
         # Tablas lisas con la junta enrasada: vistas de lejos y a ras, cualquier canto
         # asomaría a puntos.
-        kit.banded_wall(builder, (-reach, reach), (B_BASE, B_EAVE), (0.0, 0.2), BOARD, holes=holes, band=0.3, gap=0.02, gap_color="#4C362A", step=3.0, ring=0.0, inset=0.0)
+        kit.banded_wall(builder, (-reach, reach), (B_BASE, B_EAVE), (0.0, 0.2), BOARD, holes=holes, band=0.3, gap=0.02, gap_color="#4C362A", step=3.0, ring=0.0)
         for x0, z0, x1, z1 in holes:
             if z0 <= B_BASE + 0.01:
                 _barrack_door(builder, x0, x1, z1)

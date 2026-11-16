@@ -400,14 +400,13 @@ def banded_wall(
     gap_color: str = "#5E5446",
     step: float = 0.6,
     ring: float = 0.08,
-    inset: float = 0.001,
 ) -> None:
-    """Muro almohadillado (los bajos estalinistas): bandas de revoque con la junta pintada.
+    """Muro almohadillado (los bajos estalinistas, las tablas del barracón): bandas con la
+    junta pintada.
 
-    Las juntas van enrasadas y de color, no hundidas: una ranura fina se volvería una
-    línea punteada en el contorno de tinta. ``inset`` es lo que se mete la junta: con 0
-    queda en el mismo plano que las bandas y no asoma el canto de ninguna (las tablas del
-    barracón, que se ven de lejos y a ras).
+    Las juntas van enrasadas y de color, en el mismo plano que las bandas: una ranura,
+    aunque sea de un milímetro, deja asomar el canto de las bandas, y el contorno de tinta
+    lo dibujaría a puntos.
     """
     x0, x1 = x_range
     z0, z1 = z_range
@@ -420,7 +419,7 @@ def banded_wall(
         mb.slab((x0, x1), (z, joint), (y0, y1), color, holes=clipped, step=step, jitter=0.02, back=False, ring=ring)
         if joint < top:
             gaps = [(a, max(b, joint), c, min(d, top)) for a, b, c, d in holes if b < top and d > joint]
-            mb.slab((x0, x1), (joint, top), (y0 + inset, y0 + 0.04), gap_color, holes=gaps, back=False)
+            mb.slab((x0, x1), (joint, top), (y0, y0 + 0.04), gap_color, holes=gaps, back=False)
         z = top
 
 
@@ -431,6 +430,7 @@ def moulding(
     color: str,
     *,
     jitter: float = 0.0,
+    mitre: bool | tuple[bool, bool] = False,
 ) -> list:
     """Moldura recta a lo largo de x con el perfil ``profile``: puntos (y, z) de su
     sección, con y < 0 hacia fuera del muro (alféizares, guardapolvos, impostas).
@@ -438,9 +438,118 @@ def moulding(
     Las caras de arriba y de abajo de una moldura van inclinadas (vierteaguas), no
     planas: vista a ras, una cara plana de pocos centímetros ocupa menos de un píxel y el
     contorno de tinta la dibujaría a puntos. Inclinada, su altura sigue viéndose.
+
+    Con ``mitre`` (los dos extremos, o (izquierdo, derecho)), los extremos vuelven hasta el
+    muro a inglete, como si la moldura doblara: sin un canto plano de frente, que de lejos
+    se vería de canto. Los extremos que se juntan con otra pieza van rectos.
     """
     x0, x1 = x_range
-    return mb.prism(ccw(profile), x1 - x0, ((x0 + x1) / 2.0, 0.0, 0.0), color, rotation=(90.0, 0.0, 90.0), jitter=jitter)
+    faces = mb.prism(ccw(profile), x1 - x0, ((x0 + x1) / 2.0, 0.0, 0.0), color, rotation=(90.0, 0.0, 90.0), jitter=jitter)
+    left, right = (mitre, mitre) if isinstance(mitre, bool) else mitre
+    for vert in dict.fromkeys(v for f in faces for v in f.verts):
+        if left and abs(vert.co.x - x0) < 1e-6:
+            vert.co.x = x0 - vert.co.y
+        elif right and abs(vert.co.x - x1) < 1e-6:
+            vert.co.x = x1 + vert.co.y
+    return faces
+
+
+def moulding_run(
+    mb: tb.MeshBuilder,
+    x_range: tuple[float, float],
+    profile: Sequence[tuple[float, float]],
+    color: str,
+    *,
+    holes: Sequence[tuple[float, float, float, float]] = (),
+    jitter: float = 0.0,
+) -> None:
+    """Una moldura corrida (un zócalo, una imposta) partida donde la cortan los huecos
+    ``(x0, z0, x1, z1)``: solo cuenta su ancho."""
+    start, end = x_range
+    for a, _, c, _ in sorted(holes) + [(end, 0.0, end, 0.0)]:
+        if min(a, end) - start > 0.05:
+            moulding(mb, (start, min(a, end)), profile, color, jitter=jitter)
+        start = max(start, c)
+
+
+def corner(mb: tb.MeshBuilder, profile: Sequence[tuple[float, float]], color: str) -> None:
+    """La esquina que sobresale de una moldura corrida (imposta, cornisa, alero) con la
+    sección ``profile`` de :func:`moulding`: las dos fachadas se cortan a inglete.
+
+    La esquina está en el origen: una fachada sigue hacia +x (con el muro en y = 0) y la
+    otra hacia +y (con el muro en x = 0); la pieza ocupa lo de fuera (x < 0, y < 0). La
+    sección empieza y acaba contra el muro.
+    """
+    section = ccw([(-y, z) for y, z in profile])
+    for (o0, z0), (o1, z1) in zip(section, section[1:]):
+        mb.quad(((-o0, 0.0, z0), (-o0, -o0, z0), (-o1, -o1, z1), (-o1, 0.0, z1)), color)
+        mb.quad(((-o0, -o0, z0), (0.0, -o0, z0), (0.0, -o1, z1), (-o1, -o1, z1)), color)
+
+
+def offset_polygon(polygon: Sequence[tuple[float, float]], offset: float) -> list[Vector]:
+    """Un contorno convexo desplazado hacia fuera (``offset`` > 0) o hacia dentro, con las
+    esquinas a inglete. Devuelve los puntos en sentido antihorario."""
+    points = [Vector(p) for p in ccw(polygon)]
+    count = len(points)
+    result = []
+    for k in range(count):
+        before = (points[k] - points[k - 1]).normalized()
+        after = (points[(k + 1) % count] - points[k]).normalized()
+        n_before = Vector((before.y, -before.x))
+        n_after = Vector((after.y, -after.x))
+        result.append(points[k] + (n_before + n_after) * (offset / (1.0 + n_before.dot(n_after))))
+    return result
+
+
+def outline(
+    mb: tb.MeshBuilder,
+    polygon: Sequence[tuple[float, float]],
+    profile: Sequence[tuple[float, float]],
+    color: str,
+    *,
+    step: float = 0.6,
+) -> None:
+    """Moldura alrededor de un contorno convexo de la fachada (un recercado, un frontón,
+    los cantos de un sillar), con las esquinas a inglete.
+
+    ``polygon`` son puntos (x, z) en la cara del muro (y = 0). ``profile`` es la sección,
+    sin la cara que va contra el muro: puntos (o, d), con o hacia fuera del contorno y d
+    lo que sale del muro (hacia -y). Empieza y acaba contra el muro; con dos puntos, va de
+    fuera (el muro) hacia dentro y hacia delante. Los cantos van en derrame (inclinados)
+    y no a escuadra: vista casi de frente, una cara a escuadra de pocos centímetros ocupa
+    menos de un píxel y el contorno de tinta la dibujaría a puntos.
+    """
+    section = ccw(profile) if len(profile) > 2 else list(profile)
+    rings = [offset_polygon(polygon, o) for o, _ in section]
+    count = len(rings[0])
+    for k in range(count):
+        length = (rings[0][(k + 1) % count] - rings[0][k]).length
+        segments = max(1, math.ceil(length / step))
+        for i in range(len(section) - 1):
+            d0, d1 = section[i][1], section[i + 1][1]
+            a0, b0 = rings[i][k], rings[i][(k + 1) % count]
+            a1, b1 = rings[i + 1][k], rings[i + 1][(k + 1) % count]
+            for s in range(segments):
+                f0, f1 = s / segments, (s + 1) / segments
+                quad = ((a0.lerp(b0, f0), d0), (a0.lerp(b0, f1), d0), (a1.lerp(b1, f1), d1), (a1.lerp(b1, f0), d1))
+                mb.quad([(p.x, -d, p.y) for p, d in quad], color)
+
+
+def block(
+    mb: tb.MeshBuilder,
+    rect: tuple[float, float, float, float],
+    depth: float,
+    color: str,
+    *,
+    splay: float = 0.04,
+    cuts: int = 0,
+) -> None:
+    """Un bloque que sale del muro (sillar, ménsula, tablero, clave) con los cantos en
+    derrame: ``rect`` (x0, z0, x1, z1) es su cara de delante, a ``depth`` del muro, y los
+    cantos llegan al muro ``splay`` más allá."""
+    x0, z0, x1, z1 = rect
+    outline(mb, [(x0, z0), (x1, z0), (x1, z1), (x0, z1)], [(splay, 0.0), (0.0, depth)], color)
+    mb.quad(((x0, -depth, z0), (x1, -depth, z0), (x1, -depth, z1), (x0, -depth, z1)), color, cuts=cuts)
 
 
 def ring(

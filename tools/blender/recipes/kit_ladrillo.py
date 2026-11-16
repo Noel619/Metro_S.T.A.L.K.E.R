@@ -53,6 +53,13 @@ DARK = "#121110"
 SLAB_COLOR = "#7A7368"
 BEAM = "#3A3028"
 
+# Secciones (y, z) de las molduras corridas, con y < 0 hacia fuera. Las caras de abajo de
+# las hiladas en saledizo van en derrame: planas y estrechas, vistas desde la calle se
+# dibujarían a puntos.
+IMPOST = [(0.0, 0.3), (-0.14, 0.28), (-0.14, 0.2), (-0.1, 0.17), (-0.1, 0.04), (0.0, 0.0)]
+CORBEL = [(0.0, 0.42), (-0.08, 0.466), (-0.08, 0.5), (-0.15, 0.54), (-0.15, 0.58), (-0.22, 0.62), (-0.22, 0.76), (-0.46, 0.8), (-0.46, 0.92), (0.0, 0.95)]
+PLINTH_CAP = [(0.0, P + 0.03), (-0.06, P - 0.01), (-0.06, P - 0.05), (0.0, P - 0.05)]
+
 
 def _neighbours(z_range: tuple[float, float] = (0.0, H)) -> list:
     z0, z1 = z_range
@@ -70,15 +77,38 @@ def _frames(openings: list) -> list:
     return [mb.finish("contexto_carpinteria")]
 
 
-def _arch_band(mb: tb.MeshBuilder, x0: float, x1: float, z: float, rise: float, thickness: float, depth: float, color: str, *, y: float = 0.0) -> None:
-    """Un arco rebajado de ladrillo a sardinel sobre un hueco: banda curva entre dos arcos."""
+def _arch_band(mb: tb.MeshBuilder, x0: float, x1: float, z: float, rise: float, thickness: float, depth: float, color: str) -> None:
+    """Un arco rebajado de ladrillo a sardinel sobre un hueco: una banda curva entre dos
+    arcos, con los cantos en derrame (a escuadra, de lejos se dibujarían a puntos)."""
     steps = 12
     span = (x1 - x0) / 2.0
     xc = (x0 + x1) / 2.0
-    lower = [(xc + span * math.cos(math.pi * k / steps), z + rise * math.sin(math.pi * k / steps)) for k in range(steps + 1)]
-    upper = [(xc + (span + thickness * 0.5) * math.cos(math.pi * k / steps), z + thickness + (rise + thickness * 0.3) * math.sin(math.pi * k / steps)) for k in range(steps + 1)]
-    outline = kit.ccw(lower + upper[::-1])
-    mb.prism(outline, depth, (0.0, y - depth / 2.0, 0.0), color, rotation=(90.0, 0.0, 0.0), jitter=0.03)
+    splay = min(0.03, thickness * 0.25)
+    sections = []
+    for k in range(steps + 1):
+        angle = math.pi * k / steps
+        low = Vector((xc + span * math.cos(angle), z + rise * math.sin(angle)))
+        high = Vector((xc + (span + thickness * 0.5) * math.cos(angle), z + thickness + (rise + thickness * 0.3) * math.sin(angle)))
+        across = (high - low).normalized() * splay
+        # De fuera hacia dentro (como kit.outline): el canto de arriba, la cara y el de abajo.
+        sections.append([(high, 0.0), (high - across, depth), (low + across, depth), (low, 0.0)])
+
+    def point(p: Vector, d: float) -> tuple[float, float, float]:
+        return (p.x, -d, p.y)
+
+    for k in range(steps):
+        for i in range(3):
+            (a0, d0), (a1, d1) = sections[k][i], sections[k][i + 1]
+            (b0, _), (b1, _) = sections[k + 1][i], sections[k + 1][i + 1]
+            mb.quad((point(a0, d0), point(b0, d0), point(b1, d1), point(a1, d1)), color)
+    # Los arranques, cerrados.
+    for k, outward in ((0, -1.0), (steps, 1.0)):
+        corners = [point(p, d) for p, d in sections[k]]
+        travel = Vector(point(sections[min(k + 1, steps)][3][0], 0.0)) - Vector(point(sections[max(k - 1, 0)][3][0], 0.0))
+        normal = (Vector(corners[1]) - Vector(corners[0])).cross(Vector(corners[2]) - Vector(corners[0]))
+        if normal.dot(travel) * outward < 0.0:
+            corners.reverse()
+        mb.quad(corners, color)
 
 
 def _lintel(mb: tb.MeshBuilder, opening: tuple, *, fancy: bool = False) -> None:
@@ -88,19 +118,25 @@ def _lintel(mb: tb.MeshBuilder, opening: tuple, *, fancy: bool = False) -> None:
     _arch_band(mb, x0 - 0.06, x1 + 0.06, z1, 0.16, 0.24, 0.06, BRICK_DARK)
     _arch_band(mb, x0 - 0.16, x1 + 0.16, z1 + 0.12, 0.2, 0.12, 0.1, BRICK_LIGHT)
     for x in (x0 - 0.22, x1 + 0.22):  # los arranques del guardapolvo
-        mb.box((0.16, 0.1, 0.1), (x, -0.05, z1 + 0.17), BRICK_LIGHT)
+        kit.block(mb, (x - 0.06, z1 + 0.14, x + 0.06, z1 + 0.2), 0.1, BRICK_LIGHT, splay=0.02)
     # Alféizar de piedra, con nieve, y el delantal de ladrillo debajo.
     with mb.material(1):
-        mb.box((x1 - x0 + 0.3, 0.14, 0.08), ((x0 + x1) / 2.0, -0.07, z0 - 0.04), STONE, jitter=0.03)
-    mb.box((x1 - x0 + 0.1, 0.06, 0.35), ((x0 + x1) / 2.0, -0.03, z0 - 0.27), BRICK_LIGHT)
+        sill = [(0.0, z0 + 0.01), (-0.14, z0 - 0.03), (-0.14, z0 - 0.07), (0.0, z0 - 0.11)]
+        kit.moulding(mb, (x0 - 0.15, x1 + 0.15), sill, STONE, jitter=0.03, mitre=True)
+    kit.block(mb, (x0 - 0.03, z0 - 0.425, x1 + 0.03, z0 - 0.115), 0.06, BRICK_LIGHT, splay=0.02)
     if fancy:
         # Recercado de ladrillo: dos columnillas y un frontoncillo de hiladas escalonadas.
         for x in (x0 - 0.13, x1 + 0.13):
-            mb.box((0.14, 0.1, z1 - z0 + 0.1), (x, -0.05, (z0 + z1) / 2.0), BRICK_LIGHT, jitter=0.03)
+            kit.block(mb, (x - 0.05, z0 - 0.03, x + 0.05, z1 + 0.03), 0.1, BRICK_LIGHT, splay=0.02)
         base = z1 + 0.36
         for k in range(4):
             half = (x1 - x0) / 2.0 + 0.35 - k * 0.24
-            mb.box((half * 2.0, 0.12 - k * 0.01, 0.1), ((x0 + x1) / 2.0, -0.06, base + 0.1 * k), BRICK_LIGHT, jitter=0.02)
+            depth = 0.12 - k * 0.01
+            bottom, top = base + 0.1 * k - 0.05, base + 0.1 * k + 0.05
+            # La hilada de abajo, con la cara de abajo en derrame; las demás apoyan en ella.
+            low = [(-0.08, bottom - 0.03), (0.0, bottom - 0.06)] if k == 0 else [(0.0, bottom)]
+            section = [(0.0, top), (-depth, top), (-depth, bottom), *low]
+            kit.moulding(mb, ((x0 + x1) / 2.0 - half, (x0 + x1) / 2.0 + half), section, BRICK_LIGHT, jitter=0.02, mitre=True)
 
 
 def _wall(lib: kit.KitLibrary, name: str, openings: list, seed: int, *, fancy: bool = False, z_range=(0.0, H), lintels: bool = True) -> None:
@@ -143,14 +179,16 @@ def _ground(lib: kit.KitLibrary, name: str, opening: tuple | None, seed: int, *,
     con su arco rebajado."""
     mb = tb.MeshBuilder(seed=seed)
     holes = [opening] if opening else []
+    plinth_holes = [(a, b, c, min(d, P)) for a, b, c, d in holes if b < P]
     with mb.material(2):
-        mb.slab((0.0, W), (-BELOW, P), (-0.06, T), RENDER, holes=[(a, b, c, min(d, P)) for a, b, c, d in holes if b < P], step=0.8, jitter=0.03, back=False)
+        mb.slab((0.0, W), (-BELOW, P - 0.05), (-0.06, T), RENDER, holes=plinth_holes, step=0.8, jitter=0.03, back=False)
+        kit.moulding_run(mb, (0.0, W), PLINTH_CAP, RENDER, holes=plinth_holes, jitter=0.03)
     mb.slab((0.0, W), (P, GROUND), (0.0, T), BRICK, holes=[(a, max(b, P), c, d) for a, b, c, d in holes if d > P], step=0.6, jitter=0.03, back=False, ring=0.12)
     if opening:
         x0, z0, x1, z1 = opening
         _arch_band(mb, x0 - 0.08, x1 + 0.08, z1, 0.22, 0.3, 0.07, BRICK_DARK)
-        with mb.material(1):
-            mb.box((0.22, 0.1, 0.3), ((x0 + x1) / 2.0, -0.05, z1 + 0.32), STONE)  # clave
+        with mb.material(1):  # la clave
+            kit.block(mb, ((x0 + x1) / 2.0 - 0.09, z1 + 0.19, (x0 + x1) / 2.0 + 0.09, z1 + 0.45), 0.1, STONE, splay=0.02)
         if steps:
             with mb.material(1):
                 for k in range(2):
@@ -172,7 +210,8 @@ def build_ground(lib: kit.KitLibrary) -> None:
     top = arc_base + radius
     mb = tb.MeshBuilder(seed=35)
     with mb.material(2):
-        mb.slab((0.0, W), (-BELOW, P), (-0.06, T), RENDER, holes=[(x0, -BELOW, x1, P)], jitter=0.03, back=False)
+        mb.slab((0.0, W), (-BELOW, P - 0.05), (-0.06, T), RENDER, holes=[(x0, -BELOW, x1, P)], jitter=0.03, back=False)
+        kit.moulding_run(mb, (0.0, W), PLINTH_CAP, RENDER, holes=[(x0, -BELOW, x1, P)], jitter=0.03)
     mb.slab((0.0, W), (P, GROUND), (0.0, T), BRICK, holes=[(x0, P, x1, top)], step=0.6, jitter=0.03, back=False)
     arc = [(xc + radius * math.cos(math.pi * k / 16), arc_base + radius * math.sin(math.pi * k / 16)) for k in range(16, -1, -1)]
     mb.prism(kit.ccw([(x1, arc_base), (x1, top), (x0, top), (x0, arc_base), *arc[1:-1]]), T, (0.0, T / 2.0, 0.0), BRICK, rotation=(90.0, 0.0, 0.0))
@@ -185,49 +224,48 @@ def build_ground(lib: kit.KitLibrary) -> None:
 
 def build_mouldings(lib: kit.KitLibrary) -> None:
     """Imposta de dentellones, cornisa de hiladas en saledizo, lesenas y esquinas."""
+
     def dentils(mb: tb.MeshBuilder, x0: float, x1: float, z: float, depth: float) -> None:
         count = max(1, round((x1 - x0) / 0.26))
         for k in range(count):
             x = x0 + (x1 - x0) * (k + 0.5) / count
-            mb.box((0.13, depth, 0.09), (x, -depth / 2.0, z), BRICK_LIGHT)
+            kit.block(mb, (x - 0.05, z - 0.03, x + 0.05, z + 0.03), depth, BRICK_LIGHT, splay=0.015)
 
     mb = tb.MeshBuilder(seed=41)
-    mb.box((W, 0.1, 0.16), (W / 2.0, -0.05, 0.12), BRICK_LIGHT, jitter=0.02)
-    dentils(mb, 0.0, W, -0.0, 0.08)
-    mb.box((W, 0.14, 0.08), (W / 2.0, -0.07, 0.24), BRICK_LIGHT, jitter=0.02)
+    kit.moulding(mb, (0.0, W), IMPOST, BRICK_LIGHT, jitter=0.02)
+    dentils(mb, 0.0, W, 0.0, 0.08)
     lib.add(mb.finish("ladrillo_imposta", kit.materials("ladrillo")), _neighbours(), seed=41)
     mb = tb.MeshBuilder(seed=42)
-    mb.box((0.14, 0.14, 0.32), (-0.07, -0.07, 0.12), BRICK_LIGHT)
+    kit.corner(mb, IMPOST, BRICK_LIGHT)
+    mb.box((0.08, 0.08, 0.07), (-0.04, -0.04, 0.0), BRICK_LIGHT)  # el dentellón de la esquina
     lib.add(mb.finish("ladrillo_imposta_esquina", kit.materials("ladrillo")), [], seed=42)
     # Cornisa: friso de nichos, hiladas que salen y una fila de dentellones.
     mb = tb.MeshBuilder(seed=43)
-    for k in range(3):  # nichos del friso
-        x = W * (k + 0.5) / 3
-        mb.box((0.62, 0.05, 0.3), (x, 0.02, 0.2), BRICK_DARK)
-    mb.slab((0.0, W), (0.0, 0.42), (-0.03, 0.0), BRICK, holes=[(W * (k + 0.5) / 3 - 0.31, 0.05, W * (k + 0.5) / 3 + 0.31, 0.35) for k in range(3)], back=False)
-    courses = [(0.42, 0.08), (0.5, 0.15), (0.58, 0.22)]
-    for z, out in courses:
-        mb.box((W, out, 0.08), (W / 2.0, -out / 2.0, z + 0.04), BRICK_LIGHT, jitter=0.02)
+    niches = [(W * (k + 0.5) / 3 - 0.31, 0.05, W * (k + 0.5) / 3 + 0.31, 0.35) for k in range(3)]
+    mb.slab((0.0, W), (0.0, 0.42), (0.0, 0.03), BRICK, holes=niches, back=False)
+    for x0, z0, x1, z1 in niches:
+        # Rehundidos, con las mochetas en derrame y el fondo de ladrillo oscuro.
+        kit.outline(mb, [(x0, z0), (x1, z0), (x1, z1), (x0, z1)], [(0.0, 0.0), (-0.03, -0.04)], BRICK)
+        mb.quad(((x0 + 0.03, 0.04, z0 + 0.03), (x1 - 0.03, 0.04, z0 + 0.03), (x1 - 0.03, 0.04, z1 - 0.03), (x0 + 0.03, 0.04, z1 - 0.03)), BRICK_DARK)
+    kit.moulding(mb, (0.0, W), CORBEL, BRICK_LIGHT, jitter=0.02)
     dentils(mb, 0.0, W, 0.71, 0.3)
-    for z, out in ((0.76, 0.38), (0.84, 0.46)):
-        mb.box((W, out, 0.08), (W / 2.0, -out / 2.0, z + 0.04), BRICK_LIGHT, jitter=0.02)
     with mb.material(1):
         mb.box((W, 0.6, 0.03), (W / 2.0, -0.18, 0.935), kit.GALVANIZED, rotation=(-6.0, 0.0, 0.0))
     piece = mb.finish("ladrillo_cornisa", kit.materials("ladrillo", "nevado"))
     lib.add(piece, _neighbours(), seed=43)
     mb = tb.MeshBuilder(seed=44)
-    for z, out in ((0.46, 0.15), (0.54, 0.22), (0.62, 0.3), (0.8, 0.38), (0.88, 0.46)):
-        mb.box((out, out, 0.08), (-out / 2.0, -out / 2.0, z), BRICK_LIGHT)
-    mb.box((0.2, 0.2, 0.42), (-0.06, -0.06, 0.21), BRICK)
+    kit.corner(mb, CORBEL, BRICK_LIGHT)
+    mb.box((0.04, 0.08, 0.42), (-0.02, 0.0, 0.21), BRICK)  # tapa la arista del friso
     lib.add(mb.finish("ladrillo_cornisa_esquina", kit.materials("ladrillo")), [], seed=44)
-    # Lesena entre vanos (centrada en la junta) y la de las esquinas, en las dos caras.
+    # Lesena entre vanos (centrada en la junta) y la de las esquinas, en las dos caras: con
+    # los cantos en derrame.
     mb = tb.MeshBuilder(seed=45)
-    mb.box((0.52, 0.12, H), (0.0, -0.06, H / 2.0), BRICK_LIGHT, cuts=2, jitter=0.02)
+    mb.prism(kit.ccw([(-0.26, 0.0), (-0.22, -0.12), (0.22, -0.12), (0.26, 0.0)]), H, (0.0, 0.0, H / 2.0), BRICK_LIGHT, jitter=0.02)
     lib.add(mb.finish("ladrillo_lesena", kit.materials("ladrillo")), _neighbours(), seed=45)
+    corner = kit.ccw([(0.56, 0.0), (0.52, -0.12), (-0.12, -0.12), (-0.12, 0.52), (0.0, 0.56), (0.0, 0.0)])
     for name, z0, z1, seed in (("ladrillo_esquina", 0.0, H, 46), ("ladrillo_esquina_bajos", -BELOW, GROUND, 47)):
         mb = tb.MeshBuilder(seed=seed)
-        mb.box((0.62, 0.12, z1 - z0), (0.25, -0.06, (z0 + z1) / 2.0), BRICK_LIGHT, cuts=2, jitter=0.02)
-        mb.box((0.12, 0.62, z1 - z0), (-0.06, 0.25, (z0 + z1) / 2.0), BRICK_LIGHT, cuts=2, jitter=0.02)
+        mb.prism(corner, z1 - z0, (0.0, 0.0, (z0 + z1) / 2.0), BRICK_LIGHT, jitter=0.02)
         lib.add(mb.finish(name, kit.materials("ladrillo")), [], seed=seed)
 
 
