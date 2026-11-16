@@ -136,10 +136,12 @@ fi
 if want singulares; then
     # Los edificios singulares (F3-16): el vestíbulo del metro, el Edificio Partido y la
     # Casa de los Sóviets.
-    capture style/diorama_vestibulo vestibulo "--call=DioramaVestibulo:capture_only:avenida,cupula,compuerta" 10
+    capture style/diorama_vestibulo vestibulo "--call=DioramaVestibulo:capture_only:avenida,cupula" 10
     keep vestibulo_camara_avenida fase3_singular_vestibulo
     keep vestibulo_camara_cupula fase3_singular_vestibulo_cupula
-    keep vestibulo_camara_compuerta fase3_singular_vestibulo_compuerta
+    capture style/diorama_vestibulo esclusa \
+        "--call=DioramaVestibulo:capture_only:compuerta --call=DioramaVestibulo:set_flashlight:1" 10
+    keep esclusa fase3_singular_vestibulo_compuerta
     capture style/diorama_partido partido "--call=DioramaPartido:capture_only:crater,casa" 10
     keep partido_camara_crater fase3_singular_partido
     keep partido_camara_casa fase3_singular_partido_casa
