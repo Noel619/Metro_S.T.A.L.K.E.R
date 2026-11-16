@@ -14,6 +14,8 @@ const DEEP: int = 3
 const RING: int = 4
 ## Lo lejos que llegan los sectores del borde del mapa.
 const FAR: float = 100000.0
+## Lo que oscurece el fondo de un socavón (al fondo de un hoyo llega menos luz).
+const PIT_SHADE: float = 0.5
 
 var transit: CityTransit
 var plan: CityPlan
@@ -28,7 +30,7 @@ var stats: Dictionary = {}
 var edge_stats: Dictionary = {}
 ## Lo que le toca: pares (grupo, primer índice del triángulo), triángulos del relleno,
 ## aristas, muros, barandillas, ejes, pasos de cebra, pares (vía, tramo de la vía) de las
-## vías del tren y del tranvía (CityTransit.tracks), y los desvíos y los topes.
+## vías del tren y del tranvía (CityTransit.tracks), los desvíos, los topes y las grietas.
 var triangles: PackedInt32Array = PackedInt32Array()
 var fills: PackedInt32Array = PackedInt32Array()
 var edges: PackedInt32Array = PackedInt32Array()
@@ -39,6 +41,7 @@ var crossings: PackedInt32Array = PackedInt32Array()
 var tracks: PackedInt32Array = PackedInt32Array()
 var turnouts: PackedInt32Array = PackedInt32Array()
 var stops: PackedInt32Array = PackedInt32Array()
+var cracks: PackedInt32Array = PackedInt32Array()
 
 var _center: Vector2
 var _origin: Vector2i
@@ -129,6 +132,9 @@ func add_collision(points: PackedVector3Array) -> void:
 
 
 func _surface(index: int, start: int) -> void:
+	if transit.mesh_normals.has(index):
+		_emit_mesh(index, start)
+		return
 	var data: Dictionary = transit.groups[index]
 	var points: Array = data["puntos"]
 	var corners: Array = data["triangulos"]
@@ -214,6 +220,57 @@ func _emit_polygon(index: int, poly: PackedVector2Array, style: Array) -> void:
 		normals.fill(normal)
 	buffer(style[0]).add_polygon(points, normals, style[1], uvs)
 	add_collision(points)
+
+
+## Un triángulo de una malla propia (un socavón), con la altura, la normal suave y la
+## textura de sus vértices; lo que cae fuera del sector se recorta. Cuanto más hondo, más
+## oscuro ([constant PIT_SHADE]).
+func _emit_mesh(index: int, start: int) -> void:
+	var data: Dictionary = transit.groups[index]
+	var points: Array = data["puntos"]
+	var corners: Array = data["triangulos"]
+	var heights: Array = data["z"]
+	var texture: Array = data["uv"]
+	var mesh_normals: PackedVector3Array = transit.mesh_normals[index]
+	var corner: PackedVector2Array = PackedVector2Array()
+	var ids: PackedInt32Array = PackedInt32Array()
+	for n: int in 3:
+		var v: int = int(corners[start + n])
+		ids.append(v)
+		corner.append(Vector2(points[v * 2], points[v * 2 + 1]))
+	var poly: PackedVector2Array = corner.duplicate()
+	if GridClip.area(poly) < 0.0:
+		poly.reverse()
+	poly = _clip_to_sector(poly)
+	if poly.size() < 3 or GridClip.area(poly) < 1e-6:
+		return
+	var style: Array = _style(index)
+	var tile: float = CityTransit.TILE.get(style[0], 4.0)
+	var depth: Vector2 = transit.mesh_range[index]
+	var tint: Color = style[1]
+	var out_points: PackedVector3Array = PackedVector3Array()
+	var out_normals: PackedVector3Array = PackedVector3Array()
+	var uvs: PackedVector2Array = PackedVector2Array()
+	var colors: PackedColorArray = PackedColorArray()
+	for p: Vector2 in poly:
+		var w: Vector3 = CityTransit.barycentric(p, corner[0], corner[1], corner[2])
+		var z: float = 0.0
+		var normal: Vector3 = Vector3.ZERO
+		var uv: Vector2 = Vector2.ZERO
+		for n: int in 3:
+			var v: int = ids[n]
+			z += float(heights[v]) * w[n]
+			normal += mesh_normals[v] * w[n]
+			uv += Vector2(texture[v * 2], texture[v * 2 + 1]) * w[n]
+		out_points.append(local(p, z))
+		out_normals.append(normal.normalized())
+		uvs.append(uv / tile)
+		var f: float = clampf((depth.y - z) / maxf(depth.y - depth.x, 0.5), 0.0, 1.0)
+		var shade: float = 1.0 - PIT_SHADE * pow(f, 0.7)
+		colors.append(Color(tint.r * shade, tint.g * shade, tint.b * shade, tint.a))
+	buffer(style[0]).add_polygon(out_points, out_normals, tint, uvs, colors)
+	add_collision(out_points)
+	stats["piezas"] += 1
 
 
 ## Una pieza dentro de un triángulo de la rejilla, siguiendo la rasante con sus normales

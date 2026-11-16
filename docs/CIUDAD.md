@@ -366,3 +366,39 @@ Todo lo que se pisa para ir de un sitio a otro, levantado en 3D: 211.000 m² de 
 ![El tope al final de una vía de la playa](capturas/fase3_transito_topes.jpg)
 
 **Pendiente.** El cruce del tranvía con el apartadero de la fábrica (los carriles se cruzan a ras, sin el rombo de un cruzamiento) y los vehículos del ferrocarril, que todavía son cajas.
+
+## 17. La superficie, rota
+
+![El socavón de la avenida: la calle cayó al túnel de la línea 1](capturas/fase3_deterioro_socavon.jpg)
+
+Nada de lo que hay fuera está intacto (README, «La ambientación de la superficie»): la ciudad ya estaba gastada antes de la guerra, la bomba cayó a unos kilómetros y lleva dos inviernos sin que nadie la toque. `tools/ciudad/deterioro.py` lo pone en el plano con datos y reglas, siempre igual (el azar sale de la clave de cada cosa), y la maqueta lo levanta.
+
+**Las texturas.** El asfalto, con piel de cocodrilo, grietas largas desgranadas, parches viejos también rotos, baches pequeños y manchas; el hormigón, de mala calidad: poros, juntas del encofrado, desconchones con la armadura oxidada que chorrea y grietas con salitre; las losas, el granito y el adoquín, de tonos dispares, partidos, hundidos o que faltan; la pintura vial, a trozos. Encima, el pavimento lleva manchas grandes de hollín, aceite y humedad que no se repiten con la textura.
+
+**Socavones.** Como en *Metro 2033*: donde reventó lo que va bajo la calle, el agua se llevó la tierra y la calle cayó al hueco. Hay diez (`datos.HUNDIMIENTOS`), cada uno sobre lo que reventó y alargado a lo largo de ello:
+
+| Socavón | Qué reventó | Medidas |
+|---|---|---|
+| El de la avenida | La bóveda del túnel de la línea 1 | 34 × 25 m, 11 m de hondo; por el fondo se baja al túnel |
+| Dos en la calle de los Mineros | La galería de la calefacción | Zanjas de 12-15 m, 2,5 m de hondo, con los tubos forrados al aire |
+| Tres en el Muelle Sur y junto al gran colector | Los colectores de pluviales y del centro | 6-13 m, de 3 a 4 m de hondo |
+| El de la calle Norte | La bóveda de ladrillo del arroyo enterrado | 14 × 10 m, 5 m de hondo |
+| Tres en la Juventud, la Fábrica y el Hospital | Tuberías del agua que se helaron | 5-8 m, unos 2 m de hondo |
+
+El tránsito se corta por el contorno de cada uno (irregular, con los dientes de la costra rota) y una malla propia, con la altura de cada vértice, baja de la calle al fondo: en el borde, el corte de la calle (la costra de asfalto o de losas, desigual, volando sobre la base de grava que se llevó el agua, y la tierra); debajo, la pared casi a pico; luego el talud de cascotes, con sus desprendimientos y las cárcavas del agua, y el fondo, donde cuaja la nieve. Cuanto más hondo, más oscuro. Alrededor, la calle se hunde unos palmos antes de romperse (la cubeta) y se abre en grietas, radiales y en arco. Dentro, lo que cayó: trozos de asfalto y losas por el talud, algunos colgando del borde, y en el fondo lo que reventó (el tubo de fundición, el colector de hormigón o la galería con sus tubos y sus tapas caídas), con el charco helado. Los coches que estaban encima están en el fondo, de morro (tres en el de la avenida, uno en Mineros); las vías del tranvía se cortan en el borde y sus carriles asoman doblados sobre el hueco. Se puede caer dentro: la colisión del relieve baja bajo la malla y la malla es lo que se pisa.
+
+**Grietas.** Unas 1.900, pintadas a ras del pavimento como tiras oscuras que se afilan en las puntas: alrededor de los socavones y, por todas partes, las de la helada (la mitad a lo largo de la calle, por las rodadas y la junta del centro; otras de través; alguna sin orden). Cada una va dentro de una sola clase de superficie y lleva su nieve: donde la nieve tapa el pavimento, las tapa igual.
+
+**Baches.** 744, a grupos (donde se encharca el agua y la helada levanta el asfalto), casi todos en la calzada: el agujero oscuro, a veces con hielo, la corona de asfalto desmigado y trozos sueltos alrededor. Van sobre la calle, inclinados con ella; no la cortan (son poco hondos y no hacen falta para andar).
+
+**Tapas, bordillos y pintura.** De las 430 tapas de registro, 73 están abiertas (la tapa, tirada al lado) y 34 ya no están: se las llevaron para chatarra y queda la boca negra del pozo. Faltan piezas de bordillo, de metro en metro (la helada las levantó): en su hueco se ve la tierra del asiento, y la mitad sigue tirada en la calzada. De los pasos de cebra faltan franjas enteras y de los ejes, rayas; lo que queda está gastado a trozos.
+
+**Vías.** Los carriles están oxidados (y las barandillas de tubo), faltan traviesas (podridas, rotas o arrancadas para leña) y otras se han movido.
+
+**Matojos.** Unos 4.500 matojos de hierba seca salen por donde el pavimento se abre: junto a los bordillos y al pie de las fachadas, en las grietas, en los alcorques, alrededor de los socavones y por todo el balasto de las vías que ya no se usan. Son tres planos cruzados con la mata dibujada (`assets/textures/pavimentos/matojo.png`).
+
+![La galería de la calefacción, hundida frente a la fábrica](capturas/fase3_deterioro_galeria.jpg)
+
+![Una tubería del agua reventó por la helada y se llevó la calle](capturas/fase3_deterioro_agua.jpg)
+
+**Pendiente.** Los baches y los pozos abiertos no son agujeros de verdad (se dibujan encima de la calle): si hace falta caer en un pozo, habrá que cortar la calle como en los socavones. Los edificios, los vehículos y el mobiliario todavía no llevan su deterioro.

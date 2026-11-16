@@ -40,6 +40,7 @@ AGUA_BORDE = (92, 112, 118)
 VERDE = (206, 204, 168)
 ARENA = (228, 214, 180)
 ROJO = (180, 66, 58)
+SOCAVON = (62, 52, 46)
 AZUL_TEXTO = (52, 84, 98)
 GRUPO_COLOR = {
     "vivienda": (178, 150, 118),
@@ -326,6 +327,17 @@ def capa_vias(l: Lienzo) -> None:
             continue
         l.linea(t["puntos"], (107, 91, 75, 230), 2.6)
         l.linea(t["puntos"], (226, 214, 190, 255), 1.0)
+
+
+def capa_socavones(l: Lienzo) -> None:
+    """Los socavones (deterioro.py): el hueco, oscuro, con el fondo más negro."""
+    import deterioro as DT
+
+    for s in DT.socavones():
+        l.poligono(s.contorno, relleno=SOCAVON + (255,), borde=TINTA + (255,), grueso=1.2)
+        fondo = s.contorno.buffer(-min(s.datos["radio"], s.datos["ancho"]) * 0.45)
+        if not fondo.is_empty:
+            l.poligono(fondo, relleno=(28, 24, 22, 255))
 
 
 def capa_escombros(l: Lienzo, escombros) -> None:
@@ -799,6 +811,7 @@ def base(h: np.ndarray, res: float, escombros, calles, apagado: float = 0.0, num
     capa_patios(l)
     capa_vallas_y_sendas(l)
     capa_vias(l)
+    capa_socavones(l)
     if arboles:
         capa_arboles(l)
     capa_vehiculos(l)
@@ -839,6 +852,7 @@ def plano_general(h, res, escombros, calles, salida: Path) -> None:
     p.simbolo(muestra_caja(GRUPO_COLOR["vivienda"], rayas=2), "3 · Destripado: cascarón, calles cegadas")
     p.simbolo(muestra_caja(GRUPO_COLOR["vivienda"], rayas=3), "4 · Arrasado: muñones y escombros")
     p.simbolo(muestra_caja((150, 136, 116)), "Escombros caídos a la calle (hacia fuera de la bomba)")
+    p.simbolo(muestra_caja(SOCAVON), "Socavón: la calle se hundió sobre un colector, una tubería o el metro")
     p.espacio()
     p.simbolo(muestra_linea(TINTA + (255,), 3.2), "Ferrocarril")
     p.simbolo(muestra_linea((143, 59, 46, 255), 1.4, guion=True), "Tranvía")
@@ -1022,6 +1036,7 @@ def plano_peligros(h, res, escombros, calles, salida: Path) -> None:
     p.simbolo(muestra_caja((230, 150, 40)), "Focos de radiación: objetos y sitios contaminados")
     p.simbolo(muestra_caja((150, 170, 120)), "Hace falta máscara")
     p.simbolo(muestra_caja((240, 244, 250), (40, 80, 140)), "Hielo fino")
+    p.simbolo(muestra_caja(SOCAVON), "Socavones: caída de 2 a 11 m (el de la avenida baja al túnel)")
     p.simbolo(muestra_linea((120, 40, 30, 255), 1.6, guion=True), "Anillos de daño de la bomba")
     p.simbolo(muestra_circulo((40, 80, 140, 255), PAPEL, 8), "Cruces del río")
     p.titulo("Patrullas", 15)

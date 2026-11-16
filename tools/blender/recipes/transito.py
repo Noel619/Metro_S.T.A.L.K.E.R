@@ -5,7 +5,10 @@ Y de Blender es -Z). Todas las piezas se colocan como instancias desde la red de
 tránsito (CityTransit), así que su origen es el punto por el que se colocan:
 
 - Tapas y sumideros: en la superficie que se pisa, la cara de arriba a ras (asoman unos
-  milímetros, como el hierro gastado de la calle).
+  milímetros, como el hierro gastado de la calle). Los pozos abiertos (la tapa ya no está):
+  el marco a ras y la boca negra. Las tapas sueltas, tiradas al lado: apoyan en el suelo.
+- Bordillo suelto: una pieza de granito de un metro tumbada en la calzada (a lo largo de Y),
+  apoyada en el suelo.
 - Traviesas: el origen es lo alto del asiento del carril (donde apoya el patín); la
   traviesa va a lo largo de X, de lado a lado de la vía.
 - Traviesa de madera de los desvíos: un metro de largo en X, para estirarla a lo que
@@ -45,6 +48,9 @@ WHITE_PAINT = "#C9C4B8"
 BLACK_PAINT = "#1E1C1B"
 RED_PAINT = "#8E2A22"
 LAMP_GLASS = "#B9B2A0"
+GRANITE = "#8A867F"
+GRANITE_CHIP = "#A29E96"
+SOIL_STUCK = "#4E463E"
 
 # Carril: medio ancho de vía hasta el eje de cada carril y su perfil (x a la derecha, z
 # desde lo alto del carril), cerrado por abajo.
@@ -145,6 +151,53 @@ def build_round_lid() -> bpy.types.Object:
     return root
 
 
+def _round_lid_top(mb: tb.MeshBuilder, lift: float) -> None:
+    """La tapa redonda sin marco (con sus nervios, sus aros y sus agujeros), con la cara de
+    arriba a `lift`."""
+    mb.lathe([(0.0, lift - 0.04), (0.298, lift - 0.04), (0.298, lift), (0.0, lift)], (0.0, 0.0, 0.0), CAST_IRON,
+             segments=28, sharp_angle=30.0)
+    for radius in (0.09, 0.18, 0.27):
+        _ring(mb, radius - 0.008, radius + 0.008, lift - 0.001, lift + 0.004, CAST_IRON_WORN, 28)
+    for k in range(12):
+        angle = k * 30.0
+        r0, r1 = 0.098, 0.262
+        middle = (r0 + r1) / 2.0
+        center = (math.cos(math.radians(angle)) * middle, math.sin(math.radians(angle)) * middle, lift + 0.0015)
+        mb.box((r1 - r0, 0.014, 0.005), center, CAST_IRON_WORN, rotation=(0.0, 0.0, angle))
+
+
+def build_open_round_pit() -> bpy.types.Object:
+    """El pozo redondo sin su tapa: el marco de fundición a ras y la boca, negra (lo que
+    se ve de la calle es el agujero)."""
+    root = tb.empty("pozo_redondo")
+    mb = tb.MeshBuilder(seed=213)
+    mb.lathe([(0.31, -0.12), (0.42, -0.12), (0.42, 0.005), (0.31, 0.005), (0.31, -0.12)], (0.0, 0.0, 0.0),
+             CAST_IRON, segments=28, sharp_angle=30.0)
+    # El escalón del asiento de la tapa, gastado, y la boca (a ras del asiento, sobre la
+    # calle: lo que se ve es el negro del pozo).
+    _ring(mb, 0.298, 0.312, -0.03, 0.002, CAST_IRON_WORN, 28)
+    mb.lathe([(0.0, 0.0035), (0.3, 0.0035), (0.3, 0.004), (0.0, 0.004)], (0.0, 0.0, 0.0), DARK_PIT, segments=28,
+             sharp_angle=30.0)
+    pit = mb.finish("pozo_redondo", _material(), root)
+    tb.stain(pit, RUST, amount=0.6, scale=6.0, coverage=0.4, seed=213)
+    tb.paint({pit: None}, samples=12, ao=0.4, ao_distance=0.05, seed=213)
+    return root
+
+
+def build_loose_round_lid() -> bpy.types.Object:
+    """La tapa redonda tirada en la calle, junto a su pozo: apoya en el suelo."""
+    root = tb.empty("tapa_suelta_redonda")
+    mb = tb.MeshBuilder(seed=217)
+    _round_lid_top(mb, 0.04)
+    for angle in (90.0, 270.0):
+        center = (math.cos(math.radians(angle)) * 0.225, math.sin(math.radians(angle)) * 0.225, 0.0385)
+        mb.box((0.05, 0.022, 0.004), center, DARK_PIT, rotation=(0.0, 0.0, angle + 90.0))
+    lid = mb.finish("tapa_suelta_redonda", _material(), root)
+    tb.stain(lid, RUST, amount=0.65, scale=6.0, coverage=0.45, seed=217)
+    tb.paint({lid: None}, samples=12, ao=0.45, ao_distance=0.05, seed=217)
+    return root
+
+
 def build_square_lid() -> bpy.types.Object:
     """Tapa cuadrada de la red de cables (60 cm): rejilla de tacos en relieve."""
     root = tb.empty("tapa_cuadrada")
@@ -162,6 +215,55 @@ def build_square_lid() -> bpy.types.Object:
     lid = mb.finish("tapa_cuadrada", _material(), root)
     tb.stain(lid, RUST, amount=0.5, scale=6.0, coverage=0.35, seed=223)
     tb.paint({lid: None}, samples=16, ao=0.45, ao_distance=0.05, seed=223)
+    return root
+
+
+def build_open_square_pit() -> bpy.types.Object:
+    """El pozo cuadrado de la red de cables sin su tapa: el marco a ras y la boca negra."""
+    root = tb.empty("pozo_cuadrado")
+    mb = tb.MeshBuilder(seed=229)
+    for x0, x1, y0, y1 in ((-0.39, 0.39, 0.31, 0.39), (-0.39, 0.39, -0.39, -0.31), (-0.39, -0.31, -0.31, 0.31),
+                           (0.31, 0.39, -0.31, 0.31)):
+        mb.box((x1 - x0, y1 - y0, 0.123), ((x0 + x1) / 2.0, (y0 + y1) / 2.0, -0.0585), CAST_IRON)
+    mb.box((0.62, 0.62, 0.0005), (0.0, 0.0, 0.0038), DARK_PIT)
+    pit = mb.finish("pozo_cuadrado", _material(), root)
+    tb.stain(pit, RUST, amount=0.6, scale=6.0, coverage=0.4, seed=229)
+    tb.paint({pit: None}, samples=12, ao=0.4, ao_distance=0.05, seed=229)
+    return root
+
+
+def build_loose_square_lid() -> bpy.types.Object:
+    """La tapa cuadrada tirada junto a su pozo: apoya en el suelo."""
+    root = tb.empty("tapa_suelta_cuadrada")
+    mb = tb.MeshBuilder(seed=233)
+    mb.box((0.6, 0.6, 0.04), (0.0, 0.0, 0.02), CAST_IRON)
+    for i in range(5):
+        for j in range(5):
+            mb.box((0.055, 0.055, 0.005), (-0.22 + i * 0.11, -0.22 + j * 0.11, 0.0425), CAST_IRON_WORN,
+                   rotation=(0.0, 0.0, 45.0))
+    lid = mb.finish("tapa_suelta_cuadrada", _material(), root)
+    tb.stain(lid, RUST, amount=0.6, scale=6.0, coverage=0.45, seed=233)
+    tb.paint({lid: None}, samples=12, ao=0.45, ao_distance=0.05, seed=233)
+    return root
+
+
+def build_loose_curb() -> bpy.types.Object:
+    """Una pieza de bordillo de granito (1 m) arrancada por la helada, tumbada en la
+    calzada: desportillada en las aristas, con la tierra pegada abajo."""
+    root = tb.empty("bordillo_suelto")
+    rng = random.Random(239)
+    mb = tb.MeshBuilder(seed=239)
+    mb.box((0.3, 1.0, 0.15), (0.0, 0.0, 0.075), GRANITE, bevel=0.012, cuts=2, jitter=0.03)
+    for _ in range(5):
+        y = rng.uniform(-0.45, 0.45)
+        side = rng.choice((-1.0, 1.0))
+        mb.box((0.06, rng.uniform(0.06, 0.14), 0.05), (side * 0.15, y, rng.uniform(0.02, 0.13)), GRANITE_CHIP,
+               rotation=(rng.uniform(0, 30), rng.uniform(0, 30), rng.uniform(0, 30)))
+    mb.box((0.26, 0.7, 0.012), (0.0, rng.uniform(-0.1, 0.1), 0.004), SOIL_STUCK, jitter=0.1)
+    curb = mb.finish("bordillo_suelto", _material(), root)
+    tb.wobble(curb, 0.004, scale=8.0, seed=239)
+    tb.stain(curb, "#5E5A54", amount=0.4, scale=4.0, coverage=0.35, seed=239)
+    tb.paint({curb: None}, samples=12, ao=0.5, ao_distance=0.1, seed=239)
     return root
 
 
@@ -382,6 +484,11 @@ def models() -> dict:
     return {
         "tapa_redonda": build_round_lid,
         "tapa_cuadrada": build_square_lid,
+        "pozo_redondo": build_open_round_pit,
+        "pozo_cuadrado": build_open_square_pit,
+        "tapa_suelta_redonda": build_loose_round_lid,
+        "tapa_suelta_cuadrada": build_loose_square_lid,
+        "bordillo_suelto": build_loose_curb,
         "sumidero": build_drain,
         "traviesa": build_sleeper,
         "traviesa_madera": build_timber,

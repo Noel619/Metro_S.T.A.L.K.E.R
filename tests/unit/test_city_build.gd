@@ -171,6 +171,47 @@ func test_a_buffer_stop_stops_a_walker() -> void:
 		assert_almost(reached.distance_to(base), 0.2, 0.3, "choca en el madero")
 
 
+func test_sinkholes_open_the_street() -> void:
+	# En el centro de cada socavón, lo primero que se pisa es su fondo (ni la calle ni el
+	# terreno de debajo, que se rebaja bajo la malla).
+	var holes: Array = _city.plan.transit["socavones"]
+	assert_eq(int(_city.stats["transito"]["socavones"]), holes.size())
+	assert_true(holes.size() >= 10, "socavones: %d" % holes.size())
+	for hole: Dictionary in holes:
+		var group: Dictionary = _city.plan.transit["grupos"][int(hole["grupo"])]
+		var heights: Array = group["z"]
+		var rim: int = hole["contorno"].size() / 2
+		var street: float = 0.0
+		for v: int in rim:
+			street += float(heights[v])
+		street = street / rim + 0.42
+		var center: Vector2 = Vector2(hole["centro"][0], hole["centro"][1])
+		var hit: Dictionary = _ray_down(center, [])
+		assert_false(hit.is_empty(), "%s: nada en el centro" % hole["id"])
+		if hit.is_empty():
+			continue
+		var floor_z: float = float(heights[heights.size() - 1])
+		var depth: float = street - hit["position"].y
+		assert_true(depth > 0.85 * float(hole["hondo"]), "%s: baja %.2f m" % [hole["id"], depth])
+		assert_true(hit["position"].y < floor_z + 0.6, "%s: el fondo queda tapado" % hole["id"])
+	# Las grietas y los carriles del tranvía que cuelgan sobre el socavón de la avenida.
+	assert_true(int(_city.stats["transito"]["grietas"]) > 1500, "grietas")
+	assert_true(float(_city.stats["transito"]["colgando_m"]) > 2.0, "carriles colgando")
+
+
+func test_a_walker_falls_into_a_sinkhole() -> void:
+	for hole: Dictionary in _city.plan.transit["socavones"]:
+		if String(hole["id"]) != "agua_juventud":
+			continue
+		var center: Vector2 = Vector2(hole["centro"][0], hole["centro"][1])
+		var start: Vector2 = center + Vector2(0.0, -6.5)
+		var street: float = _city.surface_height(start)
+		var ended: float = await _walk(start, center, 10.0)
+		assert_true(ended < street - 1.2, "acaba a %.2f m (la calle, a %.2f)" % [ended, street])
+		return
+	assert_true(false, "sin el socavón de la calle de la Juventud")
+
+
 func test_platforms_and_ballast_sit_at_the_rail_level() -> void:
 	var rails: Dictionary = _city.plan.transit["ferrocarril"]
 	var formation: float = _formation("principal", Vector2(200.0, 34.0))

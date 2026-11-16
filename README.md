@@ -149,6 +149,24 @@ Lo único que heredas es un **depósito** en la estación: un local que él comp
 
 *Un depósito que levantar bajo tierra y una ciudad muerta que saquear arriba: planifica cada salida, dibuja tus propios mapas y vuelve vivo.*
 
+### La ambientación de la superficie: nada está intacto
+
+La superficie es una ciudad soviética de provincias que ya estaba gastada antes de la guerra, que recibió una bomba atómica a pocos kilómetros (cayó en el nudo ferroviario y la Planta Nº 1, al noreste; otra, más lejos, al suroeste) y que lleva dos años abandonada a un invierno que no acaba. Todo lo que se haga para el exterior cuenta esas tres cosas a la vez:
+
+- **El desgaste de antes de la guerra**: asfalto parcheado y agrietado, hormigón soviético de mala calidad (poroso, desconchado, con la armadura oxidada asomando), losas desniveladas, bordillos rotos, pintura vial desvaída y óxido en todo lo metálico.
+- **La bomba**: cuanto más cerca de la Zona Cero, más destrozo. Hollín y quemaduras, cristales y escombros por todas partes, losas levantadas, grietas abiertas por la onda, y postes y árboles tumbados en la misma dirección.
+- **Dos años de abandono en invierno**: nadie limpia ni repara. El hielo revienta las tuberías y las alcantarillas y el terreno se hunde sobre ellas: socavones en mitad de la calle, como en *Metro 2033*. Las heladas abren baches y levantan las losas, faltan tapas de registro o están movidas, la nieve y el hielo se amontonan en los rincones, asoman matojos secos en las grietas, y los vehículos y los trenes se pudren donde se pararon.
+
+Reglas para todo lo que se haga fuera (modelos, texturas, terreno, calles):
+
+1. **Nada nace limpio ni nuevo.** Cada superficie, modelo y textura lleva grietas, desconchones, manchas, óxido, piezas que faltan o suciedad. Una superficie impecable es un fallo, como lo sería un agujero en el suelo.
+2. **El daño tiene causa y dirección.** Se reparte según la distancia a la Zona Cero, lo que hay debajo (colectores, galerías, tuberías) y lo que el tiempo hace a cada material; no a voleo.
+3. **Se nota de cerca y de lejos.** De cerca, en el detalle: bordes rotos, gravilla suelta, juntas abiertas. De lejos, en la silueta: socavones, cosas caídas, huecos.
+4. **Sigue siendo legible.** El jugador tiene que poder leer por dónde se pasa y qué es peligroso: un socavón, un pozo abierto, hielo fino.
+5. **Es determinista.** El deterioro sale de semillas fijas, como todo el plano: dos ejecuciones dan la misma ciudad rota.
+
+En las calles ya está hecho así (`tools/ciudad/deterioro.py`; ver [CIUDAD.md, «La superficie, rota»](docs/CIUDAD.md#17-la-superficie-rota) y la decisión D-035): diez socavones sobre los colectores, la galería de la calefacción, las tuberías del agua y el túnel del metro, grietas, baches, tapas abiertas o robadas, bordillos que faltan, pintura a trozos, carriles oxidados, traviesas que faltan y matojos secos. Lo siguiente que se haga fuera (edificios, vehículos, mobiliario) sigue las mismas reglas.
+
 ### Qué hace el jugador
 
 - **En el Depósito**: limpia y restaura el local; procesa el botín (mide la radiación, descontamina, repara, pesa, etiqueta y ordena); atiende el mostrador; acepta encargos; paga el impuesto y come.
@@ -167,6 +185,7 @@ Lo único que heredas es un **depósito** en la estación: un local que él comp
 7. **El mundo está vivo.** Como en *Rain World*, todo sigue funcionando aunque no estés: los saqueadores duermen en sus guaridas, unas criaturas salen a cazar mientras otras descansan, y se pelean entre ellas. Tú eres un organismo más.
 8. **Pequeño pero impecable.** Poco espacio, muy bien hecho, y la misma calidad en toda la ciudad que se explora. Calidad antes que cantidad, en todo.
 9. **Sin cajas de texto.** Toda la interfaz es un objeto del mundo.
+10. **Nada está intacto.** Fuera, todo lleva el desgaste de una ciudad soviética vieja, la huella de la bomba y dos años de abandono en invierno (ver [la ambientación de la superficie](#la-ambientación-de-la-superficie-nada-está-intacto)).
 
 ---
 
@@ -941,7 +960,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F3-14** **Zona 1, La Plaza**: primero con geometría provisional y después estilizada, con al menos 3 rutas a cada objetivo.
 - [x] **F3-15** **Maqueta automática de la ciudad**: un generador en Godot lee `data/ciudad/plano.json` y levanta la ciudad entera en volúmenes sencillos (relieve, calles, edificios a su altura, escombros). Sirve para probar recorridos, vistas, sectores de carga y rendimiento antes de construir. *(Hecha: `scenes/debug/maqueta_ciudad.tscn`, con recorridos de las rutas, hitos a la vista, prueba de rendimiento y 48 sectores con dos niveles de detalle; ver [CIUDAD.md](docs/CIUDAD.md#15-la-maqueta).)*
 - [ ] **F3-16** Kit modular de arquitectura soviética para los tipos del plano (jrushchovka, bloque de 9 plantas, casa estalinista), con daños por nivel e interiores de serie.
-- [ ] **F3-17** **Red de tránsito de la ciudad** en 3D: calzadas, aceras, bordillos, plazas, sendas, camino, escaleras y el tablero del puente, con muros, pretiles, pasos de cebra, tapas y sumideros, encajados en el relieve y con colisión que se sube andando. *(Hecho en la maqueta todo lo que se pisa y las vías del tren y del tranvía, con la estación, la playa de vías, los desvíos, los topes y los pasos a nivel, y los modelos de detalle de las tapas, los sumideros y las traviesas: ver [CIUDAD.md](docs/CIUDAD.md#16-la-red-de-tránsito). Falta el cruce del tranvía con el apartadero de la fábrica.)*
+- [ ] **F3-17** **Red de tránsito de la ciudad** en 3D: calzadas, aceras, bordillos, plazas, sendas, camino, escaleras y el tablero del puente, con muros, pretiles, pasos de cebra, tapas y sumideros, encajados en el relieve y con colisión que se sube andando. *(Hecho en la maqueta todo lo que se pisa y las vías del tren y del tranvía, con la estación, la playa de vías, los desvíos, los topes y los pasos a nivel, y los modelos de detalle de las tapas, los sumideros y las traviesas: ver [CIUDAD.md](docs/CIUDAD.md#16-la-red-de-tránsito). Todo roto como debe estar (socavones sobre lo que reventó debajo, grietas, baches, tapas abiertas o robadas, bordillos que faltan, pintura a trozos, óxido y matojos): ver [CIUDAD.md](docs/CIUDAD.md#17-la-superficie-rota). Falta el cruce del tranvía con el apartadero de la fábrica.)*
 
 **Entregable**: una salida de 10 a 20 minutos: subir por la escalera, llegar a un objetivo y volver.
 **Criterio de salida**: en las pruebas, los jugadores planifican antes de salir, dibujan su mapa, usan al menos dos rutas distintas y ninguna muerte se siente injusta.

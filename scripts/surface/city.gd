@@ -42,10 +42,14 @@ const TRANSIT_MATERIALS: Dictionary = {
 	"grava": ["grava", 0.9],
 	"balasto": ["grava", 0.8],
 	"tierra": ["tierra", 0.9],
+	"derrumbe": ["derrumbe", 0.85],
+	"grieta": ["", 0.8],
 	"pintura": ["pintura", 0.6],
 	"metal": ["", 0.3],
 }
 const PAVEMENTS_DIR: String = "res://assets/textures/pavimentos/"
+## Lo que miden los matojos (ancho y alto) antes de su escala.
+const TUFT_SIZE: Vector2 = Vector2(0.8, 0.6)
 
 ## Distancia al centro de un sector a partir de la cual se dibuja su versión lejana.
 @export var near_distance: float = 450.0
@@ -370,7 +374,9 @@ func _make_materials() -> void:
 	_materials["lejos"] = far
 	for kind: String in TRANSIT_MATERIALS:
 		var settings: Array = TRANSIT_MATERIALS[kind]
-		var material: ShaderMaterial = _shader_material("tinta_transito", ramps, settings[1])
+		# La pintura vial se recorta por el alfa de su textura: queda a trozos.
+		var shader: String = "tinta_transito_recorte" if kind == "pintura" else "tinta_transito"
+		var material: ShaderMaterial = _shader_material(shader, ramps, settings[1])
 		if not String(settings[0]).is_empty():
 			material.set_shader_parameter(
 				"albedo_texture", load(PAVEMENTS_DIR + String(settings[0]) + ".png")
@@ -416,8 +422,11 @@ func _load_models() -> void:
 
 
 ## Los detalles del tránsito (modelos de tools/blender/recipes/transito.py): tapas de
-## registro y sumideros de fundición (sin nieve: el calor de la alcantarilla la funde),
-## traviesas de hormigón y de madera, corazones y palancas de los desvíos y topes.
+## registro y sumideros de fundición (sin nieve: el calor de la alcantarilla la funde), los
+## pozos abiertos y las tapas tiradas, los bordillos sueltos, traviesas de hormigón y de
+## madera, corazones y palancas de los desvíos y topes. Lo que cayó en los socavones y los
+## baches (tools/blender/recipes/deterioro.py): trozos de asfalto y losas rotas, la tubería,
+## el colector o la galería reventados y el charco helado. Y los matojos secos.
 func _load_detail_models() -> void:
 	var snow: Dictionary = {
 		"tapa_redonda": 0.0,
@@ -429,6 +438,23 @@ func _load_detail_models() -> void:
 		"corazon_1_6": 0.35,
 		"palanca_aguja": 0.5,
 		"tope": 0.6,
+		"placa_asfalto_a": 0.6,
+		"placa_asfalto_b": 0.6,
+		"placa_asfalto_c": 0.6,
+		"losa_rota_a": 0.6,
+		"losa_rota_b": 0.6,
+		"tuberia_rota": 0.3,
+		"colector_roto": 0.45,
+		"canal_calefaccion": 0.45,
+		"charco_helado": 0.2,
+		"pozo_redondo": 0.0,
+		"pozo_cuadrado": 0.0,
+		"tapa_suelta_redonda": 0.2,
+		"tapa_suelta_cuadrada": 0.2,
+		"bordillo_suelto": 0.5,
+		"bache_a": 0.3,
+		"bache_b": 0.3,
+		"bache_c": 0.3,
 	}
 	for model: String in snow:
 		var scene: Node = (load(MODELS_DIR + model + ".glb") as PackedScene).instantiate()
@@ -436,7 +462,50 @@ func _load_detail_models() -> void:
 		var material: ShaderMaterial = _shader_material(
 			"tinta", load(RAMPS) as Texture2D, float(snow[model])
 		)
-		if model.begins_with("tapa") or model.begins_with("corazon") or model == "sumidero":
+		if (
+			model.begins_with("tapa")
+			or model.begins_with("corazon")
+			or model.begins_with("pozo")
+			or model in ["sumidero", "tuberia_rota"]
+		):
 			material.set_shader_parameter("ramp_row", 4)
 		_models[model] = [(found[0] as MeshInstance3D).mesh, material]
 		scene.free()
+	_models["matojo"] = [_tuft_mesh(), _tuft_material()]
+
+
+## Un matojo: tres planos cruzados (0,8 m de ancho y 0,6 de alto) con la mata de hierba
+## seca de assets/textures/pavimentos/matojo.png; las normales, hacia arriba (la luz no
+## dibuja los planos). El origen, abajo en el centro.
+static func _tuft_mesh() -> ArrayMesh:
+	var points: PackedVector3Array = PackedVector3Array()
+	var normals: PackedVector3Array = PackedVector3Array()
+	var uvs: PackedVector2Array = PackedVector2Array()
+	var indices: PackedInt32Array = PackedInt32Array()
+	for k: int in 3:
+		var across: Vector3 = Vector3(cos(k * PI / 3.0), 0.0, sin(k * PI / 3.0)) * TUFT_SIZE.x * 0.5
+		var base: int = points.size()
+		var up: Vector3 = Vector3.UP * TUFT_SIZE.y
+		points.append_array([-across, across, across + up, -across + up])
+		uvs.append_array(
+			[Vector2(0.0, 1.0), Vector2(1.0, 1.0), Vector2(1.0, 0.0), Vector2(0.0, 0.0)]
+		)
+		for _n: int in 4:
+			normals.append(Vector3.UP)
+		indices.append_array([base, base + 1, base + 2, base, base + 2, base + 3])
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = points
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh: ArrayMesh = ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
+
+
+func _tuft_material() -> ShaderMaterial:
+	var material: ShaderMaterial = _shader_material("tinta_recorte", load(RAMPS) as Texture2D, 0.1)
+	material.set_shader_parameter("albedo_texture", load(PAVEMENTS_DIR + "matojo.png"))
+	material.set_shader_parameter("use_vertex_color", false)
+	return material

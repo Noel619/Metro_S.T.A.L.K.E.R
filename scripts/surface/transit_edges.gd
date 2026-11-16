@@ -2,7 +2,8 @@ class_name TransitEdges
 extends RefCounted
 ## Lo que va en las lindes del tránsito (las aristas de transito.json): bordillos, bordes
 ## de jardín, bordillos bajos de las sendas, contrahuellas, escalones, muros entre dos
-## niveles, pretiles (el muelle y el puente) y los bordes rotos del vano hundido. También
+## niveles, pretiles (el muelle y el puente), los bordes rotos del vano hundido y el corte
+## de la calle en el borde de los socavones. También
 ## los muros y las barandillas de las escaleras y las marcas viales (pasos de cebra y
 ## ejes). Lo levanta cada TransitSector para lo suyo: de cada línea, los tramos que caen en
 ## su sector.
@@ -30,8 +31,20 @@ const PARAPET: Vector2 = Vector2(0.3, 1.0)
 const PARAPET_FROM: float = 0.5
 ## Lo que baja el borde del tablero sobre la losa del puente.
 const DECK_EDGE: float = 0.45
+## El corte de la calle en el borde de un socavón: lo que mide la costra (lo menos y lo que
+## varía), la base de grava de debajo y lo que la ha socavado el agua bajo la costra.
+const COLLAPSE_CRUST: Vector2 = Vector2(0.06, 0.07)
+const COLLAPSE_BASE: float = 0.22
+const COLLAPSE_RECESS: float = 0.14
+const COLLAPSE_BASE_COLOR: Color = Color(0.52, 0.5, 0.47, 0.0)
+const COLLAPSE_SOIL_COLOR: Color = Color(0.5, 0.45, 0.39, 0.0)
 ## La línea de seguridad de los andenes: desde dónde y hasta dónde, contando desde el borde.
 const PLATFORM_LINE: Vector2 = Vector2(0.15, 0.25)
+## Las grietas: lo que se levantan sobre lo que se pisa, lo que tardan en abrirse desde
+## sus puntas y su color (casi negro; el alfa lo pone la nieve de su clase).
+const CRACK_LIFT: float = 0.006
+const CRACK_TAPER: float = 0.35
+const CRACK_COLOR: Color = Color(0.09, 0.085, 0.08)
 ## Pintura de las marcas: lo que se levanta sobre la calzada y el ancho de los ejes.
 const PAINT_LIFT: float = 0.012
 const AXIS_WIDTH: float = 0.12
@@ -50,11 +63,14 @@ const EDGE_MATERIALS: Dictionary = {
 	"pretil": "granito",
 	"rotura": "hormigon",
 	"muro_escalera": "hormigon",
+	"derrumbe": "derrumbe",
 }
 const EDGE_COLOR: Color = Color(0.64, 0.63, 0.6, 0.45)
 const RISER_COLOR: Color = Color(0.7, 0.68, 0.65, 0.1)
 const WALL_COLOR: Color = Color(0.72, 0.7, 0.66, 0.4)
-const RAIL_COLOR: Color = Color(0.3, 0.29, 0.28, 0.2)
+const RAIL_COLOR: Color = Color(0.38, 0.28, 0.22, 0.2)
+## Las rayas del eje que ya no se ven (de cada cien).
+const DASH_GONE: float = 0.3
 const PAINT_COLOR: Color = Color(0.86, 0.85, 0.8, 0.7)
 
 var transit: CityTransit
@@ -72,7 +88,7 @@ func _init(city_transit: CityTransit, sector: TransitSector) -> void:
 
 func build() -> void:
 	var data: Dictionary = plan.transit
-	stats = {"aristas": 0, "muros": 0, "barandillas": 0, "franjas": 0}
+	stats = {"aristas": 0, "muros": 0, "barandillas": 0, "franjas": 0, "grietas": 0}
 	for index: int in out.edges:
 		_build_edge(data["aristas"][index])
 	for index: int in out.walls:
@@ -80,6 +96,7 @@ func build() -> void:
 	for index: int in out.rails:
 		_build_railing(data["barandillas"][index])
 	_build_markings(data["marcas"])
+	_build_cracks(data.get("grietas", []))
 
 
 func _build_edge(edge: Dictionary) -> void:
@@ -87,13 +104,31 @@ func _build_edge(edge: Dictionary) -> void:
 	var full: PackedVector2Array = PackedVector2Array()
 	for k: int in range(0, flat.size(), 2):
 		full.append(Vector2(flat[k], flat[k + 1]))
+	# Donde faltan piezas del bordillo, el hueco que dejan; lo demás, la arista.
+	var gaps: Array = edge.get("huecos", [])
+	var kept: Array = [full]
+	if not gaps.is_empty():
+		var lengths: PackedFloat32Array = arc_lengths(full)
+		kept = []
+		var from: float = 0.0
+		for gap: Array in gaps:
+			if float(gap[0]) > from + 0.01:
+				kept.append(sub_line(full, lengths, from, float(gap[0])))
+			for part: PackedVector2Array in clip_line(
+				sub_line(full, lengths, float(gap[0]), float(gap[1]))
+			):
+				_build_edge_part(edge, part, true)
+			from = float(gap[1])
+		if lengths[lengths.size() - 1] > from + 0.01:
+			kept.append(sub_line(full, lengths, from, lengths[lengths.size() - 1]))
 	# Solo lo que cae en el sector (el corte en el linde sale igual desde los dos lados).
-	for part: PackedVector2Array in clip_line(full):
-		_build_edge_part(edge, part)
+	for line: PackedVector2Array in kept:
+		for part: PackedVector2Array in clip_line(line):
+			_build_edge_part(edge, part)
 	stats["aristas"] += 1
 
 
-func _build_edge_part(edge: Dictionary, part: PackedVector2Array) -> void:
+func _build_edge_part(edge: Dictionary, part: PackedVector2Array, gap: bool = false) -> void:
 	var line: PackedVector2Array = GridClip.subdivide(part, CityTransit.STEP)
 	if line.size() < 2:
 		return
@@ -114,6 +149,9 @@ func _build_edge_part(edge: Dictionary, part: PackedVector2Array) -> void:
 		short_left.append(z_left[k])
 		short_right.append(z_right[k])
 	var sides: Array = [short_line, line_normals(short_line), short_left, short_right, right < 0]
+	if gap:
+		_curb_gap(sides)
+		return
 	match kind:
 		"bordillo":
 			_curb(sides)
@@ -133,6 +171,8 @@ func _build_edge_part(edge: Dictionary, part: PackedVector2Array) -> void:
 			_drop_face(sides, true)
 		"paso_nivel":
 			_drop_face(sides, false)
+		"derrumbe":
+			_collapse(sides, String(transit.group(left)["clase"]))
 
 
 ## La polilínea recortada por los límites del sector: los trozos que caen dentro.
@@ -218,6 +258,21 @@ func _curb(sides: Array) -> void:
 	_extrude_collision(sides, ramps)
 	if to_terrain:
 		_closure(sides, tops)
+
+
+## Donde falta una pieza del bordillo: la tierra de su asiento, de lo alto de la acera (o
+## del terreno) a la calzada, y la rampa de colisión para subir.
+func _curb_gap(sides: Array) -> void:
+	var z_left: PackedFloat32Array = sides[2]
+	var z_right: PackedFloat32Array = sides[3]
+	var faces: Array = []
+	var ramps: Array = []
+	for n: int in z_left.size():
+		var high: float = maxf(z_right[n], z_left[n] + 0.02)
+		faces.append([Vector2(0.0, high), Vector2(0.0, z_left[n] - 0.05)])
+		ramps.append([Vector2(RAMP, z_left[n]), Vector2(0.0, high)])
+	extrude(sides, faces, "derrumbe", COLLAPSE_SOIL_COLOR, false)
+	_extrude_collision(sides, ramps)
 
 
 ## Bordillo de jardín, de alcorque o de senda: dentro de lo pavimentado, con la cara de
@@ -325,6 +380,40 @@ func _drop_face(sides: Array, stripe: bool) -> void:
 	extrude(sides, faces, "hormigon", WALL_COLOR, true)
 	if stripe:
 		extrude(sides, line, "pintura", PAINT_COLOR, false)
+
+
+## El borde roto de un socavón (la calle a la izquierda, el hueco a la derecha): la
+## costra de lo que se pisa (asfalto, losas, hormigón), de grosor desigual; debajo, la base
+## de grava, socavada por el agua (la costra vuela sobre ella), y la tierra hasta la malla
+## del socavón. La colisión, una cara a plomo.
+func _collapse(sides: Array, kind: String) -> void:
+	var line: PackedVector2Array = sides[0]
+	var z_left: PackedFloat32Array = sides[2]
+	var z_right: PackedFloat32Array = sides[3]
+	var crust: Array = []
+	var under: Array = []
+	var base: Array = []
+	var soil: Array = []
+	var wall: Array = []
+	for n: int in z_left.size():
+		var top: float = z_left[n]
+		var key: String = "derrumbe/%d/%d" % [roundi(line[n].x * 5.0), roundi(line[n].y * 5.0)]
+		var thick: float = COLLAPSE_CRUST.x + COLLAPSE_CRUST.y * CityPlan.chance(key)
+		var recess: float = COLLAPSE_RECESS * (0.3 + CityPlan.chance(key + "/b"))
+		var low: float = top - thick - COLLAPSE_BASE * (0.7 + 0.6 * CityPlan.chance(key + "/c"))
+		var bottom: float = minf(z_right[n], low - 0.05) - 0.05
+		crust.append([Vector2(0.0, top + 0.002), Vector2(0.0, top - thick)])
+		under.append([Vector2(0.0, top - thick), Vector2(recess, top - thick)])
+		base.append([Vector2(recess, top - thick), Vector2(recess * 0.5, low)])
+		soil.append([Vector2(recess * 0.5, low), Vector2(0.0, bottom)])
+		wall.append([Vector2(0.0, top), Vector2(0.0, bottom)])
+	var material: String = CityTransit.SURFACE_MATERIALS.get(kind, "asfalto")
+	var tint: Color = CityTransit.SURFACE_COLORS.get(kind, Color.WHITE)
+	extrude(sides, crust, material, Color(tint, 0.0), false)
+	extrude(sides, under, "grava", COLLAPSE_BASE_COLOR, false)
+	extrude(sides, base, "grava", COLLAPSE_BASE_COLOR, false)
+	extrude(sides, soil, "derrumbe", COLLAPSE_SOIL_COLOR, false)
+	_extrude_collision(sides, wall)
 
 
 ## Donde el terreno queda por encima del borde, una cara de suelo cierra el corte.
@@ -452,10 +541,65 @@ func _build_markings(marks: Dictionary) -> void:
 		var lengths: PackedFloat32Array = arc_lengths(line)
 		var total: float = lengths[lengths.size() - 1]
 		var start: float = 0.0
+		var dash: int = 0
 		while start < total:
 			var end: float = minf(total, start + (DASH.x if dashed else total))
-			_paint_stripe(line, lengths, start, end, level)
+			# Gastada a trozos: de la discontinua faltan rayas enteras.
+			if not dashed or CityPlan.chance("raya/%d/%d" % [index, dash]) >= DASH_GONE:
+				_paint_stripe(line, lengths, start, end, level)
 			start = end + (DASH.y if dashed else 0.0)
+			dash += 1
+
+
+## Las grietas de la calle (tools/ciudad/deterioro.py): tiras oscuras a ras de lo que se
+## pisa, afiladas en las puntas y partidas por la rejilla para seguir la rasante. Llevan la
+## nieve de su clase: donde la nieve tapa el pavimento, las tapa igual.
+func _build_cracks(cracks: Array) -> void:
+	for index: int in out.cracks:
+		var crack: Dictionary = cracks[index]
+		var line: PackedVector2Array = PackedVector2Array()
+		for point: Array in crack["puntos"]:
+			line.append(Vector2(point[0], point[1]))
+		var fine: PackedVector2Array = GridClip.subdivide(line, CityTransit.STEP)
+		if fine.size() < 2:
+			continue
+		var normals: PackedVector2Array = line_normals(fine)
+		var lengths: PackedFloat32Array = arc_lengths(fine)
+		var total: float = lengths[lengths.size() - 1]
+		var half: float = float(crack["ancho"]) * 0.5
+		var snow: float = (
+			(CityTransit.SURFACE_COLORS.get(String(crack["clase"]), Color.WHITE) as Color).a
+		)
+		var color: Color = Color(CRACK_COLOR, snow)
+		var heights: PackedFloat32Array = PackedFloat32Array()
+		var widths: PackedFloat32Array = PackedFloat32Array()
+		for k: int in fine.size():
+			var z: float = transit.surface_at(fine[k])
+			heights.append((transit.terrain_z(fine[k]) if is_nan(z) else z) + CRACK_LIFT)
+			var taper: float = minf(lengths[k], total - lengths[k]) / CRACK_TAPER
+			widths.append(half * clampf(taper, 0.15, 1.0))
+		var drawn: bool = false
+		for k: int in fine.size() - 1:
+			if not out.owns((fine[k] + fine[k + 1]) * 0.5):
+				continue
+			var a: Vector2 = fine[k]
+			var b: Vector2 = fine[k + 1]
+			var points: PackedVector3Array = PackedVector3Array(
+				[
+					out.local(a - normals[k] * widths[k], heights[k]),
+					out.local(b - normals[k + 1] * widths[k + 1], heights[k + 1]),
+					out.local(b + normals[k + 1] * widths[k + 1], heights[k + 1]),
+					out.local(a + normals[k] * widths[k], heights[k]),
+				]
+			)
+			var up: PackedVector3Array = PackedVector3Array(
+				[Vector3.UP, Vector3.UP, Vector3.UP, Vector3.UP]
+			)
+			var uvs: PackedVector2Array = PackedVector2Array([a, b, b, a])
+			out.buffer("grieta").add_polygon(points, up, color, uvs)
+			drawn = true
+		if drawn:
+			stats["grietas"] += 1
 
 
 ## Una franja de línea entre dos distancias a lo largo de la polilínea.
@@ -663,6 +807,18 @@ static func value_at(along: PackedFloat32Array, values: PackedFloat32Array, s: f
 			var f: float = 0.0 if span <= 0.0 else clampf((s - along[k - 1]) / span, 0.0, 1.0)
 			return lerpf(values[k - 1], values[k], f)
 	return values[0]
+
+
+## El trozo de una polilínea entre dos distancias desde su principio.
+static func sub_line(
+	line: PackedVector2Array, lengths: PackedFloat32Array, a: float, b: float
+) -> PackedVector2Array:
+	var result: PackedVector2Array = PackedVector2Array([point_at(line, lengths, a)])
+	for k: int in line.size():
+		if lengths[k] > a + 1e-4 and lengths[k] < b - 1e-4:
+			result.append(line[k])
+	result.append(point_at(line, lengths, b))
+	return result
 
 
 static func point_at(line: PackedVector2Array, lengths: PackedFloat32Array, s: float) -> Vector2:

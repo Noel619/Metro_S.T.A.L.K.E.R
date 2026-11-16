@@ -20,7 +20,7 @@ fijas). Se guardan en assets/textures/ y las usan los shaders de assets/shaders/
 - pagina_cuadriculada.png  una página del cuaderno: cuadrícula de 5 mm trazada algo
                  suelta. No se enlosa: cubre la página entera (UV de 0 a 1).
 - pavimentos/    los pavimentos de la ciudad (asfalto, losas, granito, adoquín, bordillo,
-                 hormigón, grava, tierra y pintura vial): ver pavimentos.py.
+                 hormigón, grava, tierra, derrumbe y pintura vial): ver pavimentos.py.
 """
 
 from __future__ import annotations

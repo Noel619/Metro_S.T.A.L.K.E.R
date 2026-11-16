@@ -58,12 +58,14 @@ func add_face(
 
 ## Un polígono convexo que mira hacia arriba, con la normal de cada vértice (sombreado
 ## suave). Los puntos van en sentido antihorario vistos desde arriba, en el plano (x al
-## este, y al norte); se dan ya en el espacio de la malla.
+## este, y al norte); se dan ya en el espacio de la malla. Con [param vertex_colors], un
+## color por vértice en vez de [param color].
 func add_polygon(
 	points: PackedVector3Array,
 	vertex_normals: PackedVector3Array,
 	color: Color,
-	vertex_uvs: PackedVector2Array
+	vertex_uvs: PackedVector2Array,
+	vertex_colors: PackedColorArray = PackedColorArray()
 ) -> void:
 	var count: int = points.size()
 	if count < 3:
@@ -72,8 +74,11 @@ func add_polygon(
 	vertices.append_array(points)
 	normals.append_array(vertex_normals)
 	uvs.append_array(vertex_uvs)
-	for i: int in count:
-		colors.append(color)
+	if vertex_colors.size() == count:
+		colors.append_array(vertex_colors)
+	else:
+		for i: int in count:
+			colors.append(color)
 	# Antihorario en el plano es antihorario visto desde arriba también en el mundo (el
 	# norte es -Z): Godot dibuja la cara delantera en sentido horario, así que se invierte.
 	for i: int in range(1, count - 1):

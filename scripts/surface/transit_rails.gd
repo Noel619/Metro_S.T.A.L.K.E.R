@@ -11,6 +11,10 @@ extends RefCounted
 ##
 ## Medidas soviéticas: ancho de vía de 1520 mm (el tranvía, 1524), carril de 15 cm sobre
 ## traviesas de hormigón de 2,7 m cada 0,55 m y 30 cm de balasto.
+##
+## Donde el tranvía cruza un socavón, cada carril se corta por el contorno del hueco: lo
+## que asoma sobre él (transito.json lo deja llegar un poco más allá del borde) se dibuja
+## entero, colgando de la calle y doblado hacia abajo.
 
 ## Del plano de formación (la rasante de la vía) a lo alto del balasto y de las traviesas
 ## en el asiento del carril (lo alto del carril lo da transito.json).
@@ -45,10 +49,18 @@ const RAIL_HEIGHT: float = 0.15
 const SLEEPER_STEP: float = 0.55
 ## El carril a ras: lo que asoma sobre la calle, el ancho de la cabeza y el de la garganta.
 const FLUSH_LIFT: float = 0.006
+## Lo que se dobla hacia abajo la punta de un carril que asoma sobre un socavón.
+const HANG_DROP: float = 0.15
+## Las traviesas que faltan (podridas, rotas o arrancadas para leña) y las que se han
+## movido: cuántas de cada cien y cuánto giran como mucho (grados).
+const SLEEPER_MISSING: float = 0.035
+const SLEEPER_SHIFTED: float = 0.12
+const SLEEPER_TWIST: float = 6.0
 const HEAD_WIDTH: float = 0.075
 const GROOVE_WIDTH: float = 0.045
 const BALLAST_COLOR: Color = Color(0.46, 0.44, 0.42, 0.55)
-const STEEL_COLOR: Color = Color(0.3, 0.29, 0.28, 0.15)
+## Dos años sin trenes: los carriles, oxidados.
+const STEEL_COLOR: Color = Color(0.4, 0.28, 0.21, 0.15)
 const GROOVE_COLOR: Color = Color(0.12, 0.12, 0.12, 0.3)
 ## El tope: la caja que choca (desde su origen, a lo alto del carril; hacia delante, sobre
 ## los últimos metros de la vía): media anchura, de dónde a dónde a lo largo y en alto.
@@ -222,7 +234,8 @@ static func _slice(
 
 ## Las traviesas de un trozo: cada [constant SLEEPER_STEP] metros desde el principio de la
 ## vía ([param s0] es lo que mide la vía hasta el primer punto del trozo), salvo donde van
-## las de madera de un desvío ([param bare]: tramos del principio de la vía).
+## las de madera de un desvío ([param bare]: tramos del principio de la vía) y las que
+## faltan; algunas, algo giradas.
 func _sleepers(points: PackedVector2Array, z: PackedFloat32Array, s0: float, bare: Array) -> void:
 	var lengths: PackedFloat32Array = TransitEdges.arc_lengths(points)
 	var total: float = lengths[lengths.size() - 1]
@@ -234,13 +247,18 @@ func _sleepers(points: PackedVector2Array, z: PackedFloat32Array, s0: float, bar
 		var span: float = maxf(lengths[k] - lengths[k - 1], 1e-6)
 		var f: float = clampf((s - lengths[k - 1]) / span, 0.0, 1.0)
 		var p: Vector2 = points[k - 1].lerp(points[k], f)
-		if out.owns(p) and not _inside(bare, s0 + s):
+		var key: String = "traviesa/%d/%d" % [roundi(p.x * 10.0), roundi(p.y * 10.0)]
+		var luck: float = CityPlan.chance(key)
+		if out.owns(p) and not _inside(bare, s0 + s) and luck >= SLEEPER_MISSING:
 			var height: float = lerpf(z[k - 1], z[k], f)
 			var along: Vector3 = Vector3(
 				points[k].x - points[k - 1].x, z[k] - z[k - 1], points[k - 1].y - points[k].y
 			)
 			var center: Vector3 = CityPlan.to_world(p, height + SLEEPER_TOP)
 			var basis: Basis = Basis.looking_at(along.normalized(), Vector3.UP)
+			if luck < SLEEPER_MISSING + SLEEPER_SHIFTED:
+				var twist: float = (CityPlan.chance(key + "/giro") * 2.0 - 1.0) * SLEEPER_TWIST
+				basis = Basis(Vector3.UP, deg_to_rad(twist)) * basis
 			out.add_instance("traviesa", Transform3D(basis, center))
 			stats["traviesas"] += 1
 		s += SLEEPER_STEP
@@ -368,29 +386,111 @@ func _rail_along(points: Array) -> void:
 
 ## Un carril a ras de lo que se pisa (pasos a nivel y tranvía): su cabeza y la garganta
 ## del lado de dentro de la vía, partidos por la rejilla para seguir la superficie.
-## [param left] dice si es el carril de la izquierda (la vía queda a su derecha).
+## [param left] dice si es el carril de la izquierda (la vía queda a su derecha). Lo que
+## cae sobre un socavón cuelga.
 func _flush_rail(rail: PackedVector2Array, start: float, left: bool) -> void:
 	var fine: PackedVector2Array = GridClip.subdivide(rail, CityTransit.STEP)
 	for part: Array in _clip(fine, PackedFloat32Array(), start):
-		var points: PackedVector2Array = part[0]
-		var heights: PackedFloat32Array = PackedFloat32Array()
-		for p: Vector2 in points:
-			var z: float = transit.surface_at(p)
-			heights.append((transit.terrain_z(p) if is_nan(z) else z) + FLUSH_LIFT)
-		var sides: Array = [points, TransitEdges.line_normals(points), heights, heights, false]
-		var head: Array = []
-		var groove: Array = []
-		# La garganta, del lado de la vía: a la derecha del carril de la izquierda.
-		var near: float = HEAD_WIDTH * (-0.5 if left else 0.5)
-		var far: float = near + (-GROOVE_WIDTH if left else GROOVE_WIDTH)
-		for z: float in heights:
-			head.append([Vector2(HEAD_WIDTH * 0.5, z), Vector2(-HEAD_WIDTH * 0.5, z)])
-			groove.append(
-				[Vector2(maxf(near, far), z - 0.001), Vector2(minf(near, far), z - 0.001)]
-			)
-		edges.extrude(sides, head, "metal", STEEL_COLOR, false, part[2])
-		edges.extrude(sides, groove, "metal", GROOVE_COLOR, false, part[2])
-		stats["a_ras_m"] += TransitEdges.arc_lengths(points)[points.size() - 1] * 0.5
+		var pieces: Array = _split_by_sinkholes(part[0])
+		for n: int in pieces.size():
+			var piece: Array = pieces[n]
+			if piece[1]:
+				_hanging_rail(piece[0], n > 0, n < pieces.size() - 1)
+			else:
+				_flush_piece(piece[0], float(part[2]) + float(piece[2]), left)
+
+
+## Los trozos de una polilínea partida por los contornos de los socavones que toca: cada
+## uno como [puntos, si cae en un socavón, lo que mide la polilínea hasta su principio].
+func _split_by_sinkholes(points: PackedVector2Array) -> Array:
+	var box: Rect2 = Rect2(points[0], Vector2.ZERO)
+	for p: Vector2 in points:
+		box = box.expand(p)
+	var holes: Array = []
+	for hole: Dictionary in transit.sinkholes:
+		if (hole["caja"] as Rect2).intersects(box.grow(0.1)):
+			holes.append(hole["contorno"])
+	if holes.is_empty():
+		return [[points, false, 0.0]]
+	var cut: PackedVector2Array = PackedVector2Array([points[0]])
+	for k: int in points.size() - 1:
+		var p: Vector2 = points[k]
+		var q: Vector2 = points[k + 1]
+		var span: float = p.distance_to(q)
+		if span < 1e-6:
+			continue
+		var hits: PackedFloat32Array = PackedFloat32Array()
+		for outline: PackedVector2Array in holes:
+			for m: int in outline.size():
+				var hit: Variant = Geometry2D.segment_intersects_segment(
+					p, q, outline[m], outline[(m + 1) % outline.size()]
+				)
+				if hit != null:
+					hits.append(p.distance_to(hit) / span)
+		hits.sort()
+		for t: float in hits:
+			if t > 1e-5 and t < 1.0 - 1e-5:
+				cut.append(p.lerp(q, t))
+		cut.append(q)
+	if cut.size() < 2:
+		return [[points, false, 0.0]]
+	var result: Array = []
+	var current: PackedVector2Array = PackedVector2Array([cut[0]])
+	var inside: bool = transit.in_sinkhole((cut[0] + cut[1]) * 0.5)
+	var along: float = 0.0
+	var piece_start: float = 0.0
+	for k: int in range(1, cut.size()):
+		var here: bool = transit.in_sinkhole((cut[k - 1] + cut[k]) * 0.5)
+		if here != inside:
+			result.append([current, inside, piece_start])
+			current = PackedVector2Array([cut[k - 1]])
+			inside = here
+			piece_start = along
+		current.append(cut[k])
+		along += cut[k - 1].distance_to(cut[k])
+	result.append([current, inside, piece_start])
+	return result
+
+
+## Un carril que asoma sobre un socavón: entero, a la altura de la calle de la que cuelga
+## (la punta suelta, doblada hacia abajo). [param from_start] y [param from_end] dicen por
+## qué punta sigue en la calle.
+func _hanging_rail(points: PackedVector2Array, from_start: bool, from_end: bool) -> void:
+	if points.size() < 2 or not (from_start or from_end):
+		return
+	var level: float = float(transit.plan.transit["niveles"]["calzada"])
+	var lengths: PackedFloat32Array = TransitEdges.arc_lengths(points)
+	var total: float = maxf(lengths[lengths.size() - 1], 1e-3)
+	var along: Array = []
+	for k: int in points.size():
+		var f: float = lengths[k] / total
+		var loose: float = f if from_start and not from_end else 1.0 - f
+		if from_start and from_end:
+			loose = 1.0 - absf(2.0 * f - 1.0)
+		var top: float = transit.base_z(points[k]) + level + FLUSH_LIFT - HANG_DROP * loose * loose
+		along.append([points[k].x, points[k].y, top])
+	_rail_along(along)
+	stats["colgando_m"] = stats.get("colgando_m", 0.0) + total
+
+
+## Un trozo de carril a ras: la cabeza y la garganta sobre lo que se pisa.
+func _flush_piece(points: PackedVector2Array, start: float, left: bool) -> void:
+	var heights: PackedFloat32Array = PackedFloat32Array()
+	for p: Vector2 in points:
+		var z: float = transit.surface_at(p)
+		heights.append((transit.terrain_z(p) if is_nan(z) else z) + FLUSH_LIFT)
+	var sides: Array = [points, TransitEdges.line_normals(points), heights, heights, false]
+	var head: Array = []
+	var groove: Array = []
+	# La garganta, del lado de la vía: a la derecha del carril de la izquierda.
+	var near: float = HEAD_WIDTH * (-0.5 if left else 0.5)
+	var far: float = near + (-GROOVE_WIDTH if left else GROOVE_WIDTH)
+	for z: float in heights:
+		head.append([Vector2(HEAD_WIDTH * 0.5, z), Vector2(-HEAD_WIDTH * 0.5, z)])
+		groove.append([Vector2(maxf(near, far), z - 0.001), Vector2(minf(near, far), z - 0.001)])
+	edges.extrude(sides, head, "metal", STEEL_COLOR, false, start)
+	edges.extrude(sides, groove, "metal", GROOVE_COLOR, false, start)
+	stats["a_ras_m"] += TransitEdges.arc_lengths(points)[points.size() - 1] * 0.5
 
 
 ## Los trozos de la polilínea (con sus alturas, si las trae) que caen en el sector: cada uno

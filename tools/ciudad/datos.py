@@ -1447,6 +1447,39 @@ SUBSUELO: list[dict] = [
 TRAMOS_INUNDADOS = [{"puntos": [eje(232), eje(420), eje(508), eje(600)], "notas": "Agua helada; en el punto más bajo, hasta el pecho."}]
 TRAMOS_HUNDIDOS = [{"puntos": [eje(990), (1180, 1100), (1310, 1040)], "notas": "Bóveda caída: no se pasa."}]
 
+# Socavones (como en Metro 2033): donde reventó lo que va bajo la calle, el agua se llevó la
+# tierra y la calle cayó al hueco (tools/ciudad/deterioro.py). `radio` a lo largo de `rumbo`
+# (grados desde el este; lo que reventó va así) y `ancho` de través, en metros; `hondo`, lo
+# que baja el fondo bajo la calle; `causa`: metro (la bóveda del túnel), galeria (la de la
+# calefacción), colector, arroyo (su bóveda de ladrillo) o agua (una tubería que se heló).
+HUNDIMIENTOS: list[dict] = [
+    {"id": "socavon_avenida", "nombre": "El socavón de la avenida", "pos": R.SOCAVON, "radio": 17.0, "ancho": 12.5,
+     "rumbo": 48.0, "hondo": 11.0, "causa": "metro",
+     "notas": "La bóveda del túnel de la línea 1 cedió: la calzada cayó dentro con las vías del tranvía y parte del "
+              "atasco. Se baja con cuerda; por el fondo se entra en el túnel."},
+    {"id": "calefaccion_fabrica", "nombre": "La galería de la calefacción, frente a la fábrica", "pos": (1102.0, 317.0),
+     "radio": 7.5, "ancho": 3.2, "rumbo": 0.0, "hondo": 2.6, "causa": "galeria",
+     "notas": "La galería se hundió a lo largo: se ven los dos tubos aislados, reventados por la helada."},
+    {"id": "calefaccion_mineros", "nombre": "La galería de la calefacción en Mineros", "pos": (663.0, 319.0),
+     "radio": 6.0, "ancho": 2.8, "rumbo": 2.0, "hondo": 2.4, "causa": "galeria", "notas": ""},
+    {"id": "pluviales_muelle", "nombre": "El colector del Muelle Sur", "pos": (493.0, 613.0), "radio": 6.5,
+     "ancho": 4.5, "rumbo": -7.5, "hondo": 3.6, "causa": "colector",
+     "notas": "El colector de pluviales asoma roto en el fondo; el agua que bajaba al río se heló dentro."},
+    {"id": "pluviales_puerto", "nombre": "El colector, camino del puerto", "pos": (770.0, 604.0), "radio": 4.2,
+     "ancho": 3.2, "rumbo": 2.0, "hondo": 3.0, "causa": "colector", "notas": ""},
+    {"id": "arroyo", "nombre": "La bóveda del arroyo", "pos": (698.0, 1188.0), "radio": 7.0, "ancho": 5.0,
+     "rumbo": 80.0, "hondo": 5.0, "causa": "arroyo",
+     "notas": "La bóveda de ladrillo del arroyo enterrado se abrió en la calle Norte: abajo corre el agua bajo el hielo."},
+    {"id": "colector_centro", "nombre": "El gran colector", "pos": (1038.0, 1101.0), "radio": 4.0, "ancho": 3.0,
+     "rumbo": -42.0, "hondo": 4.2, "causa": "colector", "notas": ""},
+    {"id": "agua_juventud", "nombre": "Una tubería reventada en la calle de la Juventud", "pos": (345.0, 452.0),
+     "radio": 3.4, "ancho": 2.6, "rumbo": 90.0, "hondo": 2.0, "causa": "agua", "notas": ""},
+    {"id": "agua_fabrica", "nombre": "Una tubería reventada en la calle de la Fábrica", "pos": (846.0, 420.0),
+     "radio": 4.0, "ancho": 3.0, "rumbo": 90.0, "hondo": 2.3, "causa": "agua", "notas": ""},
+    {"id": "agua_hospital", "nombre": "Una tubería reventada frente al hospital", "pos": (340.0, 1002.0),
+     "radio": 3.0, "ancho": 2.4, "rumbo": 90.0, "hondo": 1.8, "causa": "agua", "notas": ""},
+]
+
 # ---------------------------------------------------------------------------
 # Amenazas: territorios, guaridas, patrullas y vigías
 # ---------------------------------------------------------------------------

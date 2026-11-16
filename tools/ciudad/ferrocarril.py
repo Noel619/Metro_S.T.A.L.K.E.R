@@ -388,16 +388,52 @@ def ejes_tranvia() -> list[tuple[str, LineString]]:
     return resultado
 
 
-def tranvias(transito) -> list[dict]:
-    """Las vías del tranvía, por la calle (a ras): lo que de cada una cae en el tránsito."""
+def tranvias(transito, huecos=None, voladizo: float = 0.0) -> list[dict]:
+    """Las vías del tranvía, por la calle (a ras): lo que de cada una cae en el tránsito.
+    Donde cruzan un socavón (`huecos`), se cortan: siguen `voladizo` metros sobre el hueco
+    desde el borde (los carriles asoman, doblados; la maqueta los cuelga) y lo demás cae
+    con la calle. Un tramo que solo roza el hueco se corta igual."""
+    from shapely.ops import substring
+
+    if huecos is not None and not huecos.is_empty:
+        # Lo que asoma: la corona de cada hueco, de `voladizo` metros desde su borde.
+        transito = transito.union(huecos.difference(huecos.buffer(-voladizo)))
     resultado = []
     for ident, via in ejes_tranvia():
         dentro = via.intersection(transito)
         for tramo in getattr(dentro, "geoms", [dentro]):
             if tramo.is_empty or tramo.length < 1.0 or tramo.geom_type != "LineString":
                 continue
-            resultado.append({"linea": ident, "puntos": [(round(x, 3), round(y, 3)) for x, y in tramo.coords]})
+            for trozo in _sin_huecos_en_medio(tramo, huecos, substring):
+                if trozo.length >= 1.0:
+                    resultado.append({"linea": ident, "puntos": [(round(x, 3), round(y, 3)) for x, y in trozo.coords]})
     return resultado
+
+
+def _sin_huecos_en_medio(tramo: LineString, huecos, substring) -> list[LineString]:
+    """El tramo sin lo que cae en un hueco lejos de sus puntas (las puntas pueden asomar)."""
+    if huecos is None or huecos.is_empty or not tramo.intersects(huecos):
+        return [tramo]
+    largo = tramo.length
+    cortes = []
+    en_hueco = tramo.intersection(huecos)
+    for pieza in getattr(en_hueco, "geoms", [en_hueco]):
+        if pieza.is_empty or pieza.geom_type != "LineString":
+            continue
+        a = tramo.project(Point(pieza.coords[0]))
+        b = tramo.project(Point(pieza.coords[-1]))
+        a, b = min(a, b), max(a, b)
+        if a > 1e-3 and b < largo - 1e-3:
+            cortes.append((a, b))
+    if not cortes:
+        return [tramo]
+    trozos = []
+    desde = 0.0
+    for a, b in sorted(cortes):
+        trozos.append(substring(tramo, desde, a))
+        desde = b
+    trozos.append(substring(tramo, desde, largo))
+    return [t for t in trozos if t.geom_type == "LineString"]
 
 
 def puente(perfiles_vias: dict) -> dict:
