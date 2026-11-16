@@ -91,6 +91,7 @@ El nombre del material elige el material de Godot si existe `assets/materials/<n
 - `tools/blender/recipes/personajes.py`: `jugador_chico`, `jugador_chica` y las manos de primera persona (`manos_*`).
 - En Godot, `PlayerAvatar` (`scripts/actors/player_avatar.gd`) carga el modelo y lo anima: `speed`, `carrying`, `look_pitch`, `expression`, y la mochila, el zurrón y la mascarilla, que se pueden ocultar.
 - Para revisarlos: `tools/capture.sh res://scenes/style/personajes_superficie.tscn salida.png`.
+- Las manos de primera persona las maneja `FirstPersonArms`; `GripModifier` las lleva a los lados de lo que se sujeta, según sus medidas. Para verlo con distintos objetos: `scenes/style/primera_persona_*.tscn` (con `tools/capture.sh` y 150 fotogramas de espera).
 
 Si cambias un material de `assets/materials/` después de importar un modelo, borra su copia de `.godot/imported/` para que Godot lo importe otra vez.
 

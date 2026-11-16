@@ -4,5 +4,6 @@
 
 [node name="PrimeraPersona" type="Node3D"]
 script = ExtResource("1_review")
-variant = "chico"
-carrying = true
+variant = "chica"
+item_id = &"caja_carton_grande"
+inspecting = false

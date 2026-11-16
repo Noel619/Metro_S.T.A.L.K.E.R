@@ -24,11 +24,14 @@ var state: ItemState
 var holder_peer: int = 0
 
 var _body: RigidBody3D
+## La mitad de sus medidas, en sus propios ejes.
+var _half_size: Vector3 = Vector3.ZERO
 var _stuck_time: float = 0.0
 
 
 func _ready() -> void:
 	_body = get_parent() as RigidBody3D
+	_half_size = GripModifier.bounds_of(_body).size / 2.0
 	var interactable: Interactable = Interactable.of(_body)
 	if interactable != null:
 		interactable.interacted.connect(_on_interacted)
@@ -41,6 +44,11 @@ static func follow_stiffness(mass: float) -> float:
 
 func is_held() -> bool:
 	return holder_peer != 0
+
+
+## La mitad de las medidas del objeto (ancho, alto y fondo).
+func half_size() -> Vector3:
+	return _half_size
 
 
 func _on_interacted(player: Node) -> void:
@@ -94,7 +102,7 @@ func _physics_process(delta: float) -> void:
 	if player == null:
 		_set_holder.rpc(0)
 		return
-	var target: Transform3D = player.hold_transform(_body.mass)
+	var target: Transform3D = player.hold_transform(_body.mass, _half_size)
 	var offset: Vector3 = target.origin - _body.global_position
 	var stiffness: float = follow_stiffness(_body.mass)
 	_body.linear_velocity = (offset * stiffness).limit_length(MAX_SPEED)

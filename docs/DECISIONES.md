@@ -101,3 +101,7 @@ Cada jugador manda sobre su movimiento y su mirada; el anfitrión, sobre la fís
 ## D-025 · Los guiones que se lanzan con `-s` no nombran clases del juego
 
 Un guion lanzado con `godot -s` se compila antes de que existan las autocargas. Si nombra una clase que las usa (`Player` usa `Settings`), falla al compilar y, como no llega a llamar a `quit()`, el proceso se queda colgado. Por eso las pruebas de red (`tests/net/`) acceden a los nodos sin tipos; los tests unitarios sí pueden, porque el ejecutor los carga más tarde.
+
+## D-026 · Las manos se colocan con las medidas del objeto
+
+En primera persona, la animación de sujetar deja las manos a una distancia fija, y eso solo vale para un tamaño. `GripModifier` las corrige cada fotograma con la caja que envuelve al objeto y con su posición real: van a sus costados, a algo menos de media altura, y lo que es estrecho y ligero (hasta 14 cm y 1,5 kg: una lata, una botella) se lleva solo con la derecha. La distancia a la que se lleva algo también depende de su tamaño: a partir de 15 cm de medio ancho se aleja, y a partir de 12 cm de medio alto baja, para que una caja grande o el bidón no tapen toda la vista. No hacen falta datos por objeto: sale todo de su malla.

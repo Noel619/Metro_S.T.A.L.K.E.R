@@ -24,6 +24,9 @@ const EYE_HEIGHTS: Dictionary = {"chico": 1.57, "chica": 1.51}
 ## Dónde quedan las manos respecto a los ojos: al llevar algo y al inspeccionarlo.
 const HOLD_OFFSET: Vector3 = Vector3(0.0, -0.26, -0.62)
 const INSPECT_OFFSET: Vector3 = Vector3(0.0, -0.07, -0.44)
+## Hasta este medio ancho y este medio alto, un objeto no cambia cómo se lleva.
+const FREE_HALF_WIDTH: float = 0.15
+const FREE_HALF_HEIGHT: float = 0.12
 const LAYER_PLAYERS: int = 1 << 1
 const MASK_PLAYERS: int = (1 << 0) | (1 << 2)
 const MASK_REACH: int = (1 << 0) | (1 << 2) | (1 << 4)
@@ -157,7 +160,6 @@ func _process(delta: float) -> void:
 	_avatar.carrying = _held != null
 	if not is_local():
 		return
-	_arms.holding = _held != null
 	inspecting = _held != null and Input.is_action_pressed(&"use_secondary")
 	var pad: Vector2 = Input.get_vector(&"look_left", &"look_right", &"look_up", &"look_down")
 	if pad != Vector2.ZERO:
@@ -217,6 +219,11 @@ func held_item() -> Carryable:
 	return _held
 
 
+## Las manos que ve este jugador (solo existen en su propio equipo).
+func arms() -> FirstPersonArms:
+	return _arms
+
+
 func focused() -> Interactable:
 	return _focus
 
@@ -227,6 +234,11 @@ func set_held_item(item: Carryable) -> void:
 	if is_local():
 		hold_euler = Vector3.ZERO
 		inspecting = false
+		if _arms != null:
+			if item != null:
+				_arms.hold(item.get_parent() as Node3D, item.state.data.weight)
+			else:
+				_arms.hold(null)
 
 
 ## Cuánto frena lo que lleva: de 1 (nada) hacia 0.
@@ -237,11 +249,15 @@ func carry_slowdown() -> float:
 
 
 ## Dónde debe estar un objeto de [param mass] kilos que este jugador lleva.
-func hold_transform(mass: float) -> Transform3D:
+## [param half_size] es la mitad de sus medidas: lo grande se lleva más lejos y
+## más bajo, para que quepa entre los brazos y no tape toda la vista.
+func hold_transform(mass: float, half_size: Vector3 = Vector3.ZERO) -> Transform3D:
 	var offset: Vector3 = INSPECT_OFFSET if inspecting else HOLD_OFFSET
+	offset.z -= maxf(0.0, maxf(half_size.x, half_size.z) - FREE_HALF_WIDTH)
 	if not inspecting:
 		# Lo pesado cuelga más bajo.
 		offset.y -= minf(0.16, mass * 0.012)
+		offset.y -= maxf(0.0, half_size.y - FREE_HALF_HEIGHT) * 0.9
 	var head: Transform3D = Transform3D(
 		Basis(Vector3.UP, rotation.y) * Basis(Vector3.RIGHT, head_pitch), eye_position()
 	)

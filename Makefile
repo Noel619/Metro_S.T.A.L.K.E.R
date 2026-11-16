@@ -52,4 +52,6 @@ capture: import ## capturas de las escenas de revisión (en capturas/, sin versi
 	tools/capture.sh res://scenes/style/diorama_patio_anochecer.tscn capturas/patio_anochecer.png
 	tools/capture.sh res://scenes/style/personajes_superficie.tscn capturas/personajes_superficie.png
 	tools/capture.sh res://scenes/style/personajes_deposito.tscn capturas/personajes_deposito.png
-	tools/capture.sh res://scenes/style/primera_persona_chico.tscn capturas/primera_persona.png 1600 900 150
+	tools/capture.sh res://scenes/style/primera_persona_caja.tscn capturas/primera_persona_caja.png 1600 900 150
+	tools/capture.sh res://scenes/style/primera_persona_caja_grande.tscn capturas/primera_persona_caja_grande.png 1600 900 150
+	tools/capture.sh res://scenes/style/primera_persona_lata.tscn capturas/primera_persona_lata.png 1600 900 150

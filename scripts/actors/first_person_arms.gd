@@ -5,6 +5,8 @@ extends Node3D
 ## Cuelgan de la cámara. Casi siempre están bajas, fuera de la vista; suben
 ## cuando sujetan algo y salen un momento cuando tocan o cogen algo. Se mueven
 ## "a saltos", como el resto del dibujo.
+##
+## Al sujetar algo, [GripModifier] las coloca según el tamaño del objeto.
 
 const MODELS: Dictionary = {
 	"chico": "res://assets/models/manos_chico.glb",
@@ -14,6 +16,8 @@ const BLEND_TIME: float = 0.18
 const ANIMATION_FPS: float = 12.0
 
 var holding: bool = false
+## Coloca las manos alrededor de lo que se lleva.
+var grip: GripModifier
 
 var _player: AnimationPlayer
 var _pending: float = 0.0
@@ -29,6 +33,21 @@ func setup(variant: String) -> void:
 	_player.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL
 	_player.play(&"reposo")
 	_player.advance(0.0)
+	grip = GripModifier.new()
+	grip.name = "Agarre"
+	grip.view = self
+	(model.find_child("Skeleton3D", true, false) as Skeleton3D).add_child(grip)
+
+
+## Empieza a sujetar un objeto (o lo suelta, con [code]null[/code]).
+func hold(body: Node3D, weight: float = 0.0) -> void:
+	holding = body != null
+	if grip == null:
+		return
+	if body != null:
+		grip.grip(body, weight)
+	else:
+		grip.release()
 
 
 ## La mano derecha sale a tocar o a coger algo.

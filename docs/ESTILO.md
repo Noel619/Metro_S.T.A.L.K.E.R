@@ -117,7 +117,7 @@ De noche la luz ambiente y la de la luna son casi nulas (`tinta_negro` = 1): el 
 - `tools/capture.sh escena salida.png [ancho] [alto] [fotogramas]` hace una captura por cada cámara del grupo `capture_camera`.
 - `CAPTURE_ARGS="--hide=InkPost"` captura sin post-proceso.
 - `CAPTURE_ARGS="--post=debug_view=N"` muestra una capa del post-proceso: 1 profundidad, 2 normales, 3 contorno, 4 tramado, 5 color de entrada, 6 relleno.
-- Escenas de revisión en `scenes/style/`: `diorama_deposito_limpio`, `diorama_deposito_abandonado`, `diorama_patio_dia`, `diorama_patio_anochecer`, `diorama_patio_noche`, `prueba_estilo`, `personajes_superficie`, `personajes_deposito` y `primera_persona_chico` / `primera_persona_chica`. El visor (`visor_estilo`, la escena principal) las recorre todas.
+- Escenas de revisión en `scenes/style/`: `diorama_deposito_limpio`, `diorama_deposito_abandonado`, `diorama_patio_dia`, `diorama_patio_anochecer`, `diorama_patio_noche`, `prueba_estilo`, `personajes_superficie`, `personajes_deposito` y las de primera persona (`primera_persona_caja`, `_caja_grande`, `_lata`, `_bidon` e `_inspeccion`). El visor (`visor_estilo`, la escena principal) las recorre todas.
 
 ## 6. Pendiente en la Fase 1
 
