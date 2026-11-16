@@ -425,7 +425,26 @@ def _breach(mb: tb.MeshBuilder, rng: random.Random) -> None:
             for _ in range(3):
                 start = (u + side * reach * rng.uniform(0.6, 1.0), rng.uniform(inner + 1.0, HALF_V - 1.0), z - 0.2)
                 kit.rebar(mb, start, (side, rng.uniform(-0.3, 0.3), -0.6), rng.uniform(0.5, 1.2), rng, radius=0.014)
-    # El muro del patio, visto desde el boquete: negro, con sus ventanas.
+    # Lo que deja ver el boquete: la cabeza del cuerpo central y los muros de través del ala
+    # que queda a los lados, quemados, con sus huecos.
+    walls = [
+        ((max(u0, -CENTRAL) + min(u1, CENTRAL)) / 2.0, inner, (0.0, 1.0), min(u1, CENTRAL) - max(u0, -CENTRAL)),
+        (u0, (inner + HALF_V) / 2.0, (1.0, 0.0), HALF_V - inner - WALL),
+        (u1, (inner + HALF_V) / 2.0, (-1.0, 0.0), HALF_V - inner - WALL),
+    ]
+    for uc, vc, normal, length in walls:
+
+        def build(builder: tb.MeshBuilder, length=length) -> None:
+            holes = []
+            for k in range(8):
+                z = BASE_TOP + STOREY * k
+                for i in range(int((length - 2.0) // 4.0) + 1):
+                    x = -length / 2.0 + 2.0 + 4.0 * i
+                    if rng.random() < 0.8:
+                        holes.append((x - 0.6, z + 0.2, x + 0.6, z + 2.4))
+            builder.slab((-length / 2.0, length / 2.0), (0.0, ROOF), (0.0, 0.4), CHAR, holes=holes, step=2.0, jitter=0.05)
+
+        _placed(mb, _frame((uc, vc), normal), build)
     for _ in range(14):  # vigas carbonizadas cruzadas
         a = Vector((rng.uniform(u0 + 1.0, u1 - 1.0), rng.uniform(inner + 1.0, HALF_V - 1.0), rng.uniform(BASE_TOP, 30.0)))
         b = a + Vector((rng.uniform(-4.0, 4.0), rng.uniform(-3.0, 3.0), rng.uniform(-6.0, -1.0)))
@@ -568,8 +587,8 @@ def _tower_collision(mb: tb.MeshBuilder) -> None:
 def _wear(position: Vector, normal: Vector) -> float:
     """El revoque se cae por todas partes (ardió), más junto a los huecos y abajo."""
     p = _from_plan(position)
-    if abs(normal.z) > 0.5:
-        return 0.0
+    if abs(normal.z) > 0.5 or p.y < -HALF_V - 0.5:
+        return 0.0  # ni lo horizontal ni el pórtico (sus columnas, de piedra artificial, aguantan)
     low = max(0.0, 1.0 - (p.z - BASE_TOP) / 4.0)
     return 0.2 + 0.45 * low
 

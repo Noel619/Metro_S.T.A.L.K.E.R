@@ -213,16 +213,15 @@ func test_singular_buildings_are_whole() -> void:
 			assert_false(pieces.has(model + hidden), "%s: %s no se dibuja" % [label, hidden])
 		var shape: CollisionShape3D = node.get_node_or_null("Colision/Forma")
 		assert_true(shape != null and shape.shape != null, "%s: tiene colisión" % label)
-		# Lo que se ve cabe en su parcela (con un margen para las cornisas que vuelan).
+		# Lo que asoma sobre la calle cabe en su parcela (con 2 m para lo que vuela: las
+		# cornisas en las esquinas, las marquesinas). Lo de bajo tierra (el túnel de las
+		# escaleras del metro) puede salirse.
 		var lot: Rect2 = Rect2(outline[0] - center, Vector2.ZERO)
 		for point: Vector2 in outline:
 			lot = lot.expand(point - center)
-		lot = lot.grow(1.0)
+		lot = lot.grow(2.0)
 		for piece: String in pieces:
-			var box: AABB = (meshes[piece] as Mesh).get_aabb()
-			var seen: Rect2 = Rect2(
-				Vector2(box.position.x, -box.end.z), Vector2(box.size.x, box.size.z)
-			)
+			var seen: Rect2 = _above_street(meshes[piece])
 			assert_true(lot.encloses(seen), "%s: %s se sale de la parcela" % [label, piece])
 		node.free()
 		built += 1
@@ -253,6 +252,21 @@ func test_vestibule_opens_the_ground() -> void:
 		area += absf((holes[i + 1] - holes[i]).cross(holes[i + 2] - holes[i])) / 2.0
 	assert_true(area > 500.0 and area < 700.0, "el hueco es el basamento (%.0f m²)" % area)
 	node.free()
+
+
+## Lo que asoma de una malla por encima de la calle, visto desde arriba (x, -z).
+static func _above_street(mesh: Mesh) -> Rect2:
+	var result: Rect2 = Rect2()
+	var first: bool = true
+	for surface: int in mesh.get_surface_count():
+		var vertices: PackedVector3Array = mesh.surface_get_arrays(surface)[Mesh.ARRAY_VERTEX]
+		for vertex: Vector3 in vertices:
+			if vertex.y < 0.05:
+				continue
+			var point: Vector2 = Vector2(vertex.x, -vertex.z)
+			result = Rect2(point, Vector2.ZERO) if first else result.expand(point)
+			first = false
+	return result
 
 
 func _spec(kind: String, damage: int, fire: String) -> Dictionary:
