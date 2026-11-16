@@ -108,13 +108,13 @@ func _carry_a_can(me: Node) -> void:
 	):
 		return
 	var lifted: Callable = func() -> bool:
-		return body.global_position.distance_to(me.hold_transform(body.mass).origin) < 0.25
+		return body.global_position.distance_to(can.hold_target().origin) < 0.25
 	if not await _until(lifted, "la lata no llega a sus manos"):
 		return
-	me.scripted_input = Vector2(0.0, 1.0)
-	await _frames(60)
-	me.scripted_input = Vector2.ZERO
-	await _frames(30)
+	var failure: String = await _walk_with(me, can)
+	if not failure.is_empty():
+		_finish(false, failure)
+		return
 	var carried: float = body.global_position.distance_to(resting)
 	if carried < 0.8 or not lifted.call():
 		_finish(false, "la lata no le sigue (se ha movido %.2f m)" % carried)
@@ -123,6 +123,24 @@ func _carry_a_can(me: Node) -> void:
 	if not await _until(func() -> bool: return me.held_item() == null, "no la suelta"):
 		return
 	_finish(true, "ha cogido la lata, la ha llevado %.2f m y la ha soltado" % carried)
+
+
+## Anda con la lata. La física es del anfitrión y llega con retraso, pero el
+## invitado la dibuja en sus manos, también mientras anda. Devuelve el fallo, si lo hay.
+func _walk_with(me: Node, can: Node) -> String:
+	if not await _until(func() -> bool: return can.in_hands(), "no la ve en sus manos"):
+		return "no la ve en sus manos"
+	var slipped: int = 0
+	me.scripted_input = Vector2(0.0, 1.0)
+	for _i in 60:
+		await physics_frame
+		await process_frame
+		slipped += 0 if can.in_hands() else 1
+	me.scripted_input = Vector2.ZERO
+	await _frames(30)
+	if slipped > 0:
+		return "al andar, la lata se le despega de las manos (%d veces)" % slipped
+	return ""
 
 
 func _until(condition: Callable, failure: String) -> bool:

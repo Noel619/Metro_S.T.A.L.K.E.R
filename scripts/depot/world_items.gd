@@ -54,7 +54,17 @@ func _build(values: Dictionary) -> Node:
 	body.mass = state.data.weight
 	body.collision_layer = LAYER_OBJECTS
 	body.collision_mask = MASK_OBJECTS
-	body.continuous_cd = state.data.weight < 1.0
+	body.continuous_cd = state.data.weight < Carryable.CCD_WEIGHT
+	# Las mallas cuelgan de un nodo propio: quien lo lleva lo dibuja en sus manos
+	# aunque el cuerpo físico vaya un poco por detrás (Carryable).
+	var visual: Node3D = Node3D.new()
+	visual.name = "Visual"
+	body.add_child(visual)
+	for child: Node in body.get_children():
+		if child is MeshInstance3D:
+			# Fuera del árbol, Godot no reconoce al dueño como antepasado y avisa.
+			child.owner = null
+			child.reparent(visual, false)
 	body.linear_damp = 0.2
 	body.angular_damp = 0.6
 	if not multiplayer.is_server():

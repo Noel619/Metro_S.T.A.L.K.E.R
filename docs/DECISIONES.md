@@ -105,3 +105,23 @@ Un guion lanzado con `godot -s` se compila antes de que existan las autocargas. 
 ## D-026 · Las manos se colocan con las medidas del objeto
 
 En primera persona, la animación de sujetar deja las manos a una distancia fija, y eso solo vale para un tamaño. `GripModifier` las corrige cada fotograma con la caja que envuelve al objeto y con su posición real: van a sus costados, a algo menos de media altura, y lo que es estrecho y ligero (hasta 14 cm y 1,5 kg: una lata, una botella) se lleva solo con la derecha. La distancia a la que se lleva algo también depende de su tamaño: a partir de 15 cm de medio ancho se aleja, y a partir de 12 cm de medio alto baja, para que una caja grande o el bidón no tapen toda la vista. No hacen falta datos por objeto: sale todo de su malla.
+
+## D-027 · Lo que se lleva va delante del pecho, nunca dentro del cuerpo
+
+Lo que se llevaba iba en un punto fijo respecto a los ojos y colocado por su base: al mirar abajo se metía en el cuerpo (con el bidón, ya a -15°), al girarlo para inspeccionarlo llegaba a la cámara y, como el cuerpo no chocaba con ello, al andar contra una pared el jugador lo atravesaba y la cámara acababa dentro. Reglas:
+
+- Se coloca por su centro, en la vista y por debajo de la mirada, y siempre al menos a 20 cm del eje de los ojos más lo que abulte hacia ellos (el pecho y un hueco). Al inspeccionarlo, lo bastante lejos para que, lo gire como lo gire, no llegue a la cara.
+- Cuanto más abajo se mira, más lejos tendría que ir para no tocar el pecho, y las manos (antebrazos que salen de abajo de la vista) no lo pueden seguir más allá de un punto. Por eso, con algo en las manos la mirada no baja más de lo que las manos lo alcanzan: unos 42° con el bidón o la caja grande, 56° con una caja pequeña y 68° con una lata o una botella (sin nada, 82°). Si se coge algo mirando más abajo, la mirada sube sola.
+- Al mirar arriba, lo ligero sube con la mirada; lo pesado no pasa de la altura del pecho y sale de la vista por abajo.
+- Si hay una pared delante, se acerca al pecho en vez de meterse en ella; cuando ya no cabe, no se puede seguir andando hacia la pared (sí a lo largo). Lo mismo con otro jugador. Las comprobaciones son de solape: un barrido de forma no ve lo que ya toca al empezar.
+- Lo que el jugador anda o gira se sigue sin retraso: si no, al andar se quedaba atrás y acababa dentro del cuerpo. El peso se nota al acomodarlo, en lo que frena y en lo bajo que cuelga, y se cae solo si se queda atascado a más de 50 cm de las manos.
+- Quien lo lleva lo ve dibujado justo en sus manos: las mallas cuelgan de un nodo `Visual` que se pone en el sitio de las manos mientras el cuerpo físico (que va a 60 pasos por segundo y, en los invitados, llega con el retraso de la red) coincida con alguno de los sitios donde han estado las manos en el último medio segundo. Si no coincide, algo lo para de verdad y se dibuja donde está. La física sigue siendo del anfitrión (D-024).
+
+## D-028 · Las manos agarran puntos de la malla, en los ejes del objeto
+
+Sustituye a D-026 en cómo se ponen las manos; lo de no necesitar datos por objeto se mantiene. Las manos se movían cada fotograma a los lados de la caja que envuelve al objeto vista desde la cámara, con límites de alcance: al mirar casi en vertical, al girar deprisa o con lo que no es una caja (la escoba), quedaban lejos y el objeto flotaba. Ahora, cuando el objeto llega a las manos, `GripModifier` busca con rayos sobre su malla dónde apoyar cada palma y guarda esos puntos en los ejes del objeto, así que las manos van pegadas a él aunque se mueva, gire o se mire desde otro ángulo:
+
+- Con dos manos, en la esquina de delante de cada costado, con los dedos rodeándola: más atrás, la cara de delante las taparía. En lo redondo (el bidón, el cubo) esa esquina ya es la cara de delante, así que el agarre se retrasa hacia el costado.
+- Lo que cabe en una mano (hasta 14 cm y 1,5 kg), por el medio, con la derecha y los dedos cerrados alrededor; va un poco a la derecha y se coloca por el agarre, de modo que una escoba sobresale por arriba.
+- Lo que se lleva va derecho en el mundo, así que al mirar abajo gira respecto a la cámara y su parte de abajo se esconde. Al cogerlo se buscan varias alturas en cada costado y se usa la más baja que se vea; si las manos quedan en el borde de la vista, agarran más arriba. Si gira tanto que los costados ya no quedan a los lados (al inspeccionarlo), se vuelven a buscar.
+- Cada antebrazo se orienta para que la palma mire al objeto, sin doblar la muñeca de más y con el final de la manga fuera de la vista: el modelo solo tiene antebrazos.

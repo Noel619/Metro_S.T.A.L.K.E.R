@@ -6,7 +6,8 @@ extends Node3D
 ## cuando sujetan algo y salen un momento cuando tocan o cogen algo. Se mueven
 ## "a saltos", como el resto del dibujo.
 ##
-## Al sujetar algo, [GripModifier] las coloca según el tamaño del objeto.
+## Al sujetar algo, [GripModifier] las lleva a él: las dos a sus costados o, si
+## cabe en una mano, solo la derecha (la izquierda se queda abajo).
 
 const MODELS: Dictionary = {
 	"chico": "res://assets/models/manos_chico.glb",
@@ -16,7 +17,7 @@ const BLEND_TIME: float = 0.18
 const ANIMATION_FPS: float = 12.0
 
 var holding: bool = false
-## Coloca las manos alrededor de lo que se lleva.
+## Coloca las manos sobre lo que se lleva.
 var grip: GripModifier
 
 var _player: AnimationPlayer
@@ -36,16 +37,19 @@ func setup(variant: String) -> void:
 	grip = GripModifier.new()
 	grip.name = "Agarre"
 	grip.view = self
+	grip.camera = get_parent() as Camera3D
 	(model.find_child("Skeleton3D", true, false) as Skeleton3D).add_child(grip)
 
 
-## Empieza a sujetar un objeto (o lo suelta, con [code]null[/code]).
-func hold(body: Node3D, weight: float = 0.0) -> void:
+## Empieza a sujetar un objeto (o lo suelta, con [code]null[/code]): [param body]
+## es lo que se dibuja de él y [param weight], lo que pesa. [param arrived] dice
+## si ya ha llegado a las manos (ver [method GripModifier.grip]).
+func hold(body: Node3D, weight: float = 0.0, arrived: Callable = Callable()) -> void:
 	holding = body != null
 	if grip == null:
 		return
 	if body != null:
-		grip.grip(body, weight)
+		grip.grip(body, weight, arrived)
 	else:
 		grip.release()
 
@@ -64,7 +68,9 @@ func _process(delta: float) -> void:
 	if _reaching > 0.0:
 		_reaching -= delta
 	else:
-		var animation: StringName = &"sostener" if holding else &"reposo"
+		# Con una sola mano, la otra se queda abajo, como en reposo.
+		var both: bool = holding and not grip.is_one_handed()
+		var animation: StringName = &"sostener" if both else &"reposo"
 		if _player.current_animation != animation:
 			_player.play(animation, BLEND_TIME)
 	_pending += delta

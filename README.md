@@ -73,7 +73,7 @@ Todo lo que se ve (estanterías, cajas, persiana, bloques dañados, escombros, c
 |---|---|
 | ![Los dos protagonistas en el patio de Los Bloques](docs/capturas/fase2_personajes_superficie.jpg) | ![Primer plano](docs/capturas/fase2_personajes_caras.jpg) |
 | ![En el depósito](docs/capturas/fase2_personajes_deposito.jpg) | ![De frente, de perfil y de espaldas](docs/capturas/fase2_personajes_fila.jpg) |
-| ![En marcha: caminar y cargar](docs/capturas/fase2_personajes_marcha.jpg) | ![Primera persona: las manos se colocan según lo que llevas (caja pequeña, caja grande, lata y bidón)](docs/capturas/fase2_primera_persona.jpg) |
+| ![En marcha: caminar y cargar](docs/capturas/fase2_personajes_marcha.jpg) | ![Primera persona: las manos agarran lo que llevas (caja pequeña, caja grande, lata y bidón)](docs/capturas/fase2_primera_persona.jpg) |
 
 El chico y la chica, también generados por código: modelo, esqueleto, animaciones y las manos que se ven en primera persona. Tras tu primera revisión ("no puede ser un mundo tan *friendly*") son adolescentes flacos y ojerosos, con ropa heredada y remendada y equipo de stalker. Están **pendientes de tu visto bueno**.
 
@@ -896,7 +896,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F2-00** Los protagonistas: el chico y la chica, con esqueleto, animaciones (reposo y caminar, con y sin carga), cara dibujada con 8 expresiones, color por jugador y manos de primera persona con los dedos articulados. *(Hechos; segunda pasada tras tu revisión del tono, pendiente de tu visto bueno.)*
 - [x] **F2-01** Controlador en primera persona, versión depósito: tranquila y sin estamina.
 - [x] **F2-02** Interacción: raycast, componentes `Interactable` y resaltado dibujado (el punto de lápiz se convierte en una mano y el objeto gana un contorno de tinta).
-- [x] **F2-03** Física de objetos: coger, girar, inspeccionar, soltar. El peso se nota: lo pesado tarda en seguirte, cuelga más bajo, te frena y se te cae si lo arrastras contra algo. Las manos se colocan según el tamaño de lo que llevas: a los lados de una caja, y con una sola mano lo que cabe en ella; lo grande se lleva más lejos y más bajo para que no tape la vista.
+- [x] **F2-03** Física de objetos: coger, girar, inspeccionar, soltar. El peso se nota: lo pesado tarda en seguirte, cuelga más bajo, te frena y se te cae si lo arrastras contra algo. Las manos agarran lo que llevas lo mires como lo mires: por las esquinas de una caja, por los costados de un bidón y con una sola mano lo que cabe en ella; lo grande se lleva más lejos y más bajo para que no tape la vista. Lo que llevas nunca se mete en el cuerpo ni en la cámara, ni se atraviesa al andar contra una pared; con algo grande en las manos no se puede mirar tan abajo.
 - [x] **F2-04** Modelo de datos de los objetos: categoría, peso, forma en la cuadrícula, estado, contaminación, fragilidad y valor. *(10 fichas en `data/items/`.)*
 - [ ] **F2-05** El primer día: telarañas, barrer, fregar, basura, cajas del antiguo dueño, bombilla, persiana atascada.
 - [ ] **F2-06** Dosímetro y descontaminación: lavar, cepillar, embolsar.
@@ -911,7 +911,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Entregable**: el depósito, del primer día sucio a la primera venta.
 **Criterio de salida**: se juega todo el recorrido sin una sola caja de texto, y lo prueban 2 o 3 personas: "¿da gusto?".
-**Estado**: 🟨 en curso. Ya se puede andar por el depósito, coger y dejar cosas, solo o con otro jugador. 29 tests y dos pruebas de red en verde. Falta todo lo que convierte eso en un trabajo: limpiar, procesar el botín, vender, los encargos, el impuesto y el trozo de estación.
+**Estado**: 🟨 en curso. Ya se puede andar por el depósito, coger y dejar cosas, solo o con otro jugador. 38 tests y dos pruebas de red en verde. Falta todo lo que convierte eso en un trabajo: limpiar, procesar el botín, vender, los encargos, el impuesto y el trozo de estación.
 
 ### Fase 3: La Superficie jugable · tamaño L
 

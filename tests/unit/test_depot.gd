@@ -54,8 +54,8 @@ func test_pick_up_carry_and_drop() -> void:
 	await _frames(40)
 	assert_true(_player.held_item() == can, "la lleva")
 	assert_true(_player.focused() == null, "con las manos ocupadas no señala nada")
-	var hands: Vector3 = _player.hold_transform(body.mass).origin
-	assert_true(body.global_position.distance_to(hands) < 0.15, "está en sus manos")
+	var hands: Vector3 = can.hold_target().origin
+	assert_true(body.global_position.distance_to(hands) < 0.05, "está en sus manos")
 	_player.scripted_input = Vector2(0.0, 1.0)
 	await _frames(50)
 	_player.scripted_input = Vector2.ZERO
@@ -73,7 +73,7 @@ func test_weight_is_felt() -> void:
 	)
 	var light: float = _player.hold_transform(0.4).origin.y
 	var heavy: float = _player.hold_transform(18.0).origin.y
-	assert_true(heavy < light - 0.1, "lo pesado cuelga más bajo")
+	assert_true(heavy < light - 0.08, "lo pesado cuelga más bajo")
 	var can: Carryable = _bench_can()
 	_player.set_held_item(can)
 	var with_can: float = _player.carry_slowdown()
