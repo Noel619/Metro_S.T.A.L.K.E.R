@@ -125,3 +125,11 @@ El tránsito no se pone encima del terreno: la acera va 3 cm por encima de la ra
 ## D-031 · La Escalinata, horizontal de lado a lado
 
 La ladera cae de través bajo la Escalinata (un 14 % en 40 m de ancho). Los peldaños van horizontales y la escalera queda excavada a un lado (muro de contención) y en alto al otro (muro con pretil), con siete tramos y descansillos colocados donde la ladera se allana. Para que el primer peldaño sea horizontal, la parte de la plaza del Puente Norte que queda al pie pasa a ser el rellano de abajo, a la cota del muelle, y lo que la plaza tenía ladera arriba, al otro lado de la Bajada, queda en tierra. La cabeza se allana de lado a lado (solo en la rasante: lo que asoma del terreno lo cierra un borde). El Bulevar del Río pierde el trozo que caía sobre los tramos y llega a la Escalinata por la plaza de la cabeza.
+
+## D-032 · Las vías del tren llevan su propia rasante
+
+Cada vía del tren tiene su rasante (`tools/ciudad/ferrocarril.py`), que no es la del terreno: lo sigue sin pasar de la pendiente de su clase (1,2 % la principal y la playa, 2,5 % los apartaderos), no baja de la corona de su terraplén, va recta de estribo a estribo por el puente y queda atada a la vía de la que sale. El relieve se nivela después a lo largo de cada vía (caja y talud), salvo bajo el puente. Así una vía nunca sube ni baja más de lo que puede un tren, y la estación, la playa y los andenes quedan en llano. Los andenes son los altos soviéticos (1,10 m sobre el carril) y los vehículos de la vía se apoyan en el carril. En la maqueta, el balasto y los carriles son perfiles extruidos y las traviesas instancias; cada sector levanta solo los tramos que le tocan.
+
+## D-033 · Pasos a nivel y tranvía, siempre a ras
+
+Donde el tren cruza una calle, la calle sube hasta el carril (no al revés: la vía no puede quebrar su rasante), con una losa de hormigón de lado a lado de la calle y el terreno subiendo con ella como un terraplén; así ningún carril hace escalón con un bordillo y no hacen falta pretiles junto a la vía. El tranvía va siempre a ras de la calzada: donde su vía pisa algo peatonal o la tierra, una cama de losas a la altura de la calzada le abre paso. Sus curvas se redondean a 20 m de radio, porque el trazado del plano giraba en seco.

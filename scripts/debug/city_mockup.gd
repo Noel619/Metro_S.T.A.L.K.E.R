@@ -116,6 +116,34 @@ const VIEWS: Array[Dictionary] = [
 		"to": Vector3(1118.0, 862.0, 2.5),
 		"fov": 60.0,
 	},
+	{
+		"name": "estacion",
+		"title": "Los andenes de la estación, entre la vía principal y las de andén",
+		"from": Vector3(132.0, 28.0, 1.7),
+		"to": Vector3(330.0, 33.0, -0.4),
+		"fov": 62.0,
+	},
+	{
+		"name": "playa",
+		"title": "La playa de vías desde su entrada",
+		"from": Vector3(872.0, 40.0, 2.4),
+		"to": Vector3(1010.0, 110.0, -1.0),
+		"fov": 62.0,
+	},
+	{
+		"name": "paso_nivel",
+		"title": "Un paso a nivel del apartadero de la fábrica",
+		"from": Vector3(909.0, 163.5, 1.7),
+		"to": Vector3(919.5, 184.0, -0.4),
+		"fov": 62.0,
+	},
+	{
+		"name": "tranvia",
+		"title": "El tranvía por la mediana de la Avenida",
+		"from": Vector3(559.6, 482.6, 1.7),
+		"to": Vector3(597.0, 523.0, -0.3),
+		"fov": 62.0,
+	},
 ]
 ## Niebla: la del juego, una ligera (para ver lejos) o ninguna (todo detallado).
 const FOG_MODES: PackedStringArray = ["juego", "ligera", "sin"]

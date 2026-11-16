@@ -201,10 +201,12 @@ func _prepare_decks() -> void:
 				}
 			)
 		)
+	# El del ferrocarril: a la altura de la rasante de la vía en cada punta (el balasto, las
+	# traviesas y los carriles los pone la red de tránsito encima).
 	var railway: Dictionary = plan.data["puente_ferrocarril"]
 	var a: Vector2 = Vector2(railway["puntos"][0][0], railway["puntos"][0][1])
 	var b: Vector2 = Vector2(railway["puntos"][1][0], railway["puntos"][1][1])
-	var level: float = maxf(plan.height_at(a + (a - b).normalized() * 6.0), plan.height_at(b))
+	var levels: Array = plan.transit["puente_ferrocarril"]["z"]
 	(
 		_decks
 		. append(
@@ -212,8 +214,8 @@ func _prepare_decks() -> void:
 				"from": a,
 				"to": b,
 				"half_width": float(railway["ancho"]) * 0.5,
-				"height_from": level,
-				"height_to": level,
+				"height_from": float(levels[0]) - 0.05,
+				"height_to": float(levels[1]) - 0.05,
 			}
 		)
 	)

@@ -39,6 +39,9 @@ const SURFACE_MATERIALS: Dictionary = {
 	"senda": "grava",
 	"camino": "tierra",
 	"peldano": "granito",
+	"anden": "hormigon",
+	"paso_nivel": "hormigon",
+	"via_tranvia": "hormigon",
 }
 ## Color de cada clase (multiplica la textura) y, en el alfa, cuánta nieve la cubre.
 const SURFACE_COLORS: Dictionary = {
@@ -53,6 +56,9 @@ const SURFACE_COLORS: Dictionary = {
 	"senda": Color(0.58, 0.52, 0.44, 0.9),
 	"camino": Color(0.5, 0.44, 0.36, 0.85),
 	"peldano": Color(0.68, 0.66, 0.63, 0.6),
+	"anden": Color(0.62, 0.6, 0.57, 0.75),
+	"paso_nivel": Color(0.5, 0.49, 0.47, 0.45),
+	"via_tranvia": Color(0.56, 0.55, 0.52, 0.5),
 }
 ## Metros de suelo que cubre la textura de cada material.
 const TILE: Dictionary = {
@@ -89,6 +95,11 @@ var cells: Vector2i = Vector2i.ZERO
 var cells_per_sector: int = 100
 ## Cifras de la construcción.
 var stats: Dictionary = {}
+## Las vías del tren y del tranvía, en tramos: {"puntos": PackedVector2Array, "z":
+## PackedFloat32Array (la rasante de la vía; vacía si va a ras), "largo": lo que mide la vía
+## hasta cada punto, "abierta": si lleva balasto y traviesas, "carril": del eje de la vía
+## al de cada carril, "puntas": si cada extremo queda suelto (no sigue en otro tramo)}.
+var tracks: Array = []
 
 var groups: Array = []
 ## Por grupo: 1 si sigue la rasante; y el nivel de su clase.
@@ -336,6 +347,73 @@ func _prepare() -> void:
 	for row: int in grid.y:
 		for column: int in grid.x:
 			_sectors.append(TransitSector.new(self, Vector2i(column, row)))
+	_prepare_tracks()
+
+
+## Los tramos de las vías del tren (abiertos o a ras en los pasos a nivel) y los del
+## tranvía (a ras), con lo que mide cada uno hasta cada punto.
+func _prepare_tracks() -> void:
+	tracks.clear()
+	for via: Dictionary in plan.transit.get("vias", []):
+		var ends: PackedVector2Array = PackedVector2Array()
+		for stretch: Dictionary in via["tramos"]:
+			var flat: Array = stretch["puntos"]
+			ends.append(Vector2(flat[0][0], flat[0][1]))
+			ends.append(Vector2(flat[flat.size() - 1][0], flat[flat.size() - 1][1]))
+		for stretch: Dictionary in via["tramos"]:
+			var line: PackedVector2Array = PackedVector2Array()
+			var heights: PackedFloat32Array = PackedFloat32Array()
+			for p: Array in stretch["puntos"]:
+				line.append(Vector2(p[0], p[1]))
+				heights.append(p[2])
+			var open: bool = String(stretch["tipo"]) == "abierta"
+			var track: Dictionary = _track(line, heights if open else PackedFloat32Array())
+			track["carril"] = TransitRails.RAIL_OFFSET
+			if not open:
+				track["carriles"] = _rails(line, TransitRails.RAIL_OFFSET)
+			track["puntas"] = [_is_loose(ends, line[0]), _is_loose(ends, line[line.size() - 1])]
+			tracks.append(track)
+	for item: Dictionary in plan.transit.get("tranvias", []):
+		var line: PackedVector2Array = PackedVector2Array()
+		for p: Array in item["puntos"]:
+			line.append(Vector2(p[0], p[1]))
+		var track: Dictionary = _track(line, PackedFloat32Array())
+		track["carril"] = TransitRails.TRAM_OFFSET
+		track["carriles"] = _rails(line, TransitRails.TRAM_OFFSET)
+		track["puntas"] = [false, false]
+		tracks.append(track)
+
+
+## Un tramo; si va a ras, con la línea de cada carril (la de la izquierda primero),
+## calculada de una vez para que los sectores la corten igual.
+static func _track(line: PackedVector2Array, heights: PackedFloat32Array) -> Dictionary:
+	return {
+		"puntos": line,
+		"z": heights,
+		"largo": TransitEdges.arc_lengths(line),
+		"abierta": not heights.is_empty(),
+		"carriles": [],
+	}
+
+
+static func _rails(line: PackedVector2Array, offset: float) -> Array:
+	var normals: PackedVector2Array = TransitEdges.line_normals(line)
+	var result: Array = []
+	for side: float in [1.0, -1.0]:
+		var rail: PackedVector2Array = PackedVector2Array()
+		for k: int in line.size():
+			rail.append(line[k] + normals[k] * offset * side)
+		result.append(rail)
+	return result
+
+
+## ¿Acaba la vía en este punto (no sigue en otro de sus tramos)?
+static func _is_loose(ends: PackedVector2Array, point: Vector2) -> bool:
+	var count: int = 0
+	for end: Vector2 in ends:
+		if end.distance_to(point) < 0.05:
+			count += 1
+	return count <= 1
 
 
 ## Reparte entre los sectores lo que toca a cada uno (por su caja).
@@ -374,6 +452,20 @@ func _assign() -> void:
 		var center: Vector2 = Vector2(crossings[index]["centro"][0], crossings[index]["centro"][1])
 		for sector: TransitSector in _sectors_in(Rect2(center, Vector2.ZERO).grow(40.0)):
 			sector.add_item("crossings", index)
+	_assign_tracks()
+
+
+## Reparte los tramos de las vías por sus segmentos: cada sector recibe, en orden, los
+## pares (vía, segmento) que caen en él (con el ancho del balasto de margen).
+func _assign_tracks() -> void:
+	var margin: float = TransitRails.BALLAST_HALF.y + 0.5
+	for index: int in tracks.size():
+		var line: PackedVector2Array = tracks[index]["puntos"]
+		for k: int in line.size() - 1:
+			var box: Rect2 = Rect2(line[k], Vector2.ZERO).expand(line[k + 1]).grow(margin)
+			for sector: TransitSector in _sectors_in(box):
+				sector.add_item("tracks", index)
+				sector.add_item("tracks", k)
 
 
 ## Reparte líneas por su caja (los puntos van seguidos, x e y, o de dos en dos o de tres
@@ -419,6 +511,11 @@ func _merge() -> void:
 			stats[key] = stats.get(key, 0) + sector.stats[key]
 		for key: String in sector.edge_stats:
 			stats[key] = stats.get(key, 0) + sector.edge_stats[key]
+		for model: String in sector.instances:
+			if not instances.has(sector.sector):
+				instances[sector.sector] = {}
+			var by_model: Dictionary = instances[sector.sector]
+			by_model[model] = by_model.get(model, []) + sector.instances[model]
 
 
 func _sector_of_cell(cell: Vector2i) -> TransitSector:

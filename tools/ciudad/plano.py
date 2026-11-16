@@ -38,6 +38,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import datos as D  # noqa: E402
 import relieve as R  # noqa: E402
+import ferrocarril as F  # noqa: E402
 import transito as T  # noqa: E402
 from geo import ALTO, ANCHO, SECTOR, banda, coords, distancia, sector_de  # noqa: E402
 
@@ -212,19 +213,19 @@ def suavizar(a: np.ndarray, radio: int) -> np.ndarray:
     return a
 
 
-def calcular_relieve(escombros: list[dict], res: float = 2.0) -> tuple[np.ndarray, np.ndarray]:
-    """El relieve (lo que se ve: con los escombros) y el terreno (sin ellos). Los dos con
-    los terraplenes del ferrocarril y las calles de la falda de la loma niveladas."""
+def calcular_relieve(escombros: list[dict], res: float = 2.0) -> tuple[np.ndarray, np.ndarray, dict]:
+    """El relieve (lo que se ve: con los escombros), el terreno (sin ellos) y las rasantes
+    de las vías del tren. El relieve y el terreno llevan las vías niveladas (con sus
+    terraplenes y trincheras) y las calles de la falda de la loma."""
     nx, ny = int(ANCHO / res), int(ALTO / res)
     xs = (np.arange(nx) + 0.5) * res
     ys = (np.arange(ny) + 0.5) * res
     gx, gy = np.meshgrid(xs, ys)
     h = R.altura_natural(gx, gy)
-    for t in D.TERRAPLENES:
-        h = h + R.terraplen(gx, gy, t["puntos"], t["alto"], t["corona"], t["talud"])
-    terreno = T.nivelar(h, res)
+    ferro = F.perfiles(h, res)
+    terreno = T.nivelar(h, res, ferro)
     montones = rasterizar([(e["forma"], e["alto"]) for e in escombros], res, nx, ny)
-    return terreno + suavizar(montones, max(1, int(4 / res))), terreno
+    return terreno + suavizar(montones, max(1, int(4 / res))), terreno, ferro
 
 
 def muestrear(h: np.ndarray, res: float, xs: np.ndarray, ys: np.ndarray) -> np.ndarray:
@@ -388,12 +389,22 @@ def exportar_arbol(a: dict) -> dict:
     return registro
 
 
+# Vehículos que van sobre los carriles del tren (si no están volcados, en lo alto del carril).
+SOBRE_CARRILES = ("vagon", "coche_tren", "locomotora")
+
+
 def alturas_en_el_transito(trazado, alturas) -> None:
     """La altura de lo que pisan los árboles y los vehículos que están en el tránsito (una
-    acera, un alcorque, el tablero del puente…); los demás, la sacan del relieve."""
+    acera, un alcorque, el tablero del puente…) o sobre una vía del tren (lo alto del
+    carril); los demás, la sacan del relieve."""
     for lista in (D.ARBOLES, D.VEHICULOS):
         for cosa in lista:
             x, y = cosa["pos"]
+            if cosa.get("tipo") in SOBRE_CARRILES and cosa.get("estado") != "volcado":
+                carril = F.carril_en(alturas.ferrocarril, x, y)
+                if carril is not None:
+                    cosa["z"] = round(carril, 3)
+                    continue
             grupo = T._grupo_en(trazado, x, y)
             if grupo is None:
                 cosa.pop("z", None)
@@ -498,11 +509,18 @@ def main() -> int:
     problemas = validar(calles)
     calcular_danos()
     escombros = calcular_escombros()
-    relieve, terreno = calcular_relieve(escombros, 2.0)
+    relieve, terreno, ferro = calcular_relieve(escombros, 2.0)
     calcular_cotas(terreno, 2.0)
-    rasante = T.rasante_transito(terreno, 2.0)
-    alturas = T.Alturas(rasante, relieve, terreno, 2.0)
-    trazado = T.trazar_completo(alturas)
+    planta = T.trazar()
+    rasante_calles = T.rasante_transito(terreno, 2.0)
+    pavimento = unary_union(list(planta.superficies.values()))
+    pasos = F.cruces(ferro, pavimento)
+    rasante = F.subir_pasos(rasante_calles, 2.0, pasos, T.NIVEL_CALZADA)
+    # El terreno sube con la calle junto a los pasos a nivel (su terraplén).
+    terreno = F.subir_terreno(terreno, 2.0, rasante_calles, rasante, pavimento, T.NIVEL_PEATON)
+    relieve = F.subir_terreno(relieve, 2.0, rasante_calles, rasante, pavimento, T.NIVEL_PEATON)
+    alturas = T.Alturas(rasante, relieve, terreno, 2.0, ferro)
+    trazado = T.trazar_completo(alturas, planta)
     problemas += T.comprobar(trazado, alturas)
     alturas_en_el_transito(trazado, alturas)
     meta = exportar_relieve(relieve, 2.0)

@@ -65,6 +65,10 @@ ARCEN_SERVICIO = 1.0
 MARGEN_MAPA = 40.0
 # Lado de los alcorques de los árboles de las aceras.
 LADO_ALCORQUE = 1.2
+# Ancho de la losa de los pasos a nivel (centrada en la vía, de lado a lado de la calle).
+ANCHO_PASO_NIVEL = 6.0
+# Ancho de la cama de cada vía del tranvía donde pisa algo peatonal (centrada en la vía).
+ANCHO_CAMA_TRANVIA = 3.2
 # Decimales de las coordenadas exportadas (milímetros).
 DECIMALES = 3
 
@@ -82,6 +86,13 @@ CLASES = {
     "camino": {"nivel": NIVEL_CAMINO, "rodada": False},
     # Los peldaños y los rellanos de las escaleras: su regla ya da la altura de la pisada.
     "peldano": {"nivel": 0.0, "rodada": False},
+    # Los andenes de la estación (y sus rampas): su regla da la altura.
+    "anden": {"nivel": 0.0, "rodada": False},
+    # La losa de hormigón de los pasos a nivel: a ras del carril, como la calzada.
+    "paso_nivel": {"nivel": NIVEL_CALZADA, "rodada": True},
+    # La cama del tranvía donde deja la calzada (la mediana de la Avenida, la Plaza): losas
+    # de hormigón a la altura de la calzada, con los carriles a ras.
+    "via_tranvia": {"nivel": NIVEL_CALZADA, "rodada": True},
 }
 PEATONALES = ("acera", "losas", "plaza", "paseo", "isleta")
 # Aceras de losas en el centro (la Plaza, la Avenida y el Centro); de asfalto en el resto.
@@ -425,13 +436,54 @@ def trazar_superficies(t: Trazado) -> None:
     t.superficies = {"calzada": calzada, "adoquin": adoquin, "acera": asfalto, "losas": losas, "plaza": plaza,
                      "paseo": paseo, "isleta": isletas}
     _trazar_sendas_y_camino(t, pavimento)
+    _fuera_de_las_vias(t)
+    _cama_del_tranvia(t)
     _separar_clases(t)
+
+
+def _fuera_de_las_vias(t: Trazado) -> None:
+    """Nada del tránsito pisa la vía del tren salvo en los pasos a nivel (donde la cruza
+    una calzada): lo demás que llega a ella (una esquina de acera, un retal de plaza) se
+    recorta a 3 m de su eje, lo que la losa del paso. En el paso, una losa de hormigón a ras
+    del carril cruza la calle de lado a lado (las aceras bajan a ella por su bordillo)."""
+    vias = unary_union([banda(v["puntos"], ANCHO_PASO_NIVEL) for v in D.VIAS])
+    pasos = vias.intersection(t.superficies["calzada"]).buffer(8.0)
+    fuera = vias.difference(pasos)
+    for clase, forma in t.superficies.items():
+        if clase not in ("calzada", "adoquin"):
+            t.superficies[clase] = forma.difference(fuera)
+    todo = unary_union(list(t.superficies.values()))
+    losas = unary_union([banda(v["puntos"], ANCHO_PASO_NIVEL) for v in D.VIAS])
+    losas = limpiar(losas.intersection(pasos).intersection(todo), 1.0)
+    for clase in list(t.superficies):
+        t.superficies[clase] = t.superficies[clase].difference(losas)
+    t.superficies["paso_nivel"] = losas
+
+
+def _cama_del_tranvia(t: Trazado) -> None:
+    """El tranvía va por la calzada, a ras. Donde su vía la deja (la mediana de la Avenida,
+    la Plaza, una curva que corta una esquina), una cama de losas a la altura de la calzada
+    le abre paso: los carriles siguen a ras y lo de al lado queda tras un bordillo. Nunca
+    sobre el río (el vano hundido del puente), la Escalinata ni un edificio."""
+    import ferrocarril as F
+
+    vias = [via for _, via in F.ejes_tranvia()]
+    cama = unary_union([v.buffer(ANCHO_CAMA_TRANVIA / 2.0, cap_style=2, join_style=2) for v in vias])
+    rodado = unary_union([t.superficies[c] for c in ("calzada", "adoquin", "paso_nivel")])
+    edificios = unary_union([e["huella"] for e in D.EDIFICIOS])
+    cama = cama.intersection(_mapa()).difference(rodado).difference(D.RIO).difference(edificios)
+    cama = limpiar(cama.difference(t.zona_escalinata), 1.0)
+    for clase in list(t.superficies):
+        if clase not in ("calzada", "adoquin", "paso_nivel"):
+            t.superficies[clase] = t.superficies[clase].difference(cama)
+    t.superficies["via_tranvia"] = cama
 
 
 def _separar_clases(t: Trazado) -> None:
     """Deja las clases sin astillas y sin solaparse (las rodadas mandan)."""
     ocupado = Polygon()
-    for clase in ("calzada", "adoquin", "isleta", "plaza", "paseo", "losas", "acera", "senda", "camino"):
+    for clase in ("paso_nivel", "calzada", "adoquin", "via_tranvia", "isleta", "plaza", "paseo", "losas", "acera",
+                  "senda", "camino"):
         forma = t.superficies[clase].difference(ocupado)
         minimo = 1.0 if CLASES[clase]["rodada"] else 0.5
         forma = limpiar(forma, minimo).intersection(forma)
@@ -578,23 +630,31 @@ def _rejilla(forma, res: float):
     return np.meshgrid(xs, ys)
 
 
-def nivelar(terreno: np.ndarray, res: float) -> np.ndarray:
-    """El terreno con las calles de la loma niveladas: dentro de la calle, la rasante (de
-    lado a lado); fuera, se funde con el terreno en un talud de TALUD_NIVELADA metros."""
+def nivelar(terreno: np.ndarray, res: float, ferrocarril: dict | None = None) -> np.ndarray:
+    """El terreno con las calles de la loma y las vías del tren niveladas: dentro de la
+    franja, la rasante (de lado a lado); fuera, se funde con el terreno en un talud (de
+    TALUD_NIVELADA metros en las calles; el suyo en cada vía). Las vías hacen así sus
+    terraplenes y sus trincheras."""
     import relieve as R
 
     gx, gy = _rejilla(terreno.shape, res)
     resultado = terreno.copy()
     peso_max = np.zeros_like(terreno)
-    for datos in rasantes(terreno, res).values():
+    franjas = list(rasantes(terreno, res).values()) + list((ferrocarril or {}).values())
+    for datos in franjas:
+        talud = datos.get("talud", TALUD_NIVELADA)
         pts = np.asarray(datos["puntos"], float)
-        alcance = datos["media"] + TALUD_NIVELADA
+        alcance = datos["media"] + talud
         caja = ((gx >= pts[:, 0].min() - alcance) & (gx <= pts[:, 0].max() + alcance)
                 & (gy >= pts[:, 1].min() - alcance) & (gy <= pts[:, 1].max() + alcance))
         d, f = R._distancia_polilinea(gx[caja], gy[caja], datos["puntos"])
         z = np.interp(f, datos["s"], datos["z"])
-        t = np.clip((d - datos["media"]) / TALUD_NIVELADA, 0.0, 1.0)
+        t = np.clip((d - datos["media"]) / talud, 0.0, 1.0)
         peso = 1.0 - t * t * (3.0 - 2.0 * t)
+        if datos.get("sin_nivelar"):
+            # Bajo el puente del ferrocarril, el río sigue a su altura.
+            a, b = datos["sin_nivelar"]
+            peso = np.where((f > a) & (f < b), 0.0, peso)
         actual = peso_max[caja]
         mejor = peso > actual
         valores = resultado[caja]
@@ -715,9 +775,12 @@ class Alturas:
     ve, con los escombros), muestreados como en la maqueta (bilineal entre los centros de
     las celdas de 2 m)."""
 
-    def __init__(self, rasante: np.ndarray, relieve: np.ndarray, desnudo: np.ndarray, res: float = 2.0):
+    def __init__(self, rasante: np.ndarray, relieve: np.ndarray, desnudo: np.ndarray, res: float = 2.0,
+                 ferrocarril: dict | None = None):
         self.rasante = rasante
         self.relieve = relieve
+        # Las rasantes de las vías del tren (ferrocarril.perfiles).
+        self.ferrocarril = ferrocarril or {}
         # El terreno nivelado sin escombros: con él se decide si un borde es muro (los
         # montones de escombros caen encima de la acera, no la contienen).
         self.desnudo = desnudo
@@ -860,6 +923,20 @@ def trazar_grupos(t: Trazado, alturas: Alturas) -> None:
     t.puente = {"regla": puente}
     _escalinata(t, alturas)
     _escaleras_sendas(t, alturas)
+    _andenes(t, alturas)
+
+
+def _andenes(t: Trazado, alturas: Alturas) -> None:
+    """Los andenes isla de la estación de tren, con sus rampas, a 1,10 m sobre el carril."""
+    import ferrocarril as F
+
+    if "principal" not in alturas.ferrocarril:
+        return
+    for anden in F.andenes(alturas.ferrocarril):
+        regla = {"tipo": "plano", "z": round(anden["z"], 3)}
+        if "gx" in anden:
+            regla.update({"g": (anden["gx"], 0.0), "o": (anden["ox"], 0.0)})
+        t.grupos.append(Grupo("anden", anden["forma"], regla, 0.0))
 
 
 def _pisadas_en_grupos(t: Trazado, huella, pisadas, marco, angulo: float, nombre: str) -> list[int]:
@@ -1156,8 +1233,13 @@ def _clasificar(t: Trazado, alturas: Alturas, puntos, izq: int, der: int, hueco,
             if tramo.length > 0.05:
                 resultado.append(Arista(list(tramo.coords), "rotura", izq, -1))
         return resultado
+    if ci == "paso_nivel":
+        # La punta de la losa, donde la vía sale de la calle: una cara hasta el balasto.
+        return [Arista(puntos, "paso_nivel", izq, -1)]
     if CLASES[ci]["rodada"]:
         return [Arista(puntos, "bordillo", izq, -1)]
+    if ci == "anden":
+        return [Arista(puntos, "anden", izq, -1)]
     if ci == "peldano":
         return [Arista(puntos, "muro_escalera", izq, -1)]
     if ci == "senda":
@@ -1444,9 +1526,10 @@ def superficie_en(t: Trazado, alturas: Alturas, xs, ys) -> np.ndarray:
 # ---------------------------------------------------------------------------
 # Todo junto
 # ---------------------------------------------------------------------------
-def trazar_completo(alturas: Alturas) -> Trazado:
-    """El trazado con sus grupos, aristas, marcas y detalles."""
-    t = trazar()
+def trazar_completo(alturas: Alturas, t: Trazado | None = None) -> Trazado:
+    """El trazado con sus grupos, aristas, marcas y detalles (sobre el trazado en planta, si
+    ya está hecho)."""
+    t = t or trazar()
     trazar_grupos(t, alturas)
     trazar_aristas(t, alturas)
     lineas_muros = unary_union([LineString([p[:2] for p in m["puntos"]]) for m in t.muros]).buffer(0.45)
@@ -1480,6 +1563,21 @@ def _triangular(forma) -> tuple[list, list]:
             if len(set(ids)) == 3:
                 triangulos += ids
     return vertices, triangulos
+
+
+def _exportar_ferrocarril(t: Trazado, alturas: Alturas) -> dict:
+    """Las vías del tren (por tramos: abiertos o a ras de la calle) y del tranvía."""
+    import ferrocarril as F
+
+    if not alturas.ferrocarril:
+        return {}
+    transito = unary_union([g.forma for g in t.grupos if not g.elevado])
+    return {
+        "vias": F.tramos(alturas.ferrocarril, transito),
+        "tranvias": F.tranvias(transito.union(unary_union([g.forma for g in t.grupos if g.elevado]))),
+        "puente_ferrocarril": F.puente(alturas.ferrocarril),
+        "ferrocarril": {"carril": F.CARRIL, "anden": F.ANDEN_ALTO},
+    }
 
 
 def _regla_json(regla: dict) -> dict:
@@ -1533,6 +1631,7 @@ def exportar(t: Trazado, alturas: Alturas, carpeta) -> dict:
                    "vano_hundido": list(_calle("puente_progreso")["vano_hundido"]),
                    "tablero": _calle("puente_progreso")["tablero"]},
         **meta_rejilla,
+        **_exportar_ferrocarril(t, alturas),
         "relleno": {"triangulos": [ident for ident, _ in malla.rellenos],
                     "puntos": [v for _, esquinas in malla.rellenos for xy in esquinas for v in xy]},
     }

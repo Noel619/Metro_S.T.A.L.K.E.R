@@ -12,6 +12,8 @@ const FULL: int = 1
 const BORDER: int = 2
 const DEEP: int = 3
 const RING: int = 4
+## Lo lejos que llegan los sectores del borde del mapa.
+const FAR: float = 100000.0
 
 var transit: CityTransit
 var plan: CityPlan
@@ -20,10 +22,13 @@ var sector: Vector2i
 ## espacio del sector (origen en su centro).
 var meshes: Dictionary = {}
 var collision: MeshBuffer = MeshBuffer.new()
+## Instancias (las traviesas): {modelo: Array de Transform3D en el mundo}.
+var instances: Dictionary = {}
 var stats: Dictionary = {}
 var edge_stats: Dictionary = {}
 ## Lo que le toca: pares (grupo, primer índice del triángulo), triángulos del relleno,
-## aristas, muros, barandillas, ejes y pasos de cebra.
+## aristas, muros, barandillas, ejes, pasos de cebra y pares (vía, tramo de la vía) de las
+## vías del tren y del tranvía (CityTransit.tracks).
 var triangles: PackedInt32Array = PackedInt32Array()
 var fills: PackedInt32Array = PackedInt32Array()
 var edges: PackedInt32Array = PackedInt32Array()
@@ -31,6 +36,7 @@ var walls: PackedInt32Array = PackedInt32Array()
 var rails: PackedInt32Array = PackedInt32Array()
 var axes: PackedInt32Array = PackedInt32Array()
 var crossings: PackedInt32Array = PackedInt32Array()
+var tracks: PackedInt32Array = PackedInt32Array()
 
 var _center: Vector2
 var _origin: Vector2i
@@ -75,11 +81,17 @@ func build() -> void:
 	var builder: TransitEdges = TransitEdges.new(transit, self)
 	builder.build()
 	edge_stats = builder.stats
+	var rails: TransitRails = TransitRails.new(transit, self, builder)
+	rails.build()
+	edge_stats.merge(rails.stats)
 
 
-## Los límites por los que se recorta lo del sector (infinitos en el borde del mapa).
+## Los límites por los que se recorta lo del sector (en el borde del mapa, muy lejos: un
+## rectángulo con lados infinitos no se puede restar).
 func clip_bounds() -> Rect2:
-	return Rect2(_clip_low, _clip_high - _clip_low)
+	var far: Vector2 = Vector2.ONE * FAR
+	var low: Vector2 = _clip_low.clamp(-far, far)
+	return Rect2(low, _clip_high.clamp(-far, far) - low)
 
 
 ## ¿Es de este sector el punto (lo de fuera del mapa es de los sectores del borde)?
@@ -97,6 +109,13 @@ func buffer(material: String) -> MeshBuffer:
 	if not meshes.has(material):
 		meshes[material] = MeshBuffer.new()
 	return meshes[material]
+
+
+## Añade una instancia de un modelo (en el mundo).
+func add_instance(model: String, placed: Transform3D) -> void:
+	if not instances.has(model):
+		instances[model] = []
+	instances[model].append(placed)
 
 
 ## Añade caras de colisión (un polígono convexo, en el espacio del sector).

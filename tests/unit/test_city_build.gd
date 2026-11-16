@@ -88,9 +88,11 @@ func test_transit_is_built_and_cuts_the_terrain() -> void:
 func test_surfaces_sit_at_their_level() -> void:
 	var plan: CityPlan = _city.plan
 	var levels: Dictionary = plan.transit["niveles"]
-	# La mediana de la avenida, su calzada, su acera y el tablero del puente.
+	# La cama del tranvía en medio de la avenida (a la altura de la calzada), su mediana, su
+	# calzada, su acera y el tablero del puente.
 	var places: Array = [
-		[plan.axis_point(150.0, 0.0), levels["isleta"]],
+		[plan.axis_point(150.0, 0.0), levels["via_tranvia"]],
+		[plan.axis_point(150.0, 5.0), levels["isleta"]],
 		[plan.axis_point(150.0, -20.0), levels["calzada"]],
 		[plan.axis_point(150.0, 32.0), levels["losas"]],
 	]
@@ -137,6 +139,58 @@ func test_a_walker_climbs_a_curb_and_a_flight() -> void:
 	var bottom: Vector2 = plan.axis_point(652.0, 0.0)
 	var climbed: float = await _walk(bottom, plan.axis_point(664.0, 0.0), 12.0)
 	assert_true(climbed > _city.surface_height(bottom) + 1.2, "sube un tramo entero")
+
+
+func test_tracks_are_built() -> void:
+	var stats: Dictionary = _city.stats["transito"]
+	assert_true(int(stats["traviesas"]) > 15000, "traviesas: %d" % int(stats["traviesas"]))
+	assert_true(float(stats["via_m"]) > 9000.0, "vía sobre balasto: %.0f m" % stats["via_m"])
+	assert_true(float(stats["a_ras_m"]) > 5000.0, "vía a ras: %.0f m" % stats["a_ras_m"])
+
+
+func test_platforms_and_ballast_sit_at_the_rail_level() -> void:
+	var rails: Dictionary = _city.plan.transit["ferrocarril"]
+	var formation: float = _formation("principal", Vector2(200.0, 34.0))
+	# El andén isla al sur de la principal: 1,10 m sobre lo alto del carril.
+	var platform: Dictionary = _ray_down(Vector2(200.0, 28.0), [])
+	var expected: float = formation + float(rails["carril"]) + float(rails["anden"])
+	assert_almost(platform["position"].y, expected, 0.01)
+	# En el eje de la vía se pisa lo alto del balasto.
+	var bed: Dictionary = _ray_down(Vector2(200.0, 34.0), [])
+	assert_almost(bed["position"].y, formation + TransitRails.BALLAST_TOP, 0.02)
+
+
+func test_level_crossing_is_flush_with_the_rail() -> void:
+	# El primer paso a nivel del apartadero de la fábrica: la losa, a lo alto del carril.
+	for via: Dictionary in _city.plan.transit["vias"]:
+		if String(via["id"]) != "fabrica":
+			continue
+		for stretch: Dictionary in via["tramos"]:
+			if String(stretch["tipo"]) != "embebida":
+				continue
+			var middle: Array = stretch["puntos"][stretch["puntos"].size() / 2]
+			var point: Vector2 = Vector2(middle[0], middle[1])
+			var rail: float = _formation("fabrica", point) + TransitRails.SLEEPER_TOP
+			rail += TransitRails.RAIL_HEIGHT
+			assert_almost(_ray_down(point, [])["position"].y, rail, 0.03, "paso en %s" % point)
+			return
+	assert_true(false, "sin pasos a nivel en el apartadero de la fábrica")
+
+
+## La rasante de una vía (el plano de formación) en el punto de su trazado más cercano.
+func _formation(ident: String, point: Vector2) -> float:
+	var best: float = INF
+	var result: float = NAN
+	for via: Dictionary in _city.plan.transit["vias"]:
+		if String(via["id"]) != ident:
+			continue
+		for stretch: Dictionary in via["tramos"]:
+			for p: Array in stretch["puntos"]:
+				var d: float = point.distance_to(Vector2(p[0], p[1]))
+				if d < best and String(stretch["tipo"]) == "abierta":
+					best = d
+					result = p[2]
+	return result
 
 
 ## Lleva un cuerpo como el del visitante de [param from] hacia [param to] y devuelve a qué

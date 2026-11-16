@@ -289,12 +289,13 @@ TERRAPLENES = [
     {"puntos": [(-20, 34), (300, 34), (600, 37), (860, 42)], "alto": 5.0, "corona": 14.0, "talud": 10.0},
     {"puntos": [(1480, 80), (1530, 130), (1556, 200), (1562, 300), (1562, 420), (1557, 560), (1554, 620)],
      "alto": 6.0, "corona": 10.0, "talud": 12.0},
-    {"puntos": [(1548, 760), (1538, 820), (1515, 920), (1492, 1010)], "alto": 4.0, "corona": 10.0, "talud": 10.0},
+    {"puntos": [(1548, 742), (1548, 760), (1538, 820), (1515, 920), (1492, 1010)], "alto": 4.0, "corona": 10.0,
+     "talud": 10.0},
 ]
 VIAS: list[dict] = [
     {"id": "principal", "nombre": "Línea del ferrocarril", "puntos": VIA_PRINCIPAL, "tipo": "principal"},
     {"id": "anden_1", "nombre": "Vía de andén", "tipo": "secundaria", "puntos": [(60, 24), (120, 22), (330, 22), (380, 26)]},
-    {"id": "anden_2", "nombre": "Vía de andén", "tipo": "secundaria", "puntos": [(60, 44), (120, 46), (330, 46), (380, 42)]},
+    {"id": "anden_2", "nombre": "Vía de andén", "tipo": "secundaria", "puntos": [(60, 42), (120, 44), (330, 44), (380, 41)]},
     {"id": "fabrica", "nombre": "Apartadero de la fábrica", "tipo": "secundaria",
      "puntos": [(905, 150), (928, 210), (936, 300), (940, 372)]},
     {"id": "puerto", "nombre": "Vía del muelle", "tipo": "secundaria",
@@ -468,7 +469,8 @@ edificio("PLZ-23", "pabellon", "Entrada sellada del metro", rect(205, 132, 10, 6
          notas="Sellada por el gobierno civil. Al otro lado sigue la red habitada.")
 edificio("PLZ-24", "pabellon", "Monumento al Minero", circulo(*_PT, 6), 1, pisos=1, altura=12.0, uso="monumento",
          interior="ninguno", sotano=False, hito=3, notas="Estatua de bronce sobre un pedestal de granito. Le falta el brazo.")
-for _i, _a in enumerate([100, 118, 280, 305, 330]):
+# Los quioscos del anillo de la Plaza (dos, apartados de la curva del tranvía).
+for _i, _a in enumerate([100, 118, 280, 255, 350]):
     _x, _y = _PT[0] + 74 * math.cos(math.radians(_a)), _PT[1] + 74 * math.sin(math.radians(_a))
     menor(f"PLZ-Q{_i + 1}", "quiosco", "Quiosco", rect(_x, _y, 4, 3, _a), 1, uso="quiosco")
 for _i, (_x, _y) in enumerate([(196, 82), (290, 84), (192, 130), (296, 128)]):

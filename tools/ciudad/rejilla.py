@@ -42,7 +42,7 @@ REBAJE_HONDO = 0.45
 # Lo que puede separarse la rasante del plano de un triángulo para dibujarlo entero.
 TOLERANCIA_PLANO = 0.003
 # Clases que van por debajo de la rasante (cerca de ellas el terreno asomaría).
-CLASES_HONDAS = ("calzada", "adoquin", "camino", "alcorque", "peldano")
+CLASES_HONDAS = ("calzada", "adoquin", "paso_nivel", "via_tranvia", "camino", "alcorque", "peldano")
 # Resolución del rasterizado con el que se clasifican los triángulos que el borde no cruza.
 PIXELES_POR_METRO = 2
 

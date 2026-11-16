@@ -28,6 +28,7 @@ var _landmarks: Array[Dictionary] = []
 var _labels: Array[Dictionary] = []
 var _canvas: Control
 var _font: Font
+var _labels_drawn: bool = false
 
 
 ## Construye las tres capas (empiezan ocultas).
@@ -139,8 +140,12 @@ func _mark_blind_spots(marks: Array[Array], spacing: float) -> void:
 
 
 func _process(_delta: float) -> void:
-	if _canvas != null and (routes.visible or sectors.visible or landmarks.visible):
+	# Se redibuja mientras se ve alguna capa y una vez más al ocultarlas todas (si no, los
+	# rótulos se quedarían en pantalla, quietos, al cambiar de vista).
+	var shown: bool = routes.visible or sectors.visible or landmarks.visible
+	if _canvas != null and (shown or _labels_drawn):
 		_canvas.queue_redraw()
+	_labels_drawn = shown
 
 
 ## Las rutas del plano como una cinta por encima del suelo. Todas salen de la compuerta:

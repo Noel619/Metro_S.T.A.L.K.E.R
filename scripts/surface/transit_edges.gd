@@ -30,6 +30,8 @@ const PARAPET: Vector2 = Vector2(0.3, 1.0)
 const PARAPET_FROM: float = 0.5
 ## Lo que baja el borde del tablero sobre la losa del puente.
 const DECK_EDGE: float = 0.45
+## La línea de seguridad de los andenes: desde dónde y hasta dónde, contando desde el borde.
+const PLATFORM_LINE: Vector2 = Vector2(0.15, 0.25)
 ## Pintura de las marcas: lo que se levanta sobre la calzada y el ancho de los ejes.
 const PAINT_LIFT: float = 0.012
 const AXIS_WIDTH: float = 0.12
@@ -86,7 +88,7 @@ func _build_edge(edge: Dictionary) -> void:
 	for k: int in range(0, flat.size(), 2):
 		full.append(Vector2(flat[k], flat[k + 1]))
 	# Solo lo que cae en el sector (el corte en el linde sale igual desde los dos lados).
-	for part: PackedVector2Array in _clip_line(full):
+	for part: PackedVector2Array in clip_line(full):
 		_build_edge_part(edge, part)
 	stats["aristas"] += 1
 
@@ -103,7 +105,7 @@ func _build_edge_part(edge: Dictionary, part: PackedVector2Array) -> void:
 	for p: Vector2 in line:
 		z_left.append(transit.surface_z(left, p))
 		z_right.append(transit.surface_z(right, p) if right >= 0 else transit.terrain_z(p))
-	var kept: PackedInt32Array = _simplify(line, z_left, z_right)
+	var kept: PackedInt32Array = simplify(line, z_left, z_right)
 	var short_line: PackedVector2Array = PackedVector2Array()
 	var short_left: PackedFloat32Array = PackedFloat32Array()
 	var short_right: PackedFloat32Array = PackedFloat32Array()
@@ -111,7 +113,7 @@ func _build_edge_part(edge: Dictionary, part: PackedVector2Array) -> void:
 		short_line.append(line[k])
 		short_left.append(z_left[k])
 		short_right.append(z_right[k])
-	var sides: Array = [short_line, _left_normals(short_line), short_left, short_right, right < 0]
+	var sides: Array = [short_line, line_normals(short_line), short_left, short_right, right < 0]
 	match kind:
 		"bordillo":
 			_curb(sides)
@@ -127,10 +129,14 @@ func _build_edge_part(edge: Dictionary, part: PackedVector2Array) -> void:
 			_wall_edge(sides, kind, transit.group(left)["elevado"])
 		"tierra", "fachada":
 			_step_face(sides, String(transit.group(left)["clase"]), kind == "fachada")
+		"anden":
+			_drop_face(sides, true)
+		"paso_nivel":
+			_drop_face(sides, false)
 
 
 ## La polilínea recortada por los límites del sector: los trozos que caen dentro.
-func _clip_line(line: PackedVector2Array) -> Array[PackedVector2Array]:
+func clip_line(line: PackedVector2Array) -> Array[PackedVector2Array]:
 	var bounds: Rect2 = out.clip_bounds()
 	var low: Vector2 = bounds.position
 	var high: Vector2 = bounds.end
@@ -208,7 +214,7 @@ func _curb(sides: Array) -> void:
 			)
 		)
 		ramps.append([Vector2(RAMP, z_left[n]), Vector2(0.0, top)])
-	_extrude(sides, profiles, "bordillo", EDGE_COLOR, false)
+	extrude(sides, profiles, "bordillo", EDGE_COLOR, false)
 	_extrude_collision(sides, ramps)
 	if to_terrain:
 		_closure(sides, tops)
@@ -235,7 +241,7 @@ func _border(sides: Array, size: Vector2) -> void:
 				]
 			)
 		)
-	_extrude(sides, profiles, "bordillo", EDGE_COLOR, true)
+	extrude(sides, profiles, "bordillo", EDGE_COLOR, true)
 	if sides[4]:
 		_closure(sides, tops)
 
@@ -249,7 +255,7 @@ func _riser(sides: Array) -> void:
 	for n: int in z_left.size():
 		profiles.append([Vector2(0.0, z_left[n]), Vector2(0.0, z_right[n] - 0.02)])
 		ramps.append([Vector2(0.0, z_left[n]), Vector2(-RAMP, z_right[n])])
-	_extrude(sides, profiles, "granito", RISER_COLOR, false)
+	extrude(sides, profiles, "granito", RISER_COLOR, false)
 	_extrude_collision(sides, ramps)
 
 
@@ -284,7 +290,7 @@ func _wall_edge(sides: Array, kind: String, elevated: bool) -> void:
 		else:
 			profiles.append([Vector2(0.0, z_left[n]), Vector2(0.0, z_right[n] - 0.05)])
 	var material: String = "granito" if kind == "pretil" and not elevated else "hormigon"
-	_extrude(sides, profiles, material, WALL_COLOR, true)
+	extrude(sides, profiles, material, WALL_COLOR, true)
 
 
 ## La cara entre el borde de un camino de tierra (o de la acera junto a una fachada) y lo
@@ -300,9 +306,25 @@ func _step_face(sides: Array, kind: String, facade: bool) -> void:
 		tops.append(z_left[n])
 	var material: String = CityTransit.SURFACE_MATERIALS.get(kind, "tierra")
 	var tint: Color = CityTransit.SURFACE_COLORS.get(kind, Color.WHITE)
-	_extrude(sides, profiles, material, tint, false)
+	extrude(sides, profiles, material, tint, false)
 	if not facade:
 		_closure(sides, tops)
+
+
+## Una cara de hormigón hasta el balasto: el borde de un andén (con la línea blanca de
+## seguridad a lo largo) o la punta de la losa de un paso a nivel.
+func _drop_face(sides: Array, stripe: bool) -> void:
+	var z_left: PackedFloat32Array = sides[2]
+	var z_right: PackedFloat32Array = sides[3]
+	var faces: Array = []
+	var line: Array = []
+	for n: int in z_left.size():
+		faces.append([Vector2(0.0, z_left[n]), Vector2(0.0, minf(z_right[n], z_left[n]) - 0.1)])
+		var paint: float = z_left[n] + PAINT_LIFT * 0.25
+		line.append([Vector2(PLATFORM_LINE.y, paint), Vector2(PLATFORM_LINE.x, paint)])
+	extrude(sides, faces, "hormigon", WALL_COLOR, true)
+	if stripe:
+		extrude(sides, line, "pintura", PAINT_COLOR, false)
 
 
 ## Donde el terreno queda por encima del borde, una cara de suelo cierra el corte.
@@ -315,7 +337,7 @@ func _closure(sides: Array, tops: PackedFloat32Array) -> void:
 		any = any or high > tops[n] + 0.005
 		profiles.append([Vector2(0.0, tops[n]), Vector2(0.0, high)])
 	if any:
-		_extrude(sides, profiles, "suelo", CityTransit.GROUND_COLOR, true)
+		extrude(sides, profiles, "suelo", CityTransit.GROUND_COLOR, true)
 
 
 ## Muro de una escalera: sigue la línea de los peldaños con su pretil, o asoma lo justo
@@ -331,8 +353,8 @@ func _build_wall(wall: Dictionary) -> void:
 	var half: float = float(wall["grosor"]) * 0.5
 	var profiles: Array = []
 	var copings: Array = []
-	var along: PackedFloat32Array = _lengths(line)
-	var fine_along: PackedFloat32Array = _lengths(fine)
+	var along: PackedFloat32Array = arc_lengths(line)
+	var fine_along: PackedFloat32Array = arc_lengths(fine)
 	for n: int in fine.size():
 		var z_pitch: float = _interpolate(along, pitch, fine_along[n])
 		var ground: float = transit.terrain_z(fine[n])
@@ -363,16 +385,14 @@ func _build_wall(wall: Dictionary) -> void:
 				]
 			)
 		)
-	var sides: Array = [
-		fine, _left_normals(fine), PackedFloat32Array(), PackedFloat32Array(), false
-	]
+	var sides: Array = [fine, line_normals(fine), PackedFloat32Array(), PackedFloat32Array(), false]
 	var material: String = String(wall["material"])
-	_extrude(sides, profiles, material, WALL_COLOR, true)
-	_extrude(sides, copings, material, WALL_COLOR, false)
-	_cap(sides, profiles, 0, material)
-	_cap(sides, profiles, fine.size() - 1, material)
-	_cap(sides, copings, 0, material)
-	_cap(sides, copings, fine.size() - 1, material)
+	extrude(sides, profiles, material, WALL_COLOR, true)
+	extrude(sides, copings, material, WALL_COLOR, false)
+	cap(sides, profiles, 0, material)
+	cap(sides, profiles, fine.size() - 1, material)
+	cap(sides, copings, 0, material)
+	cap(sides, copings, fine.size() - 1, material)
 	stats["muros"] += 1
 
 
@@ -429,7 +449,7 @@ func _build_markings(marks: Dictionary) -> void:
 		for point: Array in axis["puntos"]:
 			line.append(Vector2(point[0], point[1]))
 		var dashed: bool = axis["tipo"] == "discontinua"
-		var lengths: PackedFloat32Array = _lengths(line)
+		var lengths: PackedFloat32Array = arc_lengths(line)
 		var total: float = lengths[lengths.size() - 1]
 		var start: float = 0.0
 		while start < total:
@@ -480,11 +500,15 @@ func _paint(quad: PackedVector2Array, level: float) -> void:
 
 
 ## Extruye perfiles a lo largo de la línea: un perfil por punto (todos con el mismo número
-## de puntos) y una cara por tramo de perfil y de línea.
-func _extrude(sides: Array, profiles: Array, material: String, tint: Color, collide: bool) -> void:
+## de puntos) y una cara por tramo de perfil y de línea. La textura cuenta a lo largo desde
+## [param start] (lo que mide la línea antes de este trozo, para que no salte entre
+## sectores).
+func extrude(
+	sides: Array, profiles: Array, material: String, tint: Color, collide: bool, start: float = 0.0
+) -> void:
 	var line: PackedVector2Array = sides[0]
 	var normals: PackedVector2Array = sides[1]
-	var lengths: PackedFloat32Array = _lengths(line)
+	var lengths: PackedFloat32Array = arc_lengths(line)
 	var tile: float = CityTransit.TILE.get(material, 1.0)
 	var colors: PackedColorArray = PackedColorArray([tint])
 	var mesh: MeshBuffer = null
@@ -515,10 +539,10 @@ func _extrude(sides: Array, profiles: Array, material: String, tint: Color, coll
 			var facing: Vector3 = Vector3(normal2.x, 0.0, -normal2.y) * d.y + Vector3.UP * -d.x
 			var uvs: PackedVector2Array = PackedVector2Array(
 				[
-					Vector2(lengths[s], a0.y + a0.x) / tile,
-					Vector2(lengths[s + 1], b0.y + b0.x) / tile,
-					Vector2(lengths[s + 1], b1.y + b1.x) / tile,
-					Vector2(lengths[s], a1.y + a1.x) / tile,
+					Vector2(start + lengths[s], a0.y + a0.x) / tile,
+					Vector2(start + lengths[s + 1], b0.y + b0.x) / tile,
+					Vector2(start + lengths[s + 1], b1.y + b1.x) / tile,
+					Vector2(start + lengths[s], a1.y + a1.x) / tile,
 				]
 			)
 			mesh.add_face(face, facing, colors, uvs)
@@ -552,7 +576,9 @@ func _extrude_collision(sides: Array, profiles: Array) -> void:
 
 
 ## Tapa el extremo de un muro: el perfil del punto [param index], mirando hacia fuera.
-func _cap(sides: Array, profiles: Array, index: int, material: String) -> void:
+func cap(
+	sides: Array, profiles: Array, index: int, material: String, tint: Color = WALL_COLOR
+) -> void:
 	var line: PackedVector2Array = sides[0]
 	var normals: PackedVector2Array = sides[1]
 	if not out.owns(line[index]):
@@ -563,7 +589,7 @@ func _cap(sides: Array, profiles: Array, index: int, material: String) -> void:
 	var other: int = 1 if index == 0 else index - 1
 	var outward: Vector2 = (line[index] - line[other]).normalized()
 	var facing: Vector3 = Vector3(outward.x, 0.0, -outward.y)
-	out.buffer(material).add_face(face, facing, PackedColorArray([WALL_COLOR]))
+	out.buffer(material).add_face(face, facing, PackedColorArray([tint]))
 	out.add_collision(face)
 
 
@@ -574,7 +600,7 @@ func _point(origin: Vector2, normal: Vector2, profile: Vector2) -> Vector3:
 ## Los puntos que hacen falta de una línea partida por la rejilla: se quitan los que caen
 ## en línea recta con sus vecinos, en planta y en las dos alturas (en lo llano, casi
 ## todos). Los tramos no pasan de [constant SIMPLIFY_RUN] metros.
-static func _simplify(
+static func simplify(
 	line: PackedVector2Array, z_left: PackedFloat32Array, z_right: PackedFloat32Array
 ) -> PackedInt32Array:
 	var count: int = line.size()
@@ -603,7 +629,7 @@ static func _simplify(
 
 ## Normales hacia la izquierda en cada punto, con inglete en las esquinas (el ancho de los
 ## perfiles se mantiene al doblar).
-static func _left_normals(line: PackedVector2Array) -> PackedVector2Array:
+static func line_normals(line: PackedVector2Array) -> PackedVector2Array:
 	var count: int = line.size()
 	var result: PackedVector2Array = PackedVector2Array()
 	result.resize(count)
@@ -623,7 +649,7 @@ static func _left_normals(line: PackedVector2Array) -> PackedVector2Array:
 
 
 ## Distancia acumulada a lo largo de la polilínea.
-static func _lengths(line: PackedVector2Array) -> PackedFloat32Array:
+static func arc_lengths(line: PackedVector2Array) -> PackedFloat32Array:
 	var result: PackedFloat32Array = PackedFloat32Array([0.0])
 	for k: int in range(1, line.size()):
 		result.append(result[k - 1] + line[k].distance_to(line[k - 1]))

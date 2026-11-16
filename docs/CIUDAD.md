@@ -311,7 +311,7 @@ La maqueta (`scenes/debug/maqueta_ciudad.tscn`, F3-15) levanta la ciudad entera 
 
 ![La Escalinata desde el rellano de abajo](capturas/fase3_transito_escalinata.jpg)
 
-Todo lo que se pisa para ir de un sitio a otro, levantado en 3D: 212.000 m² de calzada, 107.000 de aceras (asfalto en los barrios, losas en el centro), 33.000 de plazas de granito, 10.000 de isletas, el adoquín de la ciudad vieja, las sendas de grava de los parques, el camino de tierra del barranco, la Escalinata, las escaleras de las sendas y el tablero del puente del Progreso. En las lindes: 30 km de bordillos, 25 km de bordes de jardín, las contrahuellas, los muros de las escaleras, los pretiles del puente y del muelle, los bordes rotos del vano hundido y 72 alcorques. Encima: 126 pasos de cebra, la línea del eje de las calles principales y del puente, 437 tapas de registro y 954 sumideros.
+Todo lo que se pisa para ir de un sitio a otro, levantado en 3D: 211.000 m² de calzada, 106.000 de aceras (asfalto en los barrios, losas en el centro), 32.000 de plazas de granito, 7.600 de isletas, el adoquín de la ciudad vieja, las sendas de grava de los parques, el camino de tierra del barranco, la Escalinata, las escaleras de las sendas y el tablero del puente del Progreso. Y las vías: 9,4 km de vía de tren (la principal, la estación con sus andenes, los apartaderos y la playa de vías), 5,6 km de vía de tranvía y cinco pasos a nivel. En las lindes: 31 km de bordillos, 24 km de bordes de jardín, las contrahuellas, los muros de las escaleras, los pretiles del puente y del muelle, los bordes rotos del vano hundido, 72 alcorques y las caras de los andenes. Encima: 126 pasos de cebra, la línea del eje de las calles principales y del puente, 434 tapas de registro y 973 sumideros.
 
 **Niveles.** Respecto a la rasante (el terreno nivelado, sin escombros):
 
@@ -322,6 +322,8 @@ Todo lo que se pisa para ir de un sitio a otro, levantado en 3D: 212.000 m² de 
 | Sendas | +5 cm, con un bordillo bajo |
 | Camino de tierra | −3 cm (un poco hundido) |
 | Alcorques | −5 cm, con su cerco |
+| Losa de los pasos a nivel y cama del tranvía | −12 cm, como la calzada: a ras del carril |
+| Andenes de la estación | 1,10 m sobre lo alto del carril |
 
 **Cómo se hace.** `tools/ciudad/transito.py` decide la forma en planta con las mismas figuras de shapely que valida el plano, y la reparte en *grupos*: un trozo de una clase de superficie con su *regla* de altura (la rasante más el nivel de la clase, un plano fijo para los peldaños o la rampa del tablero del puente) y la orientación de su textura (las losas siguen la calle). Las *aristas* entre grupos, y entre un grupo y la tierra, salen ya clasificadas: bordillo, borde, contrahuella, escalón, muro, pretil (el desnivel con el terreno pasa de 40 cm), rotura o fachada. `tools/ciudad/rejilla.py` decide qué hace la maqueta con cada triángulo de la rejilla del relieve de 2 m: si el tránsito lo tapa, no se dibuja; donde una acera llega a la tierra, se dibuja el terreno debajo (la acera va 3 cm más alta); donde lo que se pisa va por debajo del terreno (una calzada, un camino, los peldaños excavados), se dibuja aparte, exacto, lo que queda de tierra. Con eso, `CityTransit` levanta cada sector en su hilo: corta las superficies por la rejilla donde la rasante no es plana (para que sigan el terreno igual que su malla) y extruye el perfil de cada arista. El terreno ni asoma entre las losas ni deja zanjas junto a las aceras, y los montones de escombros que cayeron a la calle siguen ahí, asomando sobre el asfalto.
 
@@ -335,4 +337,20 @@ Todo lo que se pisa para ir de un sitio a otro, levantado en 3D: 212.000 m² de 
 
 ![Las escaleras de la loma, del Muelle Norte al Bulevar](capturas/fase3_transito_loma.jpg)
 
-**Pendiente.** Las vías del tren y del tranvía (balasto, traviesas, carriles, andenes y pasos a nivel) y los modelos de detalle de las tapas y los sumideros (ahora son volúmenes sencillos).
+**Las vías del tren.** 17 vías: la línea principal (con el puente del Ferrocarril), las dos vías de andén de la estación, los apartaderos de la fábrica, el puerto, el carbón y el combustible, y las diez vías de la playa. `tools/ciudad/ferrocarril.py` da a cada una su rasante (el plano de formación): sigue el terreno sin pasar de la pendiente de su clase (1,2 % la principal y la playa, 2,5 % los apartaderos), no baja de la corona de su terraplén, va recta de estribo a estribo por el puente y queda atada a la vía de la que sale en cada empalme. El relieve se nivela a lo largo de cada vía: una caja llana a cada lado del eje y un talud hasta el terreno (bajo el puente no, que debajo está el río). En la maqueta (`TransitRails`), cada vía lleva su balasto de 30 cm con sus taludes, traviesas de hormigón cada 55 cm (16.900, como instancias, más bajas en el centro como las de verdad) y carriles de 15 cm con su patín, su alma y su cabeza, con el ancho de vía soviético de 1520 mm. Los vagones y los coches de tren abandonados se apoyan en lo alto del carril.
+
+**La estación.** Va sobre su terraplén, 5 m por encima de la plaza. Dos andenes isla de 210 m entre la principal y las vías de andén, a 1,10 m sobre lo alto del carril (los andenes altos soviéticos), con su cara de hormigón, la línea blanca de seguridad a 15 cm del borde y una rampa del 12 % en cada punta.
+
+**Los pasos a nivel.** Donde una vía cruza una calle (cinco veces, en los apartaderos de la fábrica y del puerto), una losa de hormigón a ras del carril cruza la calle de lado a lado, con los carriles a ras y su garganta. La calle sube hasta la losa con una rampa de 10 m a cada lado, siguiendo el carril (que puede ir en pendiente), y el terreno sube con ella como el terraplén de sus rampas; solo la caja de la vía se queda abajo, y en cada punta de la losa una cara de hormigón baja hasta el balasto. Las aceras llegan a la losa por su bordillo y en ningún otro sitio se acercan a menos de 3 m del eje de una vía.
+
+**El tranvía.** Dos líneas de vía doble, con los carriles a ras y su garganta: por la calzada y, donde la deja (la mediana de la Avenida, la Plaza, una curva que corta una esquina), por una cama de losas a la altura de la calzada, con bordillo. Las curvas tienen 20 m de radio, o menos donde no caben: en el plano, el trazado giraba en seco, y casi en redondo al salir del puente hacia la Bajada. Los carriles acaban en los bordes rotos del vano hundido. Dos quioscos de la Plaza se apartaron de la curva del tranvía.
+
+![Los andenes de la estación](capturas/fase3_transito_estacion.jpg)
+
+![La playa de vías desde su entrada](capturas/fase3_transito_playa.jpg)
+
+![Un paso a nivel del apartadero de la fábrica](capturas/fase3_transito_paso_nivel.jpg)
+
+![El tranvía por la mediana de la Avenida](capturas/fase3_transito_tranvia.jpg)
+
+**Pendiente.** Los modelos de detalle de las tapas, los sumideros y las traviesas (ahora son volúmenes sencillos), las agujas y los corazones de los desvíos (las vías que salen de otra se cruzan con ella sin más) y los topes al final de los apartaderos.

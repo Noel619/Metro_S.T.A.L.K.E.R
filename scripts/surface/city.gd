@@ -40,6 +40,7 @@ const TRANSIT_MATERIALS: Dictionary = {
 	"bordillo": ["bordillo", 0.6],
 	"hormigon": ["hormigon", 0.75],
 	"grava": ["grava", 0.9],
+	"balasto": ["grava", 0.8],
 	"tierra": ["tierra", 0.9],
 	"pintura": ["pintura", 0.6],
 	"metal": ["", 0.3],
@@ -432,3 +433,6 @@ func _load_detail_models() -> void:
 	_models["tapa_redonda"] = [round_lid, cast_iron]
 	_models["tapa_cuadrada"] = [square_lid, cast_iron]
 	_models["sumidero"] = [drain, cast_iron]
+	var concrete: ShaderMaterial = _shader_material("tinta", load(RAMPS) as Texture2D, 0.6)
+	concrete.set_shader_parameter("albedo_color", TransitRails.SLEEPER_COLOR)
+	_models["traviesa"] = [TransitRails.sleeper_mesh(), concrete]
