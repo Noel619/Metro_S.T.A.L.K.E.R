@@ -124,6 +124,14 @@ func specs() -> Array[Dictionary]:
 			"incendio": "no",
 			"patios": PackedVector2Array([Vector2(-67.0, 40.0)]),
 		},
+		# La madera: una isba de cada estado y el barracón, entero y quemado.
+		_wood("casa_madera", "DIO-M1", Vector2(-130.0, 2.0), 1, "no"),
+		_wood("casa_madera", "DIO-M2", Vector2(-116.0, 2.0), 2, "parcial"),
+		_wood("casa_madera", "DIO-M3", Vector2(-102.0, 2.0), 3, "parcial"),
+		_wood("casa_madera", "DIO-M4", Vector2(-130.0, 18.0), 1, "total"),
+		_wood("casa_madera", "DIO-M5", Vector2(-116.0, 18.0), 4, "total"),
+		_wood("barracon", "DIO-BR1", Vector2(-180.0, 2.0), 1, "parcial"),
+		_wood("barracon", "DIO-BR2", Vector2(-180.0, 22.0), 1, "total"),
 		{
 			"tipo": "torre16",
 			"clave": "DIO-T1",
@@ -206,6 +214,19 @@ func _ground() -> void:
 	ground.material_override = material
 	ground.position = Vector3(60.0 if escena == "bloques" else 0.0, level, -20.0)
 	_built.add_child(ground)
+
+
+## Una casa de madera con su medida de plano, centrada en [param at].
+static func _wood(kind: String, key: String, at: Vector2, damage: int, fire: String) -> Dictionary:
+	var half: Vector2 = Vector2(4.5, 4.0) if kind == "casa_madera" else Vector2(15.0, 5.5)
+	return {
+		"tipo": kind,
+		"clave": key,
+		"huella": _rect(at.x - half.x, at.y - half.y, at.x + half.x, at.y + half.y),
+		"pisos": 1 if kind == "casa_madera" else 2,
+		"dano": damage,
+		"incendio": fire,
+	}
 
 
 static func _rect(x0: float, y0: float, x1: float, y1: float) -> PackedVector2Array:

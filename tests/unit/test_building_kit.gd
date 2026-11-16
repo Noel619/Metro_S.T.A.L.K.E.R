@@ -71,6 +71,28 @@ func test_masonry_houses_follow_any_footprint() -> void:
 				node.free()
 
 
+func test_wooden_houses_pick_their_state() -> void:
+	# Ardieron casi todas: con incendio total o daño 4 quedan los restos.
+	assert_eq(KitWhole.state_of({"dano": 1, "incendio": "total"}), "quemada")
+	assert_eq(KitWhole.state_of({"dano": 4, "incendio": "no"}), "quemada")
+	assert_eq(KitWhole.state_of({"dano": 3, "incendio": "parcial"}), "cascaron")
+	assert_eq(KitWhole.state_of({"dano": 2, "incendio": "no"}), "chamuscada")
+	assert_eq(KitWhole.state_of({"dano": 1, "incendio": "no"}), "intacta")
+	for kind: String in ["casa_madera", "barracon"]:
+		for damage: int in range(1, 5):
+			for fire: String in ["no", "parcial", "total"]:
+				var spec: Dictionary = _spec("jrushchovka", damage, fire)
+				spec["tipo"] = kind
+				spec["huella"] = PackedVector2Array(
+					[Vector2(0, 0), Vector2(9, 0), Vector2(9, 8), Vector2(0, 8)]
+				)
+				var node: Node3D = _kit.build(spec)
+				var missing: PackedStringArray = node.get_meta(&"kit_faltan")
+				assert_true(missing.is_empty(), "%s: faltan %s" % [kind, ", ".join(missing)])
+				assert_eq(int(node.get_meta(&"kit_piezas")), 1, "%s es una casa entera" % kind)
+				node.free()
+
+
 func test_pieces_match_the_rules_measures() -> void:
 	var meshes: Dictionary = _kit.meshes_for("jrushchovka")
 	# Las piezas de un vano ocupan su vano y su planta, y el muro entra hacia -z.
@@ -156,7 +178,7 @@ func test_plan_buildings_are_built() -> void:
 		assert_true(missing.is_empty(), "%s: faltan %s" % [building["id"], ", ".join(missing)])
 		node.free()
 		built += 1
-	assert_eq(built, 110, "los bloques de paneles y las casas de muros de carga del plano")
+	assert_eq(built, 138, "todas las viviendas del plano: paneles, muros de carga y madera")
 
 
 func _spec(kind: String, damage: int, fire: String) -> Dictionary:

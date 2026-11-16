@@ -20,6 +20,9 @@ extends RefCounted
 ##   "patios" (puntos dentro de los patios: los lados que los miran son fachadas de patio),
 ##   "comercios" (escaparates en los bajos de la calle) y "arco" (un arco al patio).
 ##
+## Las casas de madera (la isba y el barracón) no se montan por vanos: el kit las tiene
+## enteras y se escoge la de su estado (KitWhole).
+##
 ## Cada pieza se repite con una MultiMesh: una llamada de dibujo por pieza y edificio.
 ## Algunos tipos visten las mismas piezas con otro material (sus "pieles"): los bloques
 ## altos llevan plaqueta en vez de hormigón pintado.
@@ -28,6 +31,7 @@ const LIBRARIES: PackedStringArray = [
 	"res://assets/models/kit_paneles.glb",
 	"res://assets/models/kit_estalinka.glb",
 	"res://assets/models/kit_ladrillo.glb",
+	"res://assets/models/kit_madera.glb",
 ]
 const MATERIALS_DIR: String = "res://assets/materials/"
 ## La familia de reglas que monta cada tipo del plano.
@@ -38,6 +42,8 @@ const FAMILIES: Dictionary = {
 	"estalinka": "mamposteria",
 	"estalinka_baja": "mamposteria",
 	"prerrevolucion": "mamposteria",
+	"casa_madera": "entera",
+	"barracon": "entera",
 }
 ## Los materiales que cambia cada tipo.
 const SKINS: Dictionary = {
@@ -87,6 +93,8 @@ func build(spec: Dictionary) -> Node3D:
 			KitPanelBlock.new(spec, assembly).build(node)
 		"mamposteria":
 			KitMasonry.new(spec, assembly).build(node)
+		"entera":
+			KitWhole.new(spec, assembly).build(node)
 		_:
 			push_error("El kit no sabe montar el tipo '%s'." % kind)
 	assembly.flush(node)

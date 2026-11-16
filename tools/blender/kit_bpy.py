@@ -399,11 +399,15 @@ def banded_wall(
     gap: float = 0.025,
     gap_color: str = "#5E5446",
     step: float = 0.6,
+    ring: float = 0.08,
+    inset: float = 0.001,
 ) -> None:
     """Muro almohadillado (los bajos estalinistas): bandas de revoque con la junta pintada.
 
     Las juntas van enrasadas y de color, no hundidas: una ranura fina se volvería una
-    línea punteada en el contorno de tinta.
+    línea punteada en el contorno de tinta. ``inset`` es lo que se mete la junta: con 0
+    queda en el mismo plano que las bandas y no asoma el canto de ninguna (las tablas del
+    barracón, que se ven de lejos y a ras).
     """
     x0, x1 = x_range
     z0, z1 = z_range
@@ -413,11 +417,63 @@ def banded_wall(
         top = min(z1, z + band)
         joint = min(top, z + band - gap) if top - z > gap * 2.0 else top
         clipped = [(a, max(b, z), c, min(d, joint)) for a, b, c, d in holes if b < joint and d > z]
-        mb.slab((x0, x1), (z, joint), (y0, y1), color, holes=clipped, step=step, jitter=0.02, back=False, ring=0.08)
+        mb.slab((x0, x1), (z, joint), (y0, y1), color, holes=clipped, step=step, jitter=0.02, back=False, ring=ring)
         if joint < top:
             gaps = [(a, max(b, joint), c, min(d, top)) for a, b, c, d in holes if b < top and d > joint]
-            mb.slab((x0, x1), (joint, top), (y0 + 0.001, y0 + 0.04), gap_color, holes=gaps, back=False)
+            mb.slab((x0, x1), (joint, top), (y0 + inset, y0 + 0.04), gap_color, holes=gaps, back=False)
         z = top
+
+
+def moulding(
+    mb: tb.MeshBuilder,
+    x_range: tuple[float, float],
+    profile: Sequence[tuple[float, float]],
+    color: str,
+    *,
+    jitter: float = 0.0,
+) -> list:
+    """Moldura recta a lo largo de x con el perfil ``profile``: puntos (y, z) de su
+    sección, con y < 0 hacia fuera del muro (alféizares, guardapolvos, impostas).
+
+    Las caras de arriba y de abajo de una moldura van inclinadas (vierteaguas), no
+    planas: vista a ras, una cara plana de pocos centímetros ocupa menos de un píxel y el
+    contorno de tinta la dibujaría a puntos. Inclinada, su altura sigue viéndose.
+    """
+    x0, x1 = x_range
+    return mb.prism(ccw(profile), x1 - x0, ((x0 + x1) / 2.0, 0.0, 0.0), color, rotation=(90.0, 0.0, 90.0), jitter=jitter)
+
+
+def ring(
+    mb: tb.MeshBuilder,
+    half: tuple[float, float],
+    profile: Sequence[tuple[float, float]],
+    color: str,
+    *,
+    step: float = 1.5,
+) -> None:
+    """Moldura que da la vuelta a una planta rectangular (centrada en el origen, de
+    semilados ``half``), con las esquinas a inglete: zócalos, vierteaguas, impostas.
+
+    ``profile`` es la sección por fuera, sin la cara que va contra el muro: puntos
+    (o, z), con o lo que sale del muro. Cada lado se parte cada ``step`` metros como
+    mucho, para que recoja la oclusión y las manchas por vértice.
+    """
+    points = ccw(profile)
+    hx, hy = half
+    corners = ((1.0, -1.0), (1.0, 1.0), (-1.0, 1.0), (-1.0, -1.0))
+
+    def corner(index: int, offset: float, z: float) -> Vector:
+        sx, sy = corners[index % 4]
+        return Vector((sx * (hx + offset), sy * (hy + offset), z))
+
+    for side in range(4):
+        count = max(1, math.ceil(2.0 * (hy if side % 2 == 0 else hx) / step))
+        for (o0, z0), (o1, z1) in zip(points, points[1:]):
+            a0, b0 = corner(side, o0, z0), corner(side + 1, o0, z0)
+            a1, b1 = corner(side, o1, z1), corner(side + 1, o1, z1)
+            for k in range(count):
+                f0, f1 = k / count, (k + 1) / count
+                mb.quad((a0.lerp(b0, f0), a0.lerp(b0, f1), a1.lerp(b1, f1), a1.lerp(b1, f0)), color)
 
 
 def balusters(
