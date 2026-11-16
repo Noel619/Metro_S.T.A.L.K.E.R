@@ -219,6 +219,7 @@ Los edificios de la superficie se montan con las piezas del kit de arquitectura 
 | `ladrillo` | Ladrillo visto: el aparejo (25 × 6,5 cm, con su junta) se dibuja en el shader |
 | `estuco` | Revoque sobre ladrillo: se cae a manchas, más junto a los huecos y abajo (el alfa del color de vértice) y más cuanto más dañada está la casa, y deja ver el ladrillo con un borde de tinta |
 | `nevado`, `vidrio`, `interior` | Lo que coge nieve (alféizares, cubiertas, aleros), los cristales y el falso interior tras los huecos (casi negro, como en un grabado) |
+| `nevado_parcial` | Lo que coge nieve solo donde el alfa del color de vértice lo dice: los suelos de dentro de un edificio abierto, nevados junto al borde roto y las ventanas reventadas y limpios al fondo ([D-039](DECISIONES.md)) |
 
 - **En el espacio del mundo:** la suciedad a manchas, los chorretones de lluvia, el aparejo y el revoque caído se calculan con la posición en el mundo, así que siguen de una pieza a la de al lado sin repetirse ([D-035](DECISIONES.md)).
 - **Por casa y por pieza:** el ensamblador tiñe cada casa (ocre, salmón, crema, gris, el rojo del ladrillo) y cada panel con un tono algo distinto, y le pasa a cada pieza su desgaste y el hollín de su incendio: una pluma negra que sube desde lo alto de cada hueco quemado y oscurece la planta de arriba.
@@ -235,8 +236,10 @@ El contorno sale de las diferencias de profundidad y de normal entre píxeles ve
 5. **Las piezas no se mueven al montarlas.** Unos milímetros de desajuste abren rendijas por las que asoman los cantos. Varían de tono, no de sitio.
 6. **Más hondo que en la realidad.** Las molduras salen de 8 a 25 cm, y las prichelinas de las isbas son tablas anchas y gruesas, no listones.
 7. **Un chaflán a 45° no dibuja línea** (las normales difieren menos que el umbral del contorno): sirve para suavizar sin que salga contorno, no para marcar una arista.
+8. **Los relieves, de una pieza.** Un emblema o una letra hechos de trozos pegados dibujan sus juntas: la estrella de un medallión hecha con un pentágono y cinco puntas se leía como una cruz. Las estrellas son un solo contorno de diez lados (`kit.raised` admite contornos cóncavos pequeños) y los anillos (la О, las órbitas del átomo, los paralelos del globo) son una banda continua con los cantos en derrame.
+9. **Lo pintado, a ras.** Las franjas de peligro, las placas, los zócalos pintados y los papeles por el suelo son caras sueltas a 2 o 3 mm de la pared, sin canto: cambian de color sin dibujar contorno. Con grosor, sus cantos de milímetros salen a puntos.
 
-Para encontrar estos fallos: los dioramas a ras de fachada (`CamaraBarraconRas`) y `CAPTURE_ARGS="--post=debug_view=2"`, que enseña las normales: los píxeles sueltos de otro color son los que salen a puntos. Queda un caso conocido: los travesaños de las carpinterías, vistos desde abajo y en sombra, todavía salen algo punteados; con el cristal enrasado desaparecería, pero se perderían las líneas de los paños de cerca.
+Los edificios singulares (los hitos y los sitios clave, [DESARROLLO.md](DESARROLLO.md#los-edificios-singulares)) siguen las mismas reglas y los mismos materiales. Para encontrar estos fallos: los dioramas a ras de fachada (`CamaraBarraconRas`) y `CAPTURE_ARGS="--post=debug_view=2"`, que enseña las normales: los píxeles sueltos de otro color son los que salen a puntos. Queda un caso conocido: los travesaños de las carpinterías, vistos desde abajo y en sombra, todavía salen algo punteados; con el cristal enrasado desaparecería, pero se perderían las líneas de los paños de cerca.
 
 | | |
 |---|---|

@@ -172,7 +172,7 @@ func _plan_specs() -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	for building: Dictionary in plan.data["edificios"]:
 		var at: Vector2 = Vector2(building["centro"][0], building["centro"][1])
-		if not BuildingKit.supports(building["tipo"]) or at.distance_to(center) > radius:
+		if not BuildingKit.supports_building(building) or at.distance_to(center) > radius:
 			continue
 		(
 			result
@@ -181,6 +181,7 @@ func _plan_specs() -> Array[Dictionary]:
 					"tipo": building["tipo"],
 					"clave": building["id"],
 					"huella": CityPlan.ring(building["huella"][0]),
+					"centro": at,
 					"pisos": int(building["pisos"]),
 					"dano": int(building["dano"]),
 					"incendio": building["incendio"],
@@ -218,18 +219,81 @@ func _ground() -> void:
 		heights.append((building as Node3D).position.y)
 	heights.sort()
 	var level: float = heights[int(heights.size() / 2.0)] if not heights.is_empty() else 0.0
-	var plane: PlaneMesh = PlaneMesh.new()
-	plane.size = Vector2(600.0, 600.0)
-	plane.subdivide_width = 60
-	plane.subdivide_depth = 60
+	# Los huecos de los edificios que bajan bajo la calle (KitSingular), relativos al origen.
+	var origin: Vector2 = center if escena == "plaza" else Vector2.ZERO
+	var holes: PackedVector2Array = PackedVector2Array()
+	for building: Node in _built.get_children():
+		for point: Vector2 in building.get_meta(&"kit_huecos", PackedVector2Array()):
+			holes.append(point - origin)
+	var middle: Vector2 = Vector2(60.0 if escena == "bloques" else 0.0, 20.0)
 	var material: ShaderMaterial = (load(GROUND_MATERIAL) as ShaderMaterial).duplicate()
 	material.set_shader_parameter("albedo_color", Color("#6f6a62"))
 	var ground: MeshInstance3D = MeshInstance3D.new()
 	ground.name = "Suelo"
-	ground.mesh = plane
+	ground.mesh = ground_mesh(Rect2(middle - Vector2(300.0, 300.0), Vector2(600.0, 600.0)), holes)
 	ground.material_override = material
-	ground.position = Vector3(60.0 if escena == "bloques" else 0.0, level, -20.0)
+	ground.position = Vector3(0.0, level, 0.0)
 	_built.add_child(ground)
+
+
+## El suelo de [param area] (en coordenadas de plano relativas al origen de la escena): una
+## rejilla de 10 m, de 1 m cerca de los huecos, sin las celdas que caen del todo dentro de
+## ellos. [param holes] son triángulos, de tres en tres. El borde dentado queda bajo el
+## edificio (bajo el basamento del vestíbulo, por ejemplo).
+static func ground_mesh(area: Rect2, holes: PackedVector2Array) -> ArrayMesh:
+	var bounds: Array[Rect2] = []
+	for i: int in range(0, holes.size() - 2, 3):
+		bounds.append(Rect2(holes[i], Vector2.ZERO).expand(holes[i + 1]).expand(holes[i + 2]))
+	var tool: SurfaceTool = SurfaceTool.new()
+	tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var coarse: float = 10.0
+	var cells: Vector2i = Vector2i((area.size / coarse).round())
+	for j: int in cells.y:
+		for i: int in cells.x:
+			var cell: Rect2 = Rect2(area.position + Vector2(i, j) * coarse, Vector2.ONE * coarse)
+			if not bounds.any(func(b: Rect2) -> bool: return b.intersects(cell)):
+				_ground_cell(tool, cell, area)
+				continue
+			for v: int in int(coarse):
+				for u: int in int(coarse):
+					var small: Rect2 = Rect2(cell.position + Vector2(u, v), Vector2.ONE)
+					if not _inside_holes(small, holes):
+						_ground_cell(tool, small, area)
+	return tool.commit()
+
+
+## Dos triángulos de suelo (mirando arriba: en el sentido del reloj vistos desde arriba).
+static func _ground_cell(tool: SurfaceTool, cell: Rect2, area: Rect2) -> void:
+	var corners: Array[Vector2] = [
+		cell.position,
+		cell.position + Vector2(0.0, cell.size.y),
+		cell.end,
+		cell.position + Vector2(cell.size.x, 0.0),
+	]
+	for index: int in [0, 1, 2, 0, 2, 3]:
+		var p: Vector2 = corners[index]
+		tool.set_normal(Vector3.UP)
+		tool.set_uv((p - area.position) / area.size)
+		tool.add_vertex(Vector3(p.x, 0.0, -p.y))
+
+
+## ¿Caen las cuatro esquinas de la celda dentro de los huecos?
+static func _inside_holes(cell: Rect2, holes: PackedVector2Array) -> bool:
+	var corners: Array[Vector2] = [
+		cell.position,
+		cell.position + Vector2(0.0, cell.size.y),
+		cell.end,
+		cell.position + Vector2(cell.size.x, 0.0),
+	]
+	for corner: Vector2 in corners:
+		var inside: bool = false
+		for i: int in range(0, holes.size() - 2, 3):
+			if Geometry2D.point_is_inside_triangle(corner, holes[i], holes[i + 1], holes[i + 2]):
+				inside = true
+				break
+		if not inside:
+			return false
+	return true
 
 
 ## Una casa de madera con su medida de plano, centrada en [param at].

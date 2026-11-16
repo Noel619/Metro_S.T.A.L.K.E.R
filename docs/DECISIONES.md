@@ -149,3 +149,11 @@ El contorno de tinta dibuja a puntos las caras que ocupan menos de un píxel: la
 ## D-037 · Las casas de madera, enteras y por estado
 
 La isba (9 × 8 m) y el barracón (30 × 11 m) tienen las medidas fijas en el plano y casi todos ardieron, así que no se montan por vanos: el kit guarda cada casa entera en cada estado (abandonada, chamuscada, cascarón y quemada) y `KitWhole` escoge la suya por el daño y el incendio de la ficha y la encaja en la huella, por su lado largo y estirada lo poco que haga falta. Una casa entera es una sola llamada de dibujo.
+
+## D-038 · Los hitos y los sitios clave, modelos enteros
+
+Los edificios que no siguen ninguna serie (el vestíbulo del metro, el Edificio Partido, la Casa de los Sóviets…) no se montan con piezas: cada uno es un modelo entero con su receta, hecho en las coordenadas del plano alrededor del «centro» de su ficha, y `KitSingular` lo pone tal cual por su id. Están en el estado que fija el plano, así que no tienen variantes, y llevan dos piezas que no se dibujan: su colisión, hecha a mano y más sencilla que lo que se ve (los escalones y las escaleras, rampas: el jugador no sube escalones), y, si el edificio baja bajo la calle, el hueco del terreno, que el edificio deja en sus metadatos para que quien pone el suelo lo recorte.
+
+## D-039 · Nieve dentro de los edificios abiertos, solo donde entra
+
+Los suelos de un edificio reventado no pueden coger nieve en todas sus caras de arriba, como `nevado`: quedarían blancos hasta el fondo de los pasillos. El material `nevado_parcial` usa la variante del sombreado de los pavimentos (`tinta_transito.gdshader`), que pone la nieve a parches según el alfa del color de vértice: la receta pinta mucha junto al borde roto y las ventanas reventadas y nada al fondo. En las caras de fuera de los antepechos el mismo alfa marca la plaqueta del material `azulejo`.

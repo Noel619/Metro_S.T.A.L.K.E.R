@@ -181,6 +181,80 @@ func test_plan_buildings_are_built() -> void:
 	assert_eq(built, 138, "todas las viviendas del plano: paneles, muros de carga y madera")
 
 
+func test_singular_buildings_are_whole() -> void:
+	var plan: CityPlan = CityPlan.load_default()
+	var built: int = 0
+	for building: Dictionary in plan.data["edificios"]:
+		if not KitSingular.MODELS.has(building["id"]):
+			continue
+		assert_true(BuildingKit.supports_building(building), "%s se monta" % building["id"])
+		var center: Vector2 = Vector2(building["centro"][0], building["centro"][1])
+		var outline: PackedVector2Array = CityPlan.ring(building["huella"][0])
+		var spec: Dictionary = {
+			"tipo": building["tipo"],
+			"clave": building["id"],
+			"huella": outline,
+			"centro": center,
+			"pisos": int(building["pisos"]),
+			"dano": int(building["dano"]),
+			"incendio": building["incendio"],
+		}
+		var node: Node3D = _kit.build(spec)
+		var label: String = building["id"]
+		var missing: PackedStringArray = node.get_meta(&"kit_faltan")
+		assert_true(missing.is_empty(), "%s: faltan %s" % [label, ", ".join(missing)])
+		var model: String = KitSingular.MODELS[label]
+		var meshes: Dictionary = _kit.meshes_for(building["tipo"])
+		var pieces: PackedStringArray = KitSingular.pieces_of(model, meshes)
+		assert_eq(
+			int(node.get_meta(&"kit_piezas")), pieces.size(), "%s: una vez cada pieza" % label
+		)
+		for hidden: String in [KitSingular.COLLISION_SUFFIX, KitSingular.HOLE_SUFFIX]:
+			assert_false(pieces.has(model + hidden), "%s: %s no se dibuja" % [label, hidden])
+		var shape: CollisionShape3D = node.get_node_or_null("Colision/Forma")
+		assert_true(shape != null and shape.shape != null, "%s: tiene colisión" % label)
+		# Lo que se ve cabe en su parcela (con un margen para las cornisas que vuelan).
+		var lot: Rect2 = Rect2(outline[0] - center, Vector2.ZERO)
+		for point: Vector2 in outline:
+			lot = lot.expand(point - center)
+		lot = lot.grow(1.0)
+		for piece: String in pieces:
+			var box: AABB = (meshes[piece] as Mesh).get_aabb()
+			var seen: Rect2 = Rect2(
+				Vector2(box.position.x, -box.end.z), Vector2(box.size.x, box.size.z)
+			)
+			assert_true(lot.encloses(seen), "%s: %s se sale de la parcela" % [label, piece])
+		node.free()
+		built += 1
+	assert_eq(built, KitSingular.MODELS.size(), "todos los singulares están en el plano")
+
+
+func test_vestibule_opens_the_ground() -> void:
+	# El foso de las escaleras baja bajo la calle: el vestíbulo dice dónde quitar el terreno,
+	# y el hueco cubre la rotonda (y no más que su basamento).
+	var plan: CityPlan = CityPlan.load_default()
+	var building: Dictionary = {}
+	for each: Dictionary in plan.data["edificios"]:
+		if each["id"] == "PLZ-06":
+			building = each
+	var center: Vector2 = Vector2(building["centro"][0], building["centro"][1])
+	var spec: Dictionary = {
+		"tipo": building["tipo"],
+		"clave": "PLZ-06",
+		"huella": CityPlan.ring(building["huella"][0]),
+		"centro": center,
+		"dano": int(building["dano"]),
+	}
+	var node: Node3D = _kit.build(spec)
+	var holes: PackedVector2Array = node.get_meta(&"kit_huecos", PackedVector2Array())
+	assert_true(holes.size() >= 3 and holes.size() % 3 == 0, "el hueco son triángulos")
+	var area: float = 0.0
+	for i: int in range(0, holes.size(), 3):
+		area += absf((holes[i + 1] - holes[i]).cross(holes[i + 2] - holes[i])) / 2.0
+	assert_true(area > 500.0 and area < 700.0, "el hueco es el basamento (%.0f m²)" % area)
+	node.free()
+
+
 func _spec(kind: String, damage: int, fire: String) -> Dictionary:
 	var length: float = 64.0 if kind == "jrushchovka" else (26.0 if kind == "torre16" else 80.0)
 	var depth: float = 12.0 if kind == "jrushchovka" else (22.0 if kind == "torre16" else 13.0)

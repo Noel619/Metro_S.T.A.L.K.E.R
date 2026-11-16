@@ -535,6 +535,22 @@ def outline(
                 mb.quad([(p.x, -d, p.y) for p, d in quad], color)
 
 
+def raised(
+    mb: tb.MeshBuilder,
+    polygon: Sequence[tuple[float, float]],
+    depth: float,
+    color: str,
+    *,
+    splay: float = 0.03,
+) -> None:
+    """Un relieve que sale del muro con el contorno ``polygon`` (convexo: puntos (x, z) de
+    su cara de delante, a ``depth`` del muro) y los cantos en derrame: los trazos de una
+    letra, una estrella, un emblema. Lo que no es convexo se hace con varios."""
+    points = ccw(polygon)
+    outline(mb, points, [(splay, 0.0), (0.0, depth)], color)
+    mb.polygon([(x, -depth, z) for x, z in points], color)
+
+
 def block(
     mb: tb.MeshBuilder,
     rect: tuple[float, float, float, float],
@@ -773,13 +789,15 @@ def window(
     sill: bool = True,
     inner: bool = False,
     open_sash: int | None = None,
+    open_angle: float | None = None,
 ) -> None:
     """Carpintería de madera de doble hoja en un hueco ``(x0, z0, x1, z1)``.
 
     ``depth`` es lo que se mete el marco desde la cara exterior del muro y ``wall``
     el espesor del muro (detrás, el alféizar interior). Materiales: 0 la madera y la
     chapa (cogen nieve), 1 el cristal y 2 lo de dentro. Rota, se abre una de las
-    hojas que giran (``open_sash`` dice cuál; los montantes y los fijos, nunca).
+    hojas que giran (``open_sash`` dice cuál; los montantes y los fijos, nunca),
+    ``open_angle`` grados (por defecto, entre 35 y 70 al azar).
     """
     x0, z0, x1, z1 = opening
     frame = 0.06
@@ -846,7 +864,8 @@ def window(
             # La hoja suelta cuelga hacia la calle: se lee desde fuera y no choca con la de dentro.
             sx0, _, sx1, _ = sash.rect
             pivot_x = sx0 if sash.hinge_side == "izquierda" else sx1
-            angle = rng.uniform(35.0, 70.0) * (-1.0 if sash.hinge_side == "izquierda" else 1.0)
+            swing = open_angle if open_angle is not None else rng.uniform(35.0, 70.0)
+            angle = swing * (-1.0 if sash.hinge_side == "izquierda" else 1.0)
             transform_faces(faces, hinge((pivot_x, depth, 0.0), "Z", angle))
     # Las hojas interiores (las ventanas soviéticas son dobles). Por defecto no: doblan las
     # líneas del contorno y, tras el cristal oscuro, apenas se ven.

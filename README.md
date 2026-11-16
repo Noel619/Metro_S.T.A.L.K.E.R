@@ -116,6 +116,22 @@ Las 138 viviendas del plano ya tienen sus modelos 3D: se montan con un kit de pi
 - **Hechos para la tinta:** molduras con perfil y cantos en derrame, juntas enrasadas y nada plano y estrecho, para que el contorno se dibuje limpio de cerca, de lejos y a ras ([D-036](docs/DECISIONES.md)).
 - **Para verlos:** en Godot, `scenes/style/diorama_edificios.tscn` (cada tipo con cada daño), `diorama_plaza.tscn` y `diorama_mercaderes.tscn` (las casas del plano tal cual), con **F6**. Cómo funciona y cómo se añaden piezas, en [DESARROLLO.md](docs/DESARROLLO.md#el-kit-de-arquitectura-f3-16); las reglas de estilo, en [ESTILO.md](docs/ESTILO.md#9-los-edificios-del-kit-f3-16).
 
+#### Los edificios singulares
+
+| | |
+|---|---|
+| ![El vestíbulo del metro desde la avenida: la rotonda, la columnata, МЕТРО y el control del ejército](docs/capturas/fase3_singular_vestibulo.jpg) | ![La cúpula de la sala, con la lámpara y la linterna sobre el óculo](docs/capturas/fase3_singular_vestibulo_cupula.jpg) |
+| ![La esclusa de la defensa civil con la compuerta abierta: por ahí sales](docs/capturas/fase3_singular_vestibulo_compuerta.jpg) | ![El Edificio Partido desde el cráter: los pisos abiertos, como una casa de muñecas](docs/capturas/fase3_singular_partido.jpg) |
+| ![Las plantas del Edificio Partido al borde del vacío](docs/capturas/fase3_singular_partido_casa.jpg) | ![La Casa de los Sóviets y su torre al final de la avenida](docs/capturas/fase3_singular_soviets.jpg) |
+
+Los hitos y los sitios clave no salen del kit: son modelos enteros, hechos uno a uno con el máximo cuidado, que se ponen por su id del plano. Los tres primeros:
+
+- **El vestíbulo del metro** (PLZ-06, tu salida): una rotonda de los años cincuenta con veinte columnas, la cúpula de chapa con su linterna y la estrella, y МЕТРО sobre la entrada; delante, el control del ejército de la evacuación. Por dentro se recorre entero: la sala con su cúpula de casetones, la lámpara, los torniquetes y el equipaje abandonado, y la esclusa de hormigón con la compuerta blindada por la que sales, sobre las tres escaleras mecánicas que bajan a oscuras.
+- **El Edificio Partido** (ZC-01, donde termina el juego): un instituto de catorce plantas al que la bomba arrancó la mitad que la miraba. Lo que queda tiene los pisos abiertos al cráter, con los laboratorios y los despachos al borde del vacío, forjados colgando y el montón de escombros al pie; se sube por su escalera hasta la azotea, que mira al cráter.
+- **La Casa de los Sóviets y su torre** (CEN-SOV y CEN-SOVT): el bloque estalinista que cierra la avenida, con su pórtico de columnas gigantes y el escudo, quemado entero y con la fachada noreste reventada; la torre, de 110 m, con la aguja doblada hacia el suroeste y el puesto del vigía en la planta 20.
+
+Tienen su colisión hecha a mano (los escalones y las escaleras son rampas) y dicen dónde quitar el terreno cuando bajan bajo la calle. Se ven en `diorama_vestibulo.tscn`, `diorama_partido.tscn` y `diorama_soviets.tscn` ([DESARROLLO.md](docs/DESARROLLO.md#los-edificios-singulares)).
+
 ### Decisiones tomadas
 
 | Tema | Decisión |
@@ -149,7 +165,7 @@ Las 138 viviendas del plano ya tienen sus modelos 3D: se montan con un kit de pi
 
 1. **Fase 1**: revisar las capturas, el [vídeo](docs/capturas/fase1_dioramas.mp4) y las piezas de interfaz, y aprobar el estilo. Con eso empiezan de lleno las Fases 2 y 3.
 2. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos).
-3. **Los edificios** (F3-16): revisar las capturas y recorrer los tres dioramas de edificios con F6. Lo siguiente sería usarlos en la maqueta, cerca del jugador, y los interiores de serie.
+3. **Los edificios** (F3-16): revisar las capturas y recorrer con F6 los dioramas de edificios y los de los tres singulares (el vestíbulo del metro, el Edificio Partido y la Casa de los Sóviets). Lo siguiente sería usarlos en la maqueta, cerca del jugador, los interiores de serie y el resto de los sitios clave.
 4. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
 
 ---
@@ -959,7 +975,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F3-13** Audio: oclusión, reverberación, ambiente dinámico, nieve.
 - [ ] **F3-14** **Zona 1, La Plaza**: primero con geometría provisional y después estilizada, con al menos 3 rutas a cada objetivo.
 - [x] **F3-15** **Maqueta automática de la ciudad**: un generador en Godot lee `data/ciudad/plano.json` y levanta la ciudad entera en volúmenes sencillos (relieve, calles, edificios a su altura, escombros). Sirve para probar recorridos, vistas, sectores de carga y rendimiento antes de construir. *(Hecha: `scenes/debug/maqueta_ciudad.tscn`, con recorridos de las rutas, hitos a la vista, prueba de rendimiento y 48 sectores con dos niveles de detalle; ver [CIUDAD.md](docs/CIUDAD.md#15-la-maqueta).)*
-- [ ] **F3-16** Kit modular de arquitectura soviética para los tipos del plano (jrushchovka, bloque de 9 plantas, casa estalinista), con daños por nivel e interiores de serie. *(Hechos los exteriores de las 138 viviendas del plano, en cuatro familias, con sus daños y los falsos interiores que se ven por las ventanas; ver [DESARROLLO.md](docs/DESARROLLO.md#el-kit-de-arquitectura-f3-16). Faltan los interiores de serie que se recorren y llevarlos a la maqueta.)*
+- [ ] **F3-16** Kit modular de arquitectura soviética para los tipos del plano (jrushchovka, bloque de 9 plantas, casa estalinista), con daños por nivel e interiores de serie. *(Hechos los exteriores de las 138 viviendas del plano, en cuatro familias, con sus daños y los falsos interiores que se ven por las ventanas, y los tres primeros edificios singulares: el vestíbulo del metro y el Edificio Partido, con su interior, y la Casa de los Sóviets con su torre; ver [DESARROLLO.md](docs/DESARROLLO.md#el-kit-de-arquitectura-f3-16). Faltan los interiores de serie que se recorren, el resto de los sitios clave y llevarlos a la maqueta.)*
 - [ ] **F3-17** **Red de tránsito de la ciudad** en 3D: calzadas, aceras, bordillos, plazas, sendas, camino, escaleras y el tablero del puente, con muros, pretiles, pasos de cebra, tapas y sumideros, encajados en el relieve y con colisión que se sube andando. *(Hecho en la maqueta todo lo que se pisa y las vías del tren y del tranvía, con la estación, la playa de vías y los pasos a nivel: ver [CIUDAD.md](docs/CIUDAD.md#16-la-red-de-tránsito). Faltan los modelos de detalle de las tapas, los sumideros y las traviesas, y los desvíos y los topes de las vías.)*
 
 **Entregable**: una salida de 10 a 20 minutos: subir por la escalera, llegar a un objetivo y volver.

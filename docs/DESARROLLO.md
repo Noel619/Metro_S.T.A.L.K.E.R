@@ -82,6 +82,7 @@ Los edificios de la superficie se montan con piezas: cada familia es una bibliot
 | `scripts/surface/kit_panel_block.gd` | Los bloques de paneles: portales, escaleras, balcones y logias, paneles caídos, muñones, el peto y los cortes |
 | `scripts/surface/kit_masonry.gd` | Las casas de muros de carga, sobre cualquier huella (rectas, curvas, en L): bajos, plantas, pilastras, esquinas, cornisa, cubierta, patios y arcos |
 | `scripts/surface/kit_whole.gd` | Las casas de madera: escoge la de su estado y la encaja en la huella |
+| `scripts/surface/kit_singular.gd` | Los edificios singulares: pone su modelo entero, su colisión y su hueco en el terreno |
 | `tools/blender/kit_bpy.py` | Las utilidades de las recetas: la biblioteca y la pintura con contexto, las carpinterías, los interiores falsos, los daños y las molduras a prueba de tinta |
 | `assets/shaders/tinta_muro.gdshader` | Los muros: suciedad, chorretones, hollín, revoque caído y plaqueta ([ESTILO.md](ESTILO.md#9-los-edificios-del-kit-f3-16)) |
 | `scripts/debug/buildings_diorama.gd` | Los dioramas |
@@ -98,6 +99,23 @@ Los edificios de la superficie se montan con piezas: cada familia es una bibliot
 3. Regenera la biblioteca (`python3 tools/blender/build_assets.py kit_estalinka`) y comprueba que las demás no cambian (`git status`).
 4. Úsala en las reglas de su familia con `assembly.put("nombre", transformación, tono, datos)`. Si pides una pieza que no existe, el edificio la apunta en sus metadatos (`kit_faltan`) y el test lo detecta.
 5. Mírala en los dioramas, de cerca, de lejos y a ras, de día y de noche. Para cazar caras de menos de un píxel, `CAPTURE_ARGS="--post=debug_view=2"` (las normales) enseña los píxeles sueltos.
+
+### Los edificios singulares
+
+Los hitos y los sitios clave no se montan con piezas: cada uno es un modelo entero con su receta, que `KitSingular` pone por su id del plano ([D-038](DECISIONES.md)).
+
+| Biblioteca | Receta | Del plano | Qué tiene |
+|---|---|---|---|
+| `singular_vestibulo` | `tools/blender/recipes/singular_vestibulo.py` | PLZ-06 | La rotonda por fuera y por dentro, la esclusa con las escaleras y el túnel, la compuerta (aparte, para poder moverla) y el control del ejército |
+| `singular_partido` | `tools/blender/recipes/singular_partido.py` | ZC-01 | La estructura rota, las fachadas, los tabiques y la escalera hasta la azotea; los muebles; el montón de escombros |
+| `singular_soviets` | `tools/blender/recipes/singular_soviets.py` | CEN-SOV y CEN-SOVT | El bloque quemado con su boquete y la torre con la aguja doblada y el puesto del vigía (dos modelos: `soviets` y `torre_soviets`) |
+
+- **El marco:** cada modelo se hace en las coordenadas del plano (x al este, y al norte, z arriba) alrededor del «centro» de su ficha, a su cota, y se pone tal cual, sin girarlo ni estirarlo. Dentro de la receta conviene un marco propio (el eje de la rotonda, el eje largo del edificio) y llevarlo al plano al final.
+- **Sus piezas** son las mallas que se llaman como el modelo o empiezan por su nombre y un guion bajo. Dos no se dibujan: `<modelo>_colision`, la colisión hecha a mano (suelos, muros, columnas; los escalones y las escaleras son rampas, porque el jugador no sube escalones de 16 cm), y `<modelo>_hueco`, dónde no va el terreno cuando el edificio baja bajo la calle (el foso de las escaleras del metro). Los triángulos del hueco quedan en los metadatos del edificio (`kit_huecos`, en coordenadas de plano): los dioramas recortan su suelo con ellos y la maqueta tendrá que hacer lo mismo con su relieve.
+- **La nieve de dentro:** el material `nevado_parcial` pone la nieve que dice el alfa del color de vértice ([D-039](DECISIONES.md)): en el Partido nieva junto al borde roto y las ventanas reventadas, no en el fondo de los pasillos.
+- **Para verlos**, con **F6**: `scenes/style/diorama_vestibulo.tscn` (la avenida, el control, la entrada, el peristilo, la sala, la cúpula, la compuerta, las escaleras y desde el aire), `diorama_partido.tscn` (desde el cráter, la casa de muñecas de cerca, la esquina, el testero, la entrada, un pasillo, la escalera, el borde, la azotea y desde el aire) y `diorama_soviets.tscn` (la avenida, la plaza, el pórtico, el escudo, el boquete, la esquina, la torre, el vigía y desde el aire). Las cámaras de dentro se ven mejor con `set_flashlight`.
+
+**Para añadir uno:** escribe `tools/blender/recipes/singular_<nombre>.py` con su `models()`, añade su biblioteca a `BuildingKit.LIBRARIES` y su id a `KitSingular.MODELS`, y genera el modelo. El test (`test_singular_buildings_are_whole`) comprueba que no falte ninguna pieza, que tenga colisión, que las piezas ocultas no se dibujen y que quepa en su parcela. Las reglas de modelado son las del kit ([ESTILO.md](ESTILO.md#reglas-de-modelado-para-la-tinta)).
 
 ## Herramientas para generar los assets
 

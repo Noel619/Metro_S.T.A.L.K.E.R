@@ -5,7 +5,7 @@
 #
 # Uso: tools/capturas_docs.sh [filtro]
 #   filtro: solo los grupos cuyo nombre lo contenga (deposito, equipo, patio, interfaz,
-#   maqueta, kit).
+#   maqueta, kit, singulares).
 set -eu
 cd "$(dirname "$0")/.."
 FILTER="${1:-}"
@@ -132,4 +132,17 @@ if want kit; then
         "--call=DioramaEdificios:set_hour:23 --call=DioramaEdificios:capture_only:portal,pinon --call=DioramaEdificios:set_flashlight:1" 10
     keep noche_camara_portal fase3_kit_noche
     keep noche_camara_pinon fase3_kit_noche_isba
+fi
+if want singulares; then
+    # Los edificios singulares (F3-16): el vestíbulo del metro, el Edificio Partido y la
+    # Casa de los Sóviets.
+    capture style/diorama_vestibulo vestibulo "--call=DioramaVestibulo:capture_only:avenida,cupula,compuerta" 10
+    keep vestibulo_camara_avenida fase3_singular_vestibulo
+    keep vestibulo_camara_cupula fase3_singular_vestibulo_cupula
+    keep vestibulo_camara_compuerta fase3_singular_vestibulo_compuerta
+    capture style/diorama_partido partido "--call=DioramaPartido:capture_only:crater,casa" 10
+    keep partido_camara_crater fase3_singular_partido
+    keep partido_camara_casa fase3_singular_partido_casa
+    capture style/diorama_soviets soviets "--call=DioramaSoviets:capture_only:avenida" 10
+    keep soviets fase3_singular_soviets
 fi

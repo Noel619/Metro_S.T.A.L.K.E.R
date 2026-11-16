@@ -21,7 +21,8 @@ extends RefCounted
 ##   "comercios" (escaparates en los bajos de la calle) y "arco" (un arco al patio).
 ##
 ## Las casas de madera (la isba y el barracón) no se montan por vanos: el kit las tiene
-## enteras y se escoge la de su estado (KitWhole).
+## enteras y se escoge la de su estado (KitWhole). Los edificios singulares (los hitos y los
+## sitios clave) son un modelo entero cada uno, por su id del plano (KitSingular).
 ##
 ## Cada pieza se repite con una MultiMesh: una llamada de dibujo por pieza y edificio.
 ## Algunos tipos visten las mismas piezas con otro material (sus "pieles"): los bloques
@@ -32,6 +33,9 @@ const LIBRARIES: PackedStringArray = [
 	"res://assets/models/kit_estalinka.glb",
 	"res://assets/models/kit_ladrillo.glb",
 	"res://assets/models/kit_madera.glb",
+	"res://assets/models/singular_vestibulo.glb",
+	"res://assets/models/singular_partido.glb",
+	"res://assets/models/singular_soviets.glb",
 ]
 const MATERIALS_DIR: String = "res://assets/materials/"
 ## La familia de reglas que monta cada tipo del plano.
@@ -65,6 +69,13 @@ static func supports(kind: String) -> bool:
 	return FAMILIES.has(kind)
 
 
+## ¿Sabe montar este edificio del plano (o esta ficha)? Los de los tipos del kit y los
+## singulares, que van por su id.
+static func supports_building(building: Dictionary) -> bool:
+	var key: String = String(building.get("id", building.get("clave", "")))
+	return supports(String(building.get("tipo", ""))) or KitSingular.MODELS.has(key)
+
+
 ## Los nombres de todas las piezas del kit.
 func piece_names() -> PackedStringArray:
 	var names: PackedStringArray = PackedStringArray(_base.keys())
@@ -88,13 +99,18 @@ func build(spec: Dictionary) -> Node3D:
 	var node: Node3D = Node3D.new()
 	node.name = String(spec.get("clave", kind)).validate_node_name()
 	var assembly: KitAssembly = KitAssembly.new(meshes_for(kind))
-	match FAMILIES.get(kind, ""):
+	var family: String = FAMILIES.get(kind, "")
+	if KitSingular.MODELS.has(String(spec.get("clave", ""))):
+		family = "singular"
+	match family:
 		"paneles":
 			KitPanelBlock.new(spec, assembly).build(node)
 		"mamposteria":
 			KitMasonry.new(spec, assembly).build(node)
 		"entera":
 			KitWhole.new(spec, assembly).build(node)
+		"singular":
+			KitSingular.new(spec, assembly).build(node)
 		_:
 			push_error("El kit no sabe montar el tipo '%s'." % kind)
 	assembly.flush(node)
@@ -104,6 +120,9 @@ func build(spec: Dictionary) -> Node3D:
 
 
 func _load_library(path: String) -> void:
+	if not ResourceLoader.exists(path):
+		push_error("Falta la biblioteca del kit %s: genera los modelos (make models)." % path)
+		return
 	var scene: Node = (load(path) as PackedScene).instantiate()
 	for found: Node in scene.find_children("*", "MeshInstance3D", true, false):
 		var instance: MeshInstance3D = found as MeshInstance3D

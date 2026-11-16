@@ -483,6 +483,13 @@ class MeshBuilder:
                 self.bm.faces.new((grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i]))
         return self._finish_piece(before, color, jitter, smooth=False)
 
+    def polygon(self, points: Iterable[Iterable[float]], color: str, *, jitter: float = 0.0) -> list:
+        """Cara suelta de varios lados, plana y convexa (en sentido antihorario vista desde
+        delante)."""
+        before = set(self.bm.faces)
+        self.bm.faces.new([self.bm.verts.new(Vector(p)) for p in points])
+        return self._finish_piece(before, color, jitter, smooth=False)
+
     def cylinder(
         self,
         radius: float,
