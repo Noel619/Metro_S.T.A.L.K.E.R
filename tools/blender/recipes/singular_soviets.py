@@ -287,12 +287,14 @@ def _order(mb: tb.MeshBuilder, length: float, name: str) -> None:
 
 def _window_dressing(mb: tb.MeshBuilder, holes: list, exterior: bool, rng: random.Random) -> None:
     """Recercados y alféizares; frontones sobre las ventanas de la planta noble; las
-    carpinterías quemadas o vacías."""
+    carpinterías quemadas o vacías. En los patios, nada: los huecos quedan negros."""
+    if not exterior:
+        return  # los patios ardieron por dentro: huecos negros, sin carpintería ni recercado
     for x0, z0, x1, z1 in holes:
-        if z1 <= BASE_TOP and exterior:
-            kit.outline(mb, [(x0, z0), (x1, z0), (x1, z1), (x0, z1)], [(0.0, 0.0), (0.0, 0.12), (0.14, 0.12), (0.2, 0.0)], GRANITE)
+        if z1 <= BASE_TOP:
+            kit.outline(mb, [(x0, z0), (x1, z0), (x1, z1), (x0, z1)], [(0.0, 0.0), (0.0, 0.12), (0.14, 0.12), (0.2, 0.0)], GRANITE, step=3.0)
         else:
-            kit.outline(mb, [(x0, z0), (x1, z0), (x1, z1), (x0, z1)], [(0.0, 0.0), (0.0, 0.08), (0.1, 0.08), (0.14, 0.0)], DETAIL)
+            kit.outline(mb, [(x0, z0), (x1, z0), (x1, z1), (x0, z1)], [(0.0, 0.0), (0.0, 0.08), (0.1, 0.08), (0.14, 0.0)], DETAIL, step=3.0)
             kit.moulding(mb, (x0 - 0.25, x1 + 0.25), [(0.0, z0 - 0.05), (-0.16, z0 - 0.08), (-0.16, z0 - 0.16), (0.0, z0 - 0.26)], DETAIL, mitre=True)
         if exterior and abs(z0 - ROWS[2][0]) < 0.01:  # la planta noble: frontón triangular
             peak = [(x0 - 0.35, z1 + 0.25), (x1 + 0.35, z1 + 0.25), ((x0 + x1) / 2.0, z1 + 0.85)]
