@@ -85,16 +85,16 @@ def _panel(
     Alrededor de cada hueco hay una fila de vértices cerca de la mocheta, para que su
     oclusión no manche medio panel, y cortes para los chorretones (``drips``).
     """
-    # Sin bisel y con la masilla casi enrasada: la junta es una línea de color nítida.
-    # Una ranura honda o un bisel dejan caras de menos de un píxel que el contorno de
-    # tinta pilla a saltos, y de lejos las juntas salen punteadas.
+    # Sin bisel y con la masilla enrasada: la junta es una línea de color nítida. Una
+    # ranura (aunque sea de un milímetro) o un bisel dejan caras de menos de un píxel que
+    # el contorno de tinta pilla a saltos, y de lejos las juntas salen punteadas.
     z0, z1 = z_range
     mb.slab(
         (J / 2.0, W - J / 2.0), (z0 + J / 2.0, z1 - J / 2.0), (0.0, T), PANEL,
         holes=holes, step=0.55, jitter=0.03, back=back, ring=0.1,
         extra_x=kit.drip_cuts(drips or []),
     )
-    mb.slab((0.0, W), (z0, z1), (0.001, 0.06), MASTIC, holes=[(J / 2.0, z0 + J / 2.0, W - J / 2.0, z1 - J / 2.0)], back=False)
+    mb.slab((0.0, W), (z0, z1), (0.0, 0.06), MASTIC, holes=[(J / 2.0, z0 + J / 2.0, W - J / 2.0, z1 - J / 2.0)], back=False)
 
 
 def _sill_drips(openings: list, rng: random.Random) -> list:
@@ -156,8 +156,8 @@ def build_walls(lib: kit.KitLibrary) -> None:
 
     # El portal: de la acera al primer descansillo, con la puerta abajo.
     mb = tb.MeshBuilder(seed=16)
-    mb.slab((J / 2.0, W - J / 2.0), (-BELOW, PORTAL_H - J / 2.0), (0.0, T), PANEL, holes=[PORTAL], bevel=0.012, step=0.55, jitter=0.03, back=False)
-    mb.slab((0.0, W), (-BELOW, PORTAL_H), (0.014, 0.06), MASTIC, holes=[(J / 2.0, -BELOW, W - J / 2.0, PORTAL_H - J / 2.0)], back=False)
+    mb.slab((J / 2.0, W - J / 2.0), (-BELOW, PORTAL_H - J / 2.0), (0.0, T), PANEL, holes=[PORTAL], step=0.55, jitter=0.03, back=False)
+    mb.slab((0.0, W), (-BELOW, PORTAL_H), (0.0, 0.06), MASTIC, holes=[(J / 2.0, -BELOW, W - J / 2.0, PORTAL_H - J / 2.0)], back=False)
     # La placa con el número del portal, junto a la puerta (el número lo pone Godot).
     mb.box((0.36, 0.02, 0.24), (2.62, -0.01, 1.95), SIGN, bevel=0.004)
     piece = mb.finish("panel_portal", kit.materials("muro"))
@@ -694,7 +694,7 @@ def build_damage(lib: kit.KitLibrary) -> None:
         if fallen:
             # Un panel entero, caído hacia dentro y apoyado en los escombros.
             mb.box((W * 0.7, T, 1.6), (W * 0.5, 1.4, 0.6), PANEL, rotation=(62.0, 4.0, 0.0), jitter=0.04)
-        mb.slab((0.0, W), (0.0, 0.3), (0.001, 0.06), MASTIC, holes=[(J / 2.0, J / 2.0, W - J / 2.0, 0.3)], back=False)
+        mb.slab((0.0, W), (0.0, 0.3), (0.0, 0.06), MASTIC, holes=[(J / 2.0, J / 2.0, W - J / 2.0, 0.3)], back=False)
         bars = 14 if letter == "f" else 6
         for _ in range(bars):
             top = max(left[1], middle[1], right[1]) * 0.5

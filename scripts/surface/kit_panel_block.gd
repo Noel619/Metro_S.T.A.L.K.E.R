@@ -308,7 +308,7 @@ func _column(face: Dictionary, bay: int) -> void:
 
 ## Una celda (un vano de una planta). Devuelve el hollín que deja en la de encima.
 func _cell(face: Dictionary, f: int, below: Color) -> Color:
-	var placement: Transform3D = _jitter(_frame(face, PLINTH + f * STOREY))
+	var placement: Transform3D = _frame(face, PLINTH + f * STOREY)
 	var tone: Color = _panel_tone()
 	var data: Color = _from_below(below, STOREY)
 	var opening: String = _opening(face, f)
@@ -359,7 +359,7 @@ func _top(face: Dictionary, kept: int, below: Color) -> void:
 		var stubs: Array = ["c", "d", "f"]
 		if face["role"] != "testero":
 			stubs = ["a", "b", "c", "d", "e", "f"]
-		assembly.put("panel_roto_" + _pick(stubs), _jitter(_frame(face, top)), _panel_tone(), data)
+		assembly.put("panel_roto_" + _pick(stubs), _frame(face, top), _panel_tone(), data)
 	elif kept == floors:
 		var parapet: String = "peto" if kind == "jrushchovka" else "peto_tecnico"
 		if damage >= 2 and _rng.randf() < 0.08:
@@ -381,7 +381,7 @@ func _stair_column(face: Dictionary) -> void:
 		assembly.put("banco_portal", base * Transform3D(Basis(), Vector3(-0.75, 0.0, 0.85)))
 	var below: Color = Color(_wear, 0.0, 0.0, 0.0)
 	for k: int in maxi(0, kept - 1):
-		var placement: Transform3D = _jitter(_frame(face, PORTAL_HEIGHT + k * STOREY))
+		var placement: Transform3D = _frame(face, PORTAL_HEIGHT + k * STOREY)
 		var burnt: bool = _burnt(column, k + 1)
 		var data: Color = _from_below(below, STOREY)
 		var source: Vector2 = SOOT_SOURCES["escalera"]
@@ -618,17 +618,6 @@ func _roof_frame(along: float, inward: float, height: float, turn: float) -> Tra
 	return Transform3D(basis.rotated(Vector3.UP, turn), _local(point, height))
 
 
-## Los paneles nunca casan del todo: un pelo torcidos y unos milímetros arriba o abajo.
-## Nunca hacia fuera: un escalón entre dos paneles dejaría asomar un canto de milímetros
-## que el contorno de tinta dibujaría a trozos.
-func _jitter(placement: Transform3D) -> Transform3D:
-	var outward: Vector3 = placement.basis.z.normalized()
-	var result: Transform3D = placement
-	result.origin.y += _rng.randf_range(-0.004, 0.004)
-	result.basis = Basis(outward, _rng.randf_range(-0.002, 0.002)) * result.basis
-	return result
-
-
 ## Una franja del bloque: de [param from] a [param to] metros por el frente y de
 ## [param near] a [param far] hacia dentro.
 func _strip(from: float, to: float, near: float, far: float) -> PackedVector2Array:
@@ -643,6 +632,9 @@ func _center() -> Vector2:
 	return _corners[0] + _axis * (_length * 0.5) + _inward * (_depth * 0.5)
 
 
+## Los paneles nunca salen iguales, pero varían de tono y no de sitio: unos milímetros de
+## desajuste abrirían rendijas por las que asoma el canto de la junta, y el contorno de
+## tinta las dibujaría a puntos.
 func _panel_tone() -> Color:
 	var shade: float = 1.0 + _rng.randf_range(-0.035, 0.035)
 	return Color(_tint.r * shade, _tint.g * shade, _tint.b * shade)

@@ -47,6 +47,22 @@ func set_hour(value: float) -> void:
 	_apply_atmosphere()
 
 
+## Enciende o apaga la linterna de las cámaras.
+func set_flashlight(on: bool) -> void:
+	flashlight = on
+	for camera: Node in get_tree().get_nodes_in_group(&"capture_camera"):
+		Flashlight.attach(camera as Camera3D).visible = on
+
+
+## Para las capturas: deja en el grupo solo las cámaras de la lista, separadas por comas y
+## sin el "Camara" del nombre ("portal,pinon,barracon_ras").
+func capture_only(names: String) -> void:
+	var wanted: PackedStringArray = names.split(",", false)
+	for camera: Node in get_tree().get_nodes_in_group(&"capture_camera"):
+		if not wanted.has(String(camera.name).trim_prefix("Camara").to_snake_case()):
+			camera.remove_from_group(&"capture_camera")
+
+
 func _apply_atmosphere() -> void:
 	if hour >= 0.0:
 		Atmosphere.apply_hour($Entorno.environment, $Sol, hour, weather)
