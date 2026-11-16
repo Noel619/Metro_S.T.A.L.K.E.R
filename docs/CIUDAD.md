@@ -253,7 +253,9 @@ Los tipos siguen las medidas de las series soviéticas reales. Los interiores de
 
 1. **El plano son datos.** `tools/ciudad/datos.py` decide la posición, el tipo, las plantas, el uso y las notas de cada cosa. `plano.py` calcula el daño, los incendios, los escombros y el relieve, y lo exporta a `data/ciudad/plano.json`.
 2. **Maqueta automática** (hecha, F3-15): un generador en Godot lee el plano y levanta la ciudad en volúmenes sencillos (relieve, calles, edificios a su altura, escombros) para probar recorridos, vistas y rendimiento antes de construir nada. Ver [la sección 15](#15-la-maqueta).
-3. **Kit modular:** cada tipo de edificio se monta con las piezas del kit de arquitectura soviética (paneles, ventanas, balcones, portales, escaleras, cubiertas), con el daño de su nivel y las variaciones de su semilla.
+3. **Kit modular** (hecho para las viviendas, F3-16): cada tipo de edificio se monta con las piezas del kit de arquitectura soviética (paneles, ventanas, balcones, portales, escaleras, cubiertas), con el daño de su nivel y las variaciones de su semilla. Ya se montan las 138 viviendas del plano (las estalinistas y las casas obreras, las de antes de la revolución, las isbas, las jrushchovkas, los bloques, la torre y los barracones), con las mismas reglas de daño que la maqueta; el resto de los tipos sigue en volúmenes. Ver [DESARROLLO.md](DESARROLLO.md#el-kit-de-arquitectura-f3-16).
+
+   ![Una estalinista de esquina en la plaza del Trabajo, montada con el kit](capturas/fase3_kit_estalinka.jpg)
 4. **Sitios clave a mano:** los 44 edificios con interior hecho a mano y los lugares de las misiones se terminan uno a uno.
 5. **Carga por sectores:** la ciudad se carga en celdas de 200 × 200 m. Hay detalle completo en la celda del jugador y en las de alrededor, y versiones simplificadas más lejos. Las manzanas sirven de oclusores (lo que tapan no se dibuja), algo imprescindible para llegar a 60 fps con la gráfica integrada.
 

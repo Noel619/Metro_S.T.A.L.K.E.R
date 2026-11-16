@@ -133,3 +133,19 @@ Cada vía del tren tiene su rasante (`tools/ciudad/ferrocarril.py`), que no es l
 ## D-033 · Pasos a nivel y tranvía, siempre a ras
 
 Donde el tren cruza una calle, la calle sube hasta el carril (no al revés: la vía no puede quebrar su rasante), con una losa de hormigón de lado a lado de la calle y el terreno subiendo con ella como un terraplén; así ningún carril hace escalón con un bordillo y no hacen falta pretiles junto a la vía. El tranvía va siempre a ras de la calzada: donde su vía pisa algo peatonal o la tierra, una cama de losas a la altura de la calzada le abre paso. Sus curvas se redondean a 20 m de radio, porque el trazado del plano giraba en seco.
+
+## D-034 · Los edificios se montan con piezas, una MultiMesh por pieza
+
+Los edificios de la superficie (F3-16) no se modelan enteros: cada familia (paneles, mampostería, madera) es una biblioteca de piezas, un `.glb` con una malla por pieza que genera su receta, y `BuildingKit` coloca las de cada casa según su ficha del plano. Las piezas miden un vano de ancho y una planta de alto, con el origen en el arranque del vano, en la cara del muro; las reglas de cada familia las estiran lo justo para que los vanos llenen la huella y las plantas tengan su altura. Cada pieza se repite con una `MultiMesh` (una llamada de dibujo por pieza y edificio): el tono de cada casa y de cada panel va en el color de la instancia, y el desgaste y el hollín, en sus datos. El daño sigue las reglas y las semillas de la maqueta (`CityPlan.chance`), así que una casa se hunde por el mismo extremo en los dos.
+
+## D-035 · Los muros se ensucian en el shader, en el espacio del mundo
+
+La suciedad, los chorretones, el aparejo del ladrillo, la plaqueta y el revoque caído los calcula `tinta_muro.gdshader` con la posición en el mundo: siguen de una pieza a la siguiente sin costuras ni repeticiones y no cuestan vértices. Lo que depende de la pieza va en el color de vértice (el alfa marca dónde va la plaqueta o dónde se cae antes el revoque: junto a los huecos y abajo) y lo que depende de la casa llega por instancia (el desgaste, el hollín y de dónde sale). La oclusión, las cavidades y los chorretones de óxido se pintan al generar cada pieza, con lo que tendrá alrededor al montarla.
+
+## D-036 · Nada plano y estrecho: molduras con perfil y juntas enrasadas
+
+El contorno de tinta dibuja a puntos las caras que ocupan menos de un píxel: las de abajo de las molduras vistas desde la calle, las de arriba de los zócalos y los cantos a escuadra de lo que sobresale poco, sobre todo de lejos, a ras y en sombra. Hacer las molduras más gruesas no basta (a ras siguen siendo finas) y tocar el post-proceso cambiaría todo el estilo, así que se modela a prueba de tinta, como la arquitectura clásica: molduras con perfil (vierteaguas y caras de abajo en derrame), cantos inclinados, esquinas a inglete, juntas de color enrasadas y piezas que no se descolocan al montarlas. Las reglas están en [ESTILO.md](ESTILO.md#9-los-edificios-del-kit-f3-16). Los travesaños de las carpinterías se quedan como están: enrasar el cristal quitaría sus puntos, pero también las líneas de los paños de cerca.
+
+## D-037 · Las casas de madera, enteras y por estado
+
+La isba (9 × 8 m) y el barracón (30 × 11 m) tienen las medidas fijas en el plano y casi todos ardieron, así que no se montan por vanos: el kit guarda cada casa entera en cada estado (abandonada, chamuscada, cascarón y quemada) y `KitWhole` escoge la suya por el daño y el incendio de la ficha y la encaja en la huella, por su lado largo y estirada lo poco que haga falta. Una casa entera es una sola llamada de dibujo.

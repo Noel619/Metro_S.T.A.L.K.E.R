@@ -45,7 +45,7 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 
 | | |
 |---|---|
-| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) completa, a falta de tu aprobación · Fase 3 empezada: la maqueta de la ciudad (F3-15) |
+| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) completa, a falta de tu aprobación · Fase 3 empezada: la maqueta de la ciudad (F3-15), su red de tránsito (F3-17) y los edificios de la superficie (F3-16) |
 | **Motor** | Godot 4.7.2 |
 | **Plataforma** | PC (Windows; la build de Linux sale casi gratis) |
 | **Idioma** | Solo español |
@@ -98,6 +98,24 @@ La ciudad entera en 3D, levantada desde el plano en volúmenes sencillos: el rel
 - **Herramientas:** cuenta los hitos que se ven desde donde estás (y comprueba la regla en toda la ciudad con V) y mide el rendimiento en tu PC (B). Todas las teclas, en [DESARROLLO.md](docs/DESARROLLO.md#la-maqueta-de-la-ciudad-f3-15).
 - **Lo que ha enseñado**, en [CIUDAD.md](docs/CIUDAD.md#15-la-maqueta): desde el 92 % de la calle se ven al menos dos hitos, pero no desde los patios cerrados; y la niebla de día tapa la ciudad a partir de unos 300 m, así que los hitos la atraviesan.
 
+### Los edificios de la superficie (F3-16)
+
+| | |
+|---|---|
+| ![Una jrushchovka de cinco plantas: paneles, balcones y los portales](docs/capturas/fase3_kit_jrushchovka.jpg) | ![Una estalinista de esquina en la plaza del Trabajo](docs/capturas/fase3_kit_estalinka.jpg) |
+| ![El bloque de 9 plantas, de plaqueta, y la torre de 16](docs/capturas/fase3_kit_bloque.jpg) | ![La fachada de una estalinista: recercados, frontones, imposta y escaparates](docs/capturas/fase3_kit_estalinka_fachada.jpg) |
+| ![La casa obrera y una casa de ladrillo de los mercaderes](docs/capturas/fase3_kit_mercader.jpg) | ![Una isba: guardapolvos tallados, contraventanas y prichelinas](docs/capturas/fase3_kit_isba.jpg) |
+| ![Los daños: el extremo que mira a la bomba se hunde](docs/capturas/fase3_kit_danos.jpg) | ![El barracón obrero](docs/capturas/fase3_kit_barracon.jpg) |
+| ![Al anochecer](docs/capturas/fase3_kit_anochecer.jpg) | ![De noche, con linterna, ante un portal](docs/capturas/fase3_kit_noche.jpg) |
+
+Las 138 viviendas del plano ya tienen sus modelos 3D: se montan con un kit de piezas generadas por código, en cuatro familias, cada una a partir de su ficha del plano (huella, plantas, daño, incendio, dónde cayó la bomba).
+
+- **Las familias:** los bloques de paneles (jrushchovka, bloque de 9 plantas y torre de 16), las casas de muros de carga (la estalinista, la casa obrera y la casa de ladrillo de antes de la revolución) y las de madera (la isba y el barracón).
+- **Muros y materiales:** hormigón pintado, plaqueta, ladrillo visto y estuco que se cae alrededor de los huecos y deja ver el ladrillo; suciedad, chorretones y hollín sobre las ventanas quemadas. Cada casa tiene su tono y cada panel el suyo.
+- **Daños como en la maqueta:** el extremo que mira a la bomba se hunde, cascarones, muñones con su escombro, balcones caídos, ventanas rotas, tapiadas o quemadas, y las casas de madera ardidas.
+- **Hechos para la tinta:** molduras con perfil y cantos en derrame, juntas enrasadas y nada plano y estrecho, para que el contorno se dibuje limpio de cerca, de lejos y a ras ([D-036](docs/DECISIONES.md)).
+- **Para verlos:** en Godot, `scenes/style/diorama_edificios.tscn` (cada tipo con cada daño), `diorama_plaza.tscn` y `diorama_mercaderes.tscn` (las casas del plano tal cual), con **F6**. Cómo funciona y cómo se añaden piezas, en [DESARROLLO.md](docs/DESARROLLO.md#el-kit-de-arquitectura-f3-16); las reglas de estilo, en [ESTILO.md](docs/ESTILO.md#9-los-edificios-del-kit-f3-16).
+
 ### Decisiones tomadas
 
 | Tema | Decisión |
@@ -131,7 +149,8 @@ La ciudad entera en 3D, levantada desde el plano en volúmenes sencillos: el rel
 
 1. **Fase 1**: revisar las capturas, el [vídeo](docs/capturas/fase1_dioramas.mp4) y las piezas de interfaz, y aprobar el estilo. Con eso empiezan de lleno las Fases 2 y 3.
 2. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos).
-3. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
+3. **Los edificios** (F3-16): revisar las capturas y recorrer los tres dioramas de edificios con F6. Lo siguiente sería usarlos en la maqueta, cerca del jugador, y los interiores de serie.
+4. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
 
 ---
 
@@ -940,12 +959,12 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F3-13** Audio: oclusión, reverberación, ambiente dinámico, nieve.
 - [ ] **F3-14** **Zona 1, La Plaza**: primero con geometría provisional y después estilizada, con al menos 3 rutas a cada objetivo.
 - [x] **F3-15** **Maqueta automática de la ciudad**: un generador en Godot lee `data/ciudad/plano.json` y levanta la ciudad entera en volúmenes sencillos (relieve, calles, edificios a su altura, escombros). Sirve para probar recorridos, vistas, sectores de carga y rendimiento antes de construir. *(Hecha: `scenes/debug/maqueta_ciudad.tscn`, con recorridos de las rutas, hitos a la vista, prueba de rendimiento y 48 sectores con dos niveles de detalle; ver [CIUDAD.md](docs/CIUDAD.md#15-la-maqueta).)*
-- [ ] **F3-16** Kit modular de arquitectura soviética para los tipos del plano (jrushchovka, bloque de 9 plantas, casa estalinista), con daños por nivel e interiores de serie.
+- [ ] **F3-16** Kit modular de arquitectura soviética para los tipos del plano (jrushchovka, bloque de 9 plantas, casa estalinista), con daños por nivel e interiores de serie. *(Hechos los exteriores de las 138 viviendas del plano, en cuatro familias, con sus daños y los falsos interiores que se ven por las ventanas; ver [DESARROLLO.md](docs/DESARROLLO.md#el-kit-de-arquitectura-f3-16). Faltan los interiores de serie que se recorren y llevarlos a la maqueta.)*
 - [ ] **F3-17** **Red de tránsito de la ciudad** en 3D: calzadas, aceras, bordillos, plazas, sendas, camino, escaleras y el tablero del puente, con muros, pretiles, pasos de cebra, tapas y sumideros, encajados en el relieve y con colisión que se sube andando. *(Hecho en la maqueta todo lo que se pisa y las vías del tren y del tranvía, con la estación, la playa de vías y los pasos a nivel: ver [CIUDAD.md](docs/CIUDAD.md#16-la-red-de-tránsito). Faltan los modelos de detalle de las tapas, los sumideros y las traviesas, y los desvíos y los topes de las vías.)*
 
 **Entregable**: una salida de 10 a 20 minutos: subir por la escalera, llegar a un objetivo y volver.
 **Criterio de salida**: en las pruebas, los jugadores planifican antes de salir, dibujan su mapa, usan al menos dos rutas distintas y ninguna muerte se siente injusta.
-**Estado**: 🟨 empezada por la ciudad: F3-15 hecha y F3-17 (la red de tránsito) casi, a falta de tu revisión. La maqueta es geometría provisional y no depende del estilo, así que se ha adelantado mientras se aprueba la Fase 1.
+**Estado**: 🟨 empezada por la ciudad: F3-15 hecha, F3-16 con los exteriores de las viviendas hechos y F3-17 (la red de tránsito) casi, a falta de tu revisión. La maqueta es geometría provisional y no depende del estilo, así que se ha adelantado mientras se aprueba la Fase 1; los edificios del kit siguen el estilo de la Fase 1 tal como está.
 
 ### Fase 4: El mundo vivo · tamaño L
 

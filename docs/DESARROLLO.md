@@ -55,6 +55,50 @@ Es una herramienta de desarrollo: lee `data/ciudad/` directamente (ver [D-024](D
 | `scripts/debug/city_mockup.gd` | La escena: vistas, recorridos, panel, capas, pruebas |
 | `scripts/debug/mockup_walker.gd`, `city_overlays.gd` | El visitante (andar y volar) y las capas de ayuda |
 
+## El kit de arquitectura (F3-16)
+
+Los edificios de la superficie se montan con piezas: cada familia es una biblioteca (un `.glb` con una malla por pieza) que genera su receta, y Godot coloca las piezas de cada casa según su ficha del plano. Cada pieza se repite con una `MultiMesh`: una llamada de dibujo por pieza y edificio ([D-034](DECISIONES.md)).
+
+| Biblioteca | Receta | Tipos del plano |
+|---|---|---|
+| `kit_paneles` | `tools/blender/recipes/kit_paneles.py` | Jrushchovka, bloque de 9 plantas y torre de 16 (estos dos, con plaqueta) |
+| `kit_estalinka` | `tools/blender/recipes/kit_estalinka.py` | Estalinista y casa obrera |
+| `kit_ladrillo` | `tools/blender/recipes/kit_ladrillo.py` | Casa anterior a la revolución (usa las carpinterías, interiores y cubierta de la estalinista) |
+| `kit_madera` | `tools/blender/recipes/kit_madera.py` | Isba y barracón: casas enteras, una por estado ([D-037](DECISIONES.md)) |
+
+**Para verlos**, en Godot, con **F6**:
+
+- `scenes/style/diorama_edificios.tscn`: una calle de Los Bloques hecha a mano, con cada tipo y cada daño, las isbas y los barracones. Sus cámaras: jrushchovka, portal, balcones, bloque y torre, daños, cascarón, muñones, la casa obrera y la de ladrillo, las isbas, el piñón de una isba y el barracón (también a ras de su fachada).
+- `scenes/style/diorama_plaza.tscn` y `diorama_mercaderes.tscn`: las casas del plano que el kit sabe montar alrededor de la plaza del Trabajo y en el barrio de los mercaderes, tal como son (con su daño real: los mercaderes están cerca de la bomba).
+- Los tres tienen `mood` (día, anochecer, noche), `hour`, `weather` y `flashlight` en el inspector. Para las capturas: `set_hour`, `set_flashlight` y `capture_only` (por ejemplo, `--call=DioramaEdificios:capture_only:portal,pinon`).
+
+**El código:**
+
+| Archivo | Qué hace |
+|---|---|
+| `scripts/surface/building_kit.gd` | `BuildingKit`: carga las bibliotecas, viste las piezas con las pieles de cada tipo y monta un edificio desde su ficha |
+| `scripts/surface/kit_assembly.gd` | `KitAssembly`: junta las piezas de un edificio y crea una `MultiMesh` por pieza |
+| `scripts/surface/kit_rules.gd` | Lo común a las familias: la ficha, el azar con semilla (la misma casa sale siempre igual), el marco de cada pieza, los estados de las ventanas y el hollín |
+| `scripts/surface/kit_panel_block.gd` | Los bloques de paneles: portales, escaleras, balcones y logias, paneles caídos, muñones, el peto y los cortes |
+| `scripts/surface/kit_masonry.gd` | Las casas de muros de carga, sobre cualquier huella (rectas, curvas, en L): bajos, plantas, pilastras, esquinas, cornisa, cubierta, patios y arcos |
+| `scripts/surface/kit_whole.gd` | Las casas de madera: escoge la de su estado y la encaja en la huella |
+| `tools/blender/kit_bpy.py` | Las utilidades de las recetas: la biblioteca y la pintura con contexto, las carpinterías, los interiores falsos, los daños y las molduras a prueba de tinta |
+| `assets/shaders/tinta_muro.gdshader` | Los muros: suciedad, chorretones, hollín, revoque caído y plaqueta ([ESTILO.md](ESTILO.md#9-los-edificios-del-kit-f3-16)) |
+| `scripts/debug/buildings_diorama.gd` | Los dioramas |
+| `tests/unit/test_building_kit.gd` | Que estén todas las piezas que piden las reglas, que la misma ficha dé siempre el mismo edificio, los daños y que se monten todas las viviendas del plano |
+
+**La ficha de un edificio** (`BuildingKit.build(spec)`) es un diccionario: `tipo`, `huella` (la planta en metros, x al este e y al norte), `origen`, `pisos`, `dano` (1 a 4), `incendio` (`no`, `parcial`, `total`), `clave` (la semilla: la misma ficha da siempre la misma casa) y `bomba` (dónde cayó). Cada familia admite algo más: los bloques, `entrada` (el lado de los portales) y `portales`; las casas de muros de carga, `patios`, `comercios` y `arco`. El detalle está al principio de `building_kit.gd`.
+
+**Las piezas** siguen las convenciones de `kit_bpy.py`: el origen es el arranque de un vano en la cara exterior del muro, x corre a lo largo de la fachada, z hacia arriba y el muro va de y = 0 hacia +y (lo que sobresale queda en y < 0). Al montarlas, cada instancia lleva en el color su tono y en los datos de instancia el desgaste y el hollín del incendio, que lee el shader.
+
+**Para añadir una pieza:**
+
+1. Constrúyela en su receta y guárdala con `lib.add(pieza, contexto, alpha=..., seed=...)`. El contexto son las piezas que tendrá alrededor al montarla (los muros vecinos, el forjado, las carpinterías): se usa para pintar la oclusión y no se exporta. `alpha` es la máscara que leen los shaders de muro (dónde va la plaqueta o dónde se cae antes el revoque).
+2. Sigue las reglas de modelado para la tinta ([ESTILO.md](ESTILO.md#9-los-edificios-del-kit-f3-16)): para las molduras, `kit.moulding` (con `mitre` si acaba en el aire), `kit.moulding_run`, `kit.corner`, `kit.outline`, `kit.block` y `kit.ring`.
+3. Regenera la biblioteca (`python3 tools/blender/build_assets.py kit_estalinka`) y comprueba que las demás no cambian (`git status`).
+4. Úsala en las reglas de su familia con `assembly.put("nombre", transformación, tono, datos)`. Si pides una pieza que no existe, el edificio la apunta en sus metadatos (`kit_faltan`) y el test lo detecta.
+5. Mírala en los dioramas, de cerca, de lejos y a ras, de día y de noche. Para cazar caras de menos de un píxel, `CAPTURE_ARGS="--post=debug_view=2"` (las normales) enseña los píxeles sueltos.
+
 ## Herramientas para generar los assets
 
 Solo hacen falta para cambiar recetas o generadores.
@@ -96,7 +140,7 @@ Todo se genera por código. **Nunca se editan a mano** los archivos de `assets/m
 ### Modelos 3D
 
 - Cada archivo de `tools/blender/recipes/` es una receta. Define `models()`, que devuelve un diccionario `nombre → función que construye el modelo`.
-- Las utilidades comunes están en `tools/blender/tumansk_bpy.py`: cajas con bisel, piezas de torno (`lathe`), placas con contorno (`prism`), tubos y cintas que siguen una curva (`tube`, `ribbon`, `smooth_path`), imperfección controlada (`wobble`, `dent`, `apply_bulge`), pintura por vértice (color base, oclusión y cavidades) y exportación.
+- Las utilidades comunes están en `tools/blender/tumansk_bpy.py`: cajas con bisel, piezas de torno (`lathe`), placas con contorno (`prism`), tubos y cintas que siguen una curva (`tube`, `ribbon`, `smooth_path`), imperfección controlada (`wobble`, `dent`, `apply_bulge`), pintura por vértice (color base, oclusión y cavidades) y exportación. Las del kit de arquitectura, en `tools/blender/kit_bpy.py`.
 - `make models` (o `python3 tools/blender/build_assets.py nombre`) genera `assets/models/<nombre>.glb`.
 - Godot lo importa solo y `tools/godot/post_import.gd` aplica las convenciones de nombre:
 
@@ -173,7 +217,7 @@ Opciones extra con la variable `CAPTURE_ARGS`:
 - `--hide=InkPost`: captura sin el post-proceso del estilo.
 - `--post=debug_view=N`: muestra una capa del post-proceso (ver `docs/ESTILO.md`).
 
-Las escenas de revisión del estilo están en `scenes/style/` y se describen en [ESTILO.md](ESTILO.md). `tools/capturas_docs.sh [filtro]` rehace las capturas de `docs/capturas/` (o solo las de un grupo: `deposito`, `equipo`, `patio`, `interfaz`, `maqueta`); dice qué cámara de cada escena va a la documentación y con qué nombre. Las de interfaz (`scenes/ui/prueba_interfaz.tscn` y `prueba_tipografia.tscn`) son 2D: se capturan igual, sin cámara.
+Las escenas de revisión del estilo están en `scenes/style/` y se describen en [ESTILO.md](ESTILO.md). `tools/capturas_docs.sh [filtro]` rehace las capturas de `docs/capturas/` (o solo las de un grupo: `deposito`, `equipo`, `patio`, `interfaz`, `maqueta`, `kit`); dice qué cámara de cada escena va a la documentación y con qué nombre. Las de interfaz (`scenes/ui/prueba_interfaz.tscn` y `prueba_tipografia.tscn`) son 2D: se capturan igual, sin cámara.
 
 Con `CAPTURE_ARGS="--call=Nodo:metodo[:valor]"` se llama a un método antes de capturar; por ejemplo, el panel de depuración abierto a las 18:45:
 

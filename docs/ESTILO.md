@@ -138,7 +138,8 @@ De noche la luz ambiente y la de la luna son casi nulas (`tinta_negro` = 1): el 
 - **Subdivisión**: las manchas y las abolladuras se pintan por vértice. Una cara grande necesita `cuts` (en las cajas) o más pasos en el perfil (en las piezas de torno) para recogerlas.
 - **Pintura** (`paint`): oclusión de 8 a 32 muestras según el tamaño, cavidades oscuras y aristas algo más claras.
 - **Destrucción** (superficie): hollín de incendio sobre las ventanas quemadas (`scorch`), paneles caídos con el hueco oscuro y varillas, balcones desplomados que cuelgan de la bisagra, cornisas rotas, escombros al pie de la fachada y puertas tapiadas con tablones.
-- **Nombres de material**: `metal` (rampa de metal), `vidrio`, `bombilla` (emite luz), `nevado` (nieve vieja) y `lejano_*` (siluetas del horizonte). El resto usa el material base.
+- **Nombres de material**: `metal` (rampa de metal), `vidrio`, `bombilla` (emite luz), `nevado` (nieve vieja), `lejano_*` (siluetas del horizonte) y, en los edificios del kit, `muro`, `azulejo`, `ladrillo`, `estuco` e `interior` (ver la [sección 9](#9-los-edificios-del-kit-f3-16)). El resto usa el material base.
+- **Nada plano y estrecho:** una cara de pocos centímetros vista casi de canto ocupa menos de un píxel, y el contorno de tinta la dibuja a puntos. Las reglas para evitarlo, en la [sección 9](#9-los-edificios-del-kit-f3-16).
 
 ## 5. Interfaz y tipografías
 
@@ -176,6 +177,7 @@ La prueba de legibilidad está en `scenes/ui/prueba_tipografia.tscn`:
   - Depósito: `diorama_deposito_limpio` y `diorama_deposito_abandonado`.
   - Equipo: `diorama_equipo`, la mesa con el equipo del stalker y las herramientas, cada pieza con su etiqueta.
   - Patio: `diorama_patio_dia`, `diorama_patio_anochecer`, `diorama_patio_noche`, `diorama_patio_noche_linterna` y `diorama_patio_ventisca`.
+  - Edificios del kit (F3-16): `diorama_edificios`, `diorama_plaza` y `diorama_mercaderes`, a cualquier hora (ver la [sección 9](#9-los-edificios-del-kit-f3-16)).
   - `prueba_estilo`.
 - El visor (`visor_estilo`, la escena principal) recorre todas esas escenas.
 - **Panel de depuración** (F1 en el visor): miedo, radiación, hora del día, clima, linterna, trazo reducido y estilo de zona, en vivo.
@@ -206,3 +208,38 @@ La maqueta de la ciudad usa el mismo sombreado por bandas, con tres variantes de
 | ![La avenida, hacia el puente y la Casa de los Sóviets](capturas/fase3_maqueta_avenida.jpg) | ![La avenida al anochecer](capturas/fase3_maqueta_avenida_anochecer.jpg) |
 | ![La salida del metro, de noche y con linterna](capturas/fase3_maqueta_salida_noche.jpg) | ![El Muelle Sur: el río helado y la loma](capturas/fase3_maqueta_rio.jpg) |
 
+## 9. Los edificios del kit (F3-16)
+
+Los edificios de la superficie se montan con las piezas del kit de arquitectura ([DESARROLLO.md](DESARROLLO.md#el-kit-de-arquitectura-f3-16)). Usan el mismo sombreado por bandas y el mismo contorno que todo lo demás; lo propio de los muros lo pone `tinta_muro.gdshader` (`TINTA_MURO` en `tinta.gdshaderinc`).
+
+| Material | Qué es |
+|---|---|
+| `muro` | Hormigón pintado (los paneles) |
+| `azulejo` | El mismo, con plaqueta cerámica de 10 cm en las caras de fachada: de lejos se funde y de cerca se ven las juntas y alguna pieza caída (el bloque de 9 plantas y la torre) |
+| `ladrillo` | Ladrillo visto: el aparejo (25 × 6,5 cm, con su junta) se dibuja en el shader |
+| `estuco` | Revoque sobre ladrillo: se cae a manchas, más junto a los huecos y abajo (el alfa del color de vértice) y más cuanto más dañada está la casa, y deja ver el ladrillo con un borde de tinta |
+| `nevado`, `vidrio`, `interior` | Lo que coge nieve (alféizares, cubiertas, aleros), los cristales y el falso interior tras los huecos (casi negro, como en un grabado) |
+
+- **En el espacio del mundo:** la suciedad a manchas, los chorretones de lluvia, el aparejo y el revoque caído se calculan con la posición en el mundo, así que siguen de una pieza a la de al lado sin repetirse ([D-035](DECISIONES.md)).
+- **Por casa y por pieza:** el ensamblador tiñe cada casa (ocre, salmón, crema, gris, el rojo del ladrillo) y cada panel con un tono algo distinto, y le pasa a cada pieza su desgaste y el hollín de su incendio: una pluma negra que sube desde lo alto de cada hueco quemado y oscurece la planta de arriba.
+- **Pintado al generar:** la oclusión de lo que tendrá alrededor al montarla, cavidades, chorretones de óxido bajo los alféizares de chapa, manchas y el hollín de las casas de madera quemadas.
+
+### Reglas de modelado para la tinta
+
+El contorno sale de las diferencias de profundidad y de normal entre píxeles vecinos. Una cara de pocos centímetros vista casi de canto ocupa menos de un píxel: unas veces se dibuja y otras no, y el contorno la pinta como una fila de puntos. Pasa con las caras de abajo de lo que está por encima de los ojos (alféizares, cornisas, impostas), con las de arriba de lo que está por debajo (zócalos) y con los cantos a escuadra de lo que sobresale poco (recercados, sillares). Se ve sobre todo de lejos, a ras de fachada y en sombra. Las reglas ([D-036](DECISIONES.md)):
+
+1. **Ninguna cara plana y estrecha.** Las molduras llevan perfil: vierteaguas arriba y la cara de abajo en derrame, inclinadas unos 30° sobre la horizontal y con al menos 4 o 5 cm de alto. Así su altura se sigue viendo a ras y su normal difiere lo bastante de la cara de delante para que el contorno la dibuje entera (`kit.moulding`, `kit.moulding_run`, `kit.ring`).
+2. **Cantos en derrame, no a escuadra.** Lo que sobresale del muro tiene los cantos inclinados unos 60° y con unos 4 cm de ancho visto de frente: recercados, frontones, sillares, ménsulas, claves, rótulos (`kit.outline`, `kit.block`).
+3. **Esquinas a inglete y extremos vueltos.** Las molduras corridas doblan las esquinas (`kit.corner`) y las que acaban en el aire vuelven al muro (`mitre`); los sillares de esquina abrazan la arista.
+4. **Juntas enrasadas y de color.** Ni una ranura, ni siquiera de un milímetro: deja asomar el canto de lo que la rodea. Las juntas de los paneles, del almohadillado y de las tablas son franjas de color en el mismo plano.
+5. **Las piezas no se mueven al montarlas.** Unos milímetros de desajuste abren rendijas por las que asoman los cantos. Varían de tono, no de sitio.
+6. **Más hondo que en la realidad.** Las molduras salen de 8 a 25 cm, y las prichelinas de las isbas son tablas anchas y gruesas, no listones.
+7. **Un chaflán a 45° no dibuja línea** (las normales difieren menos que el umbral del contorno): sirve para suavizar sin que salga contorno, no para marcar una arista.
+
+Para encontrar estos fallos: los dioramas a ras de fachada (`CamaraBarraconRas`) y `CAPTURE_ARGS="--post=debug_view=2"`, que enseña las normales: los píxeles sueltos de otro color son los que salen a puntos. Queda un caso conocido: los travesaños de las carpinterías, vistos desde abajo y en sombra, todavía salen algo punteados; con el cristal enrasado desaparecería, pero se perderían las líneas de los paños de cerca.
+
+| | |
+|---|---|
+| ![La fachada de una estalinista: recercados con orejetas, frontones, alféizares sobre ménsulas, imposta y escaparates](capturas/fase3_kit_estalinka_fachada.jpg) | ![El portal de una jrushchovka](capturas/fase3_kit_portal.jpg) |
+| ![Las isbas: abandonada, chamuscada y quemada](capturas/fase3_kit_isbas.jpg) | ![El barrio de los mercaderes, cerca de la bomba](capturas/fase3_kit_mercaderes.jpg) |
+| ![Muñones de una jrushchovka con su escombro](capturas/fase3_kit_munones.jpg) | ![Una isba de noche, con linterna](capturas/fase3_kit_noche_isba.jpg) |

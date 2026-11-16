@@ -5,7 +5,7 @@
 #
 # Uso: tools/capturas_docs.sh [filtro]
 #   filtro: solo los grupos cuyo nombre lo contenga (deposito, equipo, patio, interfaz,
-#   maqueta).
+#   maqueta, kit).
 set -eu
 cd "$(dirname "$0")/.."
 FILTER="${1:-}"
@@ -107,4 +107,29 @@ if want maqueta; then
     capture debug/maqueta_ciudad panel \
         "--call=MaquetaCiudad:go_to_view:1 --call=MaquetaCiudad:show_layers:hitos --call=MaquetaCiudad:capture_walker" 20
     keep panel fase3_maqueta_panel
+fi
+if want kit; then
+    # El kit de arquitectura (F3-16): los edificios no tienen nada que asentar.
+    capture style/diorama_edificios edificios "" 10
+    keep edificios_camara_jrushchovka fase3_kit_jrushchovka
+    keep edificios_camara_portal fase3_kit_portal
+    keep edificios_camara_bloque fase3_kit_bloque
+    keep edificios_camara_danos fase3_kit_danos
+    keep edificios_camara_munones fase3_kit_munones
+    keep edificios_camara_mercader fase3_kit_mercader
+    keep edificios_camara_pinon fase3_kit_isba
+    keep edificios_camara_isbas fase3_kit_isbas
+    keep edificios_camara_barracon fase3_kit_barracon
+    capture style/diorama_plaza plaza "--call=DioramaPlaza:capture_only:banco,fachada" 10
+    keep plaza_camara_banco fase3_kit_estalinka
+    keep plaza_camara_fachada fase3_kit_estalinka_fachada
+    capture style/diorama_mercaderes mercaderes "--call=DioramaMercaderes:capture_only:calle" 10
+    keep mercaderes fase3_kit_mercaderes
+    capture style/diorama_edificios anochecer \
+        "--call=DioramaEdificios:set_hour:18.6 --call=DioramaEdificios:capture_only:mercader" 10
+    keep anochecer fase3_kit_anochecer
+    capture style/diorama_edificios noche \
+        "--call=DioramaEdificios:set_hour:23 --call=DioramaEdificios:capture_only:portal,pinon --call=DioramaEdificios:set_flashlight:1" 10
+    keep noche_camara_portal fase3_kit_noche
+    keep noche_camara_pinon fase3_kit_noche_isba
 fi
