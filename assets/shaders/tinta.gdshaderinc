@@ -55,6 +55,9 @@ uniform vec2 ground_size = vec2(1600.0, 1200.0);
 uniform vec4 albedo_color : source_color = vec4(1.0);
 uniform sampler2D albedo_texture : source_color, hint_default_white, filter_linear_mipmap, repeat_enable;
 uniform bool use_vertex_color = true;
+// Recorte de la textura: para láminas con varias casillas (las caras dibujadas).
+uniform vec2 uv_scale = vec2(1.0, 1.0);
+uniform vec2 uv_offset = vec2(0.0, 0.0);
 uniform sampler2D ramps : hint_default_white, filter_linear, repeat_disable;
 // Fila de la rampa: -1 usa la de la zona (tinta_rampa); 3 piel; 4 metal.
 uniform int ramp_row : hint_range(-1, 4) = -1;
@@ -132,10 +135,11 @@ float soot_plume(vec2 p, vec2 source) {
 #endif
 
 void fragment() {
+	vec2 uv = UV * uv_scale + uv_offset;
 #ifdef TINTA_FACHADA
-	vec3 base = albedo_color.rgb * mix(vec3(1.0), texture(albedo_texture, UV).rgb, COLOR.a);
+	vec3 base = albedo_color.rgb * mix(vec3(1.0), texture(albedo_texture, uv).rgb, COLOR.a);
 #else
-	vec3 base = albedo_color.rgb * texture(albedo_texture, UV).rgb;
+	vec3 base = albedo_color.rgb * texture(albedo_texture, uv).rgb;
 #endif
 	if (use_vertex_color) {
 		base *= COLOR.rgb;
@@ -228,7 +232,7 @@ void fragment() {
 	}
 	ALBEDO = base;
 #ifdef TINTA_RECORTE
-	ALPHA = albedo_color.a * texture(albedo_texture, UV).a;
+	ALPHA = albedo_color.a * texture(albedo_texture, uv).a;
 	ALPHA_SCISSOR_THRESHOLD = 0.5;
 #endif
 	ROUGHNESS = 1.0;

@@ -45,16 +45,16 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 
 | | |
 |---|---|
-| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) completa, a falta de tu aprobación · Fase 3 empezada: la maqueta de la ciudad (F3-15), su red de tránsito (F3-17) y los edificios de la superficie (F3-16) |
+| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) completa, a falta de tu aprobación · Fase 2 (*El Depósito jugable*) en curso · Fase 3 empezada: la maqueta de la ciudad (F3-15), su red de tránsito (F3-17) y los edificios de la superficie (F3-16) |
 | **Motor** | Godot 4.7.2 |
 | **Plataforma** | PC (Windows; la build de Linux sale casi gratis) |
 | **Idioma** | Solo español |
 | **Calidad objetivo** | Lista para publicarse, aunque por ahora no se publique |
 | **Equipo de referencia** | Ryzen 7 8700G con su gráfica integrada (Radeon 780M) |
-| **Siguiente hito** | H1 · *Prueba de Tinta* (Fase 1) |
+| **Siguiente hito** | H1 · *Prueba de Tinta* (Fase 1) y H2 · *El depósito abre* (Fase 2) |
 | **La ciudad** | Plano completo fijado: [docs/CIUDAD.md](docs/CIUDAD.md) · Maqueta en 3D: `scenes/debug/maqueta_ciudad.tscn` (F6 en el editor) |
 
-**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre el visor del estilo: ← → cambian de diorama, C de cámara, ↑ ↓ suben o bajan el miedo, L enciende la linterna y F1 abre el panel de depuración (hora, clima, miedo, radiación y estilo). Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
+**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre **el depósito jugable**: WASD para andar, el ratón para mirar, F para coger y soltar, y el botón derecho para acercar un objeto y girarlo. Con F9 abres la partida a otro jugador y con F10 te unes a una. El visor del estilo de la Fase 1 sigue en `scenes/style/visor_estilo.tscn` (F6 en el editor): ← → cambian de diorama, C de cámara, ↑ ↓ suben o bajan el miedo, L enciende la linterna y F1 abre el panel de depuración (hora, clima, miedo, radiación y estilo). Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
 
 ### Así se ve ahora (Prueba de Tinta, completa)
 
@@ -72,6 +72,16 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 Vídeo de 33 segundos con todos los dioramas: [docs/capturas/fase1_dioramas.mp4](docs/capturas/fase1_dioramas.mp4).
 
 Todo lo que se ve (los muebles y el equipo, estanterías, cajas, persiana, bloques dañados, escombros, coches, ruinas del horizonte) está generado por código: 57 modelos, cada uno a partir de su receta. La guía de estilo con los valores actuales está en [docs/ESTILO.md](docs/ESTILO.md).
+
+### Los protagonistas (Fase 2, segunda pasada)
+
+| | |
+|---|---|
+| ![Los dos protagonistas en el patio de Los Bloques](docs/capturas/fase2_personajes_superficie.jpg) | ![Primer plano](docs/capturas/fase2_personajes_caras.jpg) |
+| ![En el depósito](docs/capturas/fase2_personajes_deposito.jpg) | ![De frente, de perfil y de espaldas](docs/capturas/fase2_personajes_fila.jpg) |
+| ![En marcha: caminar y cargar](docs/capturas/fase2_personajes_marcha.jpg) | ![Primera persona: las manos agarran lo que llevas (caja pequeña, caja grande, lata y bidón)](docs/capturas/fase2_primera_persona.jpg) |
+
+El chico y la chica, también generados por código: modelo, esqueleto, animaciones y las manos que se ven en primera persona. Tras tu primera revisión ("no puede ser un mundo tan *friendly*") son adolescentes flacos y ojerosos, con ropa heredada y remendada y equipo de stalker. Están **pendientes de tu visto bueno**.
 
 ### El plano de la ciudad
 
@@ -164,9 +174,11 @@ Tienen su colisión hecha a mano (los escalones y las escaleras son rampas) y di
 ### Próximos pasos
 
 1. **Fase 1**: revisar las capturas, el [vídeo](docs/capturas/fase1_dioramas.mp4) y las piezas de interfaz, y aprobar el estilo. Con eso empiezan de lleno las Fases 2 y 3.
-2. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos).
-3. **Los edificios** (F3-16): revisar las capturas y recorrer con F6 los dioramas de edificios y los de los tres singulares (el vestíbulo del metro, el Edificio Partido y la Casa de los Sóviets). Lo siguiente sería usarlos en la maqueta, cerca del jugador, los interiores de serie y el resto de los sitios clave.
-4. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
+2. **Tu revisión de los protagonistas** (capturas de arriba): ¿tienen ya el tono de Tumansk?
+3. **Fase 2**: seguir con el depósito jugable; lo siguiente es el primer día (limpiar) y el procesado del botín.
+4. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos).
+5. **Los edificios** (F3-16): revisar las capturas y recorrer con F6 los dioramas de edificios y los de los tres singulares (el vestíbulo del metro, el Edificio Partido y la Casa de los Sóviets). Lo siguiente sería usarlos en la maqueta, cerca del jugador, los interiores de serie y el resto de los sitios clave.
+6. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
 
 ---
 
@@ -804,11 +816,14 @@ Elegidas en la Fase 1 (F1-13). Las cuatro tienen licencia OFL, español completo
 │   ├── fonts/
 │   └── audio/               # music/, ambience/, sfx/, ui/
 ├── data/                    # recursos .tres: el contenido del juego
+│   ├── items/               # fichas de los objetos
 │   └── ciudad/              # el plano de la ciudad (plano.json, relieve.png y suelo.png), generado
 ├── scenes/                  # depot/, station/, surface/, ui/, actors/, props/, debug/
 ├── scripts/
 │   ├── core/                # autoloads y utilidades
 │   ├── net/                 # sesión, anfitrión, replicación
+│   ├── actors/              # jugador, avatar, manos de primera persona
+│   ├── interaction/         # componentes Interactable
 │   ├── depot/               # objetos, banco, descontaminación, tienda, economía
 │   ├── surface/             # la ciudad (plano, sectores, maqueta), jugador, herramientas, cuaderno…
 │   ├── ai/                  # percepción, conocimiento, criaturas, humanos
@@ -927,7 +942,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Entregable**: *Hola, Tumansk*: una caja generada por receta, importada sola, que dos instancias conectadas ven moverse a la vez.
 **Criterio de salida**: un asset va de la receta al juego sin tocar nada a mano; las dos instancias están sincronizadas; la CI está en verde.
-**Estado**: ✅ terminada. 14 tests y la prueba de red en verde. Captura: [docs/capturas/fase0_hola_tumansk.png](docs/capturas/fase0_hola_tumansk.png).
+**Estado**: ✅ terminada. Tests y prueba de red en verde. Captura: [docs/capturas/fase0_hola_tumansk.png](docs/capturas/fase0_hola_tumansk.png).
 
 ### Fase 1: La Prueba de Tinta (puerta de estilo) · tamaño M
 
@@ -935,7 +950,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 - [x] **F1-01** Shader de sombreado por bandas con rampas por material: luz cálida, sombra fría y luz de borde.
 - [x] **F1-02** Contorno por post-proceso (profundidad y normales), con grosor variable y trazo irregular. Se hace con un rectángulo a pantalla completa ([D-008](docs/DECISIONES.md)).
-- [x] **F1-03** Contorno por casco invertido para objetos clave, personas y criaturas (`InkHull`: normales suavizadas, grosor en píxeles, trazo vivo y miedo).
+- [x] **F1-03** Contorno por casco invertido para objetos clave, personas y criaturas (`InkHull`: normales suavizadas, grosor en píxeles, trazo vivo y miedo). *(En los protagonistas, con `assets/shaders/casco.gdshader`, que también resalta lo que se puede coger.)*
 - [x] **F1-04** Tramado en las sombras (*tonal art maps*), con densidad controlable.
 - [x] **F1-05** Trazo vivo a saltos (4, 8 y 12 fps), controlado por `StyleDirector`.
 - [x] **F1-06** Papel, grano, viñeta y gradación de color por zona (por parámetros en lugar de LUT, [D-011](docs/DECISIONES.md)).
@@ -957,10 +972,11 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Objetivo**: que trabajar en el depósito sea un placer táctil, de principio a fin.
 
-- [ ] **F2-01** Controlador en primera persona, versión depósito: tranquila y sin estamina.
-- [ ] **F2-02** Interacción: raycast, componentes `Interactable` y resaltado dibujado.
-- [ ] **F2-03** Física de objetos: coger, girar, inspeccionar, soltar. El peso se nota.
-- [ ] **F2-04** Modelo de datos de los objetos: categoría, peso, forma en la cuadrícula, estado, contaminación, fragilidad y valor.
+- [ ] **F2-00** Los protagonistas: el chico y la chica, con esqueleto, animaciones (reposo y caminar, con y sin carga), cara dibujada con 8 expresiones, color por jugador y manos de primera persona con los dedos articulados. *(Hechos; segunda pasada tras tu revisión del tono, pendiente de tu visto bueno.)*
+- [x] **F2-01** Controlador en primera persona, versión depósito: tranquila y sin estamina.
+- [x] **F2-02** Interacción: raycast, componentes `Interactable` y resaltado dibujado (el punto de lápiz se convierte en una mano y el objeto gana un contorno de tinta).
+- [x] **F2-03** Física de objetos: coger, girar, inspeccionar, soltar. El peso se nota: lo pesado tarda en seguirte, cuelga más bajo, te frena y se te cae si lo arrastras contra algo. Las manos agarran lo que llevas lo mires como lo mires: por las esquinas de una caja, por los costados de un bidón y con una sola mano lo que cabe en ella; lo grande se lleva más lejos y más bajo para que no tape la vista. Lo que llevas nunca se mete en el cuerpo ni en la cámara, ni se atraviesa al andar contra una pared; con algo grande en las manos no se puede mirar tan abajo.
+- [x] **F2-04** Modelo de datos de los objetos: categoría, peso, forma en la cuadrícula, estado, contaminación, fragilidad y valor. *(10 fichas en `data/items/`.)*
 - [ ] **F2-05** El primer día: telarañas, barrer, fregar, basura, cajas del antiguo dueño, bombilla, persiana atascada.
 - [ ] **F2-06** Dosímetro y descontaminación: lavar, cepillar, embolsar.
 - [ ] **F2-07** Banco de trabajo con reparaciones sencillas (minijuegos táctiles).
@@ -970,10 +986,11 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F2-11** Impuesto diario y comida (el puesto de al lado).
 - [ ] **F2-12** El trozo de estación que se recorre: pasillo, puesto vecino, tablón de avisos y escalera mecánica.
 - [ ] **F2-13** Respuesta táctil: sonidos, polvo y microanimaciones.
-- [ ] **F2-14** Todo sincronizado: dos jugadores pueden trabajar a la vez en el depósito.
+- [ ] **F2-14** Todo sincronizado: dos jugadores pueden trabajar a la vez en el depósito. *(Lo hecho hasta ahora ya lo está: los jugadores se ven, cada uno con su color, y los objetos los mueve el anfitrión. Lo comprueba una prueba con dos instancias.)*
 
 **Entregable**: el depósito, del primer día sucio a la primera venta.
 **Criterio de salida**: se juega todo el recorrido sin una sola caja de texto, y lo prueban 2 o 3 personas: "¿da gusto?".
+**Estado**: 🟨 en curso. Ya se puede andar por el depósito, coger y dejar cosas, solo o con otro jugador. 38 tests y dos pruebas de red en verde. Falta todo lo que convierte eso en un trabajo: limpiar, procesar el botín, vender, los encargos, el impuesto y el trozo de estación.
 
 ### Fase 3: La Superficie jugable · tamaño L
 
@@ -1106,7 +1123,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 |---|---|---|---|---|---|
 | **H0 · Hola, Tumansk** | 0 | Proyecto, red, pipelines y CI | Un asset va de la receta al juego sin pasos manuales; dos instancias sincronizadas | S | ✅ |
 | **H1 · Prueba de Tinta** | 1 | 2 dioramas y guía de estilo | Estilo aprobado por ti | M | 🟨 |
-| **H2 · El depósito abre** | 2 | Depósito jugable | Del depósito sucio a la primera venta, sin cajas de texto | L | ⬜ |
+| **H2 · El depósito abre** | 2 | Depósito jugable | Del depósito sucio a la primera venta, sin cajas de texto | L | 🟨 |
 | **H3 · Primera salida** | 3 | La Plaza, el cuaderno y la Jauría | Se planifica, se dibuja, se usan rutas distintas; muertes justas | L | 🟨 |
 | **H4 · El mundo vivo** | 4 | Las zonas 1 y 2 funcionando sin el jugador | Lo que ves al llegar cuadra con lo que pasó; rutinas y peleas que nadie provoca | L | ⬜ |
 | **H5 · Los primeros días** | 5 | Vertical slice | Bucle completo, 60 fps en tu PC, cooperativo de 2 | XL | ⬜ |

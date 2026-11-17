@@ -13,6 +13,8 @@ const SCENES: PackedStringArray = [
 	"res://scenes/style/diorama_patio_noche.tscn",
 	"res://scenes/style/diorama_patio_ventisca.tscn",
 	"res://scenes/style/diorama_equipo.tscn",
+	"res://scenes/style/personajes_superficie.tscn",
+	"res://scenes/style/personajes_deposito.tscn",
 ]
 const DEBUG_PANEL: Script = preload("res://scripts/debug/debug_panel.gd")
 

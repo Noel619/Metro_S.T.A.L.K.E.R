@@ -141,6 +141,27 @@ De noche la luz ambiente y la de la luna son casi nulas (`tinta_negro` = 1): el 
 - **Nombres de material**: `metal` (rampa de metal), `vidrio`, `bombilla` (emite luz), `nevado` (nieve vieja), `lejano_*` (siluetas del horizonte) y, en los edificios del kit, `muro`, `azulejo`, `ladrillo`, `estuco` e `interior` (ver la [sección 9](#9-los-edificios-del-kit-f3-16)). El resto usa el material base.
 - **Nada plano y estrecho:** una cara de pocos centímetros vista casi de canto ocupa menos de un píxel, y el contorno de tinta la dibuja a puntos. Las reglas para evitarlo, en la [sección 9](#9-los-edificios-del-kit-f3-16).
 
+## 4b. Personas
+
+![Los protagonistas en el patio](capturas/fase2_personajes_superficie.jpg)
+
+- **Tono** ([D-045](DECISIONES.md)): nada de juguetes. Unas siete cabezas de alto, flacos, cargados de hombros; caras cansadas y sucias; ropa heredada, remendada, manchada de grasa y con barro de rodillas abajo.
+- **Cara**: lámina 2D de 8 expresiones (`assets/ui/cara_*.svg`) sobre una cabeza con relieve. Ojos pequeños con el párpado pesado, ojeras, rayas de lápiz bajo el pómulo, la boca apretada. Sin colorete ni brillos.
+- **Contorno**: además del contorno del post-proceso, las personas llevan un casco invertido (`assets/shaders/casco.gdshader`, segunda pasada de los materiales `ropa`, `piel` y `prenda_jugador`). Su grosor sigue al de la zona y al miedo, y varía a saltos.
+- **Movimiento a saltos**: 12 fotogramas por segundo.
+- **Color del jugador**: la bufanda (y el trapo de la trenza) se tiñen con el color de cada jugador, siempre apagado: ocre `#9A7A2E`, petróleo `#2C6468`, óxido `#7A4A30` y azul pizarra `#42558A`. No hay jugador rojo.
+
+| Uso | Hex |
+|---|---|
+| Piel | `#C9A58B`, enrojecida por el frío `#B5766A`, sucia `#7C6455` |
+| Chaqueta acolchada del chico | `#676650`, oscura `#525240` |
+| Capote de la chica | `#5B5A54`, oscuro `#494842` |
+| Lona | `#6B634C`, `#555D47` (zurrón) |
+| Cuero | `#3E2C21`, gastado `#5F4532` |
+| Goma, cinta aislante | `#222224`, `#1F2733` |
+| Cuerda | `#85765A` |
+| Mugre, polvo, barro | `#26221E`, `#8B8576`, `#4E4233` |
+
 ## 5. Interfaz y tipografías
 
 **Interfaz:** las primeras piezas en el estilo final están en `scenes/ui/prueba_interfaz.tscn`.
@@ -178,6 +199,7 @@ La prueba de legibilidad está en `scenes/ui/prueba_tipografia.tscn`:
   - Equipo: `diorama_equipo`, la mesa con el equipo del stalker y las herramientas, cada pieza con su etiqueta.
   - Patio: `diorama_patio_dia`, `diorama_patio_anochecer`, `diorama_patio_noche`, `diorama_patio_noche_linterna` y `diorama_patio_ventisca`.
   - Edificios del kit (F3-16): `diorama_edificios`, `diorama_plaza` y `diorama_mercaderes`, a cualquier hora (ver la [sección 9](#9-los-edificios-del-kit-f3-16)).
+  - Personajes (Fase 2): `personajes_superficie`, `personajes_deposito` y las de primera persona (`primera_persona_caja`, `_caja_grande`, `_lata`, `_bidon` e `_inspeccion`).
   - `prueba_estilo`.
 - El visor (`visor_estilo`, la escena principal) recorre todas esas escenas.
 - **Panel de depuración** (F1 en el visor): miedo, radiación, hora del día, clima, linterna, trazo reducido y estilo de zona, en vivo.

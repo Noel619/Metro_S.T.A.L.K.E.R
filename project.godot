@@ -13,7 +13,7 @@ config_version=5
 config/name="Tumansk"
 config/description="Supervivencia táctica en primera persona en una ciudad soviética arrasada."
 config/version="0.1.0"
-run/main_scene="res://scenes/style/visor_estilo.tscn"
+run/main_scene="res://scenes/depot/deposito.tscn"
 config/features=PackedStringArray("4.7", "Forward Plus")
 config/icon="res://icon.svg"
 

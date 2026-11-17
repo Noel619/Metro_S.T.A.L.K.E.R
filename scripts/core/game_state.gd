@@ -8,6 +8,8 @@ const STARTING_RUBLES: int = 150
 const SAVE_KEY: String = "game_state"
 
 var player_name: String = ""
+## El protagonista elegido al firmar la escritura: "chico" o "chica".
+var protagonist: String = "chico"
 var day: int = 1
 var rubles: int = STARTING_RUBLES
 var debt: int = 0
@@ -19,8 +21,9 @@ func _ready() -> void:
 
 
 ## Deja el estado como al firmar la escritura del depósito.
-func reset_for_new_game(new_player_name: String) -> void:
+func reset_for_new_game(new_player_name: String, new_protagonist: String = "chico") -> void:
 	player_name = new_player_name.strip_edges()
+	protagonist = new_protagonist if new_protagonist == "chica" else "chico"
 	day = 1
 	rubles = STARTING_RUBLES
 	debt = 0
@@ -45,6 +48,7 @@ func try_spend(amount: int) -> bool:
 func save_state() -> Dictionary:
 	return {
 		"player_name": player_name,
+		"protagonist": protagonist,
 		"day": day,
 		"rubles": rubles,
 		"debt": debt,
@@ -54,6 +58,7 @@ func save_state() -> Dictionary:
 
 func load_state(data: Dictionary) -> void:
 	player_name = str(data.get("player_name", ""))
+	protagonist = "chica" if str(data.get("protagonist", "chico")) == "chica" else "chico"
 	day = int(data.get("day", 1))
 	rubles = int(data.get("rubles", STARTING_RUBLES))
 	debt = int(data.get("debt", 0))
