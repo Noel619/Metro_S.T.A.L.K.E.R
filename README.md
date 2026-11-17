@@ -976,9 +976,9 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 ### Fase 2: El Depósito jugable · tamaño L
 
-**Objetivo**: que trabajar en el depósito sea un placer táctil, de principio a fin.
+**Objetivo**: que trabajar en el depósito sea un placer táctil, de principio a fin. El diseño concreto (el local, el día, cada sistema y cómo está hecho) está en [docs/DEPOSITO.md](docs/DEPOSITO.md).
 
-- [ ] **F2-00** Los protagonistas: el chico y la chica, con esqueleto, animaciones (reposo y caminar, con y sin carga), cara dibujada con 8 expresiones, color por jugador y manos de primera persona con los dedos articulados. *(Hechos; segunda pasada tras tu revisión del tono, pendiente de tu visto bueno.)*
+- [x] **F2-00** Los protagonistas: el chico y la chica, con esqueleto, animaciones (reposo y caminar, con y sin carga), cara dibujada con 8 expresiones, color por jugador y manos de primera persona con los dedos articulados. *(Aprobados tras la segunda pasada.)*
 - [x] **F2-01** Controlador en primera persona, versión depósito: tranquila y sin estamina.
 - [x] **F2-02** Interacción: raycast, componentes `Interactable` y resaltado dibujado (el punto de lápiz se convierte en una mano y el objeto gana un contorno de tinta).
 - [x] **F2-03** Física de objetos: coger, girar, inspeccionar, soltar. El peso se nota: lo pesado tarda en seguirte, cuelga más bajo, te frena y se te cae si lo arrastras contra algo. Las manos agarran lo que llevas lo mires como lo mires: por las esquinas de una caja, por los costados de un bidón y con una sola mano lo que cabe en ella; lo grande se lleva más lejos y más bajo para que no tape la vista. Lo que llevas nunca se mete en el cuerpo ni en la cámara, ni se atraviesa al andar contra una pared; con algo grande en las manos no se puede mirar tan abajo.
