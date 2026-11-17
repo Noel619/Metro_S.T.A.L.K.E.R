@@ -102,11 +102,16 @@ Todo está explicado en [docs/CIUDAD.md](docs/CIUDAD.md), con cuatro hojas: [gen
 | ![Tumansk desde el aire, sin niebla](docs/capturas/fase3_maqueta_aerea.jpg) | ![La avenida, hacia el puente y la Casa de los Sóviets](docs/capturas/fase3_maqueta_avenida.jpg) |
 | ![Las rutas y los sectores](docs/capturas/fase3_maqueta_rutas.jpg) | ![El panel: dónde estás, qué tienes delante y qué hitos se ven](docs/capturas/fase3_maqueta_panel.jpg) |
 
-La ciudad entera en 3D, levantada desde el plano en volúmenes sencillos: el relieve, las calles, los 357 edificios a su altura y con lo que queda en pie según su daño, los vehículos, los árboles y los puentes. Sirve para probar recorridos, vistas, sectores de carga y rendimiento antes de construir con el kit modular.
+La ciudad entera en 3D, levantada desde el plano: el relieve, las calles, los 357 edificios a su altura y con lo que queda en pie según su daño, los vehículos, los árboles y los puentes. Los 142 edificios que ya tienen modelo (las viviendas del kit y los singulares) se ven con él de cerca; los demás, y todos de lejos, en volúmenes sencillos. Sirve para probar recorridos, vistas, sectores de carga y rendimiento.
+
+| | |
+|---|---|
+| ![El vestíbulo del metro en su plaza](docs/capturas/fase3_maqueta_vestibulo.jpg) | ![La Casa de los Sóviets cierra la avenida](docs/capturas/fase3_maqueta_soviets.jpg) |
 
 - **Para abrirla:** en Godot, `scenes/debug/maqueta_ciudad.tscn` y **F6**. Se recorre a pie (Tab para volar), con vistas fijas (1-9 y 0) y recorridos automáticos de las rutas del plano con cronómetro (R).
 - **Herramientas:** cuenta los hitos que se ven desde donde estás (y comprueba la regla en toda la ciudad con V) y mide el rendimiento en tu PC (B). Todas las teclas, en [DESARROLLO.md](docs/DESARROLLO.md#la-maqueta-de-la-ciudad-f3-15).
 - **Lo que ha enseñado**, en [CIUDAD.md](docs/CIUDAD.md#15-la-maqueta): desde el 92 % de la calle se ven al menos dos hitos, pero no desde los patios cerrados; y la niebla de día tapa la ciudad a partir de unos 300 m, así que los hitos la atraviesan.
+- **Los edificios del kit en ella** ([CIUDAD.md](docs/CIUDAD.md#los-edificios-del-kit-en-la-maqueta)): cada uno tiene tres escalones de detalle (su volumen a más de 200 m, su modelo sin sombras hasta 60 m y entero más cerca) para que el coste de dibujo no se dispare ([D-052](docs/DECISIONES.md)); los que están en ladera llevan un zócalo, y los singulares se asientan en una explanada del plano ([D-051](docs/DECISIONES.md)). Se sale del metro por el foso de las escaleras del vestíbulo, y en la Casa de los Sóviets se sube por el escombro hasta el boquete.
 
 ### Los edificios de la superficie (F3-16)
 
@@ -133,14 +138,15 @@ Las 138 viviendas del plano ya tienen sus modelos 3D: se montan con un kit de pi
 | ![El vestíbulo del metro desde la avenida: la rotonda, la columnata, МЕТРО y el control del ejército](docs/capturas/fase3_singular_vestibulo.jpg) | ![La cúpula de la sala, con la lámpara y la linterna sobre el óculo](docs/capturas/fase3_singular_vestibulo_cupula.jpg) |
 | ![La esclusa de la defensa civil con la compuerta abierta: por ahí sales](docs/capturas/fase3_singular_vestibulo_compuerta.jpg) | ![El Edificio Partido desde el cráter: los pisos abiertos, como una casa de muñecas](docs/capturas/fase3_singular_partido.jpg) |
 | ![Las plantas del Edificio Partido al borde del vacío](docs/capturas/fase3_singular_partido_casa.jpg) | ![La Casa de los Sóviets y su torre al final de la avenida](docs/capturas/fase3_singular_soviets.jpg) |
+| ![El escombro de la fachada reventada de la Casa de los Sóviets: por él se sube al boquete](docs/capturas/fase3_singular_soviets_escombro.jpg) | ![El cuarto quemado detrás del boquete, con lo que ardió de las oficinas](docs/capturas/fase3_singular_soviets_cuarto.jpg) |
 
 Los hitos y los sitios clave no salen del kit: son modelos enteros, hechos uno a uno con el máximo cuidado, que se ponen por su id del plano. Los tres primeros:
 
 - **El vestíbulo del metro** (PLZ-06, tu salida): una rotonda de los años cincuenta con veinte columnas, la cúpula de chapa con su linterna y la estrella, y МЕТРО sobre la entrada; delante, el control del ejército de la evacuación. Por dentro se recorre entero: la sala con su cúpula de casetones, la lámpara, los torniquetes y el equipaje abandonado, y la esclusa de hormigón con la compuerta blindada por la que sales, sobre las tres escaleras mecánicas que bajan a oscuras.
 - **El Edificio Partido** (ZC-01, donde termina el juego): un instituto de catorce plantas al que la bomba arrancó la mitad que la miraba. Lo que queda tiene los pisos abiertos al cráter, con los laboratorios y los despachos al borde del vacío, forjados colgando y el montón de escombros al pie; se sube por su escalera hasta la azotea, que mira al cráter.
-- **La Casa de los Sóviets y su torre** (CEN-SOV y CEN-SOVT): el bloque estalinista que cierra la avenida, con su pórtico de columnas gigantes y el escudo, quemado entero y con la fachada noreste reventada; la torre, de 110 m, con la aguja doblada hacia el suroeste y el puesto del vigía en la planta 20.
+- **La Casa de los Sóviets y su torre** (CEN-SOV y CEN-SOVT): el bloque estalinista que cierra la avenida, con su pórtico de columnas gigantes y el escudo, quemado entero y con la fachada noreste reventada: su escombro sale hasta la calle, y por él se sube al boquete y se baja al cuarto quemado de detrás, entre archivadores, la caja fuerte y mesas carbonizadas. La torre, de 110 m, tiene la aguja doblada hacia el suroeste y el puesto del vigía en la planta 20.
 
-Tienen su colisión hecha a mano (los escalones y las escaleras son rampas) y dicen dónde quitar el terreno cuando bajan bajo la calle. Se ven en `diorama_vestibulo.tscn`, `diorama_partido.tscn` y `diorama_soviets.tscn` ([DESARROLLO.md](docs/DESARROLLO.md#los-edificios-singulares)).
+Tienen su colisión hecha a mano (los escalones y las escaleras son rampas) y dicen dónde quitar el terreno cuando bajan bajo la calle. Se ven en `diorama_vestibulo.tscn`, `diorama_partido.tscn` y `diorama_soviets.tscn` ([DESARROLLO.md](docs/DESARROLLO.md#los-edificios-singulares)), y ya están en la maqueta.
 
 ### Decisiones tomadas
 
@@ -176,8 +182,8 @@ Tienen su colisión hecha a mano (los escalones y las escaleras son rampas) y di
 1. **Fase 1**: revisar las capturas, el [vídeo](docs/capturas/fase1_dioramas.mp4) y las piezas de interfaz, y aprobar el estilo. Con eso empiezan de lleno las Fases 2 y 3.
 2. **Tu revisión de los protagonistas** (capturas de arriba): ¿tienen ya el tono de Tumansk?
 3. **Fase 2**: seguir con el depósito jugable; lo siguiente es el primer día (limpiar) y el procesado del botín.
-4. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos).
-5. **Los edificios** (F3-16): revisar las capturas y recorrer con F6 los dioramas de edificios y los de los tres singulares (el vestíbulo del metro, el Edificio Partido y la Casa de los Sóviets). Lo siguiente sería usarlos en la maqueta, cerca del jugador, los interiores de serie y el resto de los sitios clave.
+4. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos). Ahora, con los edificios del kit, las calles residenciales cuestan entre 900 y 1.250 llamadas: es la medida que más interesa.
+5. **Los edificios** (F3-16): revisar las capturas, recorrer con F6 los dioramas de edificios y los de los tres singulares, y verlos en la maqueta (Ctrl+4 y Ctrl+5: el vestíbulo y la Casa de los Sóviets). Lo siguiente serían los interiores de serie, el resto de los sitios clave y, si el rendimiento lo pide, juntar las piezas iguales de cada manzana.
 6. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
 
 ---

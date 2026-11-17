@@ -126,6 +126,8 @@ El relieve decide qué se ve y desde dónde:
 - El terraplén de la vía es un camino alto y expuesto.
 - Los montones de escombros cortan calles y abren pasos por encima.
 
+Los edificios con modelo propio (los singulares de [la sección 14](#14-cómo-se-construye)) se asientan en una explanada a su cota: el terreno se allana bajo su huella y unos metros alrededor (lo que el modelo sale de ella: el pórtico de la Casa de los Sóviets, por ejemplo), y vuelve a su altura en una transición suave. Tampoco reciben montones de escombros del plano: traen el suyo ([D-051](DECISIONES.md)).
+
 El relieve se exporta en `data/ciudad/relieve.png`: 16 bits, 2 m por píxel, y metros = valor / 100 − 50.
 
 ## 6. El río y sus cinco cruces
@@ -253,10 +255,10 @@ Los tipos siguen las medidas de las series soviéticas reales. Los interiores de
 
 1. **El plano son datos.** `tools/ciudad/datos.py` decide la posición, el tipo, las plantas, el uso y las notas de cada cosa. `plano.py` calcula el daño, los incendios, los escombros y el relieve, y lo exporta a `data/ciudad/plano.json`.
 2. **Maqueta automática** (hecha, F3-15): un generador en Godot lee el plano y levanta la ciudad en volúmenes sencillos (relieve, calles, edificios a su altura, escombros) para probar recorridos, vistas y rendimiento antes de construir nada. Ver [la sección 15](#15-la-maqueta).
-3. **Kit modular** (hecho para las viviendas, F3-16): cada tipo de edificio se monta con las piezas del kit de arquitectura soviética (paneles, ventanas, balcones, portales, escaleras, cubiertas), con el daño de su nivel y las variaciones de su semilla. Ya se montan las 138 viviendas del plano (las estalinistas y las casas obreras, las de antes de la revolución, las isbas, las jrushchovkas, los bloques, la torre y los barracones), con las mismas reglas de daño que la maqueta; el resto de los tipos sigue en volúmenes. Ver [DESARROLLO.md](DESARROLLO.md#el-kit-de-arquitectura-f3-16).
+3. **Kit modular** (hecho para las viviendas, F3-16): cada tipo de edificio se monta con las piezas del kit de arquitectura soviética (paneles, ventanas, balcones, portales, escaleras, cubiertas), con el daño de su nivel y las variaciones de su semilla. Ya se montan las 138 viviendas del plano (las estalinistas y las casas obreras, las de antes de la revolución, las isbas, las jrushchovkas, los bloques, la torre y los barracones), con las mismas reglas de daño que la maqueta, y ya están en ella; el resto de los tipos sigue en volúmenes. Ver [DESARROLLO.md](DESARROLLO.md#el-kit-de-arquitectura-f3-16).
 
    ![Una estalinista de esquina en la plaza del Trabajo, montada con el kit](capturas/fase3_kit_estalinka.jpg)
-4. **Sitios clave a mano:** los 44 edificios con interior hecho a mano y los lugares de las misiones se terminan uno a uno, como modelos enteros ([D-038](DECISIONES.md)). Hechos los tres primeros: el vestíbulo del metro (PLZ-06), con la sala, la esclusa y las escaleras; el Edificio Partido (ZC-01), con sus catorce plantas abiertas al cráter y la escalera hasta la azotea, y la Casa de los Sóviets con su torre (CEN-SOV y CEN-SOVT). Ver [DESARROLLO.md](DESARROLLO.md#los-edificios-singulares). Al llevarlos a la maqueta, el relieve tendrá que respetar sus huecos y quitar el montón de escombros que el generador pone sobre la huella del Edificio Partido, que ya trae el suyo.
+4. **Sitios clave a mano:** los 44 edificios con interior hecho a mano y los lugares de las misiones se terminan uno a uno, como modelos enteros ([D-038](DECISIONES.md)). Hechos los tres primeros: el vestíbulo del metro (PLZ-06), con la sala, la esclusa y las escaleras; el Edificio Partido (ZC-01), con sus catorce plantas abiertas al cráter y la escalera hasta la azotea, y la Casa de los Sóviets con su torre (CEN-SOV y CEN-SOVT). Ver [DESARROLLO.md](DESARROLLO.md#los-edificios-singulares). Ya están en la maqueta, cada uno en su explanada y sin el escombro del plano, y el terreno no tapa el foso de las escaleras del metro.
 5. **Carga por sectores:** la ciudad se carga en celdas de 200 × 200 m. Hay detalle completo en la celda del jugador y en las de alrededor, y versiones simplificadas más lejos. Las manzanas sirven de oclusores (lo que tapan no se dibuja), algo imprescindible para llegar a 60 fps con la gráfica integrada.
 
 **Para cambiar algo:** se edita `tools/ciudad/datos.py` y se ejecuta `make ciudad`. Si algo se solapa, pisa la calle o cae en la zona equivocada, el generador lo dice y la CI no pasa.
@@ -265,12 +267,13 @@ Los tipos siguen las medidas de las series soviéticas reales. Los interiores de
 
 ![Tumansk desde el aire, sin niebla](capturas/fase3_maqueta_aerea.jpg)
 
-La maqueta (`scenes/debug/maqueta_ciudad.tscn`, F3-15) levanta la ciudad entera desde los datos del plano en unos cinco segundos (tres son la red de tránsito, que se levanta sector a sector en varios hilos). Se recorre a pie (a 1,4 m/s y con colisión) o volando, y tiene herramientas para medir. Cómo se abre y sus teclas, en [DESARROLLO.md](DESARROLLO.md#la-maqueta-de-la-ciudad-f3-15).
+La maqueta (`scenes/debug/maqueta_ciudad.tscn`, F3-15) levanta la ciudad entera desde los datos del plano en unos nueve segundos (cuatro son la red de tránsito, que se levanta sector a sector en varios hilos, y uno y medio, los edificios del kit). Se recorre a pie (a 1,4 m/s y con colisión) o volando, y tiene herramientas para medir. Cómo se abre y sus teclas, en [DESARROLLO.md](DESARROLLO.md#la-maqueta-de-la-ciudad-f3-15).
 
 - **Lo que se levanta:**
   - El relieve, cada 2 m, pintado con el suelo del plano (el hielo, las vías, los patios y los escombros) bajo la nieve vieja.
   - La red de tránsito: calzadas, aceras, plazas, sendas, escaleras y el tablero del puente, con sus bordillos, muros, pretiles, pasos de cebra, tapas y sumideros. Ver [la sección 16](#16-la-red-de-tránsito).
   - Los 357 edificios, a su altura y con lo que queda en pie según su daño. Las torres llevan aguja (la de la Casa de los Sóviets, doblada hacia el suroeste), las chimeneas se estrechan, las torres de refrigeración tienen su forma y las casas de madera y las de antes de la revolución llevan tejado a dos aguas.
+  - Los 142 que sabe montar el kit de arquitectura (las 138 viviendas y los cuatro singulares) son, de cerca, sus modelos; de lejos, sus volúmenes ([la sección de abajo](#los-edificios-del-kit-en-la-maqueta)).
   - Los 866 vehículos, los 2685 árboles y los puentes (el del Progreso, con su vano hundido sobre el hielo, y el del ferrocarril, de celosía).
   - Las tuberías elevadas (el tubo cruza el río con su pasarela), las vallas, la línea eléctrica y el muro de la autovía caída al oeste y al norte.
 - **El daño en volumen:**
@@ -283,23 +286,36 @@ La maqueta (`scenes/debug/maqueta_ciudad.tscn`, F3-15) levanta la ciudad entera 
 
 ![Las rutas y los sectores de la orilla sur](capturas/fase3_maqueta_rutas.jpg)
 
+### Los edificios del kit en la maqueta
+
+Los edificios que sabe montar el kit (F3-16) se levantan con su ficha del plano: su huella, sus plantas, su daño y su incendio, los patios de su manzana y dónde cayó la bomba. Levantar la ciudad con ellos cuesta un segundo y medio más.
+
+- **De cerca, su modelo; de lejos, su volumen** ([D-052](DECISIONES.md)). Dentro de la versión detallada de su sector, cada edificio tiene tres escalones: su volumen a más de 200 m; de 200 a 60 m, su modelo sin sombras (las proyecta su volumen); y, más cerca, el modelo entero. Lo que va en los huecos de las fachadas (ventanas, puertas, escaparates y los cuartos de detrás) no proyecta sombra nunca. Los hitos siguen viéndose de lejos, solos, como siempre.
+- **En ladera**, el kit pone el edificio a su cota y la maqueta le añade un zócalo de piedra hasta 40 cm por debajo del punto más bajo de su huella, para que no flote por el lado de abajo. Lo llevan 41 de los 138 (los que tienen más de 15 cm de desnivel bajo la huella); bajo las isbas de la loma hay hasta 1,7 m.
+- **Los singulares** (el vestíbulo del metro, el Edificio Partido y la Casa de los Sóviets con su torre) están en su explanada, sin el escombro del plano. Chocan con su propia colisión, así que en ellos se entra, y no tapan la vista como oclusores (se ve a través de su peristilo, sus plantas abiertas y su boquete). En el vestíbulo, el terreno no se dibuja ni choca donde bajan las escaleras: se sale del metro por su foso. En la Casa de los Sóviets se sube por el escombro de la fachada reventada hasta el boquete y se baja al cuarto quemado que quedó detrás.
+- **Los demás** chocan como su volumen: no se entra en ellos.
+
+| | |
+|---|---|
+| ![El vestíbulo del metro en su plaza, en la maqueta](capturas/fase3_maqueta_vestibulo.jpg) | ![La Casa de los Sóviets cierra la avenida, en la maqueta](capturas/fase3_maqueta_soviets.jpg) |
+
 ### Lo que ha enseñado la maqueta
 
-- **Los hitos se ven desde casi toda la calle, pero no desde los patios.** Con línea de visión desde la altura de los ojos (cada 20 m, fuera de los edificios), desde el 92 % de los 4039 puntos se ven al menos dos hitos. Por zonas:
+- **Los hitos se ven desde casi toda la calle, pero no desde los patios.** Con línea de visión desde la altura de los ojos (cada 20 m, fuera de los edificios), desde el 92 % de los 4055 puntos se ven al menos dos hitos. Por zonas:
 
   | Zona | Se ven dos o más |
   |---|---|
   | El río, el Parque y el Hospital, la Zona Industrial | 97–100 % |
-  | El Centro, la Zona Cero | 93–95 % |
-  | La Avenida y el Mercado, el Barrio Obrero, La Plaza | 82–83 % |
-  | Los Bloques | 73 % |
+  | El Centro, la Zona Cero | 91–93 % |
+  | La Avenida y el Mercado, el Barrio Obrero, La Plaza | 80–84 % |
+  | Los Bloques | 75 % |
 
   Los puntos ciegos son casi todos patios cerrados: los de los microdistritos, los del Barrio Obrero y los de las manzanas estalinistas (rosa: ningún hito; amarillo: uno). La regla del plano («desde cualquier punto») se cumple en las calles; en los patios habría que aceptarlo o añadir hitos que asomen por encima de los tejados (una chimenea de calefacción, un depósito de agua, una antena).
 
   ![Puntos ciegos: desde las baldosas rosas no se ve ningún hito; desde las amarillas, uno](capturas/fase3_maqueta_hitos.jpg)
 
 - **La niebla de día tapa la ciudad a partir de unos 300 m.** Solo los hitos la atraviesan ([D-027](DECISIONES.md)): por eso desde la avenida se ve la torre de la Casa de los Sóviets a 850 m, pero no el resto del centro.
-- **Rendimiento** (contado en el entorno de desarrollo, sin gráfica; los fps hay que medirlos en tu PC con la tecla B): a pie de calle se dibujan entre 80 y 200 objetos por imagen (llamadas de dibujo) y entre 0,48 y 0,6 millones de triángulos, con la oclusión activa (quita hasta una cuarta parte de las llamadas en la zona industrial y alrededor de un 12 % en la plaza). La mayor parte de los triángulos es el relieve detallado, no los edificios: es lo primero que habría que aligerar si hiciera falta.
+- **Rendimiento** (contado en el entorno de desarrollo, sin gráfica; los fps hay que medirlos en tu PC con la tecla B): a pie de calle, con la red de tránsito y los edificios del kit, se dibujan entre 120 y 1.250 objetos por imagen (llamadas de dibujo, contando las de las sombras) y entre 0,4 y 1,9 millones de triángulos. Las calles con edificios del kit son las más caras (entre 900 y 1.250 llamadas; con volúmenes, entre 400 y 670), y las sombras se llevan entre un tercio y la mitad. La oclusión activa quita hasta una cuarta parte de las llamadas en la zona industrial. Si hiciera falta aligerar, lo siguiente es juntar las piezas iguales de los edificios de una manzana en una sola malla (ahora cada edificio tiene una por pieza).
 
 | | |
 |---|---|

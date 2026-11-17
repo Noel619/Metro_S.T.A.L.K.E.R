@@ -213,3 +213,17 @@ Sustituye a D-048 en cómo se ponen las manos; lo de no necesitar datos por obje
 - Lo que cabe en una mano (hasta 14 cm y 1,5 kg), por el medio, con la derecha y los dedos cerrados alrededor; va un poco a la derecha y se coloca por el agarre, de modo que una escoba sobresale por arriba.
 - Lo que se lleva va derecho en el mundo, así que al mirar abajo gira respecto a la cámara y su parte de abajo se esconde. Al cogerlo se buscan varias alturas en cada costado y se usa la más baja que se vea; si las manos quedan en el borde de la vista, agarran más arriba. Si gira tanto que los costados ya no quedan a los lados (al inspeccionarlo), se vuelven a buscar.
 - Cada antebrazo se orienta para que la palma mire al objeto, sin doblar la muñeca de más y con el final de la manga fuera de la vista: el modelo solo tiene antebrazos.
+
+## D-051 · Los edificios con modelo propio mandan sobre el plano a su alrededor
+
+El plano les apilaba montones de escombro sobre la huella, por su daño, y los dejaba en la ladera del relieve. Los montones tapaban plantas bajas, entradas y el pórtico; y bajo la Casa de los Sóviets el terreno variaba ±0,9 m, así que asomaba dentro de sus patios y en la planta baja abierta del Edificio Partido. Ahora, los edificios con modelo propio (`MODELO_PROPIO` en `tools/ciudad/datos.py`: los de `KitSingular`) no reciben montones del plano, porque su receta trae su escombro, y se asientan en una explanada a su cota (`EXPLANADAS`): llano bajo la huella entera (con lo que haya en sus patios cerrados) y unos metros alrededor (lo que el modelo sale de ella: el basamento del vestíbulo, el escombro del Partido, el pórtico de los Sóviets), y una transición suave hasta el terreno. El tránsito sale del terreno, así que sigue la explanada. Los demás edificios del kit, cerrados, se quedan en su ladera con un zócalo de piedra hasta el punto más bajo de su huella.
+
+## D-052 · El kit en la maqueta: tres escalones de detalle por edificio
+
+Un bloque del kit son unas sesenta mallas (una MultiMesh por pieza), y cada una se dibuja en la pasada de color y en cada cascada de sombras. Con el relevo solo por sectores (a 450 m), a pie de calle se llegaba a 3.600 llamadas de dibujo, seis veces más que con volúmenes. Ahora cada edificio del kit tiene tres escalones dentro de la versión detallada de su sector:
+
+- A más de 200 m (`kit_distance`), su volumen.
+- De 200 a 60 m, su modelo sin sombras. La sombra la proyecta su volumen, metido 40 cm hacia dentro para no quitarle la luz a su propia fachada.
+- A menos de 60 m (`kit_shadow_distance`), el modelo entero, con sus sombras.
+
+Las tres versiones miden la distancia desde el mismo punto (el centro del volumen), para que cambien a la vez. Además, lo que va en los huecos de las fachadas (ventanas, puertas, escaparates y los cuartos de detrás) no proyecta sombra nunca: la sombra de un hueco la hace su muro, y en una calle es la mitad de las mallas. Con eso, las calles con edificios del kit se quedan entre 900 y 1.250 llamadas (con volúmenes, entre 400 y 670). Los singulares, de pocas mallas, se dibujan enteros a menos de 200 m.
