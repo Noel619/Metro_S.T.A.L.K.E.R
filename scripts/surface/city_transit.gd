@@ -21,7 +21,9 @@ extends RefCounted
 ##
 ## Los socavones (tools/ciudad/deterioro.py) cortan la calle: cada uno es un grupo con su
 ## propia malla (la regla "malla": la altura y la textura de cada vértice), que baja del
-## corte de la calle al fondo, con lo que cayó dentro como instancias.
+## corte de la calle al fondo, con lo que cayó dentro como instancias. Las zonas de firme
+## roto (tools/ciudad/firmes.py) también: su base de grava es una malla y encima van las
+## placas sueltas de la costra, que cada sector levanta como prismas con su colisión.
 ##
 ## Cada sector se levanta en su propio hilo (TransitSector).
 
@@ -49,6 +51,7 @@ const SURFACE_MATERIALS: Dictionary = {
 	"paso_nivel": "hormigon",
 	"via_tranvia": "hormigon",
 	"socavon": "derrumbe",
+	"firme": "derrumbe",
 }
 ## Color de cada clase (multiplica la textura) y, en el alfa, cuánta nieve la cubre.
 const SURFACE_COLORS: Dictionary = {
@@ -67,6 +70,7 @@ const SURFACE_COLORS: Dictionary = {
 	"paso_nivel": Color(0.5, 0.49, 0.47, 0.45),
 	"via_tranvia": Color(0.56, 0.55, 0.52, 0.5),
 	"socavon": Color(0.55, 0.51, 0.46, 0.85),
+	"firme": Color(0.62, 0.59, 0.54, 0.8),
 }
 ## Metros de suelo que cubre la textura de cada material.
 const TILE: Dictionary = {
@@ -572,6 +576,14 @@ func _assign() -> void:
 	_assign_lines(data["barandillas"], "rails")
 	_assign_lines(data["marcas"]["ejes"], "axes")
 	_assign_lines(data.get("grietas", []), "cracks")
+	var zones: Array = data.get("placas", [])
+	for index: int in zones.size():
+		var flat: Array = zones[index]["puntos"]
+		var center: Vector2 = Vector2.ZERO
+		for k: int in range(0, flat.size(), 2):
+			center += Vector2(flat[k], flat[k + 1])
+		center /= flat.size() / 2
+		_sector_of_point(center).add_item("plates", index)
 	var crossings: Array = data["marcas"]["pasos"]
 	for index: int in crossings.size():
 		var center: Vector2 = Vector2(crossings[index]["centro"][0], crossings[index]["centro"][1])
@@ -662,6 +674,13 @@ func _merge() -> void:
 			by_model[model] = by_model.get(model, []) + sector.instances[model]
 
 
+func _sector_of_point(point: Vector2) -> TransitSector:
+	var grid: Vector2i = plan.sector_grid()
+	var sector: Vector2i = plan.sector_of(point)
+	sector = Vector2i(clampi(sector.x, 0, grid.x - 1), clampi(sector.y, 0, grid.y - 1))
+	return _sectors[sector.y * grid.x + sector.x]
+
+
 func _sector_of_cell(cell: Vector2i) -> TransitSector:
 	var grid: Vector2i = plan.sector_grid()
 	var sector: Vector2i = Vector2i(
@@ -670,8 +689,8 @@ func _sector_of_cell(cell: Vector2i) -> TransitSector:
 	return _sectors[sector.y * grid.x + sector.x]
 
 
-## Tapas de registro, sumideros y lo que cayó en los socavones, como instancias por
-## sector.
+## Tapas de registro, sumideros, lo que cayó en los socavones, los baches, los bordillos
+## sueltos, los matojos, lo tirado por la calle y las farolas, como instancias por sector.
 func _build_details() -> void:
 	var details: Dictionary = plan.transit["detalles"]
 	var count: int = 0
@@ -689,7 +708,7 @@ func _build_details() -> void:
 		_add_detail("sumidero", item)
 		count += 1
 	stats["detalles"] = count
-	for item: Dictionary in details.get("baches", []):
+	for item: Dictionary in rows(details.get("baches", {})):
 		_add_pothole(item)
 	for item: Dictionary in details.get("bordillos_sueltos", []):
 		_add_piece(
@@ -703,7 +722,7 @@ func _build_details() -> void:
 				"escala": 1.0,
 			}
 		)
-	for item: Dictionary in details.get("matojos", []):
+	for item: Dictionary in rows(details.get("matojos", {})):
 		var point: Vector2 = Vector2(item["pos"][0], item["pos"][1])
 		var size: float = float(item["escala"])
 		var basis: Basis = (
@@ -711,8 +730,13 @@ func _build_details() -> void:
 			* Basis.from_scale(Vector3(size, size * float(item["alto"]), size))
 		)
 		_add_instance("matojo", point, Transform3D(basis, CityPlan.to_world(point, item["z"])))
-	stats["baches"] = details.get("baches", []).size()
-	stats["matojos"] = details.get("matojos", []).size()
+	# Lo tirado por la calle y las farolas: las mismas piezas que las de los socavones.
+	var thrown: Array = rows(details.get("restos", {}))
+	for item: Dictionary in thrown:
+		_add_piece(item)
+	stats["baches"] = details.get("baches", {}).get("z", []).size()
+	stats["matojos"] = details.get("matojos", {}).get("z", []).size()
+	stats["restos"] = thrown.size()
 	var pieces: int = 0
 	for hole: Dictionary in plan.transit.get("socavones", []):
 		for item: Dictionary in hole["piezas"]:
@@ -722,12 +746,35 @@ func _build_details() -> void:
 	stats["piezas_socavon"] = pieces
 
 
+## Las piezas que transito.json da por columnas (tools/ciudad/transito.py, columnas), una a
+## una: cada una con sus campos, "pos" como [x, y] y "modelo" con su nombre.
+static func rows(columns: Dictionary) -> Array:
+	var result: Array = []
+	if columns.is_empty() or not columns.has("z"):
+		return result
+	var count: int = (columns["z"] as Array).size()
+	var names: Array = columns.get("modelos", [])
+	var flat: Array = columns["pos"]
+	for n: int in count:
+		var item: Dictionary = {"pos": [flat[n * 2], flat[n * 2 + 1]]}
+		for key: String in columns:
+			if key == "pos" or key == "modelos":
+				continue
+			if key == "modelo":
+				item["modelo"] = names[int(columns["modelo"][n])]
+			else:
+				item[key] = columns[key][n]
+		result.append(item)
+	return result
+
+
 ## Un bache: girado, a su escala e inclinado con la calle (su pendiente: lo que sube la
-## altura por metro hacia el este y hacia el norte).
+## altura por metro hacia el este, gx, y hacia el norte, gy).
 func _add_pothole(item: Dictionary) -> void:
 	var point: Vector2 = Vector2(item["pos"][0], item["pos"][1])
-	var slope: Array = item.get("pendiente", [0.0, 0.0])
-	var normal: Vector3 = Vector3(-float(slope[0]), 1.0, float(slope[1])).normalized()
+	var normal: Vector3 = (
+		Vector3(-float(item.get("gx", 0.0)), 1.0, float(item.get("gy", 0.0))).normalized()
+	)
 	var tilt: Basis = Basis(Quaternion(Vector3.UP, normal))
 	var basis: Basis = (
 		tilt

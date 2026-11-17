@@ -22,6 +22,17 @@ apoya en el suelo.
   corta): el agujero, oscuro y con hielo, la corona de asfalto desmigado alrededor y los
   trozos sueltos. Asoman unos milímetros; el origen, en la calle.
 
+Y lo que deja el abandono por la calle (tools/ciudad/restos.py), con el origen en el suelo:
+
+- Cascotes (cascotes_a/b/c): trozos de panel y de hormigón, ladrillos y alguna varilla,
+  caídos de las fachadas o de la onda: un metro o metro y medio, bajos.
+- Ladrillos (ladrillos): un puñado de ladrillos sueltos y partidos.
+- Neumático (neumatico): una rueda vieja tumbada.
+- Cartones (carton): cajas aplastadas, papeles y trapos, pegados al suelo por la helada.
+- Rama (rama): una rama seca caída, de dos metros, con sus ramitas (a lo largo de Y).
+- Farola arrancada (farola_mocha): la base de hormigón y el muñón del poste, partido, con
+  los cables y las varillas al aire.
+
 Todo de colores apagados: el hierro, oxidado; el hormigón, manchado de humedad y hollín.
 """
 
@@ -51,6 +62,18 @@ INSULATION_DIRT = "#5C564A"
 ICE = "#8D979B"
 FROST = "#B8BEC0"
 DARK_INSIDE = "#1A1817"
+PANEL = "#7E7A72"
+PANEL_DARK = "#625E58"
+BRICK = "#7A4A3A"
+BRICK_DARK = "#5E3A2E"
+REBAR = "#4A3426"
+RUBBER = "#252322"
+CARDBOARD = "#7F6E55"
+PAPER = "#A39C8C"
+RAG = "#57524C"
+BARK = "#3E352D"
+POLE = "#7D7A73"
+WIRE = "#2B2826"
 
 
 def _material() -> bpy.types.Material:
@@ -286,6 +309,132 @@ def build_pothole(name: str, seed: int, ice: bool) -> bpy.types.Object:
     return root
 
 
+# --------------------------------------------------------------------------
+# Lo que deja el abandono por la calle
+# --------------------------------------------------------------------------
+
+
+def build_debris(name: str, seed: int, radius: float) -> bpy.types.Object:
+    """Cascotes sueltos: trozos de panel y de hormigón, algún ladrillo y una varilla
+    retorcida, tirados en un corro bajo (cayeron de una fachada o los trajo la onda)."""
+    root = tb.empty(name)
+    rng = random.Random(seed)
+    mb = tb.MeshBuilder(seed=seed)
+    for _ in range(int(radius * 14)):
+        r = radius * math.sqrt(rng.random())
+        a = rng.uniform(0.0, 2.0 * math.pi)
+        size = rng.uniform(0.06, 0.3) * (1.2 if r < radius * 0.4 else 0.8)
+        high = size * rng.uniform(0.25, 0.6)
+        mb.box((size * rng.uniform(0.9, 1.8), size * rng.uniform(0.6, 1.2), high),
+               (r * math.cos(a), r * math.sin(a), high * 0.35), rng.choice((CONCRETE, PANEL, PANEL_DARK, SLAB)),
+               rotation=(rng.uniform(-25, 25), rng.uniform(-25, 25), rng.uniform(0, 180)), bevel=0.012, jitter=0.08)
+    for _ in range(int(radius * 5)):
+        r = radius * math.sqrt(rng.random())
+        a = rng.uniform(0.0, 2.0 * math.pi)
+        mb.box((0.25 * rng.uniform(0.5, 1.0), 0.12, 0.065), (r * math.cos(a), r * math.sin(a), 0.03),
+               rng.choice((BRICK, BRICK_DARK)), rotation=(rng.uniform(-20, 20), rng.uniform(-20, 20), rng.uniform(0, 180)),
+               bevel=0.008, jitter=0.1)
+    for _ in range(max(1, int(radius * 1.5))):
+        x, y = rng.uniform(-0.5, 0.5) * radius, rng.uniform(-0.5, 0.5) * radius
+        mb.bar((x, y, 0.04), (x + rng.uniform(-0.6, 0.6), y + rng.uniform(-0.6, 0.6), rng.uniform(0.05, 0.35)), 0.008,
+               REBAR, 5)
+    debris = mb.finish(name, _material(), root)
+    tb.stain(debris, "#3A3632", amount=0.45, scale=2.0, coverage=0.35, seed=seed)
+    tb.paint({debris: None}, samples=10, ao=0.55, ao_distance=0.2, seed=seed)
+    return root
+
+
+def build_bricks() -> bpy.types.Object:
+    """Un puñado de ladrillos sueltos, enteros y partidos."""
+    root = tb.empty("ladrillos")
+    rng = random.Random(661)
+    mb = tb.MeshBuilder(seed=661)
+    for k in range(11):
+        r = 0.45 * math.sqrt(rng.random())
+        a = rng.uniform(0.0, 2.0 * math.pi)
+        long = 0.25 if k % 3 else rng.uniform(0.1, 0.18)
+        mb.box((long, 0.12, 0.065), (r * math.cos(a), r * math.sin(a), 0.032 + 0.06 * (k % 4 == 0)),
+               rng.choice((BRICK, BRICK_DARK, "#8A5A46")), rotation=(rng.uniform(-12, 12), rng.uniform(-12, 12),
+                                                                     rng.uniform(0, 180)), bevel=0.006, jitter=0.1)
+    bricks = mb.finish("ladrillos", _material(), root)
+    tb.stain(bricks, "#4A4440", amount=0.4, scale=4.0, coverage=0.3, seed=661)
+    tb.paint({bricks: None}, samples=8, ao=0.5, ao_distance=0.1, seed=661)
+    return root
+
+
+def build_tyre() -> bpy.types.Object:
+    """Una rueda vieja tumbada, con el dibujo gastado."""
+    root = tb.empty("neumatico")
+    mb = tb.MeshBuilder(seed=667)
+    profile = [(0.2, 0.0), (0.3, 0.0), (0.33, 0.04), (0.33, 0.15), (0.3, 0.19), (0.2, 0.19), (0.19, 0.13),
+               (0.19, 0.06), (0.2, 0.0)]
+    mb.lathe(profile, (0.0, 0.0, 0.0), RUBBER, segments=24, sharp_angle=40.0)
+    tyre = mb.finish("neumatico", _material(), root)
+    tb.stain(tyre, "#3A3734", amount=0.4, scale=6.0, coverage=0.4, seed=667)
+    tb.paint({tyre: None}, samples=8, ao=0.5, ao_distance=0.1, seed=667)
+    return root
+
+
+def build_cardboard() -> bpy.types.Object:
+    """Cajas de cartón aplastadas, papeles y algún trapo, pegados al suelo por la helada."""
+    root = tb.empty("carton")
+    rng = random.Random(673)
+    mb = tb.MeshBuilder(seed=673)
+    for k in range(7):
+        w, d = (rng.uniform(0.35, 0.7), rng.uniform(0.25, 0.5)) if k < 3 else (rng.uniform(0.12, 0.3),
+                                                                               rng.uniform(0.1, 0.22))
+        color = CARDBOARD if k < 3 else rng.choice((PAPER, RAG, "#8E8676"))
+        mb.box((w, d, 0.008), (rng.uniform(-0.4, 0.4), rng.uniform(-0.3, 0.3), 0.006 + k * 0.003), color,
+               rotation=(rng.uniform(-4, 4), rng.uniform(-4, 4), rng.uniform(0, 180)), jitter=0.08)
+    trash = mb.finish("carton", _material(), root)
+    tb.stain(trash, "#4A443C", amount=0.5, scale=5.0, coverage=0.4, seed=673)
+    tb.paint({trash: None}, samples=6, ao=0.3, ao_distance=0.05, seed=673)
+    return root
+
+
+def build_branch() -> bpy.types.Object:
+    """Una rama seca caída (dos metros, a lo largo de Y), con sus ramitas."""
+    root = tb.empty("rama")
+    rng = random.Random(677)
+    mb = tb.MeshBuilder(seed=677)
+    path = [(0.0, -1.0, 0.06), (0.05, -0.4, 0.07), (-0.04, 0.3, 0.05), (0.06, 1.0, 0.04)]
+    for (x0, y0, z0), (x1, y1, z1), r in zip(path, path[1:], (0.06, 0.045, 0.03)):
+        mb.bar((x0, y0, z0), (x1, y1, z1), r, BARK, 7)
+    for _ in range(9):
+        y = rng.uniform(-0.6, 0.9)
+        side = rng.choice((-1.0, 1.0))
+        end = (side * rng.uniform(0.2, 0.55), y + rng.uniform(0.1, 0.4), rng.uniform(0.04, 0.3))
+        mb.bar((0.0, y, 0.05), end, 0.012, BARK, 5)
+    branch = mb.finish("rama", _material(), root)
+    tb.paint({branch: None}, samples=6, ao=0.4, ao_distance=0.1, seed=677)
+    return root
+
+
+def build_lamp_stump() -> bpy.types.Object:
+    """La farola arrancada: su base de hormigón y el muñón del poste, partido en punta,
+    con los cables y las varillas al aire."""
+    root = tb.empty("farola_mocha")
+    rng = random.Random(683)
+    mb = tb.MeshBuilder(seed=683)
+    mb.box((0.36, 0.36, 0.5), (0.0, 0.0, 0.25), POLE, bevel=0.03)
+    stub = rng.uniform(0.7, 1.1)
+    mb.cylinder(0.14, stub, (0.0, 0.0, 0.5 + stub / 2.0), POLE, radius_top=0.13, segments=8)
+    for k in range(5):
+        a = k / 5 * 2.0 * math.pi
+        top = 0.5 + stub + rng.uniform(0.05, 0.3)
+        mb.box((0.08, 0.06, top - stub - 0.45), (math.cos(a) * 0.09, math.sin(a) * 0.09, (stub + 0.5 + top) / 2.0),
+               POLE, rotation=(rng.uniform(-10, 10), rng.uniform(-10, 10), math.degrees(a)))
+    for _ in range(4):
+        start = (rng.uniform(-0.05, 0.05), rng.uniform(-0.05, 0.05), 0.5 + stub)
+        end = (start[0] + rng.uniform(-0.4, 0.4), start[1] + rng.uniform(-0.4, 0.4), start[2] + rng.uniform(0.1, 0.5))
+        mb.bar(start, end, 0.01, REBAR, 5)
+    mb.bar((0.0, 0.0, 0.5 + stub), (0.5, 0.2, 0.02), 0.012, WIRE, 5)
+    stump = mb.finish("farola_mocha", _material(), root)
+    tb.stain(stump, RUST, amount=0.5, scale=3.0, coverage=0.3, seed=683)
+    tb.paint({stump: None}, samples=8, ao=0.5, ao_distance=0.2, seed=683)
+    return root
+
+
 def models() -> dict:
     return {
         "placa_asfalto_a": lambda: build_asphalt_chunk("placa_asfalto_a", 601, 0.85),
@@ -300,5 +449,13 @@ def models() -> dict:
         "bache_a": lambda: build_pothole("bache_a", 651, False),
         "bache_b": lambda: build_pothole("bache_b", 653, True),
         "bache_c": lambda: build_pothole("bache_c", 659, False),
+        "cascotes_a": lambda: build_debris("cascotes_a", 687, 0.6),
+        "cascotes_b": lambda: build_debris("cascotes_b", 691, 0.85),
+        "cascotes_c": lambda: build_debris("cascotes_c", 701, 1.2),
+        "ladrillos": build_bricks,
+        "neumatico": build_tyre,
+        "carton": build_cardboard,
+        "rama": build_branch,
+        "farola_mocha": build_lamp_stump,
     }
 

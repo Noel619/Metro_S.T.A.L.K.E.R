@@ -99,7 +99,11 @@ CLASES = {
     "via_tranvia": {"nivel": NIVEL_CALZADA, "rodada": True},
     # El hueco de un socavón (deterioro.py): su regla es su malla (la altura de cada vértice).
     "socavon": {"nivel": 0.0, "rodada": False},
+    # La base de un firme roto (firmes.py: grava y tierra entre las placas), con su malla.
+    "firme": {"nivel": 0.0, "rodada": False},
 }
+# Las clases que son un hueco en la calle con su propia malla: su borde es un derrumbe.
+CLASES_HUECO = ("socavon", "firme")
 PEATONALES = ("acera", "losas", "plaza", "paseo", "isleta")
 # Aceras de losas en el centro (la Plaza, la Avenida y el Centro); de asfalto en el resto.
 ZONAS_LOSAS = (1, 3, 7)
@@ -204,8 +208,10 @@ class Arista:
     tipo: str
     izq: int
     der: int
-    # Los tramos (de, a: metros desde el principio) en los que falta el bordillo.
+    # Los tramos (de, a: metros desde el principio) en los que falta el bordillo, y los de
+    # las piezas movidas (de, a, lo que sube cada punta, lo que se sale hacia la calzada).
     huecos: list = field(default_factory=list)
+    movidos: list = field(default_factory=list)
 
 
 @dataclass
@@ -222,6 +228,9 @@ class Trazado:
     muros: list = field(default_factory=list)
     barandillas: list = field(default_factory=list)
     socavones: list = field(default_factory=list)  # [{"socavon", "grupo", "piezas"}]
+    firmes: list = field(default_factory=list)  # firmes.Zona
+    placas: list = field(default_factory=list)  # por zona: {"clase", "grosor", "caras", "puntos", "z"}
+    formas_placas: list = field(default_factory=list)  # Polygon de cada placa
     grietas: list = field(default_factory=list)  # [{"puntos", "ancho", "clase"}]
     escaleras: list = field(default_factory=list)
     marcas: dict = field(default_factory=dict)
@@ -569,6 +578,17 @@ def abrir_socavones(t: Trazado) -> None:
         t.superficies[clase] = t.superficies[clase].difference(huecos)
 
 
+def abrir_firmes(t: Trazado) -> None:
+    """Las zonas de firme roto (firmes.py) cortan su clase: dentro van su base y sus
+    placas (trazar_grupos)."""
+    import firmes as FR
+
+    t.firmes = FR.zonas(t)
+    rotas = unary_union([z.contorno for z in t.firmes])
+    for clase in list(t.superficies):
+        t.superficies[clase] = t.superficies[clase].difference(rotas)
+
+
 def trazar() -> Trazado:
     """El trazado en planta (sin alturas)."""
     t = Trazado()
@@ -576,6 +596,7 @@ def trazar() -> Trazado:
     trazar_superficies(t)
     trazar_alcorques(t)
     abrir_socavones(t)
+    abrir_firmes(t)
     return t
 
 
@@ -953,6 +974,27 @@ def trazar_grupos(t: Trazado, alturas: Alturas) -> None:
     _escaleras_sendas(t, alturas)
     _andenes(t, alturas)
     _socavones(t, alturas)
+    _firmes(t, alturas)
+
+
+def _firmes(t: Trazado, alturas: Alturas) -> None:
+    """Un grupo por zona de firme roto, con la malla de su base, y sus placas."""
+    import firmes as FR
+
+    t.placas = []
+    t.formas_placas = []
+    for z in t.firmes:
+        nivel = CLASES[z.clase]["nivel"]
+
+        def calle(xs, ys, nivel=nivel):
+            return muestrear(alturas.rasante, alturas.res, np.asarray(xs, float), np.asarray(ys, float)) + nivel
+
+        base = FR.malla(z, calle)
+        t.grupos.append(Grupo("firme", z.contorno, {"tipo": "malla", "malla": base}, 0.0, False, base))
+        datos, formas = FR.placas(z, calle)
+        if datos["caras"]:
+            t.placas.append(datos)
+        t.formas_placas += formas
 
 
 def _socavones(t: Trazado, alturas: Alturas) -> None:
@@ -1266,10 +1308,10 @@ def _clasificar(t: Trazado, alturas: Alturas, puntos, izq: int, der: int, hueco,
     if der >= 0:
         gd = t.grupos[der]
         cd = gd.clase
-        if "socavon" in (ci, cd):
-            # El corte de la calle en el borde de un socavón: se guarda una vez, con lo que
-            # se pisa a la izquierda y el hueco a la derecha.
-            return [Arista(puntos, "derrumbe", izq, der)] if cd == "socavon" and ci != "socavon" else []
+        if ci in CLASES_HUECO or cd in CLASES_HUECO:
+            # El corte de la calle en el borde de un socavón o de un firme roto: se guarda una
+            # vez, con lo que se pisa a la izquierda y el hueco a la derecha.
+            return [Arista(puntos, "derrumbe", izq, der)] if cd in CLASES_HUECO and ci not in CLASES_HUECO else []
         rod_i, rod_d = CLASES[ci]["rodada"], CLASES[cd]["rodada"]
         if rod_i != rod_d:
             # Bordillo: se guarda una vez, con la calzada a la izquierda.
@@ -1616,6 +1658,9 @@ def trazar_completo(alturas: Alturas, t: Trazado | None = None) -> Trazado:
     t.detalles["baches"] = DT.baches(t, alturas)
     t.detalles["bordillos_sueltos"] = DT.romper_bordillos(t, alturas)
     t.detalles["matojos"] = DT.matojos(t, alturas)
+    import restos as RS
+
+    t.detalles["restos"] = RS.restos(t, alturas) + RS.farolas(t, alturas)
     return t
 
 
@@ -1675,6 +1720,31 @@ def _socavon_json(item: dict, nuevo: dict) -> dict:
             "contorno": [float(v) for v in s.borde.ravel()], "piezas": item["piezas"]}
 
 
+def columnas(items: list[dict], campos: dict) -> dict:
+    """Una lista de piezas (diccionarios con los mismos campos) por columnas, que pesa mucho
+    menos en transito.json: cada campo, una lista (las posiciones, x e y seguidas), con los
+    decimales de `campos` (None: tal cual). Los modelos van por su número en "modelos"."""
+    resultado = {}
+    if any("modelo" in item for item in items):
+        modelos = sorted({item["modelo"] for item in items})
+        resultado["modelos"] = modelos
+        indice = {m: k for k, m in enumerate(modelos)}
+        resultado["modelo"] = [indice[item["modelo"]] for item in items]
+    for campo, decimales in campos.items():
+        if campo == "pos":
+            resultado["pos"] = [round(v, decimales) for item in items for v in item["pos"]]
+            continue
+        valores = [item.get(campo, 1.0 if campo in ("escala", "estira", "alto") else 0.0) for item in items]
+        if decimales == 0:
+            resultado[campo] = [int(round(v)) for v in valores]
+        else:
+            resultado[campo] = [round(v, decimales) for v in valores]
+    return resultado
+
+
+PIEZAS = {"pos": 2, "z": 2, "rumbo": 0, "cabeceo": 0, "alabeo": 0, "escala": 2}
+
+
 def _regla_json(regla: dict) -> dict:
     return {k: (list(v) if isinstance(v, tuple) else v) for k, v in regla.items() if k != "malla"}
 
@@ -1705,17 +1775,22 @@ def exportar(t: Trazado, alturas: Alturas, carpeta) -> dict:
             "triangulos": triangulos,
         }
         if g.malla is not None:
-            registro["z"] = [float(v) for v in g.malla.z]
-            registro["uv"] = [float(v) for v in g.malla.uv.ravel()]
+            registro["z"] = [round(float(v), 2 if g.clase == "firme" else 3) for v in g.malla.z]
+            # La textura, si no es la del plano (la del firme roto lo es: no hace falta).
+            if g.clase != "firme":
+                registro["uv"] = [float(v) for v in g.malla.uv.ravel()]
         grupos.append(registro)
     malla = RJ.calcular(t, alturas, triangulados)
     for registro, planos, rectas in zip(grupos, malla.planos, malla.rectas):
-        registro["planos"] = planos
-        registro["rectas"] = rectas
+        # Las mallas propias van enteras: no les hacen falta.
+        if "z" not in registro:
+            registro["planos"] = planos
+            registro["rectas"] = rectas
     meta_rejilla = RJ.exportar_png(malla, carpeta)
     aristas = [{"tipo": a.tipo, "izq": nuevo[a.izq], "der": nuevo.get(a.der, -1) if a.der >= 0 else -1,
                 "puntos": [v for xy in a.puntos for v in (round(xy[0], DECIMALES), round(xy[1], DECIMALES))],
-                **({"huecos": a.huecos} if a.huecos else {})}
+                **({"huecos": a.huecos} if a.huecos else {}),
+                **({"movidos": a.movidos} if a.movidos else {})}
                for a in t.aristas if a.izq in nuevo]
     datos = {
         "version": 1,
@@ -1730,13 +1805,19 @@ def exportar(t: Trazado, alturas: Alturas, carpeta) -> dict:
         "barandillas": t.barandillas,
         "escaleras": [{**e, "grupos": [nuevo[i] for i in e["grupos"] if i in nuevo]} for e in t.escaleras],
         "marcas": t.marcas,
-        "detalles": t.detalles,
+        "detalles": {**{k: v for k, v in t.detalles.items() if k not in ("restos", "matojos", "baches")},
+                     "restos": columnas(t.detalles.get("restos", []), PIEZAS),
+                     "matojos": columnas(t.detalles.get("matojos", []),
+                                         {"pos": 2, "z": 2, "angulo": 0, "escala": 2, "alto": 2}),
+                     "baches": columnas(t.detalles.get("baches", []),
+                                        {"pos": 2, "z": 3, "angulo": 0, "escala": 2, "gx": 3, "gy": 3})},
         "puente": {**t.puente, "regla": _regla_json(t.puente["regla"]),
                    "vano_hundido": list(_calle("puente_progreso")["vano_hundido"]),
                    "tablero": _calle("puente_progreso")["tablero"]},
         **meta_rejilla,
         **_exportar_ferrocarril(t, alturas),
         "socavones": [_socavon_json(item, nuevo) for item in t.socavones],
+        "placas": t.placas,
         "grietas": t.grietas,
         "relleno": {"triangulos": [ident for ident, _ in malla.rellenos],
                     "puntos": [v for _, esquinas in malla.rellenos for xy in esquinas for v in xy]},

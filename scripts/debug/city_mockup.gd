@@ -179,6 +179,13 @@ const VIEWS: Array[Dictionary] = [
 		"to": Vector3(345.0, 452.0, 0.3),
 		"fov": 64.0,
 	},
+	{
+		"name": "calle_rota",
+		"title": "La calle de la Planta: el firme levantado en placas, bordillos movidos y matojos",
+		"from": Vector3(1372.5, 1039.0, 1.7),
+		"to": Vector3(1356.0, 1050.0, 0.3),
+		"fov": 64.0,
+	},
 ]
 ## Niebla: la del juego, una ligera (para ver lejos) o ninguna (todo detallado).
 const FOG_MODES: PackedStringArray = ["juego", "ligera", "sin"]

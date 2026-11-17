@@ -50,6 +50,32 @@ const TRANSIT_MATERIALS: Dictionary = {
 const PAVEMENTS_DIR: String = "res://assets/textures/pavimentos/"
 ## Lo que miden los matojos (ancho y alto) antes de su escala.
 const TUFT_SIZE: Vector2 = Vector2(0.8, 0.6)
+## Los detalles pequeños (la basura, los cascotes, los matojos, los baches, las tapas) solo
+## se dibujan cerca: de lejos no se distinguen y son muchos.
+const SMALL_DETAILS: PackedStringArray = [
+	"cascotes_a",
+	"cascotes_b",
+	"cascotes_c",
+	"ladrillos",
+	"neumatico",
+	"carton",
+	"rama",
+	"escombros",
+	"escombros_grande",
+	"matojo",
+	"bache_a",
+	"bache_b",
+	"bache_c",
+	"bordillo_suelto",
+	"tapa_redonda",
+	"tapa_cuadrada",
+	"tapa_suelta_redonda",
+	"tapa_suelta_cuadrada",
+	"pozo_redondo",
+	"pozo_cuadrado",
+	"sumidero",
+]
+const SMALL_DISTANCE: float = 110.0
 
 ## Distancia al centro de un sector a partir de la cual se dibuja su versión lejana.
 @export var near_distance: float = 450.0
@@ -318,7 +344,7 @@ func _add_props(sector_node: Node3D, props: Dictionary, holder_name: String = "O
 		node.name = model.capitalize().replace(" ", "")
 		node.multimesh = multimesh
 		node.material_override = _models[model][1]
-		node.visibility_range_end = props_distance
+		node.visibility_range_end = SMALL_DISTANCE if model in SMALL_DETAILS else props_distance
 		holder.add_child(node)
 		node.visibility_parent = NodePath("../../Lejos")
 		var counter: String = "arboles" if model.begins_with("arbol") else "vehiculos"
@@ -426,7 +452,9 @@ func _load_models() -> void:
 ## pozos abiertos y las tapas tiradas, los bordillos sueltos, traviesas de hormigón y de
 ## madera, corazones y palancas de los desvíos y topes. Lo que cayó en los socavones y los
 ## baches (tools/blender/recipes/deterioro.py): trozos de asfalto y losas rotas, la tubería,
-## el colector o la galería reventados y el charco helado. Y los matojos secos.
+## el colector o la galería reventados y el charco helado. Lo tirado por la calle (cascotes,
+## ladrillos, basura, contenedores, montones de escombros) y las farolas, rotas o no. Y los
+## matojos secos.
 func _load_detail_models() -> void:
 	var snow: Dictionary = {
 		"tapa_redonda": 0.0,
@@ -455,6 +483,19 @@ func _load_detail_models() -> void:
 		"bache_a": 0.3,
 		"bache_b": 0.3,
 		"bache_c": 0.3,
+		"cascotes_a": 0.55,
+		"cascotes_b": 0.55,
+		"cascotes_c": 0.55,
+		"ladrillos": 0.5,
+		"neumatico": 0.4,
+		"carton": 0.5,
+		"rama": 0.4,
+		"contenedor": 0.4,
+		"escombros": 0.6,
+		"escombros_grande": 0.6,
+		"farola": 0.3,
+		"farola_torcida": 0.3,
+		"farola_mocha": 0.3,
 	}
 	for model: String in snow:
 		var scene: Node = (load(MODELS_DIR + model + ".glb") as PackedScene).instantiate()
@@ -466,7 +507,8 @@ func _load_detail_models() -> void:
 			model.begins_with("tapa")
 			or model.begins_with("corazon")
 			or model.begins_with("pozo")
-			or model in ["sumidero", "tuberia_rota"]
+			or model.begins_with("farola")
+			or model in ["sumidero", "tuberia_rota", "contenedor"]
 		):
 			material.set_shader_parameter("ramp_row", 4)
 		_models[model] = [(found[0] as MeshInstance3D).mesh, material]

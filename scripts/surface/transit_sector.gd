@@ -16,6 +16,10 @@ const RING: int = 4
 const FAR: float = 100000.0
 ## Lo que oscurece el fondo de un socavón (al fondo de un hoyo llega menos luz).
 const PIT_SHADE: float = 0.5
+## Las placas del firme roto: lo que se oscurecen sus cantos y su cara de abajo, y cuánto
+## varía el tono de una placa a otra.
+const PLATE_SIDE_SHADE: float = 0.62
+const PLATE_TONE: float = 0.16
 
 var transit: CityTransit
 var plan: CityPlan
@@ -30,7 +34,8 @@ var stats: Dictionary = {}
 var edge_stats: Dictionary = {}
 ## Lo que le toca: pares (grupo, primer índice del triángulo), triángulos del relleno,
 ## aristas, muros, barandillas, ejes, pasos de cebra, pares (vía, tramo de la vía) de las
-## vías del tren y del tranvía (CityTransit.tracks), los desvíos, los topes y las grietas.
+## vías del tren y del tranvía (CityTransit.tracks), los desvíos, los topes, las grietas y
+## las placas del firme roto (las de cada sector, por su centro).
 var triangles: PackedInt32Array = PackedInt32Array()
 var fills: PackedInt32Array = PackedInt32Array()
 var edges: PackedInt32Array = PackedInt32Array()
@@ -42,6 +47,7 @@ var tracks: PackedInt32Array = PackedInt32Array()
 var turnouts: PackedInt32Array = PackedInt32Array()
 var stops: PackedInt32Array = PackedInt32Array()
 var cracks: PackedInt32Array = PackedInt32Array()
+var plates: PackedInt32Array = PackedInt32Array()
 
 var _center: Vector2
 var _origin: Vector2i
@@ -78,9 +84,10 @@ func add_item(field: String, value: int) -> void:
 
 ## Levanta el sector (en un hilo del WorkerThreadPool).
 func build() -> void:
-	stats = {"piezas": 0, "rellenos": 0, "escombros": 0}
+	stats = {"piezas": 0, "rellenos": 0, "escombros": 0, "placas": 0}
 	for n: int in range(0, triangles.size(), 2):
 		_surface(triangles[n], triangles[n + 1])
+	_build_plates()
 	_build_fill()
 	_build_rubble_and_ring()
 	var builder: TransitEdges = TransitEdges.new(transit, self)
@@ -230,7 +237,8 @@ func _emit_mesh(index: int, start: int) -> void:
 	var points: Array = data["puntos"]
 	var corners: Array = data["triangulos"]
 	var heights: Array = data["z"]
-	var texture: Array = data["uv"]
+	# Sin "uv", la textura va con el plano (la base del firme roto).
+	var texture: Array = data.get("uv", points)
 	var mesh_normals: PackedVector3Array = transit.mesh_normals[index]
 	var corner: PackedVector2Array = PackedVector2Array()
 	var ids: PackedInt32Array = PackedInt32Array()
@@ -271,6 +279,86 @@ func _emit_mesh(index: int, start: int) -> void:
 	buffer(style[0]).add_polygon(out_points, out_normals, tint, uvs, colors)
 	add_collision(out_points)
 	stats["piezas"] += 1
+
+
+## Las placas del firme roto (tools/ciudad/firmes.py): cada una, un prisma con la cara de
+## arriba inclinada (la costra de su clase, con su textura girada a su aire) y los cantos
+## más oscuros (la de abajo no se ve: apoya en la grava). Con colisión arriba y en los
+## cantos: se anda por encima.
+func _build_plates() -> void:
+	var zones: Array = plan.transit.get("placas", [])
+	for index: int in plates:
+		var zone: Dictionary = zones[index]
+		var flat: Array = zone["puntos"]
+		var heights: Array = zone["z"]
+		var first: int = 0
+		var counts: Array = zone["caras"]
+		for n: int in counts.size():
+			var outline: PackedVector2Array = PackedVector2Array()
+			var tops: PackedFloat32Array = PackedFloat32Array()
+			for k: int in range(first, first + int(counts[n])):
+				outline.append(Vector2(flat[k * 2], flat[k * 2 + 1]))
+				tops.append(float(heights[k]))
+			first += int(counts[n])
+			_plate(zone, outline, tops, "placa/%d/%d" % [index, n])
+
+
+## Una placa del firme roto: su contorno (antihorario) y la altura de cada esquina.
+func _plate(
+	zone: Dictionary, outline: PackedVector2Array, heights: PackedFloat32Array, key: String
+) -> void:
+	var count: int = outline.size()
+	var corners: PackedInt32Array = Geometry2D.triangulate_polygon(outline)
+	if corners.is_empty():
+		return
+	var kind: String = zone["clase"]
+	var material: String = CityTransit.SURFACE_MATERIALS.get(kind, "asfalto")
+	var tint: Color = CityTransit.SURFACE_COLORS.get(kind, Color.WHITE)
+	var tone: float = 1.0 + PLATE_TONE * (CityPlan.chance(key) - 0.5)
+	var top_color: Color = Color(tint.r * tone, tint.g * tone, tint.b * tone, tint.a)
+	var side_tone: float = tone * PLATE_SIDE_SHADE
+	var side_color: Color = Color(tint.r * side_tone, tint.g * side_tone, tint.b * side_tone, 0.0)
+	var tile: float = CityTransit.TILE.get(material, 2.0)
+	var angle: float = CityPlan.chance(key + "/giro") * TAU
+	var axis_u: Vector2 = Vector2(cos(angle), sin(angle)) / tile
+	var axis_v: Vector2 = Vector2(-sin(angle), cos(angle)) / tile
+	var thick: float = float(zone["grosor"])
+	var top: PackedVector3Array = PackedVector3Array()
+	var bottom: PackedVector3Array = PackedVector3Array()
+	var uvs: PackedVector2Array = PackedVector2Array()
+	for k: int in count:
+		top.append(local(outline[k], float(heights[k])))
+		bottom.append(local(outline[k], float(heights[k]) - thick))
+		uvs.append(Vector2(outline[k].dot(axis_u), outline[k].dot(axis_v)))
+	var mesh: MeshBuffer = buffer(material)
+	var top_colors: PackedColorArray = PackedColorArray([top_color])
+	var side_colors: PackedColorArray = PackedColorArray([side_color])
+	for t: int in range(0, corners.size(), 3):
+		var a: int = corners[t]
+		var b: int = corners[t + 1]
+		var c: int = corners[t + 2]
+		var face: PackedVector3Array = PackedVector3Array([top[a], top[b], top[c]])
+		mesh.add_face(face, Vector3.UP, top_colors, PackedVector2Array([uvs[a], uvs[b], uvs[c]]))
+		add_collision(face)
+	var along: float = 0.0
+	for k: int in count:
+		var m: int = (k + 1) % count
+		var edge: Vector2 = outline[m] - outline[k]
+		var outward: Vector3 = Vector3(edge.y, 0.0, edge.x).normalized()
+		var side: PackedVector3Array = PackedVector3Array([top[k], top[m], bottom[m], bottom[k]])
+		var span: float = edge.length() / tile
+		var side_uvs: PackedVector2Array = PackedVector2Array(
+			[
+				Vector2(along, 0.0),
+				Vector2(along + span, 0.0),
+				Vector2(along + span, thick / tile),
+				Vector2(along, thick / tile)
+			]
+		)
+		mesh.add_face(side, outward, side_colors, side_uvs)
+		add_collision(side)
+		along += span
+	stats["placas"] += 1
 
 
 ## Una pieza dentro de un triángulo de la rejilla, siguiendo la rasante con sus normales

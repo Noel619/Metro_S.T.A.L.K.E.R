@@ -115,28 +115,34 @@ class Socavon:
         return self.datos["id"]
 
 
-def contorno(h: dict) -> Socavon:
-    """El contorno de un socavón: una elipse (`radio` a lo largo de `rumbo`, `ancho` de
-    través) mordida por un ruido suave (el hueco no es redondo) y con los dientes de la
-    costra rota en el borde. Al milímetro, como el resto del tránsito."""
-    cx, cy = h["pos"]
-    a, b = float(h["radio"]), float(h["ancho"])
-    rumbo = math.radians(h["rumbo"])
+def borde_irregular(clave: str, centro: tuple[float, float], a: float, b: float, rumbo: float,
+                    irregular: float = 0.14, paso: float = PASO_BORDE, minimo: int = 32) -> np.ndarray:
+    """Los vértices (en sentido antihorario) de un hueco irregular: una elipse (`a` a lo
+    largo de `rumbo`, en grados, y `b` de través) mordida por un ruido suave y con los
+    dientes de la costra rota en el borde. Al milímetro, como el resto del tránsito."""
+    cx, cy = centro
     perimetro = math.pi * (3.0 * (a + b) - math.sqrt((3.0 * a + b) * (a + 3.0 * b)))
-    n = int(min(170, max(32, round(perimetro / PASO_BORDE))))
-    rng = random.Random(_semilla(h["id"] + "/contorno"))
+    n = int(min(170, max(minimo, round(perimetro / paso))))
+    rng = random.Random(_semilla(clave + "/contorno"))
     ruido = _ruido_periodico(rng, n)
-    irregular = h.get("irregular", 0.14)
     theta = np.arange(n) * 2.0 * math.pi / n
     elipse = a * b / np.hypot(b * np.cos(theta), a * np.sin(theta))
     dientes = np.array([rng.uniform(-1.0, 1.0) for _ in range(n)]) * np.minimum(0.14, 0.03 * elipse)
     r = elipse * (1.0 + irregular * ruido) + dientes
-    c, s = math.cos(rumbo), math.sin(rumbo)
+    c, s = math.cos(math.radians(rumbo)), math.sin(math.radians(rumbo))
     lx, ly = r * np.cos(theta), r * np.sin(theta)
     xs = np.round(cx + lx * c - ly * s, 3)
     ys = np.round(cy + lx * s + ly * c, 3)
-    borde = np.stack([xs, ys], axis=1)
-    return Socavon(h, Polygon(borde), borde, (float(cx), float(cy)))
+    return np.stack([xs, ys], axis=1)
+
+
+def contorno(h: dict) -> Socavon:
+    """El contorno de un socavón: alargado a lo largo de lo que reventó (`radio` a lo largo
+    de `rumbo`, `ancho` de través)."""
+    centro = (float(h["pos"][0]), float(h["pos"][1]))
+    borde = borde_irregular(h["id"], centro, float(h["radio"]), float(h["ancho"]), float(h["rumbo"]),
+                            h.get("irregular", 0.14))
+    return Socavon(h, Polygon(borde), borde, centro)
 
 
 _SOCAVONES: list[Socavon] | None = None
@@ -473,9 +479,9 @@ def comprobar(pavimento) -> list[str]:
 # Las clases en las que se pintan grietas (lo pavimentado que sigue la rasante).
 CLASES_CON_GRIETAS = ("calzada", "adoquin", "acera", "losas", "plaza", "paseo", "isleta", "paso_nivel", "via_tranvia")
 # Grietas de la helada: una cada tantos metros cuadrados de cada clase.
-GRIETAS_POR_M2 = {"calzada": 1 / 140.0, "acera": 1 / 220.0, "losas": 1 / 260.0, "plaza": 1 / 260.0,
-                  "paseo": 1 / 300.0, "isleta": 1 / 260.0, "adoquin": 1 / 400.0, "paso_nivel": 1 / 60.0,
-                  "via_tranvia": 1 / 120.0}
+GRIETAS_POR_M2 = {"calzada": 1 / 90.0, "acera": 1 / 150.0, "losas": 1 / 170.0, "plaza": 1 / 170.0,
+                  "paseo": 1 / 200.0, "isleta": 1 / 140.0, "adoquin": 1 / 300.0, "paso_nivel": 1 / 50.0,
+                  "via_tranvia": 1 / 70.0}
 
 
 def _quebrada(rng: random.Random, x: float, y: float, rumbo: float, largo: float, paso: float,
@@ -561,7 +567,7 @@ def grietas(t) -> list[dict]:
             else:
                 rumbo = rng.uniform(0.0, 2.0 * math.pi)
                 largo, tuerce = rng.uniform(0.8, 3.5), 0.5
-            crudas.append((_quebrada(rng, x, y, rumbo, largo, 0.6, tuerce), rng.uniform(0.012, 0.04)))
+            crudas.append((_quebrada(rng, x, y, rumbo, largo, 0.6, tuerce), rng.uniform(0.015, 0.06)))
             hechas += 1
     # Cada una, partida por las clases: los trozos de más de 30 cm, dentro de la suya.
     resultado = []
@@ -572,7 +578,7 @@ def grietas(t) -> list[dict]:
                 continue
             for trozo in T.lineas(linea.intersection(forma)):
                 if trozo.length > 0.3:
-                    resultado.append({"puntos": [(round(x, 3), round(y, 3)) for x, y in trozo.coords],
+                    resultado.append({"puntos": [(round(x, 2), round(y, 2)) for x, y in trozo.coords],
                                       "ancho": round(ancho, 3), "clase": clase})
     return resultado
 
@@ -582,8 +588,8 @@ def grietas(t) -> list[dict]:
 # ---------------------------------------------------------------------------
 BACHES = ("bache_a", "bache_b", "bache_c")
 # Baches: grupos (donde el agua se encharca) por metro cuadrado de cada clase.
-BACHES_POR_M2 = {"calzada": 1 / 650.0, "adoquin": 1 / 500.0, "paso_nivel": 1 / 300.0, "acera": 1 / 2600.0,
-                 "losas": 1 / 3000.0, "plaza": 1 / 3200.0}
+BACHES_POR_M2 = {"calzada": 1 / 420.0, "adoquin": 1 / 350.0, "paso_nivel": 1 / 250.0, "acera": 1 / 1600.0,
+                 "losas": 1 / 2000.0, "plaza": 1 / 2200.0, "isleta": 1 / 1500.0, "via_tranvia": 1 / 600.0}
 # Tapas de registro abiertas (la tapa, tirada al lado) y que faltan (para chatarra).
 TAPAS_ABIERTAS = 0.14
 TAPAS_ROBADAS = 0.08
@@ -591,16 +597,36 @@ TAPAS_ROBADAS = 0.08
 LARGO_BORDILLO = 1.0
 BORDILLO_FALTA = 0.04
 BORDILLO_TIRADO = 0.5
+# Las piezas movidas (hundidas, levantadas, ladeadas o salidas hacia la calzada): cuántas
+# de cada cien (más cerca de la Zona Cero), lo que suben o bajan y lo que se salen.
+BORDILLO_MOVIDO = 0.17
+BORDILLO_SUBE = (-0.07, 0.04)
+BORDILLO_LADEA = 0.05
+BORDILLO_SALE = 0.04
 # Matojos secos: cada cuánto se prueba a poner uno y cuántas veces sale, según dónde.
-MATOJOS = {"bordillo": (2.5, 0.16), "fachada": (2.5, 0.22), "via": (3.0, 0.45), "balasto": (3.0, 0.22)}
+MATOJOS = {"bordillo": (2.0, 0.28), "fachada": (2.0, 0.35), "via": (3.0, 0.5), "balasto": (3.0, 0.32)}
+
+
+# Del eje de cada vía del tranvía a sus carriles, y lo que se deja libre a cada lado de
+# ellos.
+CARRIL_TRANVIA = 0.8
+LIBRE_CARRIL = 0.3
+
+
+def carriles_tranvia() -> object:
+    """Los carriles del tranvía (con lo que se deja libre a cada lado)."""
+    import ferrocarril as F
+
+    carriles = []
+    for _, via in F.ejes_tranvia():
+        for lado in (-1.0, 1.0):
+            carriles.append(via.offset_curve(lado * CARRIL_TRANVIA, join_style=2, mitre_limit=3.0))
+    return unary_union([c.buffer(LIBRE_CARRIL) for c in carriles if not c.is_empty])
 
 
 def _cerca_de_las_vias() -> object:
-    """Lo que no se puede tocar junto a las vías del tren y del tranvía."""
-    import ferrocarril as F
-
-    return unary_union([banda(v["puntos"], 5.0) for v in D.VIAS]
-                       + [via.buffer(1.4) for _, via in F.ejes_tranvia()])
+    """Lo que no se puede tocar junto a las vías del tren y los carriles del tranvía."""
+    return unary_union([banda(v["puntos"], 5.0) for v in D.VIAS] + [carriles_tranvia()])
 
 
 def baches(t, alturas) -> list[dict]:
@@ -643,7 +669,7 @@ def baches(t, alturas) -> list[dict]:
                 resultado.append({"modelo": BACHES[rng.randrange(3)], "pos": (round(px, 3), round(py, 3)),
                                   "z": round(z, 3), "angulo": round(rng.uniform(0.0, 360.0), 1),
                                   "escala": round(rng.uniform(0.7, 1.6) if k == 0 else rng.uniform(0.4, 1.0), 2),
-                                  "pendiente": [round(gx, 4), round(gy, 4)]})
+                                  "gx": round(gx, 4), "gy": round(gy, 4)})
     return resultado
 
 
@@ -680,7 +706,9 @@ def estropear_tapas(t, alturas) -> None:
 def romper_bordillos(t, alturas) -> list[dict]:
     """Las piezas de bordillo que faltan (de metro en metro: la helada las levantó y se
     cayeron o se las llevaron): sus tramos van a `huecos` de cada arista "bordillo"; la
-    mitad sigue tirada en la calzada, al lado (lo que devuelve)."""
+    mitad sigue tirada en la calzada, al lado (lo que devuelve). Otras se han movido:
+    van a `movidos` con lo que sube o baja cada punta y lo que se salen hacia la calzada."""
+    import firmes as FR
     import transito as T
 
     sueltos = []
@@ -690,12 +718,19 @@ def romper_bordillos(t, alturas) -> list[dict]:
         linea = LineString(a.puntos)
         largo = linea.length
         a.huecos = []
+        a.movidos = []
         base = f"bordillo/{round(a.puntos[0][0], 1)}/{round(a.puntos[0][1], 1)}"
         for k in range(int(largo // LARGO_BORDILLO)):
             clave = f"{base}/{k}"
-            if _azar(clave) >= BORDILLO_FALTA:
-                continue
             s0, s1 = k * LARGO_BORDILLO, (k + 1) * LARGO_BORDILLO
+            if _azar(clave) >= BORDILLO_FALTA:
+                medio = linea.interpolate((s0 + s1) / 2.0)
+                if _azar(clave + "/movido") < BORDILLO_MOVIDO * min(2.0, FR._factor(medio.x, medio.y)):
+                    sube = BORDILLO_SUBE[0] + (BORDILLO_SUBE[1] - BORDILLO_SUBE[0]) * _azar(clave + "/sube")
+                    ladea = (_azar(clave + "/ladea") - 0.5) * 2.0 * BORDILLO_LADEA
+                    sale = _azar(clave + "/sale") * BORDILLO_SALE
+                    a.movidos.append([s0, s1, round(sube - ladea, 3), round(sube + ladea, 3), round(sale, 3)])
+                continue
             if a.huecos and abs(a.huecos[-1][1] - s0) < 1e-6:
                 a.huecos[-1][1] = s1
             else:
@@ -757,6 +792,21 @@ def matojos(t, alturas) -> list[dict]:
     for a in t.alcorques:
         for _ in range(rng.choice((0, 1, 1, 2, 3))):
             puntos.append((a["pos"][0] + rng.uniform(-0.4, 0.4), a["pos"][1] + rng.uniform(-0.4, 0.4), None))
+    # En las juntas del firme roto, entre las placas.
+    if t.formas_placas:
+        arbol = shapely.STRtree(t.formas_placas)
+        for z in t.firmes:
+            juntas = z.contorno.buffer(-0.1).difference(
+                unary_union([t.formas_placas[int(i)] for i in arbol.query(z.contorno)]).buffer(0.03))
+            if juntas.is_empty:
+                continue
+            x0, y0, x1, y1 = juntas.bounds
+            for _ in range(int(min(8, 1 + z.contorno.area / 10.0))):
+                for _ in range(20):
+                    x, y = rng.uniform(x0, x1), rng.uniform(y0, y1)
+                    if shapely.contains_xy(juntas, x, y):
+                        puntos.append((x, y, None))
+                        break
     for s in socavones():
         cx, cy = s.centro
         for _ in range(int(min(14, 4 + s.contorno.length / 6.0))):

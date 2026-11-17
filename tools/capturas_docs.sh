@@ -100,6 +100,7 @@ if want maqueta; then
     keep maqueta_vista_socavon fase3_deterioro_socavon
     keep maqueta_vista_socavon_galeria fase3_deterioro_galeria
     keep maqueta_vista_socavon_agua fase3_deterioro_agua
+    keep maqueta_vista_calle_rota fase3_deterioro_calle_rota
     capture debug/maqueta_ciudad ciegos \
         "--call=MaquetaCiudad:survey_landmarks --call=MaquetaCiudad:capture_only:aerea" 10
     keep ciegos fase3_maqueta_hitos
