@@ -179,11 +179,27 @@ const VIEWS: Array[Dictionary] = [
 		"to": Vector3(345.0, 452.0, 0.3),
 		"fov": 64.0,
 	},
+	{
+		"name": "vestibulo",
+		"title": "El vestíbulo del metro, la salida, desde la plaza",
+		"from": Vector3(357.5, 333.5, 1.7),
+		"to": Vector3(326.0, 299.5, 7.0),
+		"fov": 62.0,
+	},
+	{
+		"name": "soviets",
+		"title": "La Casa de los Sóviets cierra la avenida",
+		"from": Vector3(962.0, 929.0, 1.7),
+		"to": Vector3(1069.0, 1039.7, 26.0),
+		"fov": 62.0,
+	},
 ]
 ## Niebla: la del juego, una ligera (para ver lejos) o ninguna (todo detallado).
 const FOG_MODES: PackedStringArray = ["juego", "ligera", "sin"]
 const FOG_SCALE: Dictionary = {"juego": 1.0, "ligera": 0.2, "sin": 0.0}
 const NEAR_DISTANCE: Dictionary = {"juego": 450.0, "ligera": 900.0, "sin": 5000.0}
+## Y a qué distancia se ven los modelos del kit en vez de los volúmenes.
+const KIT_DISTANCE: Dictionary = {"juego": 200.0, "ligera": 450.0, "sin": 5000.0}
 ## Velocidades de los recorridos: paso real, ×4 y ×16.
 const ROUTE_SPEEDS: Array[float] = [1.0, 4.0, 16.0]
 const COMPASS: PackedStringArray = ["E", "NE", "N", "NO", "O", "SO", "S", "SE"]
@@ -277,6 +293,7 @@ func set_fog(mode: String) -> void:
 	fog_mode = mode if FOG_MODES.has(mode) else "juego"
 	if city != null:
 		city.set_near_distance(NEAR_DISTANCE[fog_mode])
+		city.set_kit_distance(KIT_DISTANCE[fog_mode])
 	_apply_atmosphere()
 
 
