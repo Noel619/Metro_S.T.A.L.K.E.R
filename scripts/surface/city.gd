@@ -261,9 +261,10 @@ func _carved(sector: Vector2i, heights: PackedFloat32Array) -> PackedFloat32Arra
 
 ## Un edificio montado con el kit de arquitectura (CityKit): su modelo a su cota y, si está
 ## en ladera, su zócalo. Su volumen se dibuja en la versión detallada del sector hasta que se
-## está a menos de [member kit_distance]; entonces, el modelo (los hitos, que no van en la
-## versión lejana, se ven siempre así). Choca como su volumen, salvo los singulares, que
-## traen su colisión (en ellos se entra).
+## está a menos de [member kit_distance]; entonces, el modelo. El volumen de un hito no va en
+## la versión lejana: se dibuja solo, también de lejos. A media distancia, el modelo va sin
+## sombras ([method _add_kit_shadow]). Choca como su volumen, salvo los singulares, que traen
+## su colisión (en ellos se entra).
 func _add_kit_building(
 	sector_node: Node3D, holder: Node3D, building: Dictionary, volume: MeshBuffer, offset: Vector3
 ) -> void:

@@ -138,7 +138,9 @@ func plinth(building: Dictionary) -> MeshBuffer:
 	var top: float = -0.01
 	var bottom: float = -drop - PLINTH_FOOT
 	var tint: PackedColorArray = PackedColorArray([PLINTH_COLOR.srgb_to_linear()])
-	var center: Vector3 = Vector3.ZERO
+	# Hacia fuera, por el sentido de giro del contorno (también en las huellas en L): con el
+	# antihorario, fuera queda a la derecha de cada lado.
+	var turn: float = 1.0 if CityGeometry.signed_area(outline) > 0.0 else -1.0
 	for i: int in outline.size():
 		var a: Vector2 = outline[i] - anchor
 		var b: Vector2 = outline[(i + 1) % outline.size()] - anchor
@@ -150,10 +152,8 @@ func plinth(building: Dictionary) -> MeshBuffer:
 				Vector3(a.x, top, -a.y),
 			]
 		)
-		var middle: Vector3 = (face[0] + face[1]) / 2.0
-		var outward: Vector3 = Vector3(middle.x - center.x, 0.0, middle.z - center.z)
-		var side: Vector3 = (face[1] - face[0]).cross(Vector3.UP)
-		mesh.add_face(face, side if side.dot(outward) >= 0.0 else -side, tint)
+		# (b - a) × arriba es la derecha del lado, en el espacio del edificio.
+		mesh.add_face(face, (face[1] - face[0]).cross(Vector3.UP) * turn, tint)
 	return mesh
 
 

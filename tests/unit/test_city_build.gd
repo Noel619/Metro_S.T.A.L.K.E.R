@@ -105,6 +105,36 @@ func test_kit_buildings_replace_their_volumes_up_close() -> void:
 		)
 
 
+func test_plinths_face_outward() -> void:
+	# El zócalo de una casa en L, en ladera: un lado por cara, y todas miran hacia fuera de la
+	# huella, también las dos del rincón (que miran hacia el centro de la ficha).
+	var kit: CityKit = CityKit.new(_city.plan)
+	var ring: Array = [[0, 0], [20, 0], [20, 8], [8, 8], [8, 20], [0, 20], [0, 0]]
+	var anchor: Vector2 = Vector2(6.0, 6.0)
+	var building: Dictionary = {
+		"centro": [anchor.x, anchor.y], "huella": [ring], "cota": 5.0, "cota_min": 4.0
+	}
+	var mesh: MeshBuffer = kit.plinth(building)
+	assert_eq(mesh.triangle_count(), 12, "dos triángulos por lado")
+	var outline: PackedVector2Array = CityPlan.ring(ring)
+	for t: int in range(0, mesh.indices.size(), 3):
+		var middle: Vector3 = Vector3.ZERO
+		for k: int in 3:
+			middle += mesh.vertices[mesh.indices[t + k]] / 3.0
+		var normal: Vector3 = mesh.normals[mesh.indices[t]]
+		var probe: Vector2 = anchor + Vector2(middle.x + normal.x, -middle.z - normal.z)
+		assert_false(
+			Geometry2D.is_point_in_polygon(probe, outline), "cara %d hacia fuera" % (t / 3)
+		)
+		assert_almost(normal.y, 0.0, 0.001)
+	# Bajo la cota y hasta 40 cm por debajo del punto más bajo.
+	var lowest: float = INF
+	for vertex: Vector3 in mesh.vertices:
+		lowest = minf(lowest, vertex.y)
+	assert_almost(lowest, -1.0 - CityKit.PLINTH_FOOT, 0.001)
+	assert_true(kit.plinth({"cota": 5.0, "cota_min": 4.95}).is_empty(), "en llano, sin zócalo")
+
+
 func test_singular_buildings_collide_as_their_model() -> void:
 	# En el vestíbulo se entra: en medio de la sala se pisa su suelo, tres escalones por
 	# encima de la acera (su volumen era un bloque macizo).
