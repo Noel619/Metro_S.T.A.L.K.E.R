@@ -368,6 +368,10 @@ LINEAS_ELECTRICAS = [
 # Edificios
 # ---------------------------------------------------------------------------
 EDIFICIOS: list[dict] = []
+# Los edificios con modelo propio (los singulares: KitSingular.MODELS, en
+# scripts/surface/kit_singular.gd) traen su escombro en el modelo, así que el plano no les
+# apila montones: taparían sus plantas bajas, sus entradas y el pórtico.
+MODELO_PROPIO: frozenset[str] = frozenset({"PLZ-06", "ZC-01", "CEN-SOV", "CEN-SOVT"})
 _MANZANAS: dict[str, Polygon] = {}
 
 

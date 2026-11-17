@@ -107,6 +107,8 @@ def calcular_escombros() -> list[dict]:
     for e in D.EDIFICIOS:
         if e["dano"] < 2 or D.TIPOS[e["tipo"]]["grupo"] in ("menor",) or e["tipo"] in ("chimenea", "torre", "muralla"):
             continue
+        if e["id"] in D.MODELO_PROPIO:
+            continue  # su modelo trae su escombro
         huella = e["huella"]
         c = huella.centroid
         dx, dy = c.x - D.GZ[0], c.y - D.GZ[1]
