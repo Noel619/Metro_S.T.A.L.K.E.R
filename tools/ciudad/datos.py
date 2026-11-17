@@ -372,6 +372,16 @@ EDIFICIOS: list[dict] = []
 # scripts/surface/kit_singular.gd) traen su escombro en el modelo, así que el plano no les
 # apila montones: taparían sus plantas bajas, sus entradas y el pórtico.
 MODELO_PROPIO: frozenset[str] = frozenset({"PLZ-06", "ZC-01", "CEN-SOV", "CEN-SOVT"})
+# Y se asientan en una explanada a su cota, porque sus modelos se hicieron sobre suelo llano
+# (por sus patios abiertos y sus plantas bajas a la vista, una ladera asomaría dentro):
+# metros de llano alrededor de la huella (lo que el modelo sale de ella: el basamento del
+# vestíbulo, el escombro del Partido, el pórtico de los Sóviets) y de transición hasta el
+# terreno de alrededor. La torre de los Sóviets está encima de la casa.
+EXPLANADAS: dict[str, tuple[float, float]] = {
+    "PLZ-06": (3.0, 8.0),
+    "ZC-01": (4.0, 8.0),
+    "CEN-SOV": (6.0, 6.0),
+}
 _MANZANAS: dict[str, Polygon] = {}
 
 

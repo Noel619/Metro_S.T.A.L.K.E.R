@@ -11,7 +11,8 @@ Uso: python3 tools/ciudad/plano.py [--solo-datos | --comprobar] [--plano=general
 2. Calcula el daño de cada edificio (distancia a la Zona Cero, con variación fija
    por edificio), los incendios y los escombros que caen a la calle.
 3. Calcula el relieve con los terraplenes, las calles de la loma niveladas, los
-   escombros y la cubeta de los socavones (deterioro.py), y la cota de cada edificio.
+   escombros, la cubeta de los socavones (deterioro.py) y las explanadas de los edificios
+   con modelo propio, y la cota de cada edificio.
 4. Traza la red de tránsito (transito.py): calzadas, aceras, bordillos, escaleras, el
    tablero del puente, pasos de cebra… con sus alturas, y su deterioro (deterioro.py):
    socavones, grietas, baches, tapas abiertas, bordillos rotos y matojos.
@@ -263,6 +264,31 @@ def calcular_cotas(terreno: np.ndarray, res: float) -> None:
         alturas = muestrear(terreno, res, xs, ys)
         e["cota"] = round(float(np.median(alturas)), 2)
         e["cota_min"] = round(float(alturas.min()), 2)
+
+
+def explanar(capas: list[np.ndarray], res: float) -> list[np.ndarray]:
+    """Las explanadas de los edificios con modelo propio (D.EXPLANADAS): el terreno, a la cota
+    del edificio bajo su huella y su margen, y de vuelta a su altura en la transición (con
+    una curva suave). Las capas son rejillas como las de calcular_relieve (la fila 0 al sur)."""
+    resultado = [c.copy() for c in capas]
+    ny, nx = resultado[0].shape
+    for e in D.EDIFICIOS:
+        if e["id"] not in D.EXPLANADAS:
+            continue
+        margen, transicion = D.EXPLANADAS[e["id"]]
+        alcance = margen + transicion
+        # Con lo que haya en sus patios cerrados (la torre en medio de los Sóviets).
+        llena = shapely.Polygon(e["huella"].exterior)
+        minx, miny, maxx, maxy = llena.bounds
+        i0, i1 = max(0, int((minx - alcance) / res)), min(nx, int((maxx + alcance) / res) + 1)
+        j0, j1 = max(0, int((miny - alcance) / res)), min(ny, int((maxy + alcance) / res) + 1)
+        gx, gy = np.meshgrid((np.arange(i0, i1) + 0.5) * res, (np.arange(j0, j1) + 0.5) * res)
+        lejos = shapely.distance(llena, shapely.points(gx.ravel(), gy.ravel())).reshape(gx.shape)
+        t = np.clip((lejos - margen) / transicion, 0.0, 1.0)
+        llano = 1.0 - t * t * (3.0 - 2.0 * t)
+        for capa in resultado:
+            capa[j0:j1, i0:i1] += (e["cota"] - capa[j0:j1, i0:i1]) * llano
+    return resultado
 
 
 # ---------------------------------------------------------------------------
@@ -526,6 +552,10 @@ def main() -> int:
     # La calle se hunde alrededor de cada socavón (la cubeta): el terreno, el relieve y, con
     # el terreno, la rasante del tránsito.
     relieve, terreno = DT.hundir([relieve, terreno], 2.0)
+    calcular_cotas(terreno, 2.0)
+    # Los edificios con modelo propio, en su explanada a su cota (y otra vez las cotas: las
+    # de sus vecinos pueden cambiar).
+    relieve, terreno = explanar([relieve, terreno], 2.0)
     calcular_cotas(terreno, 2.0)
     planta = T.trazar()
     rasante_calles = T.rasante_transito(terreno, 2.0)
