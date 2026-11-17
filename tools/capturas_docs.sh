@@ -100,6 +100,8 @@ if want maqueta; then
     keep maqueta_vista_socavon fase3_deterioro_socavon
     keep maqueta_vista_socavon_galeria fase3_deterioro_galeria
     keep maqueta_vista_socavon_agua fase3_deterioro_agua
+    keep maqueta_vista_vestibulo fase3_maqueta_vestibulo
+    keep maqueta_vista_soviets fase3_maqueta_soviets
     capture debug/maqueta_ciudad ciegos \
         "--call=MaquetaCiudad:survey_landmarks --call=MaquetaCiudad:capture_only:aerea" 10
     keep ciegos fase3_maqueta_hitos
@@ -150,6 +152,8 @@ if want singulares; then
     capture style/diorama_partido partido "--call=DioramaPartido:capture_only:crater,casa" 10
     keep partido_camara_crater fase3_singular_partido
     keep partido_camara_casa fase3_singular_partido_casa
-    capture style/diorama_soviets soviets "--call=DioramaSoviets:capture_only:avenida" 10
-    keep soviets fase3_singular_soviets
+    capture style/diorama_soviets soviets "--call=DioramaSoviets:capture_only:avenida,escombro,cuarto" 10
+    keep soviets_camara_avenida fase3_singular_soviets
+    keep soviets_camara_escombro fase3_singular_soviets_escombro
+    keep soviets_camara_cuarto fase3_singular_soviets_cuarto
 fi

@@ -167,6 +167,21 @@ func test_metro_vestibule_goes_below_the_street() -> void:
 	assert_true(lowest < ground - 2.0, "se baja bajo la calle (lo más bajo: %.2f)" % lowest)
 
 
+func test_a_walker_climbs_into_the_soviets_breach() -> void:
+	# El escombro del boquete de la fachada noreste de la Casa de los Sóviets sale hasta la
+	# calle: por él se sube al boquete y se baja por dentro al cuarto que quedó detrás. Si la
+	# colisión de la fachada no estuviera abierta, se quedaría arriba, contra el muro (a 9 m).
+	var building: Dictionary = _city.buildings_by_id["CEN-SOV"]
+	var center: Vector2 = Vector2(building["centro"][0], building["centro"][1])
+	# El marco de su receta: u a lo largo de la fachada principal y v hacia el noreste.
+	var turn: float = deg_to_rad(-42.0)
+	var street: Vector2 = center + Vector2(-8.0, 46.0).rotated(turn)
+	var inside: Vector2 = center + Vector2(-8.0, 22.0).rotated(turn)
+	var ground: float = float(building["cota"])
+	var end: float = await _walk(street, inside, 35.0)
+	assert_true(end > ground + 2.5 and end < ground + 6.0, "dentro, a %.1f m" % (end - ground))
+
+
 func test_bridge_deck_is_walkable() -> void:
 	var point: Vector2 = _city.plan.axis_point(455.0)
 	assert_true(_city.plan.height_at(point) < -5.0, "bajo el puente está el hielo")

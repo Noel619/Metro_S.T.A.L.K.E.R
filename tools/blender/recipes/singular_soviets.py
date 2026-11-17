@@ -11,7 +11,9 @@ estrechan hasta 94 m y la aguja con su estrella, hasta 110.
 
 Ardió entera (incendio total): las ventanas negras con el hollín encima, el revoque caído,
 dentro solo oscuridad. La onda reventó la fachada noreste, la que mira a la bomba: un
-boquete de muchas plantas con los forjados colgando y el escombro dentro. La torre (daño 4)
+boquete de muchas plantas con los forjados colgando. Su escombro cayó dentro y fuera: una
+ladera que sale hasta la calle y por la que se sube al boquete y se baja al cuarto que
+quedó detrás, con lo que ardió de las oficinas encima. La torre (daño 4)
 perdió trozos del lado de la bomba y la aguja quedó doblada hacia el suroeste. En la planta
 20, en la ventana que mira al río (al sur), el puesto del vigía de los saqueadores: sacos,
 tablas y una lona.
@@ -31,7 +33,7 @@ from __future__ import annotations
 import math
 import random
 
-from mathutils import Matrix, Vector, noise
+from mathutils import Euler, Matrix, Vector, noise
 
 import kit_bpy as kit
 import tumansk_bpy as tb
@@ -53,6 +55,13 @@ CORNER_BAYS = 3  # los cuerpos de las esquinas, adelantados
 CORNER_STEP = 0.8
 PORTICO = 14.0  # medio ancho del pórtico (siete vanos)
 BREACH = (-26.0, 10.0)  # el boquete de la fachada noreste (en u)
+# El perfil del escombro del boquete (v, z): sube desde el fondo del cuarto, asoma por encima
+# del alféizar del boquete (a BASE_TOP - 0.5) y baja hasta la calle. Las pendientes, de 38°
+# dentro y 35° fuera, se pueden subir.
+SCREE = ((HALF_V - WING + 0.5, 0.0), (HALF_V - 2.0, 9.0), (HALF_V, 8.8), (HALF_V + 12.5, 0.0))
+SCREE_SIDE = 4.0  # fuera, a los lados del boquete, la ladera se tiende en estos metros
+SCREE_TOE = 1.5  # lo que el pie de la ladera avanza o se retira a lo largo de la fachada
+SCREE_COLORS = ("#4E4741", "#5E574F", "#6B6259", "#746A5E", "#6E5848", "#857561")
 # Las alturas de las ventanas de cada planta (z0, z1) y su ancho.
 ROWS = [(1.2, 4.2), (5.9, 8.0)] + [(BASE_TOP + 0.9 + STOREY * k, BASE_TOP + 3.3 + STOREY * k) for k in range(7)] + [(ATTIC + 0.9, ATTIC + 2.4)]
 WINDOW_HALF = 0.9
@@ -425,6 +434,7 @@ def _breach(mb: tb.MeshBuilder, rng: random.Random) -> None:
             for _ in range(3):
                 start = (u + side * reach * rng.uniform(0.6, 1.0), rng.uniform(inner + 1.0, HALF_V - 1.0), z - 0.2)
                 kit.rebar(mb, start, (side, rng.uniform(-0.3, 0.3), -0.6), rng.uniform(0.5, 1.2), rng, radius=0.014)
+    _scree(mb, 1.0, rough=True, rng=rng)
     # Lo que deja ver el boquete: la cabeza del cuerpo central y los muros de través del ala
     # que queda a los lados, quemados, con sus huecos.
     walls = [
@@ -449,20 +459,138 @@ def _breach(mb: tb.MeshBuilder, rng: random.Random) -> None:
         a = Vector((rng.uniform(u0 + 1.0, u1 - 1.0), rng.uniform(inner + 1.0, HALF_V - 1.0), rng.uniform(BASE_TOP, 30.0)))
         b = a + Vector((rng.uniform(-4.0, 4.0), rng.uniform(-3.0, 3.0), rng.uniform(-6.0, -1.0)))
         mb.box(((b - a).length, 0.3, 0.4), (a + b) / 2.0, CHAR, rotation=[math.degrees(r) for r in Vector((1, 0, 0)).rotation_difference((b - a).normalized()).to_euler()], jitter=0.08)
-    # El montón dentro.
-    for k in range(260):
-        u = rng.uniform(u0 + 0.5, u1 - 0.5)
-        v = rng.uniform(inner + 0.5, HALF_V + 4.0)
-        height = 9.0 * max(0.0, 1.0 - abs(v - (HALF_V - 2.0)) / 9.0) * (0.6 + 0.4 * math.sin(math.pi * (u - u0) / (u1 - u0)))
-        kit.chunk(mb, (u, v, rng.uniform(0.0, height)), rng.uniform(0.4, 1.1), rng.choice((CONCRETE, CHAR, "#6E5848", STUCCO)), rng)
+    # Los trozos de forjado y de muro, tendidos en la ladera, con su ferralla; y los cascotes
+    # encima (y unos pocos por el suelo de alrededor).
+    for _ in range(26):
+        outside = rng.random() < 0.6
+        if outside:
+            u, v = rng.uniform(u0 - 1.0, u1 + 1.0), rng.uniform(HALF_V + 1.0, SCREE[-1][0] - 1.5)
+        else:
+            u, v = rng.uniform(u0 + 2.0, u1 - 2.0), rng.uniform(inner + 2.0, HALF_V - 2.5)
+        z = _scree_height(u, v, True)
+        slope = -35.0 if outside else 38.0  # a lo largo de la ladera (de través: v)
+        size = (rng.uniform(1.6, 3.4), rng.uniform(1.0, 2.2), rng.uniform(0.2, 0.3))
+        tilt = (slope + rng.uniform(-12.0, 12.0), rng.uniform(-10.0, 10.0), rng.uniform(-25.0, 25.0))
+        mb.box(size, (u, v, z + 0.05), rng.choice((CONCRETE, "#6E6A63", STUCCO, CHAR)), rotation=tilt, cuts=1, jitter=0.08)
+        for _ in range(rng.randint(1, 3)):
+            start = (u + rng.uniform(-0.8, 0.8), v + rng.uniform(-0.4, 0.4), z + 0.15)
+            kit.rebar(mb, start, (rng.uniform(-1.0, 1.0), rng.uniform(-1.0, 1.0), rng.uniform(0.3, 1.0)), rng.uniform(0.5, 1.4), rng, radius=0.014)
+    for _ in range(760):
+        if rng.random() < 0.55:
+            u, v = rng.uniform(u0 - SCREE_SIDE, u1 + SCREE_SIDE), rng.uniform(HALF_V + 0.3, SCREE[-1][0] + SCREE_TOE + 1.0)
+        else:
+            u, v = rng.uniform(u0 + 0.6, u1 - 0.6), rng.uniform(inner + 0.6, HALF_V - 0.3)
+        z = _scree_height(u, v, True)
+        if z <= 0.0 and rng.random() < 0.75:
+            continue
+        size = rng.uniform(0.3, 0.8) if rng.random() < 0.7 else rng.uniform(0.8, 1.5)
+        kit.chunk(mb, (u, v, z + size * rng.uniform(-0.2, 0.15)), size, rng.choice((CONCRETE, CHAR, "#6E5848", STUCCO, "#7B4A38")), rng)
+    _offices(mb, rng)
+
+
+def _offices(mb: tb.MeshBuilder, rng: random.Random) -> None:
+    """Lo que ardió de las oficinas y cayó con el escombro: archivadores, una caja fuerte y
+    mesas, quemados, sobre la ladera de dentro."""
+    u0, u1 = BREACH
+    inner = HALF_V - WING
+
+    def spot() -> Vector:
+        u, v = rng.uniform(u0 + 2.0, u1 - 2.0), rng.uniform(inner + 2.0, HALF_V - 3.0)
+        return Vector((u, v, _scree_height(u, v, True)))
+
+    for _ in range(5):  # archivadores, tumbados o de pie
+        at = spot()
+        lying = rng.random() < 0.6
+        size = (0.5, 1.3, 0.6) if lying else (0.5, 0.6, 1.3)
+        mb.box(size, at + Vector((0.0, 0.0, size[2] / 2.0 - 0.1)), rng.choice(("#2C2824", kit.RUST, "#3A3631")), rotation=(rng.uniform(-12, 12), rng.uniform(-12, 12), rng.uniform(0, 180)), cuts=1, jitter=0.1)
+    at = spot()  # la caja fuerte
+    mb.box((0.8, 0.7, 1.0), at + Vector((0.0, 0.0, 0.4)), "#373B34", rotation=(rng.uniform(-15, 15), rng.uniform(-10, 10), rng.uniform(0, 180)), bevel=0.02, jitter=0.05)
+    for _ in range(3):  # mesas: el tablero y las patas, de madera carbonizada
+        at = spot()
+        turn = rng.uniform(0.0, 180.0)
+        tilt = (rng.uniform(-14, 14), rng.uniform(-14, 14), turn)
+        frame = Matrix.Translation(at + Vector((0.0, 0.0, 0.62))) @ Euler([math.radians(a) for a in tilt]).to_matrix().to_4x4()
+        mb.box((1.6, 0.8, 0.08), frame @ Vector((0.0, 0.0, 0.0)), CHAR, rotation=tilt, jitter=0.1)
+        for sx in (-0.7, 0.7):
+            for sy in (-0.32, 0.32):
+                if rng.random() < 0.8:
+                    mb.box((0.08, 0.08, 0.66), frame @ Vector((sx, sy, -0.33)), CHAR, rotation=tilt, jitter=0.1)
+
+
+def _scree_toe(u: float) -> float:
+    """Hasta dónde llega el pie de la ladera de fuera (en v) a la altura ``u``: no es recto."""
+    return SCREE[-1][0] + SCREE_TOE * max(-1.0, min(1.0, 2.6 * noise.noise(Vector((u * 0.19, 3.1, 0.0)))))
+
+
+def _scree_height(u: float, v: float, rough: bool) -> float:
+    """La altura del escombro del boquete en (u, v): el perfil SCREE, con el pie de fuera
+    irregular y tendida a los lados del boquete. Con ``rough``, con los bultos de lo que se
+    ve (la colisión es la ladera lisa)."""
+    u0, u1 = BREACH
+    profile = SCREE[:-1] + ((_scree_toe(u), 0.0),)
+    if v <= profile[0][0] or v >= profile[-1][0]:
+        return 0.0
+    height = 0.0
+    for (va, za), (vb, zb) in zip(profile, profile[1:]):
+        if va <= v <= vb:
+            height = za + (zb - za) * (v - va) / (vb - va)
+    if v >= HALF_V:
+        for edge, outward in ((u0, -1.0), (u1, 1.0)):
+            reach = (u - edge) * outward  # cuánto se sale del boquete por ese lado
+            if reach > 0.0:
+                t = min(1.0, reach / SCREE_SIDE)
+                height *= 1.0 - t * t * (3.0 - 2.0 * t)
+    if rough and height > 0.0:
+        height += 0.3 * min(1.0, height) * noise.noise(Vector((u * 0.45, v * 0.45, 7.3)))
+    return max(height, 0.0)
+
+
+def _scree_color(u: float, v: float) -> str:
+    """El tono del escombro, a manchas: hormigón, revoque, ladrillo y hollín."""
+    n = noise.noise(Vector((u * 0.17, v * 0.17, 11.0)))
+    index = int((n + 0.6) / 1.2 * len(SCREE_COLORS))
+    return SCREE_COLORS[min(len(SCREE_COLORS) - 1, max(0, index))]
+
+
+def _scree(mb: tb.MeshBuilder, step: float, rough: bool, rng: random.Random | None = None) -> None:
+    """La ladera de escombro del boquete, en una rejilla de ``step`` metros: dentro, entre
+    los muros de través; fuera, más ancha. Con ``rng``, cada celda con su tono."""
+    u0, u1 = BREACH
+    parts = (
+        ((u0 + 0.3, u1 - 0.3), (SCREE[0][0], HALF_V)),
+        ((u0 - SCREE_SIDE, u1 + SCREE_SIDE), (HALF_V, SCREE[-1][0] + SCREE_TOE * 1.5)),
+    )
+    for (ua, ub), (va, vb) in parts:
+        nu, nv = max(1, round((ub - ua) / step)), max(1, round((vb - va) / step))
+        us = [ua + (ub - ua) * i / nu for i in range(nu + 1)]
+        vs = [va + (vb - va) * j / nv for j in range(nv + 1)]
+        for j in range(nv):
+            for i in range(nu):
+                corners = [(us[a], vs[b]) for a, b in ((i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1))]
+                heights = [_scree_height(u, v, rough) for u, v in corners]
+                if max(heights) <= 0.0:
+                    continue
+                middle = (sum(u for u, _ in corners) / 4.0, sum(v for _, v in corners) / 4.0)
+                color = _scree_color(*middle) if rng else CONCRETE
+                mb.quad([(u, v, z) for (u, v), z in zip(corners, heights)], color, jitter=0.1 if rng else 0.0)
 
 
 def _block_outline_collision(mb: tb.MeshBuilder) -> None:
     """La colisión del bloque: los muros de fuera y de los patios (macizos), el pórtico y
-    el escombro del boquete, como una rampa."""
+    el boquete: la fachada abierta sobre su escombro, la ladera por la que se sube y el
+    cuarto de detrás, cerrado por los muros de través y la cabeza del cuerpo central."""
     inner = HALF_V - WING
-    for v in (-HALF_V + WALL / 2.0, HALF_V - WALL / 2.0):
-        mb.box((2.0 * HALF_U, WALL, TOP + 0.3), (0.0, v, (TOP - 0.3) / 2.0), CONCRETE)
+    u0, u1 = BREACH
+    sill = BASE_TOP - 0.5
+    mb.box((2.0 * HALF_U, WALL, TOP + 0.3), (0.0, -HALF_V + WALL / 2.0, (TOP - 0.3) / 2.0), CONCRETE)
+    for lo, hi in ((-HALF_U, u0), (u1, HALF_U)):
+        mb.box((hi - lo, WALL, TOP + 0.3), ((lo + hi) / 2.0, HALF_V - WALL / 2.0, (TOP - 0.3) / 2.0), CONCRETE)
+    mb.box((u1 - u0, WALL, sill + 0.3), ((u0 + u1) / 2.0, HALF_V - WALL / 2.0, (sill - 0.3) / 2.0), CONCRETE)
+    for u in BREACH:
+        mb.box((0.6, WING, TOP + 0.3), (u, (inner + HALF_V) / 2.0, (TOP - 0.3) / 2.0), CONCRETE)
+    # Detrás del boquete, la cabeza del cuerpo central (el resto lo cierra el patio).
+    mb.box((u1 + CENTRAL, 0.6, TOP + 0.3), ((u1 - CENTRAL) / 2.0, inner + 0.3, (TOP - 0.3) / 2.0), CONCRETE)
+    _scree(mb, 2.0, rough=False)
     for u in (-HALF_U + WALL / 2.0, HALF_U - WALL / 2.0):
         mb.box((WALL, 2.0 * HALF_V, TOP + 0.3), (u, 0.0, (TOP - 0.3) / 2.0), CONCRETE)
     for sign in (-1.0, 1.0):
