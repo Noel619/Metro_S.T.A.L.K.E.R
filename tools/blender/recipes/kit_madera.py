@@ -397,7 +397,8 @@ def _barrack_casing(mb: tb.MeshBuilder, opening: tuple) -> None:
 
 def _barrack_door(mb: tb.MeshBuilder, x0: float, x1: float, z1: float) -> None:
     """La puerta, en el marco de su fachada: hoja de tablas con su recercado, tejadillo de
-    chapa sobre dos tornapuntas y dos escalones de hormigón."""
+    chapa sobre dos tornapuntas y la escalerilla de hormigón: el rellano y dos peldaños, tres
+    contrahuellas de 16 cm."""
     middle = (x0 + x1) / 2.0
     mb.box((x1 - x0 - 0.05, 0.05, z1 - B_BASE - 0.02), (middle, 0.12, (B_BASE + z1) / 2.0), DOOR, jitter=0.06)
     for x in (x0 - 0.06, x1 + 0.06):
@@ -412,8 +413,10 @@ def _barrack_door(mb: tb.MeshBuilder, x0: float, x1: float, z1: float) -> None:
     for x in (x0 - 0.22, x1 + 0.22):
         centre = (top + foot) / 2.0 + Vector((x, 0.0, 0.0))
         mb.box((0.08, strut.length, 0.08), centre, PLANK_DARK, rotation=(math.degrees(math.atan2(strut.z, strut.y)) - 180.0, 0.0, 0.0))
-    mb.box((x1 - x0 + 0.8, 1.0, B_BASE - 0.02), (middle, -0.5, (B_BASE - 0.02) / 2.0), CONCRETE, cuts=1, jitter=0.04)
-    mb.box((x1 - x0 + 0.6, 0.32, (B_BASE - 0.02) / 2.0), (middle, -1.16, (B_BASE - 0.02) / 4.0), CONCRETE, cuts=1, jitter=0.04)
+    landing = B_BASE - 0.02
+    mb.box((x1 - x0 + 0.8, 1.0, landing), (middle, -0.5, landing / 2.0), CONCRETE, cuts=1, jitter=0.04)
+    for k, top in enumerate((landing * 2.0 / 3.0, landing / 3.0)):  # huellas de 30 cm
+        mb.box((x1 - x0 + 0.6, 0.3, top), (middle, -1.15 - 0.3 * k, top / 2.0), CONCRETE, cuts=1, jitter=0.04)
 
 
 def _barrack_wall(mb: tb.MeshBuilder, facing: str, length: float, windows: list, doors: list, rng: random.Random) -> None:
