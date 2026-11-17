@@ -24,13 +24,18 @@ func _ready() -> void:
 
 ## Muestra el icono de lo que se tiene delante, o el punto si no hay nada.
 func show_target(target: Interactable) -> void:
-	var path: String = target.icon_path() if target != null else DOT
+	show_icon(target.icon_path() if target != null else DOT)
+
+
+## Muestra un icono (o el punto, con [constant DOT]).
+func show_icon(path: String) -> void:
 	if path == _current:
 		return
 	_current = path
-	var size: float = ICON_SIZE if target != null else DOT_SIZE
+	var dot: bool = path == DOT
+	var size: float = DOT_SIZE if dot else ICON_SIZE
 	_image.texture = load(path)
 	_image.custom_minimum_size = Vector2(size, size)
 	_image.size = Vector2(size, size)
 	_image.position = -Vector2(size, size) / 2.0
-	_image.modulate.a = 0.95 if target != null else 0.7
+	_image.modulate.a = 0.7 if dot else 0.95

@@ -16,6 +16,8 @@ extends Node
 ## Solo cuando algo lo para de verdad se dibuja donde está.
 
 signal holder_changed(peer_id: int)
+## Ha cambiado su estado (en todos los equipos).
+signal state_changed
 
 ## Peer que puede pedir sin que haya red de por medio (el propio anfitrión).
 const HOST_PEER: int = 1
@@ -54,6 +56,13 @@ const SETTLE: float = 12.0
 var state: ItemState
 ## Quién lo lleva (0: nadie).
 var holder_peer: int = 0
+## Su estado tal como se replica ([method ItemState.to_dict]): lo cambia el
+## anfitrión con [method set_values] y lo recibe quien llega tarde.
+var synced_state: Dictionary = {}:
+	set(value):
+		synced_state = value
+		if state != null and not value.is_empty():
+			_load_values(value)
 
 var _body: RigidBody3D
 var _visual: Node3D
@@ -90,6 +99,21 @@ static func follow_stiffness(mass: float) -> float:
 
 func is_held() -> bool:
 	return holder_peer != 0
+
+
+## Cambia valores de su estado (las claves de [method ItemState.to_dict]). Solo
+## el anfitrión: lo ven todos.
+func set_values(values: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+	var merged: Dictionary = state.to_dict()
+	merged.merge(values.duplicate(true), true)
+	synced_state = merged
+
+
+## El cuerpo físico del objeto.
+func body() -> RigidBody3D:
+	return _body
 
 
 ## La caja que envuelve sus mallas, en sus propios ejes.
@@ -145,6 +169,12 @@ func request_grab() -> void:
 	if player.eye_position().distance_to(_body.global_position) > GRAB_RANGE:
 		return
 	_set_holder.rpc(peer)
+
+
+## El anfitrión se lo quita de las manos a quien lo lleve (porque desaparece).
+func force_drop() -> void:
+	if multiplayer.is_server() and is_held():
+		_set_holder.rpc(0)
 
 
 ## Quien lo lleva pide soltarlo.
@@ -258,8 +288,20 @@ func _process(delta: float) -> void:
 	var slack: float = 0.0 if multiplayer.is_server() else GUEST_SLACK
 	var stuck: float = smoothstep(SHOWN_NEAR + slack, SHOWN_FAR + slack, gap)
 	_in_hands = stuck < IN_HANDS
-	var shown: Transform3D = target.interpolate_with(_body.global_transform, stuck)
+	# Trabajando, se dibuja sobre lo que se trabaja (la física sigue en las manos).
+	var pose: Transform3D = player.work_pose(self) if player.working else target
+	var shown: Transform3D = pose.interpolate_with(_body.global_transform, stuck)
 	_visual.transform = _body.global_transform.affine_inverse() * shown
+
+
+func _load_values(values: Dictionary) -> void:
+	var fresh: ItemState = ItemState.from_dict(values)
+	state.condition = fresh.condition
+	state.contamination = fresh.contamination
+	state.price = fresh.price
+	state.bagged = fresh.bagged
+	state.extra = fresh.extra
+	state_changed.emit()
 
 
 ## El giro [param turn] como un vector: su eje por el ángulo (el camino corto).

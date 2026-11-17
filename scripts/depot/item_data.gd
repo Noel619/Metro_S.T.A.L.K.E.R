@@ -29,6 +29,18 @@ const SCRAP_SHARE: float = 0.1
 @export var base_value: int = 1
 ## Se vende al peso (chatarra, metales): el valor es por kilo.
 @export var sold_by_weight: bool = false
+## Para qué sirve en la mano: lo que se trabaja con él ([Workable]). Por ejemplo
+## &"escoba", &"fregona", &"palanca", &"destornillador", &"cepillo", &"cerillas",
+## &"bombilla", &"bolsa", &"etiqueta", &"billetes", &"dosimetro", &"aguja" o
+## &"comida". Vacío: no sirve de herramienta.
+@export var tool: StringName = &""
+## La punta con la que trabaja, en sus propios ejes (las cerdas de la escoba, la
+## punta del destornillador). Cero: el centro del objeto.
+@export var tip: Vector3 = Vector3.ZERO
+## Lo que alimenta: 1 es la comida de un día. 0: no se come.
+@export_range(0.0, 2.0, 0.05) var nutrition: float = 0.0
+## Es basura: su sitio es la bolsa del cubo.
+@export var trash: bool = false
 
 
 ## Ancho y alto de la forma en la cuadrícula de la mochila.
