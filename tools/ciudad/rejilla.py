@@ -13,7 +13,8 @@ noreste. Para cada triángulo, este módulo decide qué hace la maqueta con él:
   tránsito se dibuja aparte (el relleno, exacto, que exporta este módulo).
 
 Además: cuánto se rebaja la colisión del relieve en cada punto de la rejilla (bajo el
-tránsito, para quedar por debajo de lo que se pisa), qué triángulos visibles comparten un
+tránsito, para quedar por debajo de lo que se pisa; bajo un socavón, por debajo de su
+fondo), qué triángulos visibles comparten un
 punto rebajado (su colisión va aparte: ANILLO) y qué triángulos de cada grupo de tránsito
 caen sobre una rasante plana (se dibujan enteros, sin cortar por la rejilla).
 
@@ -202,6 +203,7 @@ def calcular(t, alturas, grupos_exportados: list) -> Rejilla:
                 esquinas = list(shapely.geometry.polygon.orient(tri, 1.0).exterior.coords)[:3]
                 rellenos.append((ident, [(round(x, 3), round(y, 3)) for x, y in esquinas]))
     rebaje = _rebaje(estados, rasante, en_tierra, alturas)
+    _rebaje_socavones(rebaje, relieve, en_tierra)
     _marcar_anillo(estados, rebaje)
     planos = [_planos(g, vert, tris, rasante) for g, vert, tris in grupos_exportados]
     rectas = _rectas(grupos_exportados, planos)
@@ -227,7 +229,8 @@ def _rectas(grupos_exportados: list, planos: list) -> list:
                 for e in range(3):
                     a, b = vert[tris[3 * k + e]], vert[tris[3 * k + (e + 1) % 3]]
                     for m, j in lados[(min(a, b), max(a, b))]:
-                        if (m, j) != (n, k) and planos[m][j] == "1":
+                        # La malla de un socavón no casa con nada: su borde va más bajo.
+                        if (m, j) != (n, k) and planos[m][j] == "1" and grupos_exportados[m][0].malla is None:
                             mascara |= 1 << e
             cadena.append(str(mascara))
         resultado.append("".join(cadena))
@@ -268,6 +271,31 @@ def _rebaje(estados: np.ndarray, rasante: np.ndarray, en_tierra: list, alturas) 
     rebaje = np.where(cuenta >= 6, np.maximum(rebaje, hondo), rebaje)
     rebaje = np.where((cuenta > 0) & (hondo > REBAJE_HONDO), np.maximum(rebaje, hondo), rebaje)
     return rebaje
+
+
+def _rebaje_socavones(rebaje: np.ndarray, relieve: np.ndarray, en_tierra: list) -> None:
+    """Bajo la malla de un socavón (y hasta celda y media alrededor), la colisión del
+    relieve baja hasta 30 cm por debajo de lo más hondo de la malla que tiene cerca."""
+    filas, columnas = rebaje.shape[0] - 1, rebaje.shape[1] - 1
+    for g in en_tierra:
+        if g.malla is None:
+            continue
+        x0, y0, x1, y1 = g.forma.bounds
+        i0, i1 = max(0, int(x0 // PASO) - 2), min(columnas, int(x1 // PASO) + 3)
+        j0, j1 = max(0, int(y0 // PASO) - 2), min(filas, int(y1 // PASO) + 3)
+        jj, ii = np.mgrid[j0:j1 + 1, i0:i1 + 1]
+        px, py = (ii * PASO).ravel(), (jj * PASO).ravel()
+        cerca = shapely.contains_xy(g.forma.buffer(PASO * 1.5), px, py)
+        if not cerca.any():
+            continue
+        puntos, alturas = g.malla.puntos, g.malla.z
+        d = np.hypot(px[cerca, None] - puntos[None, :, 0], py[cerca, None] - puntos[None, :, 1])
+        minimo = np.where(d < PASO * 1.5, alturas[None, :], np.inf).min(axis=1)
+        bloque = rebaje[j0:j1 + 1, i0:i1 + 1].ravel()
+        alto = relieve[j0:j1 + 1, i0:i1 + 1].ravel()[cerca]
+        bajo = np.where(np.isfinite(minimo), alto - (minimo - 0.3), 0.0)
+        bloque[cerca] = np.maximum(bloque[cerca], bajo)
+        rebaje[j0:j1 + 1, i0:i1 + 1] = bloque.reshape(jj.shape)
 
 
 def _marcar_anillo(estados: np.ndarray, rebaje: np.ndarray) -> None:

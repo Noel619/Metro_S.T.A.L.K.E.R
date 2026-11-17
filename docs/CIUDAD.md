@@ -313,7 +313,7 @@ La maqueta (`scenes/debug/maqueta_ciudad.tscn`, F3-15) levanta la ciudad entera 
 
 ![La Escalinata desde el rellano de abajo](capturas/fase3_transito_escalinata.jpg)
 
-Todo lo que se pisa para ir de un sitio a otro, levantado en 3D: 211.000 m² de calzada, 106.000 de aceras (asfalto en los barrios, losas en el centro), 32.000 de plazas de granito, 7.600 de isletas, el adoquín de la ciudad vieja, las sendas de grava de los parques, el camino de tierra del barranco, la Escalinata, las escaleras de las sendas y el tablero del puente del Progreso. Y las vías: 9,4 km de vía de tren (la principal, la estación con sus andenes, los apartaderos y la playa de vías), 5,6 km de vía de tranvía y cinco pasos a nivel. En las lindes: 31 km de bordillos, 24 km de bordes de jardín, las contrahuellas, los muros de las escaleras, los pretiles del puente y del muelle, los bordes rotos del vano hundido, 72 alcorques y las caras de los andenes. Encima: 126 pasos de cebra, la línea del eje de las calles principales y del puente, 434 tapas de registro y 973 sumideros.
+Todo lo que se pisa para ir de un sitio a otro, levantado en 3D: 211.000 m² de calzada, 106.000 de aceras (asfalto en los barrios, losas en el centro), 32.000 de plazas de granito, 7.600 de isletas, el adoquín de la ciudad vieja, las sendas de grava de los parques, el camino de tierra del barranco, la Escalinata, las escaleras de las sendas y el tablero del puente del Progreso. Y las vías: 8 km de vía de tren (la principal, la estación con sus andenes, los apartaderos y la playa de vías) con sus 19 desvíos y 13 topes, 5,6 km de vía de tranvía y cinco pasos a nivel. En las lindes: 31 km de bordillos, 24 km de bordes de jardín, las contrahuellas, los muros de las escaleras, los pretiles del puente y del muelle, los bordes rotos del vano hundido, 72 alcorques y las caras de los andenes. Encima: 126 pasos de cebra, la línea del eje de las calles principales y del puente, 434 tapas de registro y 973 sumideros.
 
 **Niveles.** Respecto a la rasante (el terreno nivelado, sin escombros):
 
@@ -339,7 +339,15 @@ Todo lo que se pisa para ir de un sitio a otro, levantado en 3D: 211.000 m² de 
 
 ![Las escaleras de la loma, del Muelle Norte al Bulevar](capturas/fase3_transito_loma.jpg)
 
-**Las vías del tren.** 17 vías: la línea principal (con el puente del Ferrocarril), las dos vías de andén de la estación, los apartaderos de la fábrica, el puerto, el carbón y el combustible, y las diez vías de la playa. `tools/ciudad/ferrocarril.py` da a cada una su rasante (el plano de formación): sigue el terreno sin pasar de la pendiente de su clase (1,2 % la principal y la playa, 2,5 % los apartaderos), no baja de la corona de su terraplén, va recta de estribo a estribo por el puente y queda atada a la vía de la que sale en cada empalme. El relieve se nivela a lo largo de cada vía: una caja llana a cada lado del eje y un talud hasta el terreno (bajo el puente no, que debajo está el río). En la maqueta (`TransitRails`), cada vía lleva su balasto de 30 cm con sus taludes, traviesas de hormigón cada 55 cm (16.900, como instancias, más bajas en el centro como las de verdad) y carriles de 15 cm con su patín, su alma y su cabeza, con el ancho de vía soviético de 1520 mm. Los vagones y los coches de tren abandonados se apoyan en lo alto del carril.
+**Las vías del tren.** 18 vías: la línea principal (con el puente del Ferrocarril), las dos vías de andén de la estación, los apartaderos de la fábrica, el puerto, el carbón y el combustible, el escape de la playa de vías y sus nueve vías. `tools/ciudad/vias.py` hace el trazado: cada vía es un cuerpo (sus puntos del plano, con las esquinas redondeadas: 300 m de radio la principal, 150 los apartaderos, 120 la playa) y, en cada punta, un desvío en su vía madre seguido de la curva que la lleva hasta su cuerpo (con un tramo recto antes si hace falta: así salen y vuelven en paralelo las vías de los andenes). `tools/ciudad/ferrocarril.py` da a cada una su rasante (el plano de formación): sigue el terreno sin pasar de la pendiente de su clase (1,2 % la principal y la playa, 2,5 % los apartaderos), no baja de la corona de su terraplén, va recta de estribo a estribo por el puente y, a lo largo de cada desvío, a la altura de la madre. El relieve se nivela a lo largo de cada vía: una caja llana a cada lado del eje y un talud hasta el terreno (bajo el puente no, que debajo está el río). En la maqueta (`TransitRails`), cada vía lleva su balasto de 30 cm con sus taludes, traviesas de hormigón Ш1 cada 55 cm (12.600, como instancias: más bajas en el centro, con su placa, sus clemas y sus tornillos en cada asiento) y carriles de 15 cm con su patín, su alma y su cabeza, con el ancho de vía soviético de 1520 mm. Los vagones y los coches de tren abandonados se apoyan en lo alto del carril.
+
+**Los desvíos.** Cada uno sale tangente a la vía madre en la punta de sus agujas y gira con el radio de su marca hasta el ángulo de su corazón: 1/9 (150 m) en la línea y la estación, 1/6 (100 m) en la playa y los apartaderos. Llevan las agujas afiladas pegadas a sus contraagujas, el corazón de fundición con su punta y sus patas de liebre (un modelo por marca), los contracarriles frente a él, traviesas de madera que se alargan conforme las dos vías se separan (con el balasto ensanchado debajo) y, junto a la punta, la palanca del cambio con su contrapeso a rayas y su farol. La maqueta corta los carriles de las dos vías donde van las agujas y el corazón.
+
+**La playa de vías.** En el plano, sus diez vías salían todas de un mismo punto de la principal, en abanico de hasta 68°: eso no se puede construir con agujas. Ahora entra por un escape que sale de la principal y sube en diagonal por la playa; de él salen, desvío tras desvío, ocho de sus vías, que giran hasta quedar paralelas cada 10 m, y la de arriba es el propio escape, que acaba en ella. La de abajo sale de la principal y vuelve a ella por el otro lado; las demás acaban en un tope, así que la playa tiene forma de trapecio y las vías de arriba son más cortas. El apartadero de la fábrica sale ahora de la principal antes de la playa, y el del puerto, de la vía de arriba de la playa. Los vagones abandonados están en lo recto de cada vía.
+
+**Los topes.** Uno en cada punta suelta de vía (13: las de la playa y los finales de los apartaderos): un bastidor de carriles viejos con el madero de choque a franjas a la altura del enganche, la señal roja encima y una pila de traviesas viejas detrás. No dejan pasar.
+
+**Tapas, sumideros y traviesas.** Son modelos de Blender (`tools/blender/recipes/transito.py`): la tapa redonda del alcantarillado con su estrella de nervios y sus aros, la cuadrada de la red de cables con su rejilla de tacos, el sumidero de la cuneta con sus barrotes sobre el pozo oscuro y las traviesas. En las tapas y los sumideros no cuaja la nieve: el calor de la alcantarilla la funde.
 
 **La estación.** Va sobre su terraplén, 5 m por encima de la plaza. Dos andenes isla de 210 m entre la principal y las vías de andén, a 1,10 m sobre lo alto del carril (los andenes altos soviéticos), con su cara de hormigón, la línea blanca de seguridad a 15 cm del borde y una rampa del 12 % en cada punta.
 
@@ -355,4 +363,44 @@ Todo lo que se pisa para ir de un sitio a otro, levantado en 3D: 211.000 m² de 
 
 ![El tranvía por la mediana de la Avenida](capturas/fase3_transito_tranvia.jpg)
 
-**Pendiente.** Los modelos de detalle de las tapas, los sumideros y las traviesas (ahora son volúmenes sencillos), las agujas y los corazones de los desvíos (las vías que salen de otra se cruzan con ella sin más) y los topes al final de los apartaderos.
+![Un desvío del escape de la playa de vías: agujas, corazón y palanca](capturas/fase3_transito_desvio.jpg)
+
+![El tope al final de una vía de la playa](capturas/fase3_transito_topes.jpg)
+
+**Pendiente.** El cruce del tranvía con el apartadero de la fábrica (los carriles se cruzan a ras, sin el rombo de un cruzamiento) y los vehículos del ferrocarril, que todavía son cajas.
+
+## 17. La superficie, rota
+
+![El socavón de la avenida: la calle cayó al túnel de la línea 1](capturas/fase3_deterioro_socavon.jpg)
+
+Nada de lo que hay fuera está intacto (README, «La ambientación de la superficie»): la ciudad ya estaba gastada antes de la guerra, la bomba cayó a unos kilómetros y lleva dos inviernos sin que nadie la toque. `tools/ciudad/deterioro.py` lo pone en el plano con datos y reglas, siempre igual (el azar sale de la clave de cada cosa), y la maqueta lo levanta.
+
+**Las texturas.** El asfalto, con piel de cocodrilo, grietas largas desgranadas, parches viejos también rotos, baches pequeños y manchas; el hormigón, de mala calidad: poros, juntas del encofrado, desconchones con la armadura oxidada que chorrea y grietas con salitre; las losas, el granito y el adoquín, de tonos dispares, partidos, hundidos o que faltan; la pintura vial, a trozos. Encima, el pavimento lleva manchas grandes de hollín, aceite y humedad que no se repiten con la textura.
+
+**Socavones.** Como en *Metro 2033*: donde reventó lo que va bajo la calle, el agua se llevó la tierra y la calle cayó al hueco. Hay diez (`datos.HUNDIMIENTOS`), cada uno sobre lo que reventó y alargado a lo largo de ello:
+
+| Socavón | Qué reventó | Medidas |
+|---|---|---|
+| El de la avenida | La bóveda del túnel de la línea 1 | 34 × 25 m, 11 m de hondo; por el fondo se baja al túnel |
+| Dos en la calle de los Mineros | La galería de la calefacción | Zanjas de 12-15 m, 2,5 m de hondo, con los tubos forrados al aire |
+| Tres en el Muelle Sur y junto al gran colector | Los colectores de pluviales y del centro | 6-13 m, de 3 a 4 m de hondo |
+| El de la calle Norte | La bóveda de ladrillo del arroyo enterrado | 14 × 10 m, 5 m de hondo |
+| Tres en la Juventud, la Fábrica y el Hospital | Tuberías del agua que se helaron | 5-8 m, unos 2 m de hondo |
+
+El tránsito se corta por el contorno de cada uno (irregular, con los dientes de la costra rota) y una malla propia, con la altura de cada vértice, baja de la calle al fondo: en el borde, el corte de la calle (la costra de asfalto o de losas, desigual, volando sobre la base de grava que se llevó el agua, y la tierra); debajo, la pared casi a pico; luego el talud de cascotes, con sus desprendimientos y las cárcavas del agua, y el fondo, donde cuaja la nieve. Cuanto más hondo, más oscuro. Alrededor, la calle se hunde unos palmos antes de romperse (la cubeta) y se abre en grietas, radiales y en arco. Dentro, lo que cayó: trozos de asfalto y losas por el talud, algunos colgando del borde, y en el fondo lo que reventó (el tubo de fundición, el colector de hormigón o la galería con sus tubos y sus tapas caídas), con el charco helado. Los coches que estaban encima están en el fondo, de morro (tres en el de la avenida, uno en Mineros); las vías del tranvía se cortan en el borde y sus carriles asoman doblados sobre el hueco. Se puede caer dentro: la colisión del relieve baja bajo la malla y la malla es lo que se pisa.
+
+**Grietas.** Unas 1.900, pintadas a ras del pavimento como tiras oscuras que se afilan en las puntas: alrededor de los socavones y, por todas partes, las de la helada (la mitad a lo largo de la calle, por las rodadas y la junta del centro; otras de través; alguna sin orden). Cada una va dentro de una sola clase de superficie y lleva su nieve: donde la nieve tapa el pavimento, las tapa igual.
+
+**Baches.** 744, a grupos (donde se encharca el agua y la helada levanta el asfalto), casi todos en la calzada: el agujero oscuro, a veces con hielo, la corona de asfalto desmigado y trozos sueltos alrededor. Van sobre la calle, inclinados con ella; no la cortan (son poco hondos y no hacen falta para andar).
+
+**Tapas, bordillos y pintura.** De las 430 tapas de registro, 73 están abiertas (la tapa, tirada al lado) y 34 ya no están: se las llevaron para chatarra y queda la boca negra del pozo. Faltan piezas de bordillo, de metro en metro (la helada las levantó): en su hueco se ve la tierra del asiento, y la mitad sigue tirada en la calzada. De los pasos de cebra faltan franjas enteras y de los ejes, rayas; lo que queda está gastado a trozos.
+
+**Vías.** Los carriles están oxidados (y las barandillas de tubo), faltan traviesas (podridas, rotas o arrancadas para leña) y otras se han movido.
+
+**Matojos.** Unos 4.500 matojos de hierba seca salen por donde el pavimento se abre: junto a los bordillos y al pie de las fachadas, en las grietas, en los alcorques, alrededor de los socavones y por todo el balasto de las vías que ya no se usan. Son tres planos cruzados con la mata dibujada (`assets/textures/pavimentos/matojo.png`).
+
+![La galería de la calefacción, hundida frente a la fábrica](capturas/fase3_deterioro_galeria.jpg)
+
+![Una tubería del agua reventó por la helada y se llevó la calle](capturas/fase3_deterioro_agua.jpg)
+
+**Pendiente.** Los baches y los pozos abiertos no son agujeros de verdad (se dibujan encima de la calle): si hace falta caer en un pozo, habrá que cortar la calle como en los socavones. Los edificios, los vehículos y el mobiliario todavía no llevan su deterioro.

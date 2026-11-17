@@ -292,20 +292,48 @@ TERRAPLENES = [
     {"puntos": [(1548, 742), (1548, 760), (1538, 820), (1515, 920), (1492, 1010)], "alto": 4.0, "corona": 10.0,
      "talud": 10.0},
 ]
+# Las vías del ferrocarril. Cada vía es un cuerpo (sus puntos: las esquinas se redondean
+# con el radio de su clase) y, en cada punta, cómo se une a otra vía: con un desvío en la
+# vía madre, "desde" al principio del cuerpo y "hasta" al final. El desvío se da con
+# {"via": madre, "marca": "1/9" o "1/6", "radio": de la curva que lleva al cuerpo} y dónde
+# está la aguja: en la madre a la altura de "x" o en la proyección del punto "en"; si no
+# se da, donde haga falta para llegar al cuerpo con una sola curva ("entre" acota en x
+# dónde buscarla). El trazado final lo hace ferrocarril.red(): el abanico de la playa de
+# vías del plano no se puede construir con agujas (salían diez vías de un mismo punto), así
+# que la playa entra por un escape en diagonal del que van saliendo sus vías.
 VIAS: list[dict] = [
     {"id": "principal", "nombre": "Línea del ferrocarril", "puntos": VIA_PRINCIPAL, "tipo": "principal"},
-    {"id": "anden_1", "nombre": "Vía de andén", "tipo": "secundaria", "puntos": [(60, 24), (120, 22), (330, 22), (380, 26)]},
-    {"id": "anden_2", "nombre": "Vía de andén", "tipo": "secundaria", "puntos": [(60, 42), (120, 44), (330, 44), (380, 41)]},
+    {"id": "anden_1", "nombre": "Vía de andén", "tipo": "secundaria", "puntos": [(120, 22), (330, 22)],
+     "desde": {"via": "principal", "marca": "1/9", "x": -20.0, "radio": 300.0},
+     "hasta": {"via": "principal", "marca": "1/9", "x": 478.0, "radio": 300.0}},
+    {"id": "anden_2", "nombre": "Vía de andén", "tipo": "secundaria", "puntos": [(120, 44), (330, 44)],
+     "desde": {"via": "principal", "marca": "1/9", "x": 8.0, "radio": 300.0},
+     "hasta": {"via": "principal", "marca": "1/9", "x": 450.0, "radio": 300.0}},
     {"id": "fabrica", "nombre": "Apartadero de la fábrica", "tipo": "secundaria",
-     "puntos": [(905, 150), (928, 210), (936, 300), (940, 372)]},
+     "puntos": [(928, 210), (936, 300), (940, 372)],
+     "desde": {"via": "principal", "marca": "1/6", "radio": 120.0, "entre": (760.0, 850.0)}},
+    {"id": "escape_playa", "nombre": "Escape de la playa de vías", "tipo": "playa",
+     "puntos": [(914.6, 56.1), (1093.5, 150.0), (1245.0, 150.0)],
+     "desde": {"via": "principal", "marca": "1/6", "x": 860.0, "radio": 100.0}},
+    {"id": "playa_1", "nombre": "Playa de vías", "tipo": "playa", "puntos": [(1040.0, 60.0), (1125.0, 60.0)],
+     "desde": {"via": "principal", "marca": "1/9", "x": 885.0, "radio": 150.0},
+     "hasta": {"via": "principal", "marca": "1/9", "x": 1280.0, "radio": 150.0}},
     {"id": "puerto", "nombre": "Vía del muelle", "tipo": "secundaria",
-     "puntos": [(1262, 152), (1292, 205), (1302, 300), (1305, 560), (1295, 628), (1240, 636), (880, 636)]},
-    {"id": "carbon", "nombre": "Apartadero del carbón", "tipo": "secundaria", "puntos": [(1556, 215), (1500, 236), (1400, 240)]},
-    {"id": "combustible", "nombre": "Apartadero del combustible", "tipo": "secundaria", "puntos": [(1290, 52), (1330, 74), (1440, 84)]},
+     "puntos": [(1302, 300), (1305.9, 636), (880, 636)],
+     "desde": {"via": "escape_playa", "marca": "1/6", "radio": 120.0, "entre": (1120.0, 1240.0)}},
+    {"id": "carbon", "nombre": "Apartadero del carbón", "tipo": "secundaria", "puntos": [(1480, 237), (1400, 240)],
+     "desde": {"via": "principal", "marca": "1/6", "en": (1562.0, 345.0), "radio": 100.0}},
+    {"id": "combustible", "nombre": "Apartadero del combustible", "tipo": "secundaria",
+     "puntos": [(1360, 68), (1440, 84)],
+     "desde": {"via": "principal", "marca": "1/6", "x": 1320.0, "radio": 200.0}},
 ]
-for _i in range(10):
+# Las vías de la playa: rectas de 10 en 10 m, que salen del escape (la de arriba es el
+# propio escape, que acaba en ella) y acaban en un tope.
+for _i in range(1, 9):
     _y = 60.0 + 10.0 * _i
-    VIAS.append({"id": f"playa_{_i + 1}", "nombre": "Playa de vías", "tipo": "playa", "puntos": [(862, 43), (905, _y), (1245, _y), (1290, 52)]})
+    VIAS.append({"id": f"playa_{_i + 1}", "nombre": "Playa de vías", "tipo": "playa",
+                 "puntos": [(910.0 + 20.0 * _i + 60.0, _y), (1245.0, _y)],
+                 "desde": {"via": "escape_playa", "marca": "1/6", "radio": 120.0, "entre": (880.0, 1100.0)}})
 
 PUENTE_FERROCARRIL = {"puntos": [(1553, 622), (1548, 752)], "ancho": 14, "nombre": "Puente del Ferrocarril",
                       "notas": "Celosía de acero intacta. Muy cerca del rastro de la lluvia radiactiva."}
@@ -1222,12 +1250,8 @@ for _i in range(3):
 for _i in range(13):
     vehiculo("coche_tren", 70 + _i * 25.5, 34, 0.0, "quemado")
 vehiculo("locomotora", 412, 34, 0.0, "quemado")
-for _k, _y in enumerate([60, 70, 90, 100, 120, 140, 150]):
-    _x = 915 + azar(f"playa/{_k}") * 60
-    while _x < 1230:
-        if azar(f"playa/{_k}/{_x:.0f}") < 0.82:
-            vehiculo("vagon", _x, _y, 0.0, "abandonado")
-        _x += 15.5
+# Los vagones de la playa de vías los pone ferrocarril.red(), en lo recto de cada vía.
+VAGONES_PLAYA = [60, 70, 90, 100, 120, 140, 150]
 vehiculo("locomotora", 1225, 80, 0.0)
 for _i in range(4):
     vehiculo("vagon", 1305, 360 + _i * 16, 90.0)
@@ -1422,6 +1446,39 @@ SUBSUELO: list[dict] = [
 ]
 TRAMOS_INUNDADOS = [{"puntos": [eje(232), eje(420), eje(508), eje(600)], "notas": "Agua helada; en el punto más bajo, hasta el pecho."}]
 TRAMOS_HUNDIDOS = [{"puntos": [eje(990), (1180, 1100), (1310, 1040)], "notas": "Bóveda caída: no se pasa."}]
+
+# Socavones (como en Metro 2033): donde reventó lo que va bajo la calle, el agua se llevó la
+# tierra y la calle cayó al hueco (tools/ciudad/deterioro.py). `radio` a lo largo de `rumbo`
+# (grados desde el este; lo que reventó va así) y `ancho` de través, en metros; `hondo`, lo
+# que baja el fondo bajo la calle; `causa`: metro (la bóveda del túnel), galeria (la de la
+# calefacción), colector, arroyo (su bóveda de ladrillo) o agua (una tubería que se heló).
+HUNDIMIENTOS: list[dict] = [
+    {"id": "socavon_avenida", "nombre": "El socavón de la avenida", "pos": R.SOCAVON, "radio": 17.0, "ancho": 12.5,
+     "rumbo": 48.0, "hondo": 11.0, "causa": "metro",
+     "notas": "La bóveda del túnel de la línea 1 cedió: la calzada cayó dentro con las vías del tranvía y parte del "
+              "atasco. Se baja con cuerda; por el fondo se entra en el túnel."},
+    {"id": "calefaccion_fabrica", "nombre": "La galería de la calefacción, frente a la fábrica", "pos": (1102.0, 317.0),
+     "radio": 7.5, "ancho": 3.2, "rumbo": 0.0, "hondo": 2.6, "causa": "galeria",
+     "notas": "La galería se hundió a lo largo: se ven los dos tubos aislados, reventados por la helada."},
+    {"id": "calefaccion_mineros", "nombre": "La galería de la calefacción en Mineros", "pos": (663.0, 319.0),
+     "radio": 6.0, "ancho": 2.8, "rumbo": 2.0, "hondo": 2.4, "causa": "galeria", "notas": ""},
+    {"id": "pluviales_muelle", "nombre": "El colector del Muelle Sur", "pos": (493.0, 613.0), "radio": 6.5,
+     "ancho": 4.5, "rumbo": -7.5, "hondo": 3.6, "causa": "colector",
+     "notas": "El colector de pluviales asoma roto en el fondo; el agua que bajaba al río se heló dentro."},
+    {"id": "pluviales_puerto", "nombre": "El colector, camino del puerto", "pos": (770.0, 604.0), "radio": 4.2,
+     "ancho": 3.2, "rumbo": 2.0, "hondo": 3.0, "causa": "colector", "notas": ""},
+    {"id": "arroyo", "nombre": "La bóveda del arroyo", "pos": (698.0, 1188.0), "radio": 7.0, "ancho": 5.0,
+     "rumbo": 80.0, "hondo": 5.0, "causa": "arroyo",
+     "notas": "La bóveda de ladrillo del arroyo enterrado se abrió en la calle Norte: abajo corre el agua bajo el hielo."},
+    {"id": "colector_centro", "nombre": "El gran colector", "pos": (1038.0, 1101.0), "radio": 4.0, "ancho": 3.0,
+     "rumbo": -42.0, "hondo": 4.2, "causa": "colector", "notas": ""},
+    {"id": "agua_juventud", "nombre": "Una tubería reventada en la calle de la Juventud", "pos": (345.0, 452.0),
+     "radio": 3.4, "ancho": 2.6, "rumbo": 90.0, "hondo": 2.0, "causa": "agua", "notas": ""},
+    {"id": "agua_fabrica", "nombre": "Una tubería reventada en la calle de la Fábrica", "pos": (846.0, 420.0),
+     "radio": 4.0, "ancho": 3.0, "rumbo": 90.0, "hondo": 2.3, "causa": "agua", "notas": ""},
+    {"id": "agua_hospital", "nombre": "Una tubería reventada frente al hospital", "pos": (340.0, 1002.0),
+     "radio": 3.0, "ancho": 2.4, "rumbo": 90.0, "hondo": 1.8, "causa": "agua", "notas": ""},
+]
 
 # ---------------------------------------------------------------------------
 # Amenazas: territorios, guaridas, patrullas y vigías

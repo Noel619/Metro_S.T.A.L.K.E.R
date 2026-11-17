@@ -28,6 +28,7 @@ from shapely.ops import unary_union
 
 import datos as D
 import relieve as R
+import vias as V
 from geo import ALTO, ANCHO, banda
 
 PASO = 2.0
@@ -134,10 +135,13 @@ def _fuera_del_crater(puntos) -> list:
 
 def perfiles(natural: np.ndarray, res: float) -> dict:
     """La rasante de cada vía (la principal primero; las que salen de otra, sujetas a ella
-    en el empalme) y la de la plataforma de la estación."""
+    en el empalme y, a lo largo de su desvío, a la altura de la madre) y la de la
+    plataforma de la estación."""
+    red = V.red()
+    por_id = {v["id"]: v for v in D.VIAS}
     resultado = {}
-    orden = sorted(D.VIAS, key=lambda v: 0 if v["id"] == "principal" else (1 if v["tipo"] == "playa" else 2))
-    for via in orden:
+    for ident in red["orden"]:
+        via = por_id[ident]
         puntos = _fuera_del_crater(via["puntos"])
         trazado = TRAZADO[via["tipo"]]
         linea, s, xs, ys = _muestras(puntos)
@@ -151,6 +155,15 @@ def perfiles(natural: np.ndarray, res: float) -> dict:
                 empalme = _empalme(resultado, xs[i], ys[i])
                 if empalme is not None:
                     fijos[i] = empalme
+            for desvio in red["desvios"]:
+                if desvio["rama"] != ident:
+                    continue
+                madre = resultado[desvio["via"]]
+                aguja = linea.project(Point(desvio["aguja"]))
+                largo = V.DESVIOS[desvio["marca"]]["largo"] + 2.0
+                junto = np.nonzero(np.abs(s - aguja) <= largo)[0]
+                for i, valor in zip(junto, _a_la_altura_de(madre, xs[junto], ys[junto])):
+                    fijos[int(i)] = float(valor)
             z = _rellenar(z, s, trazado["pendiente"], fijos)
             z = _recortar(z, s, trazado["pendiente"])
             for i, valor in fijos.items():
@@ -288,12 +301,17 @@ def andenes(perfiles_vias: dict) -> list[dict]:
     con una rampa en cada punta: polígono, altura y, en las rampas, la pendiente."""
     principal = perfiles_vias["principal"]
     x0, x1 = ANDENES_X
+    medio = LineString([((x0 + x1) / 2.0, -1e4), ((x0 + x1) / 2.0, 1e4)])
+
+    def y_en_medio(perfil: dict) -> float:
+        corte = LineString(perfil["puntos"]).intersection(medio)
+        return float(corte.y if corte.geom_type == "Point" else min(corte.geoms, key=lambda p: p.y).y)
+
     resultado = []
     for via in ("anden_1", "anden_2"):
         perfil = perfiles_vias[via]
-        y_via = float(np.mean([p[1] for p in perfil["puntos"] if x0 <= p[0] <= x1]))
-        y_principal = float(np.interp((x0 + x1) / 2, [p[0] for p in principal["puntos"]],
-                                      [p[1] for p in principal["puntos"]]))
+        y_via = y_en_medio(perfil)
+        y_principal = y_en_medio(principal)
         bajo, alto = sorted((y_via, y_principal))
         y_sur, y_norte = bajo + ANDEN_BORDE, alto - ANDEN_BORDE
         carril = float(z_en(principal, [((x0 + x1) / 2, y_principal)])[0]) + CARRIL
@@ -313,9 +331,12 @@ def andenes(perfiles_vias: dict) -> list[dict]:
 # ---------------------------------------------------------------------------
 # Exportación
 # ---------------------------------------------------------------------------
-def tramos(perfiles_vias: dict, transito) -> list[dict]:
+def tramos(perfiles_vias: dict, transito, detalles: dict) -> list[dict]:
     """Cada vía partida en tramos: abiertos (balasto, traviesas y carriles, a la altura de
-    su rasante) y embebidos (a ras de la calle o la plaza que cruzan)."""
+    su rasante) y embebidos (a ras de la calle o la plaza que cruzan). Cada tramo lleva,
+    contados desde su principio, los trozos de carril que no se dibujan (los ponen las
+    agujas y el corazón de un desvío: [carril, desde, hasta], con el carril 0 a la
+    izquierda) y los que van sin traviesas (las del desvío son de madera)."""
     resultado = []
     for via in D.VIAS:
         perfil = perfiles_vias[via["id"]]
@@ -329,8 +350,23 @@ def tramos(perfiles_vias: dict, transito) -> list[dict]:
                     continue
                 puntos = _densificar(list(tramo.coords), 4.0)
                 z = z_en(perfil, puntos)
-                partes.append({"tipo": tipo, "puntos": [(round(x, 3), round(y, 3), round(float(v), 3))
-                                                         for (x, y), v in zip(puntos, z)]})
+                inicio = linea.project(Point(puntos[0]))
+                fin = inicio + tramo.length
+                parte = {"tipo": tipo, "puntos": [(round(x, 3), round(y, 3), round(float(v), 3))
+                                                   for (x, y), v in zip(puntos, z)]}
+                # Puntas sueltas: las de la vía que no salen de un desvío (llevan tope, o
+                # acaban en el cráter o fuera del mapa).
+                parte["puntas"] = [inicio < 0.01 and "desde" not in via,
+                                   fin > linea.length - 0.01 and "hasta" not in via]
+                huecos = [[c, round(max(a, inicio) - inicio, 3), round(min(b, fin) - inicio, 3)]
+                          for c, a, b in detalles["huecos"].get(via["id"], []) if b > inicio and a < fin]
+                sin = [[round(max(a, inicio) - inicio, 3), round(min(b, fin) - inicio, 3)]
+                       for a, b in detalles["sin_traviesas"].get(via["id"], []) if b > inicio and a < fin]
+                if huecos:
+                    parte["huecos"] = huecos
+                if sin:
+                    parte["sin_traviesas"] = sin
+                partes.append(parte)
         resultado.append({"id": via["id"], "tipo": via["tipo"], "tramos": partes})
     return resultado
 
@@ -338,52 +374,7 @@ def tramos(perfiles_vias: dict, transito) -> list[dict]:
 def eje_tranvia(puntos) -> list[tuple[float, float]]:
     """El eje de una línea de tranvía con las esquinas redondeadas: un arco de
     RADIO_TRANVIA en cada una (más cerrado donde los tramos no dan para tanto)."""
-    pts = [np.asarray(p, float) for p in puntos]
-    # Los tramos muy cortos (un quiebro del trazado) se funden en una esquina.
-    k = 1
-    while k < len(pts):
-        if np.linalg.norm(pts[k] - pts[k - 1]) >= TRAMO_MINIMO_TRANVIA or len(pts) <= 2:
-            k += 1
-        elif k == 1:
-            del pts[1]
-        elif k == len(pts) - 1:
-            del pts[k - 1]
-        else:
-            pts[k - 1] = (pts[k - 1] + pts[k]) / 2.0
-            del pts[k]
-    n = len(pts)
-    largos = [float(np.linalg.norm(pts[i + 1] - pts[i])) for i in range(n - 1)]
-    direcciones = [(pts[i + 1] - pts[i]) / largos[i] for i in range(n - 1)]
-    giros = [0.0] * n
-    tangentes = [0.0] * n
-    for i in range(1, n - 1):
-        u, v = direcciones[i - 1], direcciones[i]
-        giros[i] = math.acos(float(np.clip(np.dot(u, v), -1.0, 1.0)))
-        tangentes[i] = RADIO_TRANVIA * math.tan(giros[i] / 2.0)
-    # Cada tramo se reparte entre las curvas de sus dos puntas, a prorrata.
-    limitadas = list(tangentes)
-    for i in range(n - 1):
-        suma = tangentes[i] + tangentes[i + 1]
-        if suma > largos[i]:
-            for j in (i, i + 1):
-                limitadas[j] = min(limitadas[j], largos[i] * tangentes[j] / suma)
-    resultado = [tuple(pts[0])]
-    for i in range(1, n - 1):
-        if giros[i] < 1e-4 or limitadas[i] < 1e-3:
-            resultado.append(tuple(pts[i]))
-            continue
-        u, v = direcciones[i - 1], direcciones[i]
-        radio = limitadas[i] / math.tan(giros[i] / 2.0)
-        inicio = pts[i] - u * limitadas[i]
-        lado = 1.0 if u[0] * v[1] - u[1] * v[0] > 0.0 else -1.0
-        centro = inicio + np.array([-u[1], u[0]]) * lado * radio
-        angulo = math.atan2(inicio[1] - centro[1], inicio[0] - centro[0])
-        pasos = max(2, int(math.ceil(radio * giros[i] / 2.0)))
-        for k in range(pasos + 1):
-            a = angulo + lado * giros[i] * k / pasos
-            resultado.append((float(centro[0] + radio * math.cos(a)), float(centro[1] + radio * math.sin(a))))
-    resultado.append(tuple(pts[-1]))
-    return resultado
+    return V.redondear(puntos, RADIO_TRANVIA, TRAMO_MINIMO_TRANVIA)
 
 
 def ejes_tranvia() -> list[tuple[str, LineString]]:
@@ -397,16 +388,52 @@ def ejes_tranvia() -> list[tuple[str, LineString]]:
     return resultado
 
 
-def tranvias(transito) -> list[dict]:
-    """Las vías del tranvía, por la calle (a ras): lo que de cada una cae en el tránsito."""
+def tranvias(transito, huecos=None, voladizo: float = 0.0) -> list[dict]:
+    """Las vías del tranvía, por la calle (a ras): lo que de cada una cae en el tránsito.
+    Donde cruzan un socavón (`huecos`), se cortan: siguen `voladizo` metros sobre el hueco
+    desde el borde (los carriles asoman, doblados; la maqueta los cuelga) y lo demás cae
+    con la calle. Un tramo que solo roza el hueco se corta igual."""
+    from shapely.ops import substring
+
+    if huecos is not None and not huecos.is_empty:
+        # Lo que asoma: la corona de cada hueco, de `voladizo` metros desde su borde.
+        transito = transito.union(huecos.difference(huecos.buffer(-voladizo)))
     resultado = []
     for ident, via in ejes_tranvia():
         dentro = via.intersection(transito)
         for tramo in getattr(dentro, "geoms", [dentro]):
             if tramo.is_empty or tramo.length < 1.0 or tramo.geom_type != "LineString":
                 continue
-            resultado.append({"linea": ident, "puntos": [(round(x, 3), round(y, 3)) for x, y in tramo.coords]})
+            for trozo in _sin_huecos_en_medio(tramo, huecos, substring):
+                if trozo.length >= 1.0:
+                    resultado.append({"linea": ident, "puntos": [(round(x, 3), round(y, 3)) for x, y in trozo.coords]})
     return resultado
+
+
+def _sin_huecos_en_medio(tramo: LineString, huecos, substring) -> list[LineString]:
+    """El tramo sin lo que cae en un hueco lejos de sus puntas (las puntas pueden asomar)."""
+    if huecos is None or huecos.is_empty or not tramo.intersects(huecos):
+        return [tramo]
+    largo = tramo.length
+    cortes = []
+    en_hueco = tramo.intersection(huecos)
+    for pieza in getattr(en_hueco, "geoms", [en_hueco]):
+        if pieza.is_empty or pieza.geom_type != "LineString":
+            continue
+        a = tramo.project(Point(pieza.coords[0]))
+        b = tramo.project(Point(pieza.coords[-1]))
+        a, b = min(a, b), max(a, b)
+        if a > 1e-3 and b < largo - 1e-3:
+            cortes.append((a, b))
+    if not cortes:
+        return [tramo]
+    trozos = []
+    desde = 0.0
+    for a, b in sorted(cortes):
+        trozos.append(substring(tramo, desde, a))
+        desde = b
+    trozos.append(substring(tramo, desde, largo))
+    return [t for t in trozos if t.geom_type == "LineString"]
 
 
 def puente(perfiles_vias: dict) -> dict:

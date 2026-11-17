@@ -19,9 +19,15 @@ extends RefCounted
 ## rebajados igual: asoman sobre el asfalto donde son altos. El tablero del puente va por
 ## el aire y no toca el terreno.
 ##
+## Los socavones (tools/ciudad/deterioro.py) cortan la calle: cada uno es un grupo con su
+## propia malla (la regla "malla": la altura y la textura de cada vértice), que baja del
+## corte de la calle al fondo, con lo que cayó dentro como instancias.
+##
 ## Cada sector se levanta en su propio hilo (TransitSector).
 
 const STEP: float = 2.0
+## El pozo que queda donde falta la tapa, según la tapa.
+const PITS: Dictionary = {"redonda": "pozo_redondo", "cuadrada": "pozo_cuadrado"}
 ## Lado de las celdas del índice con el que se busca qué se pisa en un punto.
 const INDEX_CELL: float = 10.0
 ## Lo que tiene que levantar un montón de escombros sobre la rasante para dibujarse.
@@ -42,6 +48,7 @@ const SURFACE_MATERIALS: Dictionary = {
 	"anden": "hormigon",
 	"paso_nivel": "hormigon",
 	"via_tranvia": "hormigon",
+	"socavon": "derrumbe",
 }
 ## Color de cada clase (multiplica la textura) y, en el alfa, cuánta nieve la cubre.
 const SURFACE_COLORS: Dictionary = {
@@ -59,19 +66,21 @@ const SURFACE_COLORS: Dictionary = {
 	"anden": Color(0.62, 0.6, 0.57, 0.75),
 	"paso_nivel": Color(0.5, 0.49, 0.47, 0.45),
 	"via_tranvia": Color(0.56, 0.55, 0.52, 0.5),
+	"socavon": Color(0.55, 0.51, 0.46, 0.85),
 }
 ## Metros de suelo que cubre la textura de cada material.
 const TILE: Dictionary = {
-	"asfalto": 4.0,
+	"asfalto": 6.0,
 	"adoquin": 2.0,
-	"acera": 4.0,
+	"acera": 6.0,
 	"losas": 2.0,
 	"plaza": 4.0,
 	"granito": 2.0,
 	"grava": 3.0,
 	"tierra": 4.0,
-	"hormigon": 2.0,
+	"hormigon": 3.0,
 	"bordillo": 1.0,
+	"derrumbe": 4.0,
 }
 ## El color del terreno en los rellenos (como CityTerrain: lo pone el suelo de la maqueta).
 const GROUND_COLOR: Color = Color(1.0, 1.0, 1.0, 0.0)
@@ -107,6 +116,12 @@ var follows_base: PackedByteArray = PackedByteArray()
 var group_level: PackedFloat32Array = PackedFloat32Array()
 var vertex_heights: PackedFloat32Array = PackedFloat32Array()
 var vertex_base: PackedFloat32Array = PackedFloat32Array()
+## Las normales de los vértices de los grupos con malla propia (los socavones), por grupo,
+## y lo alto y lo bajo de cada malla (Vector2(lo más bajo, lo más alto)).
+var mesh_normals: Dictionary = {}
+var mesh_range: Dictionary = {}
+## Los socavones: {"contorno": PackedVector2Array, "caja": Rect2}.
+var sinkholes: Array = []
 
 var _levels: Dictionary = {}
 var _sectors: Array[TransitSector] = []
@@ -177,6 +192,8 @@ func surface_z(index: int, point: Vector2) -> float:
 	var rule: Dictionary = groups[index]["regla"]
 	if String(rule["tipo"]) == "rampa":
 		return ramp_z(rule, point) + group_level[index]
+	if String(rule["tipo"]) == "malla":
+		return mesh_z(index, point)
 	var slope: Array = rule.get("g", [0.0, 0.0])
 	var origin: Array = rule.get("o", [0.0, 0.0])
 	return (
@@ -185,6 +202,67 @@ func surface_z(index: int, point: Vector2) -> float:
 		+ float(slope[1]) * (point.y - float(origin[1]))
 		+ group_level[index]
 	)
+
+
+## La altura de la malla de un grupo (un socavón) en un punto: lineal en su triángulo (en
+## el borde, el del lado que más lo contiene); fuera, la del vértice más cercano.
+func mesh_z(index: int, point: Vector2) -> float:
+	var points: Array = groups[index]["puntos"]
+	var corners: Array = groups[index]["triangulos"]
+	var heights: Array = groups[index]["z"]
+	var cell: Vector2i = Vector2i((point / INDEX_CELL).floor())
+	var pairs: PackedInt32Array = _index.get(cell, PackedInt32Array())
+	var best: float = -INF
+	var found: float = NAN
+	for n: int in range(0, pairs.size(), 2):
+		if pairs[n] != index:
+			continue
+		var start: int = pairs[n + 1]
+		var w: Vector3 = barycentric(
+			point,
+			_corner(points, corners, start),
+			_corner(points, corners, start + 1),
+			_corner(points, corners, start + 2)
+		)
+		var worst: float = minf(w.x, minf(w.y, w.z))
+		if worst > best:
+			best = worst
+			found = (
+				float(heights[int(corners[start])]) * w.x
+				+ float(heights[int(corners[start + 1])]) * w.y
+				+ float(heights[int(corners[start + 2])]) * w.z
+			)
+	if best > -1e-3:
+		return found
+	var nearest: float = INF
+	for v: int in heights.size():
+		var d: float = point.distance_squared_to(Vector2(points[v * 2], points[v * 2 + 1]))
+		if d < nearest:
+			nearest = d
+			found = float(heights[v])
+	return found
+
+
+## Pesos de las tres esquinas de un triángulo en un punto (pueden salir negativos fuera).
+static func barycentric(point: Vector2, a: Vector2, b: Vector2, c: Vector2) -> Vector3:
+	var e1: Vector2 = b - a
+	var e2: Vector2 = c - a
+	var det: float = e1.x * e2.y - e1.y * e2.x
+	if absf(det) < 1e-12:
+		return Vector3(-1.0, -1.0, -1.0)
+	var d: Vector2 = point - a
+	var u: float = (d.x * e2.y - d.y * e2.x) / det
+	var v: float = (e1.x * d.y - e1.y * d.x) / det
+	return Vector3(1.0 - u - v, u, v)
+
+
+## ¿Cae el punto dentro de un socavón?
+func in_sinkhole(point: Vector2) -> bool:
+	for hole: Dictionary in sinkholes:
+		if (hole["caja"] as Rect2).has_point(point):
+			if Geometry2D.is_point_in_polygon(point, hole["contorno"]):
+				return true
+	return false
 
 
 ## La altura de una regla de rampa (el tablero del puente) en un punto.
@@ -327,9 +405,28 @@ func cell_inside(cell: Vector2i) -> bool:
 func _prepare() -> void:
 	groups = plan.transit["grupos"]
 	_levels = plan.transit["niveles"]
-	for data: Dictionary in groups:
+	for index: int in groups.size():
+		var data: Dictionary = groups[index]
 		follows_base.append(1 if String(data["regla"]["tipo"]) == "terreno" else 0)
 		group_level.append(float(_levels[data["clase"]]))
+		if String(data["regla"]["tipo"]) == "malla":
+			mesh_normals[index] = _mesh_normals(data)
+			var heights: PackedFloat32Array = PackedFloat32Array(data["z"])
+			var low: float = INF
+			var high: float = -INF
+			for z: float in heights:
+				low = minf(low, z)
+				high = maxf(high, z)
+			mesh_range[index] = Vector2(low, high)
+	for hole: Dictionary in plan.transit.get("socavones", []):
+		var outline: PackedVector2Array = PackedVector2Array()
+		var flat: Array = hole["contorno"]
+		for k: int in range(0, flat.size(), 2):
+			outline.append(Vector2(flat[k], flat[k + 1]))
+		var box: Rect2 = Rect2(outline[0], Vector2.ZERO)
+		for p: Vector2 in outline:
+			box = box.expand(p)
+		sinkholes.append({"contorno": outline, "caja": box})
 	cells = plan.relief_size
 	cells_per_sector = int(round(plan.sector_size / STEP))
 	vertex_heights = plan.vertex_grid(plan.heights)
@@ -348,6 +445,29 @@ func _prepare() -> void:
 		for column: int in grid.x:
 			_sectors.append(TransitSector.new(self, Vector2i(column, row)))
 	_prepare_tracks()
+
+
+## Las normales suaves de una malla propia (en el mundo): la media de las de sus
+## triángulos, pesadas por su área.
+static func _mesh_normals(data: Dictionary) -> PackedVector3Array:
+	var points: Array = data["puntos"]
+	var corners: Array = data["triangulos"]
+	var heights: Array = data["z"]
+	var result: PackedVector3Array = PackedVector3Array()
+	result.resize(heights.size())
+	for t: int in range(0, corners.size(), 3):
+		var vertex: Array[Vector3] = []
+		for n: int in 3:
+			var v: int = int(corners[t + n])
+			vertex.append(CityPlan.to_world(Vector2(points[v * 2], points[v * 2 + 1]), heights[v]))
+		var face: Vector3 = (vertex[2] - vertex[0]).cross(vertex[1] - vertex[0])
+		if face.y < 0.0:
+			face = -face
+		for n: int in 3:
+			result[int(corners[t + n])] += face
+	for v: int in result.size():
+		result[v] = result[v].normalized() if result[v].length_squared() > 1e-12 else Vector3.UP
+	return result
 
 
 ## Los tramos de las vías del tren (abiertos o a ras en los pasos a nivel) y los del
@@ -371,7 +491,11 @@ func _prepare_tracks() -> void:
 			track["carril"] = TransitRails.RAIL_OFFSET
 			if not open:
 				track["carriles"] = _rails(line, TransitRails.RAIL_OFFSET)
-			track["puntas"] = [_is_loose(ends, line[0]), _is_loose(ends, line[line.size() - 1])]
+			track["puntas"] = stretch.get(
+				"puntas", [_is_loose(ends, line[0]), _is_loose(ends, line[line.size() - 1])]
+			)
+			track["huecos"] = stretch.get("huecos", [])
+			track["sin_traviesas"] = stretch.get("sin_traviesas", [])
 			tracks.append(track)
 	for item: Dictionary in plan.transit.get("tranvias", []):
 		var line: PackedVector2Array = PackedVector2Array()
@@ -447,12 +571,32 @@ func _assign() -> void:
 	_assign_lines(data["muros"], "walls")
 	_assign_lines(data["barandillas"], "rails")
 	_assign_lines(data["marcas"]["ejes"], "axes")
+	_assign_lines(data.get("grietas", []), "cracks")
 	var crossings: Array = data["marcas"]["pasos"]
 	for index: int in crossings.size():
 		var center: Vector2 = Vector2(crossings[index]["centro"][0], crossings[index]["centro"][1])
 		for sector: TransitSector in _sectors_in(Rect2(center, Vector2.ZERO).grow(40.0)):
 			sector.add_item("crossings", index)
 	_assign_tracks()
+	_assign_turnouts_and_stops()
+
+
+## Los desvíos, a los sectores que tocan sus traviesas; los topes, al suyo.
+func _assign_turnouts_and_stops() -> void:
+	var railway: Dictionary = plan.transit.get("ferrocarril", {})
+	var turnouts: Array = railway.get("desvios", [])
+	for index: int in turnouts.size():
+		var timbers: Array = turnouts[index]["maderas"]
+		var box: Rect2 = Rect2(Vector2(timbers[0][0], timbers[0][1]), Vector2.ZERO)
+		for timber: Array in timbers:
+			box = box.expand(Vector2(timber[0], timber[1]))
+		for sector: TransitSector in _sectors_in(box.grow(4.0)):
+			sector.add_item("turnouts", index)
+	var stops: Array = railway.get("topes", [])
+	for index: int in stops.size():
+		var point: Vector2 = Vector2(stops[index]["pos"][0], stops[index]["pos"][1])
+		for sector: TransitSector in _sectors_in(Rect2(point, Vector2.ZERO)):
+			sector.add_item("stops", index)
 
 
 ## Reparte los tramos de las vías por sus segmentos: cada sector recibe, en orden, los
@@ -526,27 +670,106 @@ func _sector_of_cell(cell: Vector2i) -> TransitSector:
 	return _sectors[sector.y * grid.x + sector.x]
 
 
-## Tapas de registro y sumideros, como instancias por sector.
+## Tapas de registro, sumideros y lo que cayó en los socavones, como instancias por
+## sector.
 func _build_details() -> void:
 	var details: Dictionary = plan.transit["detalles"]
 	var count: int = 0
 	for item: Dictionary in details["tapas"]:
-		_add_detail("tapa_" + String(item["tipo"]), item)
+		var kind: String = String(item["tipo"])
+		if String(item.get("estado", "cerrada")) == "cerrada":
+			_add_detail("tapa_" + kind, item)
+		else:
+			# Abierta o sin tapa: el pozo, y la tapa tirada al lado si sigue ahí.
+			_add_detail(PITS.get(kind, "pozo_redondo"), item)
+			if item.has("suelta"):
+				_add_detail("tapa_suelta_" + kind, item["suelta"])
 		count += 1
 	for item: Dictionary in details["sumideros"]:
 		_add_detail("sumidero", item)
 		count += 1
 	stats["detalles"] = count
+	for item: Dictionary in details.get("baches", []):
+		_add_pothole(item)
+	for item: Dictionary in details.get("bordillos_sueltos", []):
+		_add_piece(
+			{
+				"modelo": "bordillo_suelto",
+				"pos": item["pos"],
+				"z": item["z"],
+				"rumbo": item["rumbo"],
+				"cabeceo": 0.0,
+				"alabeo": item["alabeo"],
+				"escala": 1.0,
+			}
+		)
+	for item: Dictionary in details.get("matojos", []):
+		var point: Vector2 = Vector2(item["pos"][0], item["pos"][1])
+		var size: float = float(item["escala"])
+		var basis: Basis = (
+			Basis(Vector3.UP, deg_to_rad(float(item["angulo"])))
+			* Basis.from_scale(Vector3(size, size * float(item["alto"]), size))
+		)
+		_add_instance("matojo", point, Transform3D(basis, CityPlan.to_world(point, item["z"])))
+	stats["baches"] = details.get("baches", []).size()
+	stats["matojos"] = details.get("matojos", []).size()
+	var pieces: int = 0
+	for hole: Dictionary in plan.transit.get("socavones", []):
+		for item: Dictionary in hole["piezas"]:
+			_add_piece(item)
+			pieces += 1
+	stats["socavones"] = plan.transit.get("socavones", []).size()
+	stats["piezas_socavon"] = pieces
+
+
+## Un bache: girado, a su escala e inclinado con la calle (su pendiente: lo que sube la
+## altura por metro hacia el este y hacia el norte).
+func _add_pothole(item: Dictionary) -> void:
+	var point: Vector2 = Vector2(item["pos"][0], item["pos"][1])
+	var slope: Array = item.get("pendiente", [0.0, 0.0])
+	var normal: Vector3 = Vector3(-float(slope[0]), 1.0, float(slope[1])).normalized()
+	var tilt: Basis = Basis(Quaternion(Vector3.UP, normal))
+	var basis: Basis = (
+		tilt
+		* Basis(Vector3.UP, deg_to_rad(float(item["angulo"])))
+		* Basis.from_scale(Vector3.ONE * float(item["escala"]))
+	)
+	var placed: Transform3D = Transform3D(basis, CityPlan.to_world(point, item["z"]))
+	_add_instance(String(item["modelo"]), point, placed)
+
+
+## Una pieza caída en un socavón: hacia su rumbo, de morro según su cabeceo (positivo: la
+## punta hacia abajo), ladeada según su alabeo, a su escala y estirada a lo largo (los
+## tubos, tan largos como el fondo).
+func _add_piece(item: Dictionary) -> void:
+	var point: Vector2 = Vector2(item["pos"][0], item["pos"][1])
+	var heading: float = deg_to_rad(float(item["rumbo"]))
+	var forward: Vector3 = Vector3(cos(heading), 0.0, -sin(heading))
+	var basis: Basis = (
+		Basis.looking_at(forward, Vector3.UP)
+		* Basis(Vector3.RIGHT, -deg_to_rad(float(item["cabeceo"])))
+		* Basis(Vector3.FORWARD, deg_to_rad(float(item["alabeo"])))
+		* Basis.from_scale(
+			Vector3(1.0, 1.0, float(item.get("estira", 1.0))) * float(item["escala"])
+		)
+	)
+	_add_instance(
+		String(item["modelo"]), point, Transform3D(basis, CityPlan.to_world(point, item["z"]))
+	)
 
 
 func _add_detail(model: String, item: Dictionary) -> void:
 	var point: Vector2 = Vector2(item["pos"][0], item["pos"][1])
 	var basis: Basis = Basis(Vector3.UP, deg_to_rad(float(item["angulo"])))
 	var origin: Vector3 = CityPlan.to_world(point, float(item["z"]))
+	_add_instance(model, point, Transform3D(basis, origin))
+
+
+func _add_instance(model: String, point: Vector2, placed: Transform3D) -> void:
 	var sector: Vector2i = plan.sector_of(point)
 	if not instances.has(sector):
 		instances[sector] = {}
 	var by_model: Dictionary = instances[sector]
 	if not by_model.has(model):
 		by_model[model] = []
-	by_model[model].append(Transform3D(basis, origin))
+	by_model[model].append(placed)

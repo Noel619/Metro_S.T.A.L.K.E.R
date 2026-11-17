@@ -49,7 +49,9 @@ BARRANCO_MEDIO_ANCHO = [46.0, 46.0, 44.0, 42.0, 40.0, 38.0, 32.0, 24.0]
 COLINA = (105.0, 955.0)
 CRATER = (1500.0, 1110.0)
 CRATER_RADIO = 95.0
-SOCAVON = (558.0, 455.0)
+# El socavón de la avenida, sobre el túnel de la línea 1 (eje(178, -4)). No es del relieve
+# natural: lo abre en la calle deterioro.py (datos.HUNDIMIENTOS).
+SOCAVON = (552.07, 459.6)
 
 _RX = np.array([p[0] for p in RIO_EJE], dtype=float)
 _RY = np.array([p[1] for p in RIO_EJE], dtype=float)
@@ -150,9 +152,6 @@ def altura_natural(x, y):
     eyecta = 2.0 * np.exp(-(((r - 170.0) / 60.0) ** 2))
     h = h - cuenco + borde + eyecta
 
-    # --- El socavón de la avenida (la calle se hundió en el túnel del metro) ---
-    r = np.hypot(x - SOCAVON[0], y - SOCAVON[1])
-    h = h - 11.0 * _smooth(15.0, 6.0, r)
     return h
 
 

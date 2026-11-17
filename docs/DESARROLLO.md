@@ -30,7 +30,8 @@ Tumansk entera, levantada desde el plano en volúmenes sencillos para probar rec
 | W A S D | Moverse. Andando: Mayús corre, C se agacha, Espacio salta. Volando: Mayús acelera, Espacio sube, C baja y la rueda cambia la velocidad |
 | Tab | Andar (con colisión, a 1,4 m/s) o volar (sin colisión) |
 | 1-9 y 0 | Las vistas fijas: la salida, la avenida, Los Bloques, el río, el puente, la Escalinata, la zona industrial, la Zona Cero, la ciudad desde el aire y las rutas desde el aire |
-| Mayús+1-8 | Las vistas de la red de tránsito: la Escalinata desde abajo, un cruce del Barrio Obrero, el vano hundido del puente, las escaleras de la loma, los andenes de la estación, la playa de vías, un paso a nivel y el tranvía por la mediana de la Avenida |
+| Mayús+1-0 | Las vistas de la red de tránsito: la Escalinata desde abajo, un cruce del Barrio Obrero, el vano hundido del puente, las escaleras de la loma, los andenes de la estación, la playa de vías, un paso a nivel, un desvío del escape de la playa, un tope y el tranvía por la mediana de la Avenida |
+| Ctrl+1-3 | Las vistas del deterioro: el socavón de la avenida, la galería de la calefacción hundida frente a la fábrica y una tubería del agua reventada en la calle de la Juventud |
 | R / Mayús+R | Recorre la ruta siguiente / anterior del plano a paso de persona, con cronómetro. **+** y **-** la aceleran (×4, ×16); Retroceso la para |
 | F2 / F3 / F4 | Capas: las rutas; la rejilla de sectores y las zonas; los hitos que se ven desde donde estás |
 | V | Comprueba en toda la ciudad la regla «desde cualquier punto se ven al menos dos hitos» y marca los puntos ciegos (rosa: ninguno; amarillo: uno) |
@@ -220,8 +221,10 @@ Las herramientas que se empuñan (`martillo`, `palanca`, `navaja`) llevan un nod
 | `relieve.py` | El terreno: río, loma, barranco, colina y cráter |
 | `plano.py` | Valida, calcula daños, escombros, relieve y cotas, y exporta el plano (`plano.json`), el relieve (`relieve.png`), el suelo de la maqueta (`suelo.png`) y la red de tránsito (`transito.json`, `rasante.png`, `rejilla.png` y `rebaje.png`) |
 | `transito.py` | Traza la red de tránsito (calles, aceras, plazas, sendas, escaleras, el puente, los andenes, los pasos a nivel y la cama del tranvía) con sus alturas, aristas, marcas y detalles |
+| `vias.py` | El trazado de la red de vías: los desvíos y sus curvas de enlace, los topes, los vagones de la playa y, con las rasantes, cada desvío en 3D para la maqueta |
 | `ferrocarril.py` | Las rasantes de las vías del tren, los andenes, los pasos a nivel (la calle y el terreno suben al carril), los tramos de vía que se exportan y las vías del tranvía con sus curvas |
 | `rejilla.py` | Lo que el tránsito tapa de cada triángulo de la rejilla del relieve, el relleno exacto y el rebaje de la colisión |
+| `deterioro.py` | El deterioro de la superficie: los socavones (contorno, cubeta, malla y lo que cae dentro), las grietas, los baches, las tapas abiertas o robadas, los bordillos que faltan y los matojos |
 | `dibujo.py` | Dibuja las cuatro hojas de desarrollo |
 
 Para dibujar una sola hoja: `python3 tools/ciudad/plano.py --plano=general` (también `subsuelo`, `peligros` o `rutas`).

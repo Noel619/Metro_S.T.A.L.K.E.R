@@ -10,10 +10,11 @@ Uso: python3 tools/ciudad/plano.py [--solo-datos | --comprobar] [--plano=general
    solaparse y en la zona que dicen.
 2. Calcula el daño de cada edificio (distancia a la Zona Cero, con variación fija
    por edificio), los incendios y los escombros que caen a la calle.
-3. Calcula el relieve con los terraplenes, las calles de la loma niveladas y los
-   escombros, y la cota de cada edificio.
+3. Calcula el relieve con los terraplenes, las calles de la loma niveladas, los
+   escombros y la cubeta de los socavones (deterioro.py), y la cota de cada edificio.
 4. Traza la red de tránsito (transito.py): calzadas, aceras, bordillos, escaleras, el
-   tablero del puente, pasos de cebra… con sus alturas.
+   tablero del puente, pasos de cebra… con sus alturas, y su deterioro (deterioro.py):
+   socavones, grietas, baches, tapas abiertas, bordillos rotos y matojos.
 5. Exporta data/ciudad/plano.json, data/ciudad/relieve.png (16 bits), la rasante del
    tránsito (data/ciudad/rasante.png), la red de tránsito (data/ciudad/transito.json) y el
    suelo de la maqueta, data/ciudad/suelo.png.
@@ -39,6 +40,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import datos as D  # noqa: E402
 import relieve as R  # noqa: E402
 import ferrocarril as F  # noqa: E402
+import vias as V  # noqa: E402
+import deterioro as DT  # noqa: E402
 import transito as T  # noqa: E402
 from geo import ALTO, ANCHO, SECTOR, banda, coords, distancia, sector_de  # noqa: E402
 
@@ -395,8 +398,8 @@ SOBRE_CARRILES = ("vagon", "coche_tren", "locomotora")
 
 def alturas_en_el_transito(trazado, alturas) -> None:
     """La altura de lo que pisan los árboles y los vehículos que están en el tránsito (una
-    acera, un alcorque, el tablero del puente…) o sobre una vía del tren (lo alto del
-    carril); los demás, la sacan del relieve."""
+    acera, un alcorque, el tablero del puente, el fondo de un socavón…) o sobre una vía del
+    tren (lo alto del carril); los demás, la sacan del relieve."""
     for lista in (D.ARBOLES, D.VEHICULOS):
         for cosa in lista:
             x, y = cosa["pos"]
@@ -410,6 +413,10 @@ def alturas_en_el_transito(trazado, alturas) -> None:
                 cosa.pop("z", None)
                 continue
             z = float(alturas.z(trazado.grupos[grupo], [x], [y])[0])
+            if trazado.grupos[grupo].clase == "socavon":
+                # En el fondo de un socavón (el terreno de encima ya no está).
+                cosa["z"] = round(z, 3)
+                continue
             cosa["z"] = round(max(z, float(alturas.terreno([x], [y])[0])), 3)
 
 
@@ -456,7 +463,8 @@ def exportar_json(escombros: list[dict], meta_relieve: dict, meta_suelo: dict, c
         "transito": meta_transito,
         "calles": [{**c, "puntos": pts(c["puntos"])} for c in D.CALLES],
         "plazas": [{**{k: v for k, v in p.items() if k != "forma"}, "forma": coords(p["forma"])} for p in D.PLAZAS],
-        "vias": [{**v, "puntos": pts(v["puntos"])} for v in D.VIAS],
+        "vias": [{"id": v["id"], "nombre": v["nombre"], "tipo": v["tipo"], "puntos": pts(v["puntos"])}
+                 for v in D.VIAS],
         "puente_ferrocarril": D.PUENTE_FERROCARRIL,
         "terraplenes": D.TERRAPLENES,
         "tranvias": [{**t, "puntos": pts(t["puntos"])} for t in D.TRANVIAS],
@@ -505,11 +513,17 @@ def exportar_json(escombros: list[dict], meta_relieve: dict, meta_suelo: dict, c
 def main() -> int:
     SALIDA_DATOS.mkdir(parents=True, exist_ok=True)
     SALIDA_DOCS.mkdir(parents=True, exist_ok=True)
+    # El trazado final de las vías (desvíos y curvas) antes que nada: lo usan el relieve,
+    # el tránsito, el suelo y los planos. Pone también los vagones de la playa.
+    V.red()
     calles = calles_poligono()
     problemas = validar(calles)
     calcular_danos()
     escombros = calcular_escombros()
     relieve, terreno, ferro = calcular_relieve(escombros, 2.0)
+    # La calle se hunde alrededor de cada socavón (la cubeta): el terreno, el relieve y, con
+    # el terreno, la rasante del tránsito.
+    relieve, terreno = DT.hundir([relieve, terreno], 2.0)
     calcular_cotas(terreno, 2.0)
     planta = T.trazar()
     rasante_calles = T.rasante_transito(terreno, 2.0)
@@ -522,6 +536,8 @@ def main() -> int:
     alturas = T.Alturas(rasante, relieve, terreno, 2.0, ferro)
     trazado = T.trazar_completo(alturas, planta)
     problemas += T.comprobar(trazado, alturas)
+    # Lo que estaba encima de un socavón cae dentro (antes de darle su altura).
+    DT.hundir_vehiculos()
     alturas_en_el_transito(trazado, alturas)
     meta = exportar_relieve(relieve, 2.0)
     exportar_relieve(rasante, 2.0, "rasante.png")

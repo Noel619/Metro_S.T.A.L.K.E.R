@@ -108,6 +108,13 @@ func vehicles() -> Dictionary:
 			if state == "volcado":
 				basis = basis * Basis(Vector3.RIGHT, PI)
 				origin.y += height
+		if vehicle.has("cabeceo"):
+			# Caído en un socavón: de morro hacia el fondo y algo ladeado.
+			var tilt: Basis = (
+				Basis(Vector3.BACK, -deg_to_rad(float(vehicle["cabeceo"])))
+				* Basis(Vector3.RIGHT, deg_to_rad(float(vehicle.get("alabeo", 0.0))))
+			)
+			basis = yaw * tilt * (yaw.inverse() * basis)
 		if state == "quemado":
 			color = color.darkened(0.55) if model == "caja" else Color(0.82, 0.8, 0.78)
 		if model == "caja":

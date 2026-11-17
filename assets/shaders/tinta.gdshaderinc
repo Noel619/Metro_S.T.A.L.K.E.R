@@ -141,8 +141,11 @@ void fragment() {
 		base *= COLOR.rgb;
 	}
 #ifdef TINTA_TRANSITO
-	// Manchas grandes de suciedad y hollín: el pavimento nunca es del todo uniforme.
-	base *= mix(0.88, 1.05, value_noise(world_position * 0.13));
+	// Nada está limpio: manchas grandes de hollín, aceite y humedad, y otras más pequeñas
+	// encima. Es el pavimento de una ciudad que nadie limpia desde hace dos años.
+	float stain = value_noise(world_position * 0.045) * 0.55 + value_noise(world_position * 0.19) * 0.3
+		+ value_noise(world_position * 0.9) * 0.15;
+	base *= mix(0.62, 1.06, smoothstep(0.15, 0.85, stain));
 #endif
 #ifdef TINTA_MURO
 	{

@@ -133,8 +133,22 @@ const VIEWS: Array[Dictionary] = [
 	{
 		"name": "paso_nivel",
 		"title": "Un paso a nivel del apartadero de la fábrica",
-		"from": Vector3(909.0, 163.5, 1.7),
-		"to": Vector3(919.5, 184.0, -0.4),
+		"from": Vector3(920.6, 156.0, 1.7),
+		"to": Vector3(925.6, 182.0, -0.4),
+		"fov": 62.0,
+	},
+	{
+		"name": "desvio",
+		"title": "Un desvío del escape de la playa de vías: agujas, corazón y palanca",
+		"from": Vector3(927.0, 66.0, 1.7),
+		"to": Vector3(950.1, 73.6, -0.5),
+		"fov": 62.0,
+	},
+	{
+		"name": "topes",
+		"title": "El tope al final de una vía de la playa",
+		"from": Vector3(1224.0, 111.2, 1.7),
+		"to": Vector3(1245.0, 109.6, 0.4),
 		"fov": 62.0,
 	},
 	{
@@ -143,6 +157,27 @@ const VIEWS: Array[Dictionary] = [
 		"from": Vector3(559.6, 482.6, 1.7),
 		"to": Vector3(597.0, 523.0, -0.3),
 		"fov": 62.0,
+	},
+	{
+		"name": "socavon",
+		"title": "El socavón de la avenida: la calle cayó al túnel de la línea 1",
+		"from": Vector3(538.0, 444.0, 1.7),
+		"to": Vector3(553.5, 461.2, 2.0),
+		"fov": 64.0,
+	},
+	{
+		"name": "socavon_galeria",
+		"title": "La galería de la calefacción, hundida frente a la fábrica",
+		"from": Vector3(1096.5, 311.0, 1.7),
+		"to": Vector3(1103.0, 317.0, 0.3),
+		"fov": 64.0,
+	},
+	{
+		"name": "socavon_agua",
+		"title": "Una tubería del agua reventó por la helada y se llevó la calle",
+		"from": Vector3(343.2, 446.2, 1.7),
+		"to": Vector3(345.0, 452.0, 0.3),
+		"fov": 64.0,
 	},
 ]
 ## Niebla: la del juego, una ligera (para ver lejos) o ninguna (todo detallado).
@@ -352,8 +387,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if key == null or not key.pressed or key.echo:
 		return
 	if key.keycode >= KEY_0 and key.keycode <= KEY_9:
-		# Con Mayús, las vistas de la red de tránsito (la undécima y siguientes).
+		# Con Mayús, las vistas de la red de tránsito (la undécima y siguientes); con Ctrl,
+		# las del deterioro (la vigesimoprimera y siguientes).
 		var index: int = wrapi(key.keycode - KEY_1, 0, 10) + (10 if key.shift_pressed else 0)
+		index += 20 if key.ctrl_pressed else 0
 		if index < VIEWS.size():
 			_go_to_view(index)
 		return

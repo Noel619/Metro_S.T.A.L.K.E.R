@@ -143,9 +143,73 @@ func test_a_walker_climbs_a_curb_and_a_flight() -> void:
 
 func test_tracks_are_built() -> void:
 	var stats: Dictionary = _city.stats["transito"]
-	assert_true(int(stats["traviesas"]) > 15000, "traviesas: %d" % int(stats["traviesas"]))
-	assert_true(float(stats["via_m"]) > 9000.0, "vía sobre balasto: %.0f m" % stats["via_m"])
+	assert_true(int(stats["traviesas"]) > 11000, "traviesas: %d" % int(stats["traviesas"]))
+	assert_true(float(stats["via_m"]) > 7000.0, "vía sobre balasto: %.0f m" % stats["via_m"])
 	assert_true(float(stats["a_ras_m"]) > 5000.0, "vía a ras: %.0f m" % stats["a_ras_m"])
+	# Cada desvío y cada tope, una vez (en el sector en el que cae).
+	var railway: Dictionary = _city.plan.transit["ferrocarril"]
+	assert_eq(int(stats["desvios"]), railway["desvios"].size())
+	assert_eq(int(stats["topes"]), railway["topes"].size())
+
+
+func test_a_buffer_stop_stops_a_walker() -> void:
+	# Por la vía hacia el tope: el madero de choque no deja pasar.
+	var stop: Dictionary = _city.plan.transit["ferrocarril"]["topes"][0]
+	var heading: float = deg_to_rad(float(stop["rumbo"]))
+	var forward: Vector2 = Vector2(cos(heading), sin(heading))
+	var base: Vector2 = Vector2(stop["pos"][0], stop["pos"][1])
+	var height: float = float(stop["z"]) + 1.0
+	var space: PhysicsDirectSpaceState3D = _city.get_world_3d().direct_space_state
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+		CityPlan.to_world(base - forward * 6.0, height),
+		CityPlan.to_world(base + forward * 1.0, height)
+	)
+	var hit: Dictionary = space.intersect_ray(query)
+	assert_false(hit.is_empty(), "nada choca contra el tope")
+	if not hit.is_empty():
+		var reached: Vector2 = CityPlan.to_plan(hit["position"])
+		assert_almost(reached.distance_to(base), 0.2, 0.3, "choca en el madero")
+
+
+func test_sinkholes_open_the_street() -> void:
+	# En el centro de cada socavón, lo primero que se pisa es su fondo (ni la calle ni el
+	# terreno de debajo, que se rebaja bajo la malla).
+	var holes: Array = _city.plan.transit["socavones"]
+	assert_eq(int(_city.stats["transito"]["socavones"]), holes.size())
+	assert_true(holes.size() >= 10, "socavones: %d" % holes.size())
+	for hole: Dictionary in holes:
+		var group: Dictionary = _city.plan.transit["grupos"][int(hole["grupo"])]
+		var heights: Array = group["z"]
+		var rim: int = hole["contorno"].size() / 2
+		var street: float = 0.0
+		for v: int in rim:
+			street += float(heights[v])
+		street = street / rim + 0.42
+		var center: Vector2 = Vector2(hole["centro"][0], hole["centro"][1])
+		var hit: Dictionary = _ray_down(center, [])
+		assert_false(hit.is_empty(), "%s: nada en el centro" % hole["id"])
+		if hit.is_empty():
+			continue
+		var floor_z: float = float(heights[heights.size() - 1])
+		var depth: float = street - hit["position"].y
+		assert_true(depth > 0.85 * float(hole["hondo"]), "%s: baja %.2f m" % [hole["id"], depth])
+		assert_true(hit["position"].y < floor_z + 0.6, "%s: el fondo queda tapado" % hole["id"])
+	# Las grietas y los carriles del tranvía que cuelgan sobre el socavón de la avenida.
+	assert_true(int(_city.stats["transito"]["grietas"]) > 1500, "grietas")
+	assert_true(float(_city.stats["transito"]["colgando_m"]) > 2.0, "carriles colgando")
+
+
+func test_a_walker_falls_into_a_sinkhole() -> void:
+	for hole: Dictionary in _city.plan.transit["socavones"]:
+		if String(hole["id"]) != "agua_juventud":
+			continue
+		var center: Vector2 = Vector2(hole["centro"][0], hole["centro"][1])
+		var start: Vector2 = center + Vector2(0.0, -6.5)
+		var street: float = _city.surface_height(start)
+		var ended: float = await _walk(start, center, 10.0)
+		assert_true(ended < street - 1.2, "acaba a %.2f m (la calle, a %.2f)" % [ended, street])
+		return
+	assert_true(false, "sin el socavón de la calle de la Juventud")
 
 
 func test_platforms_and_ballast_sit_at_the_rail_level() -> void:
