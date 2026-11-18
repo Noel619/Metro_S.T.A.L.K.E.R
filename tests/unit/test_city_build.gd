@@ -27,6 +27,38 @@ func test_every_sector_and_building_is_built() -> void:
 	assert_eq(int(_city.stats["arboles"]), _city.plan.data["arboles"].size())
 
 
+func test_vehicles_are_their_models() -> void:
+	# Cada vehículo es su modelo a la medida del plano (ninguno queda como caja), los
+	# quemados tienen el suyo, los tranvías volcados yacen de costado y los barcos del río
+	# están en el hielo.
+	var placed: Dictionary = {}
+	for by_model: Dictionary in _city.props.vehicles().values():
+		for model: String in by_model:
+			var list: Array = placed.get(model, [])
+			for entry: Array in by_model[model]:
+				list.append(entry[0])
+			placed[model] = list
+	assert_false(placed.has("caja"), "vehículos sin modelo")
+	for model: String in [
+		"autobus", "autobus_quemado", "trolebus", "tranvia_quemado", "blindado", "barco"
+	]:
+		assert_true(placed.has(model), "falta %s" % model)
+	# El tren quemado de la vía 1: coches de 24 m.
+	var coach: Transform3D = placed["coche_tren_quemado"][0]
+	var mesh: Mesh = null
+	for node: Node in _city.find_children("CocheTrenQuemado", "MultiMeshInstance3D", true, false):
+		mesh = (node as MultiMeshInstance3D).multimesh.mesh
+	assert_almost(mesh.get_aabb().size.x * coach.basis.get_scale().x, 24.0, 0.6, "largo")
+	var lying: int = 0
+	for tram: Transform3D in placed["tranvia"]:
+		if absf(tram.basis.y.normalized().y) < 0.2:
+			lying += 1
+	assert_eq(lying, 2, "tranvías de costado")
+	var ice: float = float(_city.plan.data["rio"]["hielo"])
+	for barge: Transform3D in placed["barcaza"]:
+		assert_almost(barge.origin.y, ice, 0.05, "barcaza en el hielo")
+
+
 func test_ground_collision_follows_the_relief() -> void:
 	# La glorieta (llana), la cuesta de la loma (norte-sur: delataría un relieve al revés) y
 	# el hielo del río. En el centro de la glorieta está el Monumento al Minero.

@@ -7,7 +7,49 @@ extends RefCounted
 ## Los vehículos y los árboles se reparten por sectores como instancias (MultiMesh); las
 ## estructuras, como mallas troceadas por sectores.
 
-## Alto de cada vehículo (el plano da el largo y el ancho).
+## Los modelos de los vehículos (tools/blender/recipes/vehiculos.py; el coche, de
+## superficie.py). Los quemados que tienen modelo propio llevan "_quemado".
+const VEHICLE_MODELS: PackedStringArray = [
+	"coche",
+	"coche_quemado",
+	"autobus",
+	"autobus_quemado",
+	"trolebus",
+	"tranvia",
+	"tranvia_quemado",
+	"camion",
+	"camion_quemado",
+	"furgoneta",
+	"furgoneta_quemado",
+	"blindado",
+	"bombero",
+	"bombero_quemado",
+	"vagon",
+	"coche_tren",
+	"coche_tren_quemado",
+	"locomotora",
+	"locomotora_quemado",
+	"barca",
+	"barcaza",
+	"remolcador",
+	"barco",
+]
+## Lo que vuelca boca abajo; lo demás, de costado.
+const FLIPS_OVER: PackedStringArray = ["coche", "barca"]
+## Escora máxima (grados) de los barcos que se quedaron en el hielo o varados.
+const BOAT_LIST: Dictionary = {"barca": 9.0, "barcaza": 2.0, "remolcador": 6.0, "barco": 4.0}
+## Colores apagados de los coches abandonados (multiplican la pintura del modelo).
+const CAR_TINTS: Array[Color] = [
+	Color("#c9c2b0"), Color("#9fae9b"), Color("#a3a9b3"), Color("#b79c8f"), Color("#bdb59a")
+]
+## Los de los demás vehículos: la pintura ya la lleva el modelo, solo se ensucia algo.
+const VEHICLE_TINTS: Array[Color] = [
+	Color("#ffffff"), Color("#e9e4d9"), Color("#dfe2d8"), Color("#ece2d8")
+]
+## El de los quemados con modelo propio (ya son pardos y negros); sin él, más oscuro.
+const BURNT_TINT: Color = Color(0.82, 0.8, 0.78)
+## Alto y color de cada vehículo cuando no hay modelo y es una caja (el plano da el largo y
+## el ancho).
 const VEHICLE_HEIGHT: Dictionary = {
 	"coche": 1.5,
 	"furgoneta": 2.3,
@@ -42,12 +84,6 @@ const VEHICLE_COLOR: Dictionary = {
 	"bombero": Color("#8a3b2e"),
 	"coche": Color("#7a7a72"),
 }
-## Colores apagados de los coches abandonados (multiplican la pintura del modelo).
-const CAR_TINTS: Array[Color] = [
-	Color("#c9c2b0"), Color("#9fae9b"), Color("#a3a9b3"), Color("#b79c8f"), Color("#bdb59a")
-]
-## Largo del modelo del coche (assets/models/coche.glb), para escalarlo a su medida.
-const CAR_MODEL_LENGTH: float = 4.3
 ## Alto de los muros de la autovía caída, al oeste y al norte del mapa.
 const BORDER_WALL_HEIGHT: float = 10.0
 const STRUCTURE_COLOR: Color = Color("#77736b")
@@ -55,6 +91,10 @@ const STRUCTURE_COLOR: Color = Color("#77736b")
 const DECK_GAP: float = 0.02
 
 var plan: CityPlan
+## La caja de cada modelo de vehículo (la de su colisión, en sus coordenadas): la medida
+## del vehículo, con la que se escala a lo que mide en el plano. La pone City al cargar
+## los modelos; un vehículo sin ella es una caja.
+var model_boxes: Dictionary = {}
 ## Tableros de los puentes: lo que se pisa encima del hielo.
 var _decks: Array[Dictionary] = []
 
@@ -78,49 +118,89 @@ func surface_height(point: Vector2) -> float:
 	return plan.height_at(point)
 
 
-## Vehículos de cada sector: para cada sector, las instancias por modelo ("coche",
-## "coche_quemado" y "caja"), cada una con su transformación y su color.
+## Vehículos de cada sector: para cada sector, las instancias por modelo (el suyo, el
+## quemado si lo tiene, o "caja"), cada una con su transformación y su color.
 func vehicles() -> Dictionary:
 	var result: Dictionary = {}
-	var sizes: Dictionary = plan.data["medidas_vehiculos"]
 	var index: int = 0
 	for vehicle: Dictionary in plan.data["vehiculos"]:
 		index += 1
-		var kind: String = vehicle["tipo"]
-		var state: String = vehicle["estado"]
 		var point: Vector2 = Vector2(vehicle["pos"][0], vehicle["pos"][1])
-		var length: float = sizes[kind][0]
-		var width: float = sizes[kind][1]
-		var height: float = VEHICLE_HEIGHT.get(kind, 2.0)
-		var yaw: Basis = Basis(Vector3.UP, deg_to_rad(vehicle["angulo"]))
-		# La altura de lo que pisa la da el plano si está en el tránsito (la calzada va por
-		# debajo de la rasante); si no, el relieve o el tablero de un puente.
-		var ground: float = float(vehicle["z"]) if vehicle.has("z") else surface_height(point)
-		var model: String = "caja"
-		var basis: Basis = yaw * Basis.from_scale(Vector3(length, height, width))
-		var origin: Vector3 = CityPlan.to_world(point, ground + height * 0.5)
-		var color: Color = VEHICLE_COLOR.get(kind, STRUCTURE_COLOR)
-		if kind == "coche":
-			model = "coche_quemado" if state == "quemado" else "coche"
-			basis = yaw * Basis.from_scale(Vector3.ONE * (length / CAR_MODEL_LENGTH))
-			origin = CityPlan.to_world(point, ground)
-			color = CAR_TINTS[index % CAR_TINTS.size()]
-			if state == "volcado":
-				basis = basis * Basis(Vector3.RIGHT, PI)
-				origin.y += height
-		if vehicle.has("cabeceo"):
-			# Caído en un socavón: de morro hacia el fondo y algo ladeado.
-			var tilt: Basis = (
-				Basis(Vector3.BACK, -deg_to_rad(float(vehicle["cabeceo"])))
-				* Basis(Vector3.RIGHT, deg_to_rad(float(vehicle.get("alabeo", 0.0))))
-			)
-			basis = yaw * tilt * (yaw.inverse() * basis)
-		if state == "quemado":
-			color = color.darkened(0.55) if model == "caja" else Color(0.82, 0.8, 0.78)
-		if model == "caja":
-			color = color.srgb_to_linear()
-		_add_instance(result, plan.sector_of(point), model, Transform3D(basis, origin), color)
+		var model: String = _vehicle_model(vehicle)
+		var placed: Transform3D = _vehicle_transform(vehicle, model, index)
+		_add_instance(
+			result, plan.sector_of(point), model, placed, _vehicle_color(vehicle, model, index)
+		)
 	return result
+
+
+## El modelo de un vehículo: el suyo (el quemado, si lo tiene) o una caja.
+func _vehicle_model(vehicle: Dictionary) -> String:
+	var kind: String = vehicle["tipo"]
+	if vehicle["estado"] == "quemado" and model_boxes.has(kind + "_quemado"):
+		return kind + "_quemado"
+	return kind if model_boxes.has(kind) else "caja"
+
+
+## Dónde y cómo queda un vehículo: escalado a lo que mide en el plano, volcado si lo
+## tumbaron (boca abajo o de costado) e inclinado si cayó en un socavón o, un barco,
+## escorado en el hielo.
+func _vehicle_transform(vehicle: Dictionary, model: String, index: int) -> Transform3D:
+	var kind: String = vehicle["tipo"]
+	var point: Vector2 = Vector2(vehicle["pos"][0], vehicle["pos"][1])
+	var size: Array = plan.data["medidas_vehiculos"][kind]
+	var yaw: Basis = Basis(Vector3.UP, deg_to_rad(vehicle["angulo"]))
+	# La altura de lo que pisa la da el plano si está en el tránsito (la calzada va por
+	# debajo de la rasante) o sobre una vía; si no, el relieve o el tablero de un puente.
+	var ground: float = float(vehicle["z"]) if vehicle.has("z") else surface_height(point)
+	var basis: Basis
+	var origin: Vector3 = CityPlan.to_world(point, ground)
+	if model == "caja":
+		var height: float = VEHICLE_HEIGHT.get(kind, 2.0)
+		basis = yaw * Basis.from_scale(Vector3(size[0], height, size[1]))
+		origin.y += height * 0.5
+	else:
+		var box: AABB = model_boxes[model]
+		var scale: float = float(size[0]) / box.size.x
+		basis = yaw * Basis.from_scale(Vector3.ONE * scale)
+		if vehicle["estado"] == "volcado" and kind in FLIPS_OVER:
+			# Boca abajo, sobre el techo (o la borda).
+			basis = basis * Basis(Vector3.RIGHT, PI)
+			origin.y += box.end.y * scale
+		elif vehicle["estado"] == "volcado":
+			# De costado: la onda lo tumbó. La huella sigue centrada en su sitio.
+			basis = basis * Basis(Vector3.RIGHT, PI * 0.5)
+			origin.y += box.size.z * 0.5 * scale
+			origin -= yaw * Vector3(0.0, 0.0, box.get_center().y * scale)
+	var tilt: Basis = _vehicle_tilt(vehicle, index)
+	return Transform3D(yaw * tilt * (yaw.inverse() * basis), origin)
+
+
+## Lo que se inclina un vehículo: el que cayó en un socavón, de morro hacia el fondo y algo
+## ladeado (lo da el plano); los barcos, escorados en el hielo (un poco cada uno).
+func _vehicle_tilt(vehicle: Dictionary, index: int) -> Basis:
+	var pitch: float = float(vehicle.get("cabeceo", 0.0))
+	var roll: float = float(vehicle.get("alabeo", 0.0))
+	if BOAT_LIST.has(vehicle["tipo"]) and vehicle["estado"] != "volcado":
+		var most: float = BOAT_LIST[vehicle["tipo"]]
+		roll = most * sin(index * 12.9898)
+		pitch = most * 0.25 * cos(index * 78.233)
+	return Basis(Vector3.BACK, -deg_to_rad(pitch)) * Basis(Vector3.RIGHT, deg_to_rad(roll))
+
+
+## El color de la instancia: tiñe la pintura del modelo (los coches, de colores apagados;
+## los quemados, más oscuros) o es el de la caja.
+func _vehicle_color(vehicle: Dictionary, model: String, index: int) -> Color:
+	var kind: String = vehicle["tipo"]
+	var burnt: bool = vehicle["estado"] == "quemado"
+	if model == "caja":
+		var color: Color = VEHICLE_COLOR.get(kind, STRUCTURE_COLOR)
+		return (color.darkened(0.55) if burnt else color).srgb_to_linear()
+	if burnt:
+		return BURNT_TINT if model.ends_with("_quemado") else BURNT_TINT.darkened(0.5)
+	if kind == "coche":
+		return CAR_TINTS[index % CAR_TINTS.size()]
+	return VEHICLE_TINTS[index % VEHICLE_TINTS.size()]
 
 
 ## Árboles de cada sector, por modelo ("arbol_desnudo" y "arbol_desnudo_b").

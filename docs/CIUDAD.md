@@ -23,7 +23,7 @@ La fuente de verdad son los datos de [`tools/ciudad/datos.py`](../tools/ciudad/d
 | Viviendas que se recorren | 110 edificios de viviendas, con portales, escaleras, pisos y sótanos |
 | Superficie construida | 30,7 ha en planta; unos 946 000 m² de suelo entre todas las plantas |
 | Calles | 16,3 km, más pasos, escaleras y sendas |
-| Vehículos | 866 (coches, autobuses, tranvías, trolebuses, camiones, vagones, barcazas) |
+| Vehículos | 818 (coches, autobuses, tranvías, trolebuses, camiones, vagones, barcos) |
 | Árboles | 2685: 2254 en pie, secos; 431 tumbados, todos apuntando lejos de la bomba; a menos de 380 m de ella no queda ninguno |
 | Relieve | De −18 m (fondo del cráter) a +26 m (colina del parque); el río helado, a −6 m |
 | Cruzarla | 1,6 km de oeste a este: unos 20 minutos andando sin parar; más de una hora con cuidado |
@@ -274,7 +274,7 @@ La maqueta (`scenes/debug/maqueta_ciudad.tscn`, F3-15) levanta la ciudad entera 
   - La red de tránsito: calzadas, aceras, plazas, sendas, escaleras y el tablero del puente, con sus bordillos, muros, pretiles, pasos de cebra, tapas y sumideros. Ver [la sección 16](#16-la-red-de-tránsito).
   - Los 357 edificios, a su altura y con lo que queda en pie según su daño. Las torres llevan aguja (la de la Casa de los Sóviets, doblada hacia el suroeste), las chimeneas se estrechan, las torres de refrigeración tienen su forma y las casas de madera y las de antes de la revolución llevan tejado a dos aguas.
   - Los 142 que sabe montar el kit de arquitectura (las 138 viviendas y los cuatro singulares) son, de cerca, sus modelos; de lejos, sus volúmenes ([la sección de abajo](#los-edificios-del-kit-en-la-maqueta)).
-  - Los 866 vehículos, los 2685 árboles y los puentes (el del Progreso, con su vano hundido sobre el hielo, y el del ferrocarril, de celosía).
+  - Los 818 vehículos (cada uno, su modelo: [la sección 17](#17-la-superficie-rota)), los 2685 árboles y los puentes (el del Progreso, con su vano hundido sobre el hielo, y el del ferrocarril, de celosía).
   - Las tuberías elevadas (el tubo cruza el río con su pasarela), las vallas, la línea eléctrica y el muro de la autovía caída al oeste y al norte.
 - **El daño en volumen:**
   - Nivel 2: se hunde el extremo que mira a la bomba.
@@ -383,7 +383,7 @@ Todo lo que se pisa para ir de un sitio a otro, levantado en 3D: 211.000 m² de 
 
 ![El tope al final de una vía de la playa](capturas/fase3_transito_topes.jpg)
 
-**Pendiente.** El cruce del tranvía con el apartadero de la fábrica (los carriles se cruzan a ras, sin el rombo de un cruzamiento) y los vehículos del ferrocarril, que todavía son cajas.
+**Pendiente.** El cruce del tranvía con el apartadero de la fábrica (los carriles se cruzan a ras, sin el rombo de un cruzamiento).
 
 ## 17. La superficie, rota
 
@@ -419,6 +419,12 @@ El tránsito se corta por el contorno de cada uno (irregular, con los dientes de
 
 **Escombros, basura y farolas.** Unas 11.800 cosas tiradas (`tools/ciudad/restos.py`): cascotes y ladrillos al pie de las fachadas dañadas (más cuanto peor está el edificio) y montones de escombros junto a las destripadas; cartones, ramas, neumáticos y cascotes en las cunetas; 236 contenedores en las aceras, cien de ellos volcados con la basura alrededor; lo suelto por todas partes, también en las medianas; los cascotes que trajo la onda y, cerca de la Zona Cero, escombro de verdad sobre los montones del relieve (que solo dan el bulto). Las calles con calzada tienen farolas a los dos lados, alternas, con el brazo sobre la calle: de 342, solo 116 siguen en pie; 78 están torcidas hacia fuera de la bomba, 87 caídas lejos de ella (sin caer sobre un edificio ni un coche) y de 61 queda el muñón. Los modelos pequeños solo se dibujan de cerca (110 m).
 
+**Los vehículos.** Los 818 vehículos son modelos (`tools/blender/recipes/vehiculos.py`): ninguno es real, pero tienen el aire de los de una ciudad soviética de provincias. El autobús de morro chato con sus tres puertas, el trolebús con sus pértigas (una sigue en su gancho y la otra se soltó y apunta al cielo), el tranvía de dos colores con los testeros estrechos, el camión de cabina redonda con los arcos del toldo y la lona a jirones, la furgoneta «hogaza», el blindado de ocho ruedas del control junto al metro, el camión de bomberos con su escalera, los vagones, los coches de viajeros, la locomotora de maniobras y, en el río, las tres barcazas, el remolcador, los dos barcos de pasajeros y las barcas. Todos llevan dos inviernos encima: óxido en las juntas y los bajos, la mitad de los cristales rotos (se ve el negro de dentro), ruedas pinchadas, abolladuras y nieve. Los 188 quemados tienen su propio modelo: sin pintura ni goma, sin un cristal, hundidos sobre las llantas y con el hollín que salió por las ventanas (el tren de la vía 1 entero: trece coches y la locomotora). Cada modelo se escala a lo que mide en el plano por su caja de colisión, que es su medida ([D-054](DECISIONES.md)). Los dos tranvías que tumbó la onda yacen de costado (en el puente del Progreso y en la plaza Central); de las barcas sacadas a la orilla del Muelle Sur, unas están boca abajo, como se guardan en invierno; los barcos, con el casco metido en el hielo, se quedaron escorados.
+
+| | |
+|---|---|
+| ![El atasco de la avenida Soviética](capturas/fase3_vehiculos_atasco.jpg) | ![Los barcos de pasajeros, atrapados en el hielo frente a la Estación Fluvial](capturas/fase3_vehiculos_barcos.jpg) |
+
 **Matojos.** Unos 9.500 matojos de hierba seca salen por donde el pavimento se abre: junto a los bordillos y al pie de las fachadas, en las grietas y en las juntas del firme roto, en los alcorques, alrededor de los socavones y por todo el balasto de las vías que ya no se usan. Son tres planos cruzados con la mata dibujada (`assets/textures/pavimentos/matojo.png`).
 
 ![La galería de la calefacción, hundida frente a la fábrica](capturas/fase3_deterioro_galeria.jpg)
@@ -427,4 +433,4 @@ El tránsito se corta por el contorno de cada uno (irregular, con los dientes de
 
 **Lo que cuesta.** La red de tránsito pasa de 0,65 a 1,3 millones de triángulos y se levanta en unos 9 s (antes, 4); `transito.json` ocupa 6 MB (las piezas sueltas van por columnas, sin repetir los nombres de los campos).
 
-**Pendiente.** Los baches y los pozos abiertos no son agujeros de verdad (se dibujan encima de la calle): si hace falta caer en un pozo, habrá que cortar la calle como en los socavones. Las farolas y los contenedores no chocan todavía. Los patios y los solares (fuera de la calle) siguen lisos salvo cerca de la Zona Cero, y los edificios y los vehículos todavía no llevan su deterioro.
+**Pendiente.** Los baches y los pozos abiertos no son agujeros de verdad (se dibujan encima de la calle): si hace falta caer en un pozo, habrá que cortar la calle como en los socavones. Las farolas y los contenedores no chocan todavía. Los patios y los solares (fuera de la calle) siguen lisos salvo cerca de la Zona Cero, y los edificios todavía no llevan su deterioro. Los vehículos no chocan en la maqueta (son instancias sin colisión).

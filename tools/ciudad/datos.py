@@ -1278,8 +1278,9 @@ vehiculo("barcaza", 1185, 668, -6.0)
 vehiculo("remolcador", 1252, 664, -12.0)
 vehiculo("barco", 948, 762, 4.0)
 vehiculo("barco", 905, 758, -2.0)
+# Las barcas sacadas a la orilla para el invierno: unas boca abajo, como se guardan.
 for _i in range(5):
-    vehiculo("barca", 610 + _i * 8, 640, 85.0)
+    vehiculo("barca", 610 + _i * 8, 640, 85.0, "volcado" if _i % 2 == 0 else "abandonado")
 for _i, (_x, _y) in enumerate([(230, 888), (262, 878), (252, 900)]):
     vehiculo("barca", _x, _y, 30.0 * _i)
 
