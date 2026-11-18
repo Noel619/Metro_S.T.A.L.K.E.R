@@ -330,6 +330,37 @@ func test_sinkholes_open_the_street() -> void:
 	assert_true(float(_city.stats["transito"]["colgando_m"]) > 2.0, "carriles colgando")
 
 
+func test_broken_pavement_plates_are_solid() -> void:
+	# Las placas del firme roto se pisan: en el centro de cada una de las primeras, lo
+	# primero que se toca está entre lo más bajo y lo más alto de su cara de arriba.
+	var stats: Dictionary = _city.stats["transito"]
+	assert_true(int(stats["placas"]) > 10000, "placas: %d" % int(stats["placas"]))
+	assert_true(int(stats["restos"]) > 5000, "restos: %d" % int(stats["restos"]))
+	var zone: Dictionary = _city.plan.transit["placas"][0]
+	var flat: Array = zone["puntos"]
+	var heights: Array = zone["z"]
+	var first: int = 0
+	for n: int in mini(6, zone["caras"].size()):
+		var count: int = int(zone["caras"][n])
+		var center: Vector2 = Vector2.ZERO
+		var low: float = INF
+		var high: float = -INF
+		for k: int in range(first, first + count):
+			center += Vector2(flat[k * 2], flat[k * 2 + 1])
+			low = minf(low, float(heights[k]))
+			high = maxf(high, float(heights[k]))
+		center /= count
+		first += count
+		var hit: Dictionary = _ray_down(center, [])
+		assert_false(hit.is_empty(), "nada bajo la placa %d" % n)
+		if not hit.is_empty():
+			var y: float = hit["position"].y
+			assert_true(
+				y > low - 0.02 and y < high + 0.02,
+				"placa %d a %.2f (%.2f-%.2f)" % [n, y, low, high]
+			)
+
+
 func test_a_walker_falls_into_a_sinkhole() -> void:
 	for hole: Dictionary in _city.plan.transit["socavones"]:
 		if String(hole["id"]) != "agua_juventud":

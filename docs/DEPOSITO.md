@@ -185,4 +185,4 @@ Para verlo sin jugar: `scenes/debug/revision_deposito.tscn` monta el depósito c
 | F2-13 Respuesta táctil | Hecha, sin sonido (decisión: por ahora no) |
 | F2-14 Todo sincronizado | Hecha: lo cambia el anfitrión y lo ven todos; la prueba de red recorre parte del primer día y una venta con dos equipos |
 
-Pendiente para más adelante: el sonido y mojar la fregona en el cubo. Los clientes y la vendedora tienen modelo y cara propios (D-057).
+Pendiente para más adelante: el sonido y mojar la fregona en el cubo. Los clientes y la vendedora tienen modelo y cara propios (D-058).

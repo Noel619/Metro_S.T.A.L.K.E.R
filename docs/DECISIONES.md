@@ -228,23 +228,26 @@ Un bloque del kit son unas sesenta mallas (una MultiMesh por pieza), y cada una 
 
 Las tres versiones miden la distancia desde el mismo punto (el centro del volumen), para que cambien a la vez. Además, lo que va en los huecos de las fachadas (ventanas, puertas, escaparates y los cuartos de detrás) no proyecta sombra nunca: la sombra de un hueco la hace su muro, y en una calle es la mitad de las mallas. Con eso, las calles con edificios del kit se quedan entre 900 y 1.250 llamadas (con volúmenes, entre 400 y 670). Los singulares, de pocas mallas, se dibujan enteros a menos de 200 m.
 
-## D-053 · Lo que se trabaja avanza con el ratón, y el anfitrión lo aplica
+## D-053 · La calle no es un plano
+
+Con texturas rotas, grietas pintadas y baches encima, la calle seguía viéndose plana y en buen estado: una superficie lisa que sigue la rasante. El deterioro tiene que estar en la geometría. Zonas de firme roto (`tools/ciudad/firmes.py`) cortan la calle y la sustituyen por su base de grava (una malla propia, como los socavones) y placas sueltas que la maqueta levanta como prismas con colisión: se levantan, se hunden, se inclinan y se montan en lomos de presión, más cerca de la Zona Cero. Los bordillos van pieza a pieza (faltan o se han movido). Lo tirado por la calle y las farolas (`tools/ciudad/restos.py`) son instancias de modelos de Blender, las pequeñas solo de cerca. La rasante de toda la calle no se ondula: obligaría a cortar por la rejilla todos los triángulos que hoy se dibujan enteros y doblaría el tránsito para un efecto que apenas se ve; el relieve se concentra donde la calle está rota. El precio, medido: el doble de triángulos en el tránsito (1,3 millones) y el doble de tiempo al levantarlo (unos 9 s).
+
+## D-054 · Lo que se trabaja avanza con el ratón, y el anfitrión lo aplica
 
 Barrer, fregar, atornillar, hacer palanca o coser avanza con el movimiento del ratón mientras se mantiene el botón izquierdo, no con el tiempo: cada herramienta tiene su gesto (pasadas largas, frotar corto, círculos con sentido, tirar hacia abajo, mantener). Lo mide cada jugador en su equipo y lo manda al anfitrión a ratos (cada décima de segundo), que comprueba que es él, que lleva esa herramienta y que alcanza, y lo aplica (`Workable`). Así un invitado trabaja igual que el anfitrión, sin que su ratón tenga que viajar por la red fotograma a fotograma.
 
-## D-054 · El estado de las cosas fijas, en un solo diccionario replicado
+## D-055 · El estado de las cosas fijas, en un solo diccionario replicado
 
 Cada cosa fija del local que cambia (cada mancha, telaraña, la persiana, la bombilla, la estufa, el cubo, los papeles…) es un `Fixture` con un identificador, y su estado vive en `DepotWorld`: un diccionario por identificador que cambia el anfitrión, se manda a todos (también a quien llega tarde) y se guarda con la partida. Lo que no se ha tocado no está en el diccionario: cada cosa sabe cómo es el primer día. Los objetos sueltos llevan su estado en `ItemState.extra`, también replicado y guardado.
 
-## D-055 · Los papeles del mundo y de cerca son el mismo papel
+## D-056 · Los papeles del mundo y de cerca son el mismo papel
 
 Las notas, las fichas de encargo, los recibos, las etiquetas y las páginas del libro de cuentas se describen con un diccionario: el SVG del papel y los rótulos en píxeles del SVG, con su tipografía. `PaperCard` lo pone en el mundo (un rectángulo con el dibujo y el texto encima) y `CloseUp` lo dibuja grande al acercarlo. No hay cajas de texto: todo lo que hay que saber está escrito en algún papel.
 
-## D-056 · Sin sonido en la Fase 2
+## D-057 · Sin sonido en la Fase 2
 
 Por decisión del equipo, el depósito no suena todavía: la respuesta táctil (F2-13) es visual (polvo, papeles que caen y se asientan, agujas con inercia, tapas que se levantan, la lámpara que se balancea, las caras de los clientes). Cuando haya sonido, se colgará de los mismos sitios.
 
-## D-057 · La gente de la estación, con la misma receta que los protagonistas
+## D-058 · La gente de la estación, con la misma receta que los protagonistas
 
 El relojero, la vendedora, la vecina y el chatarrero salen de la receta de los protagonistas (`tools/blender/recipes/personajes.py`), con el mismo esqueleto y las mismas animaciones, así que `PlayerAvatar` los anima igual: solo cambia la clave del modelo. Lo que los distingue es la ropa (abrigo largo o chaqueta acolchada, gorra de paño, pañuelo atado a la nuca, delantal, falda, botas de fieltro) y la cara: sus láminas (`cara_<nombre>.svg`) tienen más años, con arrugas, patas de gallo, bigote, barba de días o gafas redondas dibujadas. No llevan mochila ni máscara: viven abajo. La bufanda la tiñe el juego, como la de los jugadores.
-

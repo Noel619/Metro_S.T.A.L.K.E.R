@@ -559,7 +559,8 @@ def main() -> int:
     calcular_cotas(terreno, 2.0)
     planta = T.trazar()
     rasante_calles = T.rasante_transito(terreno, 2.0)
-    pavimento = unary_union(list(planta.superficies.values()))
+    # Lo pavimentado, también donde la calle está rota o hundida (el relieve no depende de ello).
+    pavimento = unary_union(list(planta.superficies.values()) + [z.contorno for z in planta.firmes] + [DT.huecos()])
     pasos = F.cruces(ferro, pavimento)
     rasante = F.subir_pasos(rasante_calles, 2.0, pasos, T.NIVEL_CALZADA)
     # El terreno sube con la calle junto a los pasos a nivel (su terraplén).

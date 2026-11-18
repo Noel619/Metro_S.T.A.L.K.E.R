@@ -104,21 +104,27 @@ func _build_edge(edge: Dictionary) -> void:
 	var full: PackedVector2Array = PackedVector2Array()
 	for k: int in range(0, flat.size(), 2):
 		full.append(Vector2(flat[k], flat[k + 1]))
-	# Donde faltan piezas del bordillo, el hueco que dejan; lo demás, la arista.
-	var gaps: Array = edge.get("huecos", [])
+	# Donde faltan piezas del bordillo, el hueco que dejan; las piezas movidas, cada una a
+	# su aire; lo demás, la arista seguida.
+	var cuts: Array = []
+	for gap: Array in edge.get("huecos", []):
+		cuts.append([float(gap[0]), float(gap[1]), true, Vector3.ZERO])
+	for moved: Array in edge.get("movidos", []):
+		cuts.append(
+			[float(moved[0]), float(moved[1]), false, Vector3(moved[2], moved[3], moved[4])]
+		)
 	var kept: Array = [full]
-	if not gaps.is_empty():
+	if not cuts.is_empty():
+		cuts.sort_custom(func(a: Array, b: Array) -> bool: return a[0] < b[0])
 		var lengths: PackedFloat32Array = arc_lengths(full)
 		kept = []
 		var from: float = 0.0
-		for gap: Array in gaps:
-			if float(gap[0]) > from + 0.01:
-				kept.append(sub_line(full, lengths, from, float(gap[0])))
-			for part: PackedVector2Array in clip_line(
-				sub_line(full, lengths, float(gap[0]), float(gap[1]))
-			):
-				_build_edge_part(edge, part, true)
-			from = float(gap[1])
+		for cut: Array in cuts:
+			if cut[0] > from + 0.01:
+				kept.append(sub_line(full, lengths, from, cut[0]))
+			for part: PackedVector2Array in clip_line(sub_line(full, lengths, cut[0], cut[1])):
+				_build_edge_part(edge, part, cut[2], cut[3])
+			from = maxf(from, cut[1])
 		if lengths[lengths.size() - 1] > from + 0.01:
 			kept.append(sub_line(full, lengths, from, lengths[lengths.size() - 1]))
 	# Solo lo que cae en el sector (el corte en el linde sale igual desde los dos lados).
@@ -128,7 +134,12 @@ func _build_edge(edge: Dictionary) -> void:
 	stats["aristas"] += 1
 
 
-func _build_edge_part(edge: Dictionary, part: PackedVector2Array, gap: bool = false) -> void:
+## Un trozo de arista que cae en el sector. [param gap]: falta la pieza de bordillo;
+## [param moved]: la pieza se ha movido (lo que sube en cada punta y lo que se sale hacia
+## la calzada).
+func _build_edge_part(
+	edge: Dictionary, part: PackedVector2Array, gap: bool = false, moved: Vector3 = Vector3.ZERO
+) -> void:
 	var line: PackedVector2Array = GridClip.subdivide(part, CityTransit.STEP)
 	if line.size() < 2:
 		return
@@ -154,7 +165,7 @@ func _build_edge_part(edge: Dictionary, part: PackedVector2Array, gap: bool = fa
 		return
 	match kind:
 		"bordillo":
-			_curb(sides)
+			_curb(sides, moved)
 		"borde", "muro_escalera":
 			_border(sides, BORDER)
 		"bordillo_bajo":
@@ -229,35 +240,55 @@ func clip_line(line: PackedVector2Array) -> Array[PackedVector2Array]:
 
 
 ## Bordillo: la calzada a la izquierda; a la derecha la acera (el bordillo asoma un
-## centímetro) o la tierra (asoma lo que una acera).
-func _curb(sides: Array) -> void:
+## centímetro) o la tierra (asoma lo que una acera). Una pieza movida ([param moved]: lo
+## que sube en cada punta y lo que se sale hacia la calzada) lleva sus testas a la vista.
+func _curb(sides: Array, moved: Vector3 = Vector3.ZERO) -> void:
 	var z_left: PackedFloat32Array = sides[2]
 	var z_right: PackedFloat32Array = sides[3]
 	var to_terrain: bool = sides[4]
+	var lengths: PackedFloat32Array = arc_lengths(sides[0])
+	var total: float = maxf(lengths[lengths.size() - 1], 1e-3)
 	var profiles: Array = []
 	var ramps: Array = []
 	var tops: PackedFloat32Array = PackedFloat32Array()
 	for n: int in z_left.size():
-		var top: float = z_left[n] + CURB_HEIGHT if to_terrain else z_right[n] + CURB_LIFT
-		var back: float = minf(z_right[n], top) - 0.1 if to_terrain else z_right[n] - 0.02
+		var lift: float = lerpf(moved.x, moved.y, lengths[n] / total)
+		var out_x: float = moved.z
+		var top: float = (z_left[n] + CURB_HEIGHT if to_terrain else z_right[n] + CURB_LIFT) + lift
+		var back: float = (
+			minf(z_right[n], top) - 0.1 if to_terrain else minf(z_right[n], top) - 0.02
+		)
 		tops.append(top)
 		(
 			profiles
 			. append(
 				[
-					Vector2(0.0, z_left[n] - 0.05),
-					Vector2(0.0, top - 0.02),
-					Vector2(-0.02, top),
-					Vector2(-CURB_WIDTH, top),
-					Vector2(-CURB_WIDTH, back),
+					Vector2(out_x, z_left[n] - 0.05),
+					Vector2(out_x, top - 0.02),
+					Vector2(out_x - 0.02, top),
+					Vector2(out_x - CURB_WIDTH, top),
+					Vector2(out_x - CURB_WIDTH, back),
 				]
 			)
 		)
 		ramps.append([Vector2(RAMP, z_left[n]), Vector2(0.0, top)])
 	extrude(sides, profiles, "bordillo", EDGE_COLOR, false)
 	_extrude_collision(sides, ramps)
-	if to_terrain:
-		_closure(sides, tops)
+	if moved == Vector3.ZERO:
+		if to_terrain:
+			_closure(sides, tops)
+		return
+	cap(sides, profiles, 0, "bordillo", EDGE_COLOR)
+	cap(sides, profiles, profiles.size() - 1, "bordillo", EDGE_COLOR)
+	# Si la pieza se hundió, queda a la vista el canto de lo que hay detrás (la tierra).
+	var lips: Array = []
+	var sunk: bool = false
+	for n: int in tops.size():
+		var high: float = maxf(z_right[n], tops[n])
+		sunk = sunk or high > tops[n] + 0.005
+		lips.append([Vector2(moved.z - CURB_WIDTH, tops[n]), Vector2(moved.z - CURB_WIDTH, high)])
+	if sunk:
+		extrude(sides, lips, "derrumbe", COLLAPSE_SOIL_COLOR, true)
 
 
 ## Donde falta una pieza del bordillo: la tierra de su asiento, de lo alto de la acera (o
