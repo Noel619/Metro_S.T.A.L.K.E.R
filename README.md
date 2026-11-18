@@ -1008,7 +1008,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Entregable**: el depósito, del primer día sucio a la primera venta.
 **Criterio de salida**: se juega todo el recorrido sin una sola caja de texto, y lo prueban 2 o 3 personas: "¿da gusto?".
-**Estado**: 🟨 en curso. Ya se puede andar por el depósito, coger y dejar cosas, solo o con otro jugador. 38 tests y dos pruebas de red en verde. Falta todo lo que convierte eso en un trabajo: limpiar, procesar el botín, vender, los encargos, el impuesto y el trozo de estación.
+**Estado**: 🟨 todas las tareas hechas; falta el criterio de salida: que lo jueguen 2 o 3 personas y digan si da gusto. Se juega el recorrido entero, del primer día sucio a la primera venta y a dormir, solo o con otro jugador ([docs/DEPOSITO.md](docs/DEPOSITO.md)). 104 tests y dos pruebas de red en verde. Queda para más adelante: el sonido (por decisión, por ahora no), mojar la fregona en el cubo y que los clientes busquen su camino en vez de seguir rutas fijas.
 
 ### Fase 3: La Superficie jugable · tamaño L
 
