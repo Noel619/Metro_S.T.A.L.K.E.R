@@ -35,6 +35,8 @@ const DEAL_CENTER: Vector3 = Vector3(0.05, DepotRoom.COUNTER_TOP + 0.24, 3.17)
 ## Dónde deja el cliente sus cosas (su lado del mostrador) y su papelito.
 const CUSTOMER_SIDE: Vector3 = Vector3(-0.3, DepotRoom.COUNTER_TOP + 0.03, 3.42)
 const SLIP_AT: Vector3 = Vector3(0.42, DepotRoom.COUNTER_TOP + 0.004, 3.3)
+## Por dónde pasan por el pasillo, delante del puesto de comida y del contenedor.
+const PASSING_Z: float = Station.FRONT + 2.3
 ## El orden de los primeros días: quién viene y a qué.
 const FIRST_VISITS: Array = [[&"relojero", "comprar"]]
 const REGULARS: Array[StringName] = [&"vecina", &"chatarrero", &"relojero"]
@@ -160,7 +162,7 @@ func start_visit(next: Array) -> void:
 	visit = {"kind": next[1], "job": next[2] if next.size() > 2 else 0, "from": entry}
 	phase = Phase.COMING
 	var spot: Vector3 = Station.WINDOW_SPOT + Vector3(_rng.randf_range(-0.2, 0.2), 0.0, 0.0)
-	customer.walk([Vector3(entry.x * 0.5, 0.0, spot.z + 0.6), spot])
+	customer.walk([Vector3(entry.x * 0.5, 0.0, PASSING_Z), spot])
 	customer.arrived.connect(_on_arrived, CONNECT_ONE_SHOT)
 	var visits: Dictionary = GameState.flags.get("visitas", {})
 	visits[String(customer_id)] = int(visits.get(String(customer_id), 0)) + 1
@@ -450,7 +452,7 @@ func _leave(expression: StringName) -> void:
 	customer.face = expression
 	phase = Phase.LEAVING
 	var exit: Vector3 = visit.get("from", Station.ENTRY_LEFT)
-	customer.walk([Vector3(exit.x * 0.5, 0.0, Station.WINDOW_SPOT.z + 0.8), exit])
+	customer.walk([Vector3(exit.x * 0.5, 0.0, PASSING_Z), exit])
 	customer.arrived.connect(_on_left, CONNECT_ONE_SHOT)
 
 
