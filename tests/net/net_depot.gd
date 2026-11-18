@@ -14,7 +14,7 @@ extends SceneTree
 
 const SCENE_PATH: String = "res://scenes/depot/deposito.tscn"
 const TIMEOUT: float = 40.0
-const EXPECTED_ITEMS: int = 22
+const EXPECTED_ITEMS: int = 28
 
 var _role: String = ""
 var _elapsed: float = 0.0
@@ -99,7 +99,11 @@ func _carry_a_can(me: Node) -> void:
 	var resting: Vector3 = body.global_position
 	me.position = Vector3(resting.x, 0.03, resting.z + 1.1)
 	me.rotation.y = 0.0
-	me.head_pitch = -0.5
+	await _frames(2)
+	# Mira al centro de la lata (la chica tiene los ojos más bajos que el chico).
+	var eye: Vector3 = me.eye_position()
+	var center: Vector3 = resting + Vector3(0.0, 0.05, 0.0)
+	me.head_pitch = -atan2(eye.y - center.y, Vector2(eye.x - center.x, eye.z - center.z).length())
 	if not await _until(func() -> bool: return me.focused() != null, "no tiene la lata delante"):
 		return
 	me.interact()

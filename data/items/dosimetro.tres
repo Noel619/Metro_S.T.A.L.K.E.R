@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/depot/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"dosimetro"
+display_name = "Dosímetro"
+category = 3
+model = "dosimetro"
+weight = 0.9
+grid_shape = Array[Vector2i]([Vector2i(0, 0), Vector2i(1, 0)])
+fragility = 0.5
+base_value = 80
+sold_by_weight = false
+tool = &"dosimetro"

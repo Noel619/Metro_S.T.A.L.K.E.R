@@ -1,0 +1,60 @@
+[gd_resource type="Resource" script_class="RepairRecipe" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/depot/repair_recipe.gd" id="1_recipe"]
+[ext_resource type="Script" path="res://scripts/depot/repair_step.gd" id="2_step"]
+
+[sub_resource type="Resource" id="Resource_paso1"]
+script = ExtResource("2_step")
+label = "Quitar los tornillos de la tapa"
+tool = &"destornillador"
+gesture = 2
+work = 4.0
+direction = -1
+part = "tornillo"
+effect = 1
+
+[sub_resource type="Resource" id="Resource_paso2"]
+script = ExtResource("2_step")
+label = "Quitar la tapa"
+tool = &"manos"
+gesture = 3
+work = 1.0
+direction = 0
+part = "tapa"
+effect = 3
+
+[sub_resource type="Resource" id="Resource_paso3"]
+script = ExtResource("2_step")
+label = "Limpiar los contactos"
+tool = &"cepillo_alambre"
+gesture = 1
+work = 4.0
+direction = 0
+part = "contactos"
+effect = 5
+
+[sub_resource type="Resource" id="Resource_paso4"]
+script = ExtResource("2_step")
+label = "Poner la tapa"
+tool = &"manos"
+gesture = 4
+work = 1.0
+direction = 0
+part = "tapa"
+effect = 4
+
+[sub_resource type="Resource" id="Resource_paso5"]
+script = ExtResource("2_step")
+label = "Apretar los tornillos"
+tool = &"destornillador"
+gesture = 2
+work = 4.0
+direction = 1
+part = "tornillo"
+effect = 2
+
+[resource]
+script = ExtResource("1_recipe")
+item_id = &"radio_bolsillo"
+steps = Array[ExtResource("2_step")]([SubResource("Resource_paso1"), SubResource("Resource_paso2"), SubResource("Resource_paso3"), SubResource("Resource_paso4"), SubResource("Resource_paso5")])
+repaired_condition = 0.9

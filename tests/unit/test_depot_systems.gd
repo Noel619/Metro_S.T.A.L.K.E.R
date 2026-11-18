@@ -6,8 +6,13 @@ extends "res://tests/test_case.gd"
 const LEVEL: String = "res://scenes/depot/deposito.tscn"
 
 
+func before_each() -> void:
+	DepotLevel.continue_saved = false
+
+
 func after_each() -> void:
 	GameState.reset_for_new_game("")
+	GameState.clock_running = false
 
 
 func test_a_day_charges_the_tax_and_counts_what_was_eaten() -> void:
@@ -82,7 +87,7 @@ func test_working_with_a_tool_reaches_the_host() -> void:
 	var player: Player = level.call("local_player")
 	var broom: Carryable = _item(level, &"escoba")
 	assert_true(broom != null, "hay escoba")
-	broom.request_grab()
+	broom.give_to(player.peer_id)
 	await _frames(30)
 	assert_true(player.held_item() == broom, "lleva la escoba")
 	assert_eq(player.current_tool(), &"escoba")

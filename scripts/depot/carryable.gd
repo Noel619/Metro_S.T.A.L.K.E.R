@@ -171,6 +171,20 @@ func request_grab() -> void:
 	_set_holder.rpc(peer)
 
 
+## El anfitrión se lo pone en las manos a [param peer] (lo que sale de la caja
+## de los rublos, una etiqueta en blanco, una bolsa del rollo).
+func give_to(peer: int) -> void:
+	if not multiplayer.is_server() or is_held():
+		return
+	var player: Player = Player.find(get_tree(), peer)
+	if player != null and player.held_item() == null:
+		# Aparece en sus manos (no viene volando desde donde estuviera).
+		_body.global_transform = player.hold_transform(state.data.weight, _bounds)
+		_body.linear_velocity = Vector3.ZERO
+		_body.angular_velocity = Vector3.ZERO
+		_set_holder.rpc(peer)
+
+
 ## El anfitrión se lo quita de las manos a quien lo lleve (porque desaparece).
 func force_drop() -> void:
 	if multiplayer.is_server() and is_held():
@@ -242,7 +256,10 @@ func _physics_process(delta: float) -> void:
 	_last_look = Vector2(player.rotation.y, player.head_pitch)
 	_has_last = true
 	var stiffness: float = follow_stiffness(_body.mass)
-	var correction: Vector3 = (offset * stiffness).limit_length(MAX_CORRECTION)
+	# Se corrige lo que falta después de seguir a las manos (si no, lo que se ha
+	# movido el jugador se contaría dos veces y el objeto se le adelantaría, y al
+	# chocar con algo se metería en ello).
+	var correction: Vector3 = ((offset - carried * delta) * stiffness).limit_length(MAX_CORRECTION)
 	_body.linear_velocity = (carried + correction).limit_length(MAX_SPEED)
 	var error: Vector3 = _rotation_vector(
 		wanted_turn * _body.global_basis.get_rotation_quaternion().inverse()

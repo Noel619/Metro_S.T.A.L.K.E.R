@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/depot/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"lata_vacia"
+display_name = "Lata aplastada"
+category = 6
+model = "lata_vacia"
+weight = 0.05
+grid_shape = Array[Vector2i]([Vector2i(0, 0)])
+fragility = 0.0
+base_value = 0
+sold_by_weight = false
+tool = &"basura"
+trash = true

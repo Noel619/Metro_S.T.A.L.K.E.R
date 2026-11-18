@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="CustomerData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/depot/customer_data.gd" id="1_cliente"]
+
+[resource]
+script = ExtResource("1_cliente")
+id = &"vendedora"
+signature = "Zina, la de la sopa"
+variant = "chica"
+cloth_color = Color(0.6, 0.38, 0.28, 1)
+accessories = "panuelo"

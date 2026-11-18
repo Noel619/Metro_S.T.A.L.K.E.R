@@ -49,6 +49,12 @@ const LOOSE_CHAINS: Array[PackedStringArray] = [["Bufanda1", "Bufanda2"], ["Tren
 	set(value):
 		player_slot = value
 		_apply_color()
+## Otro color para la bufanda (los que no son jugadores: los clientes, la
+## vendedora). Transparente: el del puesto del jugador.
+@export var cloth_color: Color = Color(0, 0, 0, 0):
+	set(value):
+		cloth_color = value
+		_apply_color()
 ## Fotogramas por segundo del movimiento "a saltos".
 @export_range(4.0, 60.0) var animation_fps: float = 12.0
 @export var backpack_visible: bool = true:
@@ -223,7 +229,8 @@ func _show_face(face: StringName) -> void:
 
 func _apply_color() -> void:
 	if _cloth != null:
-		_cloth.set_shader_parameter("albedo_color", PLAYER_COLORS[player_slot])
+		var color: Color = cloth_color if cloth_color.a > 0.0 else PLAYER_COLORS[player_slot]
+		_cloth.set_shader_parameter("albedo_color", color)
 
 
 func _apply_equipment() -> void:

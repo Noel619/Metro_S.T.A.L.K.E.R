@@ -103,6 +103,12 @@ const SWAY_RETURN: float = 6.0
 ## Lo que mide una herramienta para trabajar girándola en las manos (la
 ## escoba); las cortas se acercan enteras a lo que se trabaja.
 const LONG_TOOL: float = 0.6
+## Lo que se puede ajustar con la rueda mientras se lleva (el precio de una
+## etiqueta, los billetes de un fajo).
+const ADJUSTABLE: Array[StringName] = [&"etiqueta", &"billetes"]
+## Con hambre se anda más despacio y tiembla lo que se lleva.
+const HUNGRY_SPEED: float = 0.8
+const HUNGRY_TREMBLE: float = 0.006
 
 var peer_id: int = 1
 var variant: String = "chico"
@@ -224,8 +230,19 @@ func _exit_tree() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_local():
+	if not is_local() or CloseUp.is_open():
 		return
+	var wheel: InputEventMouseButton = event as InputEventMouseButton
+	if wheel != null and wheel.pressed and _held != null:
+		var step: int = 0
+		if wheel.button_index == MOUSE_BUTTON_WHEEL_UP:
+			step = 1
+		elif wheel.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			step = -1
+		if step != 0 and ADJUSTABLE.has(_held.state.data.tool):
+			request_adjust.rpc_id(Carryable.HOST_PEER, step)
+			get_viewport().set_input_as_handled()
+			return
 	var motion: InputEventMouseMotion = event as InputEventMouseMotion
 	if motion != null and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if working:
@@ -244,10 +261,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if is_local():
-		inspecting = _held != null and Input.is_action_pressed(&"use_secondary")
+		var reading: bool = CloseUp.is_open()
+		inspecting = (_held != null and not reading and Input.is_action_pressed(&"use_secondary"))
 		var pressing: bool = (
 			Input.is_action_pressed(&"use_primary")
 			and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+			and not reading
 		)
 		_update_work(delta, pressing)
 		var pad: Vector2 = Input.get_vector(&"look_left", &"look_right", &"look_up", &"look_down")
@@ -267,10 +286,14 @@ func _physics_process(delta: float) -> void:
 	if not is_local():
 		return
 	var input: Vector2 = scripted_input
-	if input == Vector2.ZERO and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	if (
+		input == Vector2.ZERO
+		and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+		and not CloseUp.is_open()
+	):
 		input = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
 	var wish: Vector3 = (basis * Vector3(input.x, 0.0, input.y)).limit_length(1.0)
-	var target: Vector3 = wish * WALK_SPEED * carry_slowdown()
+	var target: Vector3 = wish * WALK_SPEED * carry_slowdown() * hunger_slowdown()
 	var planar: Vector3 = Vector3(velocity.x, 0.0, velocity.z).move_toward(
 		target, ACCELERATION * delta
 	)
@@ -391,6 +414,38 @@ func request_work(path: NodePath, tool: StringName, amount: float, point: Vector
 		workable.work(self, tool, amount, point)
 
 
+## Pide al anfitrión que cambie con la rueda lo que lleva (el precio de una
+## etiqueta, los billetes de un fajo): [param step] es +1 o -1.
+@rpc("any_peer", "call_local", "reliable")
+func request_adjust(step: int) -> void:
+	if not multiplayer.is_server() or _held == null:
+		return
+	var sender: int = multiplayer.get_remote_sender_id()
+	if sender == 0:
+		sender = multiplayer.get_unique_id()
+	if sender == peer_id:
+		EventBus.item_adjusted.emit(self, _held, signi(step))
+
+
+## El anfitrión lleva a este jugador a otro sitio (al despertar, al catre).
+@rpc("any_peer", "call_local", "reliable")
+func move_to(where: Vector3, yaw: float) -> void:
+	var sender: int = multiplayer.get_remote_sender_id()
+	if sender != 0 and sender != Carryable.HOST_PEER:
+		return
+	if not is_local():
+		return
+	global_position = where
+	rotation.y = yaw
+	head_pitch = 0.0
+	velocity = Vector3.ZERO
+
+
+## Lo que frena el hambre: de 1 (nada) a [constant HUNGRY_SPEED].
+func hunger_slowdown() -> float:
+	return HUNGRY_SPEED if GameState.hungry_days >= GameState.HUNGRY_SHAKE else 1.0
+
+
 ## Dónde se dibuja [param item] mientras se trabaja con él: lo largo (la escoba)
 ## gira en las manos hasta apoyar la punta en lo que se trabaja; lo corto se
 ## acerca entero. El gesto lo mueve un poco sobre la superficie.
@@ -491,6 +546,11 @@ func carry_target(item: Carryable, cast: bool = true) -> Transform3D:
 	if cast and is_inside_tree():
 		_reach_share = _free_share(item, turn, start + direction * near, direction, far - near)
 	var center: Vector3 = start + direction * lerpf(near, far, _reach_share)
+	if GameState.hungry_days >= GameState.HUNGRY_SHAKE:
+		var t: float = Time.get_ticks_msec() / 1000.0
+		center += (
+			Vector3(sin(t * 23.0) + sin(t * 37.0) * 0.5, sin(t * 29.0 + 1.3), 0.0) * HUNGRY_TREMBLE
+		)
 	return Transform3D(turn, center - turn * bounds.get_center())
 
 
@@ -631,6 +691,7 @@ func _update_focus() -> void:
 		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
 			from, to, MASK_REACH, [get_rid()]
 		)
+		query.collide_with_areas = true
 		var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
 		if not hit.is_empty():
 			found = Interactable.of(hit["collider"] as Node)
@@ -666,6 +727,12 @@ func _update_work_target() -> void:
 			if found != null:
 				_work_point = hit["position"]
 				_work_normal = hit["normal"]
+		if found == null and _held != null:
+			var own: Workable = Workable.find(_held.body(), tool)
+			if own != null and own.self_use:
+				found = own
+				_work_point = _held.body().global_position
+				_work_normal = _camera.global_basis.z
 	if found != _work_target and _work_pending != 0.0:
 		_send_work()
 	_work_target = found

@@ -7,16 +7,25 @@ extends Node3D
 ## su estado. En los invitados la física está congelada: solo siguen lo que
 ## dice el anfitrión. Se guardan con la partida, cada uno donde está.
 
+## Alguien ha trabajado un objeto con algo en la mano (solo en el anfitrión):
+## etiquetarlo, embolsarlo, cepillarlo, repararlo, abrirlo, comérselo…
+signal item_worked(item: Carryable, player: Node, tool: StringName, amount: float, point: Vector3)
+
+const GROUP: StringName = &"world_items"
 const MODELS_DIR: String = "res://assets/models/"
 const LAYER_OBJECTS: int = 1 << 2
 const MASK_OBJECTS: int = (1 << 0) | (1 << 1) | (1 << 2)
 const SAVE_KEY: String = "objetos"
+## Lo que tarda en llegar a los invitados un objeto nuevo antes de ponérselo en
+## las manos a alguien.
+const GIVE_DELAY: float = 0.15
 
 var _spawner: MultiplayerSpawner
 var _next_uid: int = 1
 
 
 func _enter_tree() -> void:
+	add_to_group(GROUP)
 	SaveSystem.register_provider(SAVE_KEY, self)
 
 
@@ -56,6 +65,39 @@ func spawn_state(state: ItemState, where: Transform3D) -> Node3D:
 		state.uid = _next_uid
 	_next_uid = maxi(_next_uid, state.uid + 1)
 	return _spawner.spawn({"state": state.to_dict(), "where": where}) as Node3D
+
+
+## Pone un objeto nuevo en las manos de [param player] (sale de la caja de los
+## rublos, de la caja de las etiquetas, del rollo de bolsas…). Solo el anfitrión.
+func give(player: Player, item_id: StringName, extra: Dictionary = {}) -> Carryable:
+	if not multiplayer.is_server() or player == null or player.held_item() != null:
+		return null
+	var state: ItemState = ItemState.create(item_id, 0)
+	if state.data == null:
+		return null
+	state.extra = extra.duplicate(true)
+	var where: Transform3D = player.hold_transform(state.data.weight)
+	var holder: Node3D = spawn_state(state, where)
+	var item: Carryable = holder.find_child("Carryable", true, false) as Carryable
+	var peer: int = player.peer_id
+	get_tree().create_timer(GIVE_DELAY).timeout.connect(
+		func() -> void:
+			if is_instance_valid(item):
+				item.give_to(peer)
+	)
+	return item
+
+
+## Pone un objeto nuevo con [param extra] en [param where]. Solo el anfitrión.
+func spawn_with(item_id: StringName, where: Transform3D, extra: Dictionary = {}) -> Carryable:
+	if not multiplayer.is_server():
+		return null
+	var state: ItemState = ItemState.create(item_id, 0)
+	if state.data == null:
+		return null
+	state.extra = extra.duplicate(true)
+	var holder: Node3D = spawn_state(state, where)
+	return holder.find_child("Carryable", true, false) as Carryable if holder != null else null
 
 
 ## Quita un objeto del mundo (se lo lleva un cliente, se come, va a la basura).
@@ -176,6 +218,7 @@ func _build(values: Dictionary) -> Node:
 	sync.name = "TransformSync"
 	body.add_child(sync)
 	body.add_child(_state_sync())
+	ItemBehaviors.attach(self, body, carryable)
 	return holder
 
 

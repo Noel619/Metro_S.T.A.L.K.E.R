@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="CustomerData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/depot/customer_data.gd" id="1_cliente"]
+
+[resource]
+script = ExtResource("1_cliente")
+id = &"relojero"
+signature = "Lev Abrámovich, relojero"
+variant = "chico"
+cloth_color = Color(0.2902, 0.2275, 0.3529, 1)
+accessories = "gorra,gafas"
+wants_categories = Array[int]([3])
+wants_items = Array[StringName]([&"despertador", &"radio_bolsillo", &"linterna", &"brujula"])
+buy_factor = 1.25
+sells = Array[StringName]([])
+sell_factor = 1.15
+buy_note = "Busco relojes, radios,\nlinternas. Lo que funcione\nlo pago bien."
+sell_note = ""
+job_item = &"radio_bolsillo"
+job_text = "Una radio de bolsillo que suene"
+job_pay = 70
+job_days = 3
+job_hint = "Si la arreglas, vuelvo a por ella. Necesita la tapa bien cerrada."

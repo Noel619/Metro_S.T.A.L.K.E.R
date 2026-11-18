@@ -28,6 +28,9 @@ const HANDS: StringName = &"manos"
 @export var tools: Array[StringName] = []
 @export var gesture: Gesture = Gesture.STROKE
 @export var enabled: bool = true
+## Se trabaja sobre sí mismo, con él en la mano (comer): vale aunque no se tenga
+## nada delante.
+@export var self_use: bool = false
 
 
 ## El componente de [param body] que acepta [param tool], si lo hay.

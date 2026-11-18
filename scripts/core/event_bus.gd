@@ -19,5 +19,8 @@ signal game_saved
 signal player_died(peer_id: int)
 ## Todos los jugadores han muerto: la partida se borra.
 signal game_over
+## Un jugador gira la rueda con algo en la mano (en el anfitrión): el precio de
+## una etiqueta, los billetes de un fajo. [param step] es +1 o -1.
+signal item_adjusted(player: Node, item: Node, step: int)
 
 @warning_ignore_restore("unused_signal")

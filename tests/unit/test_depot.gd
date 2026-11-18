@@ -8,6 +8,7 @@ var _player: Player
 
 
 func before_each() -> void:
+	DepotLevel.continue_saved = false
 	_level = load(LEVEL).instantiate()
 	add_child(_level)
 	_player = _level.call("local_player")
@@ -16,6 +17,7 @@ func before_each() -> void:
 
 func after_each() -> void:
 	_level.free()
+	GameState.clock_running = false
 
 
 func test_player_spawns_on_the_floor_with_everything_in_place() -> void:
@@ -23,7 +25,7 @@ func test_player_spawns_on_the_floor_with_everything_in_place() -> void:
 	assert_true(_player.is_on_floor(), "pisa el suelo")
 	assert_eq(_player.slot, 0, "el anfitrión es el primer color")
 	var items: Array[Carryable] = (_level.get("items") as WorldItems).items()
-	assert_eq(items.size(), 22)
+	assert_eq(items.size(), 28)
 	for item: Carryable in items:
 		var body: RigidBody3D = item.get_parent()
 		assert_true(body.global_position.y > -0.05, "%s no atraviesa el suelo" % item.state.data.id)
@@ -32,7 +34,7 @@ func test_player_spawns_on_the_floor_with_everything_in_place() -> void:
 
 func test_walks_and_stops() -> void:
 	var start: Vector3 = _player.position
-	_player.scripted_input = Vector2(0.0, 1.0)
+	_player.scripted_input = Vector2(0.0, -1.0)
 	await _frames(40)
 	assert_true(_player.position.distance_to(start) > 0.6, "anda")
 	assert_almost(_player.move_speed, Player.WALK_SPEED, 0.2)

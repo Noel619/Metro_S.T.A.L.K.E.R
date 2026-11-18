@@ -15,7 +15,9 @@ func test_every_item_file_is_valid() -> void:
 		assert_true(
 			data.grid_shape.has(Vector2i.ZERO), "la forma empieza en la esquina: " + file_name
 		)
-		assert_true(data.weight > 0.0 and data.base_value > 0, file_name)
+		# Lo que no es mercancía (la basura, los billetes, las etiquetas) no vale nada.
+		var goods: bool = not data.trash and not data.tool in [&"billetes", &"etiqueta", &"basura"]
+		assert_true(data.weight > 0.0 and (data.base_value > 0 or not goods), file_name)
 
 
 func test_grid_shape_size_and_rotation() -> void:

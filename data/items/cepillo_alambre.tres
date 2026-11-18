@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/depot/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"cepillo_alambre"
+display_name = "Cepillo de alambre"
+category = 2
+model = "cepillo_alambre"
+weight = 0.2
+grid_shape = Array[Vector2i]([Vector2i(0, 0), Vector2i(1, 0)])
+fragility = 0.0
+base_value = 6
+sold_by_weight = false
+tool = &"cepillo_alambre"
+tip = Vector3(0.07, 0.004, 0)
