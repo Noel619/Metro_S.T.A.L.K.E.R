@@ -33,9 +33,8 @@ const FAR_STEP: float = 8.0
 ## Lo que tiene que medir un edificio para tapar lo de detrás.
 const OCCLUDER_MIN_HEIGHT: float = 8.0
 const OCCLUDER_MIN_AREA: float = 80.0
-const PROP_MODELS: PackedStringArray = [
-	"coche", "coche_quemado", "arbol_desnudo", "arbol_desnudo_b"
-]
+## Los árboles (los vehículos los dice CityProps.VEHICLE_MODELS).
+const PROP_MODELS: PackedStringArray = ["arbol_desnudo", "arbol_desnudo_b"]
 ## Materiales del tránsito: textura (assets/textures/pavimentos/), nieve y fila de rampas.
 const TRANSIT_MATERIALS: Dictionary = {
 	"asfalto": ["asfalto", 0.75],
@@ -105,6 +104,10 @@ var plan: CityPlan
 var buildings_by_id: Dictionary = {}
 ## Cifras de la construcción: segundos, sectores, triángulos, instancias…
 var stats: Dictionary = {}
+## Lo que hay por la calle (los vehículos, los árboles y las estructuras) y dónde queda.
+var props: CityProps:
+	get:
+		return _props
 
 var _materials: Dictionary = {}
 var _models: Dictionary = {}
@@ -573,14 +576,20 @@ func _window_texture() -> ImageTexture:
 	return ImageTexture.create_from_image(image)
 
 
-## Las mallas de los modelos que se repiten (coches y árboles) y la caja de los demás
-## vehículos, con sus materiales.
+## Las mallas de los modelos que se repiten (los vehículos y los árboles) y la caja de lo
+## que no tiene modelo, con sus materiales. De cada vehículo se apunta también su caja de
+## colisión: es su medida, y con ella se escala a lo que mide en el plano.
 func _load_models() -> void:
-	for model: String in PROP_MODELS:
+	for model: String in PROP_MODELS + CityProps.VEHICLE_MODELS:
 		var scene: Node = (load(MODELS_DIR + model + ".glb") as PackedScene).instantiate()
 		var found: Array[Node] = scene.find_children("*", "MeshInstance3D", true, false)
 		var mesh_instance: MeshInstance3D = found[0] as MeshInstance3D
 		_models[model] = [mesh_instance.mesh, mesh_instance.get_surface_override_material(0)]
+		for node: Node in scene.find_children("*", "CollisionShape3D", true, false):
+			var shape: CollisionShape3D = node as CollisionShape3D
+			if shape.shape is BoxShape3D and model in CityProps.VEHICLE_MODELS:
+				var size: Vector3 = (shape.shape as BoxShape3D).size
+				_props.model_boxes[model] = AABB(shape.position - size * 0.5, size)
 		scene.free()
 	var box: BoxMesh = BoxMesh.new()
 	box.size = Vector3.ONE
@@ -637,6 +646,9 @@ func _load_detail_models() -> void:
 		"farola": 0.3,
 		"farola_torcida": 0.3,
 		"farola_mocha": 0.3,
+		"poste_tendido": 0.3,
+		"poste_tendido_partido": 0.3,
+		"poste_tendido_punta": 0.4,
 	}
 	for model: String in snow:
 		var scene: Node = (load(MODELS_DIR + model + ".glb") as PackedScene).instantiate()
@@ -649,6 +661,7 @@ func _load_detail_models() -> void:
 			or model.begins_with("corazon")
 			or model.begins_with("pozo")
 			or model.begins_with("farola")
+			or model.begins_with("poste")
 			or model in ["sumidero", "tuberia_rota", "contenedor"]
 		):
 			material.set_shader_parameter("ramp_row", 4)

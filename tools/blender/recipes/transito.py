@@ -480,8 +480,94 @@ def build_buffer_stop() -> bpy.types.Object:
     return root
 
 
+# --------------------------------------------------------------------------
+# Tendido del tranvía y del trolebús
+# --------------------------------------------------------------------------
+
+POLE_PAINT = "#5C6457"
+POLE_HEIGHT = 8.5
+POLE_STUMP = 1.6
+# El fuste (radio, altura): el faldón de abajo, más grueso, y el tubo que se estrecha hasta
+# el capuchón; un anillo cada metro y pico para que el óxido corra a lo largo.
+POLE_PROFILE = [(0.19, 0.1), (0.19, 1.2), (0.15, 1.3), (0.145, 2.5), (0.138, 3.7), (0.13, 4.9), (0.122, 6.1),
+                (0.114, 7.3), (0.106, 8.4), (0.06, 8.52), (0.0, 8.55)]
+
+
+def _pole_radius(z: float) -> float:
+    """El radio del fuste a la altura ``z`` (entre los puntos del perfil)."""
+    for (r0, z0), (r1, z1) in zip(POLE_PROFILE, POLE_PROFILE[1:]):
+        if z0 <= z <= z1:
+            return r0 + (r1 - r0) * (z - z0) / max(z1 - z0, 1e-6)
+    return POLE_PROFILE[-1][0]
+
+
+def _jag(faces: list, z: float, rng: random.Random, low: bool) -> None:
+    """Rompe a tirones el borde del tubo a la altura ``z`` (la rotura de un poste partido)."""
+    for vert in dict.fromkeys(v for f in faces for v in f.verts):
+        if abs(vert.co.z - z) < 0.02:
+            vert.co.z += rng.uniform(-0.16, 0.1) if not low else rng.uniform(-0.1, 0.16)
+
+
+def _pole_finish(mb: tb.MeshBuilder, name: str, root: bpy.types.Object, seed: int) -> None:
+    pole = mb.finish(name, _material(), root)
+    tb.stain(pole, RUST, amount=0.6, scale=1.8, coverage=0.38, seed=seed, stretch_z=0.25)
+    tb.stain(pole, STEEL_DARK, amount=0.35, scale=3.0, coverage=0.3, seed=seed + 5)
+    tb.paint({pole: None}, samples=10, ao=0.4, ao_distance=0.3, seed=seed)
+
+
+def build_overhead_pole() -> bpy.types.Object:
+    """Poste del tendido del tranvía y del trolebús: tubo de acero de 8,5 m que se estrecha
+    hacia arriba, con su collar de hormigón en la acera, la franja blanca a la altura de los
+    faros, la abrazadera donde se ata el tirante (a 6,7 m) y el capuchón. El origen, en el
+    pie; la maqueta lo tuerce o lo tumba, y el tirante y la ménsula los pone ella."""
+    root = tb.empty("poste_tendido")
+    mb = tb.MeshBuilder(seed=261)
+    mb.cylinder(0.32, 0.2, (0.0, 0.0, 0.0), CONCRETE, segments=12)
+    mb.lathe(POLE_PROFILE, (0.0, 0.0, 0.0), POLE_PAINT, segments=12)
+    mb.cylinder(_pole_radius(1.0) + 0.008, 0.35, (0.0, 0.0, 1.0), WHITE_PAINT, segments=12)
+    mb.cylinder(_pole_radius(6.7) + 0.025, 0.16, (0.0, 0.0, 6.7), STEEL_DARK, segments=12)
+    for side in (-1.0, 1.0):
+        mb.box((0.05, 0.08, 0.05), (side * (_pole_radius(6.7) + 0.05), 0.0, 6.7), STEEL_DARK)
+    _pole_finish(mb, "poste_tendido", root, 261)
+    return root
+
+
+def build_overhead_pole_stump() -> bpy.types.Object:
+    """Lo que queda en pie de un poste partido: el faldón y un palmo de tubo, roto a
+    tirones y con el negro de dentro."""
+    root = tb.empty("poste_tendido_partido")
+    rng = random.Random(263)
+    mb = tb.MeshBuilder(seed=263)
+    mb.cylinder(0.32, 0.2, (0.0, 0.0, 0.0), CONCRETE, segments=12)
+    profile = [(r, z) for r, z in POLE_PROFILE if z < POLE_STUMP] + [(_pole_radius(POLE_STUMP), POLE_STUMP)]
+    faces = mb.lathe(profile, (0.0, 0.0, 0.0), POLE_PAINT, segments=12)
+    _jag(faces, POLE_STUMP, rng, low=False)
+    mb.cylinder(_pole_radius(POLE_STUMP) - 0.012, 0.02, (0.0, 0.0, POLE_STUMP - 0.2), DARK_PIT, segments=12)
+    mb.cylinder(_pole_radius(1.0) + 0.008, 0.35, (0.0, 0.0, 1.0), WHITE_PAINT, segments=12)
+    _pole_finish(mb, "poste_tendido_partido", root, 263)
+    return root
+
+
+def build_overhead_pole_top() -> bpy.types.Object:
+    """La punta de un poste partido, tirada: del tirón al capuchón, con su abrazadera. El
+    origen, en el eje del tubo por la rotura; el tubo, hacia +Z (la maqueta lo tumba)."""
+    root = tb.empty("poste_tendido_punta")
+    rng = random.Random(265)
+    mb = tb.MeshBuilder(seed=265)
+    profile = [(_pole_radius(POLE_STUMP), 0.0)] + [(r, z - POLE_STUMP) for r, z in POLE_PROFILE if z > POLE_STUMP]
+    faces = mb.lathe(profile, (0.0, 0.0, 0.0), POLE_PAINT, segments=12)
+    _jag(faces, 0.0, rng, low=True)
+    mb.cylinder(_pole_radius(POLE_STUMP) - 0.012, 0.02, (0.0, 0.0, 0.2), DARK_PIT, segments=12)
+    mb.cylinder(_pole_radius(6.7) + 0.025, 0.16, (0.0, 0.0, 6.7 - POLE_STUMP), STEEL_DARK, segments=12)
+    _pole_finish(mb, "poste_tendido_punta", root, 265)
+    return root
+
+
 def models() -> dict:
     return {
+        "poste_tendido": build_overhead_pole,
+        "poste_tendido_partido": build_overhead_pole_stump,
+        "poste_tendido_punta": build_overhead_pole_top,
         "tapa_redonda": build_round_lid,
         "tapa_cuadrada": build_square_lid,
         "pozo_redondo": build_open_round_pit,

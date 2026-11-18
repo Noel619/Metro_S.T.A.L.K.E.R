@@ -200,6 +200,27 @@ const VIEWS: Array[Dictionary] = [
 		"to": Vector3(1356.0, 1050.0, 0.3),
 		"fov": 64.0,
 	},
+	{
+		"name": "atasco",
+		"title": "El atasco de la avenida Soviética: autobuses, camiones y coches quemados",
+		"from": Vector3(854.1, 896.7, 3.0),
+		"to": Vector3(911.0, 959.8, 0.5),
+		"fov": 62.0,
+	},
+	{
+		"name": "tendido",
+		"title": "La calle de los Mineros: el tendido del trolebús y del tranvía, roto",
+		"from": Vector3(596.0, 316.0, 1.7),
+		"to": Vector3(680.0, 322.0, 4.0),
+		"fov": 62.0,
+	},
+	{
+		"name": "barcos",
+		"title": "Los barcos de pasajeros, atrapados en el hielo frente a la Estación Fluvial",
+		"from": Vector3(872.0, 728.0, 1.7),
+		"to": Vector3(930.0, 765.0, 3.0),
+		"fov": 62.0,
+	},
 ]
 ## Niebla: la del juego, una ligera (para ver lejos) o ninguna (todo detallado).
 const FOG_MODES: PackedStringArray = ["juego", "ligera", "sin"]

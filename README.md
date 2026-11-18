@@ -104,7 +104,7 @@ Tumansk ya tiene plano: **dónde está cada calle, cada manzana y cada edificio*
 
 - 1,6 × 1,2 km, con 8 zonas, el río y los túneles.
 - 357 edificios, 314 de ellos con interior.
-- 16 km de calles y 866 vehículos del atasco de la evacuación.
+- 16 km de calles y 818 vehículos del atasco de la evacuación.
 
 Todo está explicado en [docs/CIUDAD.md](docs/CIUDAD.md), con cuatro hojas: [general](docs/ciudad/plano_tumansk.jpg), [subsuelo](docs/ciudad/plano_tumansk_subsuelo.jpg), [amenazas y peligros](docs/ciudad/plano_tumansk_peligros.jpg) y [rutas](docs/ciudad/plano_tumansk_rutas.jpg).
 
@@ -230,7 +230,7 @@ Reglas para todo lo que se haga fuera (modelos, texturas, terreno, calles):
 4. **Sigue siendo legible.** El jugador tiene que poder leer por dónde se pasa y qué es peligroso: un socavón, un pozo abierto, hielo fino.
 5. **Es determinista.** El deterioro sale de semillas fijas, como todo el plano: dos ejecuciones dan la misma ciudad rota.
 
-En las calles ya está hecho así (`tools/ciudad/deterioro.py`, `firmes.py` y `restos.py`; ver [CIUDAD.md, «La superficie, rota»](docs/CIUDAD.md#17-la-superficie-rota) y las decisiones D-041 y D-053). **La calle no es un plano**: el firme está levantado en placas (más cerca de la Zona Cero), los bordillos van pieza a pieza (faltan o se han movido) y hay diez socavones sobre los colectores, la galería de la calefacción, las tuberías del agua y el túnel del metro. Encima, escombros al pie de las fachadas, basura en las cunetas, contenedores volcados, farolas torcidas, caídas o arrancadas, grietas, baches, tapas abiertas o robadas, pintura a trozos, carriles oxidados, traviesas que faltan y matojos secos. Lo siguiente que se haga fuera (edificios, vehículos, patios) sigue las mismas reglas.
+En las calles ya está hecho así (`tools/ciudad/deterioro.py`, `firmes.py` y `restos.py`; ver [CIUDAD.md, «La superficie, rota»](docs/CIUDAD.md#17-la-superficie-rota) y las decisiones D-041 y D-053). **La calle no es un plano**: el firme está levantado en placas (más cerca de la Zona Cero), los bordillos van pieza a pieza (faltan o se han movido) y hay diez socavones sobre los colectores, la galería de la calefacción, las tuberías del agua y el túnel del metro. Encima, escombros al pie de las fachadas, basura en las cunetas, contenedores volcados, farolas torcidas, caídas o arrancadas, el tendido del tranvía y del trolebús con sus postes torcidos o caídos y los hilos colgando o tirados en la calle, grietas, baches, tapas abiertas o robadas, pintura a trozos, carriles oxidados, traviesas que faltan y matojos secos. Los vehículos también: cada uno es su modelo, oxidado, con los cristales rotos y las ruedas pinchadas, y los quemados, sobre las llantas (D-059). Lo siguiente que se haga fuera (edificios, patios) sigue las mismas reglas.
 
 ### Qué hace el jugador
 

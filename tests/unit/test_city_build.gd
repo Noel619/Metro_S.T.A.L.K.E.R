@@ -27,6 +27,38 @@ func test_every_sector_and_building_is_built() -> void:
 	assert_eq(int(_city.stats["arboles"]), _city.plan.data["arboles"].size())
 
 
+func test_vehicles_are_their_models() -> void:
+	# Cada vehículo es su modelo a la medida del plano (ninguno queda como caja), los
+	# quemados tienen el suyo, los tranvías volcados yacen de costado y los barcos del río
+	# están en el hielo.
+	var placed: Dictionary = {}
+	for by_model: Dictionary in _city.props.vehicles().values():
+		for model: String in by_model:
+			var list: Array = placed.get(model, [])
+			for entry: Array in by_model[model]:
+				list.append(entry[0])
+			placed[model] = list
+	assert_false(placed.has("caja"), "vehículos sin modelo")
+	for model: String in [
+		"autobus", "autobus_quemado", "trolebus", "tranvia_quemado", "blindado", "barco"
+	]:
+		assert_true(placed.has(model), "falta %s" % model)
+	# El tren quemado de la vía 1: coches de 24 m.
+	var coach: Transform3D = placed["coche_tren_quemado"][0]
+	var mesh: Mesh = null
+	for node: Node in _city.find_children("CocheTrenQuemado", "MultiMeshInstance3D", true, false):
+		mesh = (node as MultiMeshInstance3D).multimesh.mesh
+	assert_almost(mesh.get_aabb().size.x * coach.basis.get_scale().x, 24.0, 0.6, "largo")
+	var lying: int = 0
+	for tram: Transform3D in placed["tranvia"]:
+		if absf(tram.basis.y.normalized().y) < 0.2:
+			lying += 1
+	assert_eq(lying, 2, "tranvías de costado")
+	var ice: float = float(_city.plan.data["rio"]["hielo"])
+	for barge: Transform3D in placed["barcaza"]:
+		assert_almost(barge.origin.y, ice, 0.05, "barcaza en el hielo")
+
+
 func test_ground_collision_follows_the_relief() -> void:
 	# La glorieta (llana), la cuesta de la loma (norte-sur: delataría un relieve al revés) y
 	# el hielo del río. En el centro de la glorieta está el Monumento al Minero.
@@ -328,6 +360,33 @@ func test_sinkholes_open_the_street() -> void:
 	# Las grietas y los carriles del tranvía que cuelgan sobre el socavón de la avenida.
 	assert_true(int(_city.stats["transito"]["grietas"]) > 1500, "grietas")
 	assert_true(float(_city.stats["transito"]["colgando_m"]) > 2.0, "carriles colgando")
+
+
+func test_overhead_lines_hang_over_the_streets() -> void:
+	# El tendido del tranvía y del trolebús: los postes (en pie, torcidos, caídos o
+	# partidos) y los cables. Los hilos que siguen tensos van a unos 5,8 m de lo que se pisa;
+	# los rotos o caídos llegan al suelo.
+	var lines: Array = _city.plan.transit["tendido"]["lineas"]
+	assert_true(int(_city.stats["transito"]["cables"]) > 1000, "tramos de cable")
+	var poles: int = 0
+	for node: Node in _city.find_children("PosteTendido*", "MultiMeshInstance3D", true, false):
+		poles += (node as MultiMeshInstance3D).multimesh.instance_count
+	assert_true(poles > 150, "postes: %d" % poles)
+	var tight: int = 0
+	var down: int = 0
+	for line: Dictionary in lines:
+		if not is_equal_approx(float(line["grosor"]), 0.028):
+			continue
+		var lowest: float = INF
+		for point: Array in line["puntos"]:
+			var ground: float = _city.surface_height(Vector2(point[0], point[1]))
+			lowest = minf(lowest, float(point[2]) - ground)
+		if lowest > 5.0:
+			tight += 1
+		elif lowest < 0.3:
+			down += 1
+	assert_true(tight > 40, "hilos tensos: %d" % tight)
+	assert_true(down > 40, "hilos en el suelo: %d" % down)
 
 
 func test_broken_pavement_plates_are_solid() -> void:
