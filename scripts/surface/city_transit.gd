@@ -576,6 +576,7 @@ func _assign() -> void:
 	_assign_lines(data["barandillas"], "rails")
 	_assign_lines(data["marcas"]["ejes"], "axes")
 	_assign_lines(data.get("grietas", []), "cracks")
+	_assign_lines(data.get("tendido", {}).get("lineas", []), "wires")
 	var zones: Array = data.get("placas", [])
 	for index: int in zones.size():
 		var flat: Array = zones[index]["puntos"]

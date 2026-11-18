@@ -236,6 +236,7 @@ class Trazado:
     marcas: dict = field(default_factory=dict)
     detalles: dict = field(default_factory=dict)
     puente: dict = field(default_factory=dict)
+    tendido: dict = field(default_factory=dict)  # {"lineas": [{"grosor", "puntos"}], "cifras"}
 
 
 def _calles_rodadas() -> list[dict]:
@@ -1661,6 +1662,11 @@ def trazar_completo(alturas: Alturas, t: Trazado | None = None) -> Trazado:
     import restos as RS
 
     t.detalles["restos"] = RS.restos(t, alturas) + RS.farolas(t, alturas)
+    import tendido as TD
+
+    postes, lineas, cifras = TD.tendido(t, alturas)
+    t.detalles["restos"] += postes
+    t.tendido = {"lineas": lineas, "cifras": cifras}
     return t
 
 
@@ -1819,6 +1825,7 @@ def exportar(t: Trazado, alturas: Alturas, carpeta) -> dict:
         "socavones": [_socavon_json(item, nuevo) for item in t.socavones],
         "placas": t.placas,
         "grietas": t.grietas,
+        "tendido": {"lineas": [{"grosor": c["grosor"], "puntos": c["puntos"]} for c in t.tendido.get("lineas", [])]},
         "relleno": {"triangulos": [ident for ident, _ in malla.rellenos],
                     "puntos": [v for _, esquinas in malla.rellenos for xy in esquinas for v in xy]},
     }
@@ -1832,6 +1839,7 @@ def exportar(t: Trazado, alturas: Alturas, carpeta) -> dict:
         "rejilla": {"enteros": int((estados == RJ.ENTERO).sum()), "borde": int((estados == RJ.BORDE).sum()),
                     "hondos": int((estados == RJ.HONDO).sum()), "anillo": int(((malla.estados & RJ.ANILLO) > 0).sum()),
                     "rellenos": len(malla.rellenos)},
+        "tendido": t.tendido.get("cifras", {}),
         "kb": round(len(texto) / 1024),
     }
 

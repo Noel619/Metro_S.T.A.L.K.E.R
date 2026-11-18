@@ -646,6 +646,9 @@ func _load_detail_models() -> void:
 		"farola": 0.3,
 		"farola_torcida": 0.3,
 		"farola_mocha": 0.3,
+		"poste_tendido": 0.3,
+		"poste_tendido_partido": 0.3,
+		"poste_tendido_punta": 0.4,
 	}
 	for model: String in snow:
 		var scene: Node = (load(MODELS_DIR + model + ".glb") as PackedScene).instantiate()
@@ -658,6 +661,7 @@ func _load_detail_models() -> void:
 			or model.begins_with("corazon")
 			or model.begins_with("pozo")
 			or model.begins_with("farola")
+			or model.begins_with("poste")
 			or model in ["sumidero", "tuberia_rota", "contenedor"]
 		):
 			material.set_shader_parameter("ramp_row", 4)

@@ -20,6 +20,8 @@ const PIT_SHADE: float = 0.5
 ## varía el tono de una placa a otra.
 const PLATE_SIDE_SHADE: float = 0.62
 const PLATE_TONE: float = 0.16
+## Los cables del tendido: cobre y acero viejos, casi negros.
+const WIRE_COLOR: Color = Color(0.16, 0.14, 0.13, 0.15)
 
 var transit: CityTransit
 var plan: CityPlan
@@ -48,6 +50,8 @@ var turnouts: PackedInt32Array = PackedInt32Array()
 var stops: PackedInt32Array = PackedInt32Array()
 var cracks: PackedInt32Array = PackedInt32Array()
 var plates: PackedInt32Array = PackedInt32Array()
+## Los cables del tendido del tranvía y del trolebús que pasan por el sector.
+var wires: PackedInt32Array = PackedInt32Array()
 
 var _center: Vector2
 var _origin: Vector2i
@@ -96,6 +100,33 @@ func build() -> void:
 	var rails: TransitRails = TransitRails.new(transit, self, builder)
 	rails.build()
 	edge_stats.merge(rails.stats)
+	_build_wires()
+
+
+## Los cables del tendido (los hilos, los tirantes, las péndolas y las ménsulas): cada
+## tramo, en el sector de su punto medio, como una viga fina centrada en la línea.
+func _build_wires() -> void:
+	if wires.is_empty():
+		return
+	var lines: Array = plan.transit["tendido"]["lineas"]
+	var count: int = 0
+	for index: int in wires:
+		var points: Array = lines[index]["puntos"]
+		var thick: float = float(lines[index]["grosor"])
+		for k: int in points.size() - 1:
+			var a: Array = points[k]
+			var b: Array = points[k + 1]
+			if not owns(Vector2(a[0] + b[0], a[1] + b[1]) * 0.5):
+				continue
+			buffer("metal").add_beam(
+				local(Vector2(a[0], a[1]), float(a[2]) - thick * 0.5),
+				local(Vector2(b[0], b[1]), float(b[2]) - thick * 0.5),
+				thick,
+				thick,
+				WIRE_COLOR
+			)
+			count += 1
+	stats["cables"] = count
 
 
 ## Los límites por los que se recorta lo del sector (en el borde del mapa, muy lejos: un

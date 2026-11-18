@@ -208,6 +208,13 @@ const VIEWS: Array[Dictionary] = [
 		"fov": 62.0,
 	},
 	{
+		"name": "tendido",
+		"title": "La calle de los Mineros: el tendido del trolebús y del tranvía, roto",
+		"from": Vector3(596.0, 316.0, 1.7),
+		"to": Vector3(680.0, 322.0, 4.0),
+		"fov": 62.0,
+	},
+	{
 		"name": "barcos",
 		"title": "Los barcos de pasajeros, atrapados en el hielo frente a la Estación Fluvial",
 		"from": Vector3(872.0, 728.0, 1.7),

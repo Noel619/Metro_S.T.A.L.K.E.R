@@ -362,6 +362,33 @@ func test_sinkholes_open_the_street() -> void:
 	assert_true(float(_city.stats["transito"]["colgando_m"]) > 2.0, "carriles colgando")
 
 
+func test_overhead_lines_hang_over_the_streets() -> void:
+	# El tendido del tranvía y del trolebús: los postes (en pie, torcidos, caídos o
+	# partidos) y los cables. Los hilos que siguen tensos van a unos 5,8 m de lo que se pisa;
+	# los rotos o caídos llegan al suelo.
+	var lines: Array = _city.plan.transit["tendido"]["lineas"]
+	assert_true(int(_city.stats["transito"]["cables"]) > 1000, "tramos de cable")
+	var poles: int = 0
+	for node: Node in _city.find_children("PosteTendido*", "MultiMeshInstance3D", true, false):
+		poles += (node as MultiMeshInstance3D).multimesh.instance_count
+	assert_true(poles > 150, "postes: %d" % poles)
+	var tight: int = 0
+	var down: int = 0
+	for line: Dictionary in lines:
+		if not is_equal_approx(float(line["grosor"]), 0.028):
+			continue
+		var lowest: float = INF
+		for point: Array in line["puntos"]:
+			var ground: float = _city.surface_height(Vector2(point[0], point[1]))
+			lowest = minf(lowest, float(point[2]) - ground)
+		if lowest > 5.0:
+			tight += 1
+		elif lowest < 0.3:
+			down += 1
+	assert_true(tight > 40, "hilos tensos: %d" % tight)
+	assert_true(down > 40, "hilos en el suelo: %d" % down)
+
+
 func test_broken_pavement_plates_are_solid() -> void:
 	# Las placas del firme roto se pisan: en el centro de cada una de las primeras, lo
 	# primero que se toca está entre lo más bajo y lo más alto de su cara de arriba.

@@ -45,7 +45,7 @@ Tumansk entera, levantada desde el plano en volúmenes sencillos para probar rec
 | Tab | Andar (con colisión, a 1,4 m/s) o volar (sin colisión) |
 | 1-9 y 0 | Las vistas fijas: la salida, la avenida, Los Bloques, el río, el puente, la Escalinata, la zona industrial, la Zona Cero, la ciudad desde el aire y las rutas desde el aire |
 | Mayús+1-0 | Las vistas de la red de tránsito: la Escalinata desde abajo, un cruce del Barrio Obrero, el vano hundido del puente, las escaleras de la loma, los andenes de la estación, la playa de vías, un paso a nivel, un desvío del escape de la playa, un tope y el tranvía por la mediana de la Avenida |
-| Ctrl+1-8 | Las vistas del deterioro (el socavón de la avenida, la galería de la calefacción hundida frente a la fábrica y una tubería del agua reventada en la calle de la Juventud), dos de los edificios singulares (el vestíbulo del metro desde la plaza y la Casa de los Sóviets al final de la avenida), la calle de la Planta con el firme levantado en placas, el atasco de la avenida Soviética y los barcos atrapados en el hielo frente a la Estación Fluvial |
+| Ctrl+1-9 | Las vistas del deterioro (el socavón de la avenida, la galería de la calefacción hundida frente a la fábrica y una tubería del agua reventada en la calle de la Juventud), dos de los edificios singulares (el vestíbulo del metro desde la plaza y la Casa de los Sóviets al final de la avenida), la calle de la Planta con el firme levantado en placas, el atasco de la avenida Soviética, el tendido roto de la calle de los Mineros y los barcos atrapados en el hielo frente a la Estación Fluvial |
 | R / Mayús+R | Recorre la ruta siguiente / anterior del plano a paso de persona, con cronómetro. **+** y **-** la aceleran (×4, ×16); Retroceso la para |
 | F2 / F3 / F4 | Capas: las rutas; la rejilla de sectores y las zonas; los hitos que se ven desde donde estás |
 | V | Comprueba en toda la ciudad la regla «desde cualquier punto se ven al menos dos hitos» y marca los puntos ciegos (rosa: ninguno; amarillo: uno) |
@@ -253,6 +253,7 @@ Si cambias un material de `assets/materials/` después de importar un modelo, bo
 | `deterioro.py` | El deterioro de la superficie: los socavones (contorno, cubeta, malla y lo que cae dentro), las grietas, los baches, las tapas abiertas o robadas, los bordillos que faltan o se han movido y los matojos |
 | `firmes.py` | El firme roto: las zonas de calle levantada en placas, con su base y sus placas |
 | `restos.py` | Lo tirado por la calle (cascotes, montones de escombros, basura, contenedores) y las farolas, en pie o rotas |
+| `tendido.py` | El tendido aéreo del tranvía y del trolebús: los apoyos (postes, tirantes y ménsulas), los hilos y lo que les pasó (postes torcidos, caídos o partidos; hilos rotos o en el suelo) |
 | `dibujo.py` | Dibuja las cuatro hojas de desarrollo |
 
 Para dibujar una sola hoja: `python3 tools/ciudad/plano.py --plano=general` (también `subsuelo`, `peligros` o `rutas`).
