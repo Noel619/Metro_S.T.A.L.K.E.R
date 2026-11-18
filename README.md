@@ -45,16 +45,16 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 
 | | |
 |---|---|
-| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) completa, a falta de tu aprobación · Fase 3 empezada: la maqueta de la ciudad (F3-15) |
+| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) completa, a falta de tu aprobación · Fase 2 (*El Depósito jugable*) en curso · Fase 3 empezada: la maqueta de la ciudad (F3-15), su red de tránsito (F3-17) y los edificios de la superficie (F3-16) |
 | **Motor** | Godot 4.7.2 |
 | **Plataforma** | PC (Windows; la build de Linux sale casi gratis) |
 | **Idioma** | Solo español |
 | **Calidad objetivo** | Lista para publicarse, aunque por ahora no se publique |
 | **Equipo de referencia** | Ryzen 7 8700G con su gráfica integrada (Radeon 780M) |
-| **Siguiente hito** | H1 · *Prueba de Tinta* (Fase 1) |
+| **Siguiente hito** | H1 · *Prueba de Tinta* (Fase 1) y H2 · *El depósito abre* (Fase 2) |
 | **La ciudad** | Plano completo fijado: [docs/CIUDAD.md](docs/CIUDAD.md) · Maqueta en 3D: `scenes/debug/maqueta_ciudad.tscn` (F6 en el editor) |
 
-**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre el visor del estilo: ← → cambian de diorama, C de cámara, ↑ ↓ suben o bajan el miedo, L enciende la linterna y F1 abre el panel de depuración (hora, clima, miedo, radiación y estilo). Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
+**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre **el depósito jugable**: WASD para andar, el ratón para mirar, F para coger y soltar, y el botón derecho para acercar un objeto y girarlo. Con F9 abres la partida a otro jugador y con F10 te unes a una. El visor del estilo de la Fase 1 sigue en `scenes/style/visor_estilo.tscn` (F6 en el editor): ← → cambian de diorama, C de cámara, ↑ ↓ suben o bajan el miedo, L enciende la linterna y F1 abre el panel de depuración (hora, clima, miedo, radiación y estilo). Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
 
 ### Así se ve ahora (Prueba de Tinta, completa)
 
@@ -72,6 +72,16 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 Vídeo de 33 segundos con todos los dioramas: [docs/capturas/fase1_dioramas.mp4](docs/capturas/fase1_dioramas.mp4).
 
 Todo lo que se ve (los muebles y el equipo, estanterías, cajas, persiana, bloques dañados, escombros, coches, ruinas del horizonte) está generado por código: 57 modelos, cada uno a partir de su receta. La guía de estilo con los valores actuales está en [docs/ESTILO.md](docs/ESTILO.md).
+
+### Los protagonistas (Fase 2, segunda pasada)
+
+| | |
+|---|---|
+| ![Los dos protagonistas en el patio de Los Bloques](docs/capturas/fase2_personajes_superficie.jpg) | ![Primer plano](docs/capturas/fase2_personajes_caras.jpg) |
+| ![En el depósito](docs/capturas/fase2_personajes_deposito.jpg) | ![De frente, de perfil y de espaldas](docs/capturas/fase2_personajes_fila.jpg) |
+| ![En marcha: caminar y cargar](docs/capturas/fase2_personajes_marcha.jpg) | ![Primera persona: las manos agarran lo que llevas (caja pequeña, caja grande, lata y bidón)](docs/capturas/fase2_primera_persona.jpg) |
+
+El chico y la chica, también generados por código: modelo, esqueleto, animaciones y las manos que se ven en primera persona. Tras tu primera revisión ("no puede ser un mundo tan *friendly*") son adolescentes flacos y ojerosos, con ropa heredada y remendada y equipo de stalker. Están **pendientes de tu visto bueno**.
 
 ### El plano de la ciudad
 
@@ -92,11 +102,51 @@ Todo está explicado en [docs/CIUDAD.md](docs/CIUDAD.md), con cuatro hojas: [gen
 | ![Tumansk desde el aire, sin niebla](docs/capturas/fase3_maqueta_aerea.jpg) | ![La avenida, hacia el puente y la Casa de los Sóviets](docs/capturas/fase3_maqueta_avenida.jpg) |
 | ![Las rutas y los sectores](docs/capturas/fase3_maqueta_rutas.jpg) | ![El panel: dónde estás, qué tienes delante y qué hitos se ven](docs/capturas/fase3_maqueta_panel.jpg) |
 
-La ciudad entera en 3D, levantada desde el plano en volúmenes sencillos: el relieve, las calles, los 357 edificios a su altura y con lo que queda en pie según su daño, los vehículos, los árboles y los puentes. Sirve para probar recorridos, vistas, sectores de carga y rendimiento antes de construir con el kit modular.
+La ciudad entera en 3D, levantada desde el plano: el relieve, las calles, los 357 edificios a su altura y con lo que queda en pie según su daño, los vehículos, los árboles y los puentes. Los 142 edificios que ya tienen modelo (las viviendas del kit y los singulares) se ven con él de cerca; los demás, y todos de lejos, en volúmenes sencillos. Sirve para probar recorridos, vistas, sectores de carga y rendimiento.
+
+| | |
+|---|---|
+| ![El vestíbulo del metro en su plaza](docs/capturas/fase3_maqueta_vestibulo.jpg) | ![La Casa de los Sóviets cierra la avenida](docs/capturas/fase3_maqueta_soviets.jpg) |
 
 - **Para abrirla:** en Godot, `scenes/debug/maqueta_ciudad.tscn` y **F6**. Se recorre a pie (Tab para volar), con vistas fijas (1-9 y 0) y recorridos automáticos de las rutas del plano con cronómetro (R).
 - **Herramientas:** cuenta los hitos que se ven desde donde estás (y comprueba la regla en toda la ciudad con V) y mide el rendimiento en tu PC (B). Todas las teclas, en [DESARROLLO.md](docs/DESARROLLO.md#la-maqueta-de-la-ciudad-f3-15).
 - **Lo que ha enseñado**, en [CIUDAD.md](docs/CIUDAD.md#15-la-maqueta): desde el 92 % de la calle se ven al menos dos hitos, pero no desde los patios cerrados; y la niebla de día tapa la ciudad a partir de unos 300 m, así que los hitos la atraviesan.
+- **Los edificios del kit en ella** ([CIUDAD.md](docs/CIUDAD.md#los-edificios-del-kit-en-la-maqueta)): cada uno tiene tres escalones de detalle (su volumen a más de 200 m, su modelo sin sombras hasta 60 m y entero más cerca) para que el coste de dibujo no se dispare ([D-052](docs/DECISIONES.md)); los que están en ladera llevan un zócalo, y los singulares se asientan en una explanada del plano ([D-051](docs/DECISIONES.md)). Se sale del metro por el foso de las escaleras del vestíbulo, y en la Casa de los Sóviets se sube por el escombro hasta el boquete.
+
+### Los edificios de la superficie (F3-16)
+
+| | |
+|---|---|
+| ![Una jrushchovka de cinco plantas: paneles, balcones y los portales](docs/capturas/fase3_kit_jrushchovka.jpg) | ![Una estalinista de esquina en la plaza del Trabajo](docs/capturas/fase3_kit_estalinka.jpg) |
+| ![El bloque de 9 plantas, de plaqueta, y la torre de 16](docs/capturas/fase3_kit_bloque.jpg) | ![La fachada de una estalinista: recercados, frontones, imposta y escaparates](docs/capturas/fase3_kit_estalinka_fachada.jpg) |
+| ![La casa obrera y una casa de ladrillo de los mercaderes](docs/capturas/fase3_kit_mercader.jpg) | ![Una isba: guardapolvos tallados, contraventanas y prichelinas](docs/capturas/fase3_kit_isba.jpg) |
+| ![Los daños: el extremo que mira a la bomba se hunde](docs/capturas/fase3_kit_danos.jpg) | ![El barracón obrero](docs/capturas/fase3_kit_barracon.jpg) |
+| ![Al anochecer](docs/capturas/fase3_kit_anochecer.jpg) | ![De noche, con linterna, ante un portal](docs/capturas/fase3_kit_noche.jpg) |
+
+Las 138 viviendas del plano ya tienen sus modelos 3D: se montan con un kit de piezas generadas por código, en cuatro familias, cada una a partir de su ficha del plano (huella, plantas, daño, incendio, dónde cayó la bomba).
+
+- **Las familias:** los bloques de paneles (jrushchovka, bloque de 9 plantas y torre de 16), las casas de muros de carga (la estalinista, la casa obrera y la casa de ladrillo de antes de la revolución) y las de madera (la isba y el barracón).
+- **Muros y materiales:** hormigón pintado, plaqueta, ladrillo visto y estuco que se cae alrededor de los huecos y deja ver el ladrillo; suciedad, chorretones y hollín sobre las ventanas quemadas. Cada casa tiene su tono y cada panel el suyo.
+- **Daños como en la maqueta:** el extremo que mira a la bomba se hunde, cascarones, muñones con su escombro, balcones caídos, ventanas rotas, tapiadas o quemadas, y las casas de madera ardidas.
+- **Hechos para la tinta:** molduras con perfil y cantos en derrame, juntas enrasadas y nada plano y estrecho, para que el contorno se dibuje limpio de cerca, de lejos y a ras ([D-036](docs/DECISIONES.md)).
+- **Para verlos:** en Godot, `scenes/style/diorama_edificios.tscn` (cada tipo con cada daño), `diorama_plaza.tscn` y `diorama_mercaderes.tscn` (las casas del plano tal cual), con **F6**. Cómo funciona y cómo se añaden piezas, en [DESARROLLO.md](docs/DESARROLLO.md#el-kit-de-arquitectura-f3-16); las reglas de estilo, en [ESTILO.md](docs/ESTILO.md#9-los-edificios-del-kit-f3-16).
+
+#### Los edificios singulares
+
+| | |
+|---|---|
+| ![El vestíbulo del metro desde la avenida: la rotonda, la columnata, МЕТРО y el control del ejército](docs/capturas/fase3_singular_vestibulo.jpg) | ![La cúpula de la sala, con la lámpara y la linterna sobre el óculo](docs/capturas/fase3_singular_vestibulo_cupula.jpg) |
+| ![La esclusa de la defensa civil con la compuerta abierta: por ahí sales](docs/capturas/fase3_singular_vestibulo_compuerta.jpg) | ![El Edificio Partido desde el cráter: los pisos abiertos, como una casa de muñecas](docs/capturas/fase3_singular_partido.jpg) |
+| ![Las plantas del Edificio Partido al borde del vacío](docs/capturas/fase3_singular_partido_casa.jpg) | ![La Casa de los Sóviets y su torre al final de la avenida](docs/capturas/fase3_singular_soviets.jpg) |
+| ![El escombro de la fachada reventada de la Casa de los Sóviets: por él se sube al boquete](docs/capturas/fase3_singular_soviets_escombro.jpg) | ![El cuarto quemado detrás del boquete, con lo que ardió de las oficinas](docs/capturas/fase3_singular_soviets_cuarto.jpg) |
+
+Los hitos y los sitios clave no salen del kit: son modelos enteros, hechos uno a uno con el máximo cuidado, que se ponen por su id del plano. Los tres primeros:
+
+- **El vestíbulo del metro** (PLZ-06, tu salida): una rotonda de los años cincuenta con veinte columnas, la cúpula de chapa con su linterna y la estrella, y МЕТРО sobre la entrada; delante, el control del ejército de la evacuación. Por dentro se recorre entero: la sala con su cúpula de casetones, la lámpara, los torniquetes y el equipaje abandonado, y la esclusa de hormigón con la compuerta blindada por la que sales, sobre las tres escaleras mecánicas que bajan a oscuras.
+- **El Edificio Partido** (ZC-01, donde termina el juego): un instituto de catorce plantas al que la bomba arrancó la mitad que la miraba. Lo que queda tiene los pisos abiertos al cráter, con los laboratorios y los despachos al borde del vacío, forjados colgando y el montón de escombros al pie; se sube por su escalera hasta la azotea, que mira al cráter.
+- **La Casa de los Sóviets y su torre** (CEN-SOV y CEN-SOVT): el bloque estalinista que cierra la avenida, con su pórtico de columnas gigantes y el escudo, quemado entero y con la fachada noreste reventada: su escombro sale hasta la calle, y por él se sube al boquete y se baja al cuarto quemado de detrás, entre archivadores, la caja fuerte y mesas carbonizadas. La torre, de 110 m, tiene la aguja doblada hacia el suroeste y el puesto del vigía en la planta 20.
+
+Tienen su colisión hecha a mano (los escalones y las escaleras son rampas) y dicen dónde quitar el terreno cuando bajan bajo la calle. Se ven en `diorama_vestibulo.tscn`, `diorama_partido.tscn` y `diorama_soviets.tscn` ([DESARROLLO.md](docs/DESARROLLO.md#los-edificios-singulares)), y ya están en la maqueta.
 
 ### Decisiones tomadas
 
@@ -130,8 +180,11 @@ La ciudad entera en 3D, levantada desde el plano en volúmenes sencillos: el rel
 ### Próximos pasos
 
 1. **Fase 1**: revisar las capturas, el [vídeo](docs/capturas/fase1_dioramas.mp4) y las piezas de interfaz, y aprobar el estilo. Con eso empiezan de lleno las Fases 2 y 3.
-2. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos).
-3. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
+2. **Tu revisión de los protagonistas** (capturas de arriba): ¿tienen ya el tono de Tumansk?
+3. **Fase 2**: seguir con el depósito jugable; lo siguiente es el primer día (limpiar) y el procesado del botín.
+4. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos). Ahora, con los edificios del kit, las calles residenciales cuestan entre 900 y 1.250 llamadas: es la medida que más interesa.
+5. **Los edificios** (F3-16): revisar las capturas, recorrer con F6 los dioramas de edificios y los de los tres singulares, y verlos en la maqueta (Ctrl+4 y Ctrl+5: el vestíbulo y la Casa de los Sóviets). Lo siguiente serían los interiores de serie, el resto de los sitios clave y, si el rendimiento lo pide, juntar las piezas iguales de cada manzana.
+6. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
 
 ---
 
@@ -165,7 +218,7 @@ Reglas para todo lo que se haga fuera (modelos, texturas, terreno, calles):
 4. **Sigue siendo legible.** El jugador tiene que poder leer por dónde se pasa y qué es peligroso: un socavón, un pozo abierto, hielo fino.
 5. **Es determinista.** El deterioro sale de semillas fijas, como todo el plano: dos ejecuciones dan la misma ciudad rota.
 
-En las calles ya está hecho así (`tools/ciudad/deterioro.py`, `firmes.py` y `restos.py`; ver [CIUDAD.md, «La superficie, rota»](docs/CIUDAD.md#17-la-superficie-rota) y las decisiones D-035 y D-036). **La calle no es un plano**: el firme está levantado en placas (más cerca de la Zona Cero), los bordillos van pieza a pieza (faltan o se han movido) y hay diez socavones sobre los colectores, la galería de la calefacción, las tuberías del agua y el túnel del metro. Encima, escombros al pie de las fachadas, basura en las cunetas, contenedores volcados, farolas torcidas, caídas o arrancadas, grietas, baches, tapas abiertas o robadas, pintura a trozos, carriles oxidados, traviesas que faltan y matojos secos. Lo siguiente que se haga fuera (edificios, vehículos, patios) sigue las mismas reglas.
+En las calles ya está hecho así (`tools/ciudad/deterioro.py`, `firmes.py` y `restos.py`; ver [CIUDAD.md, «La superficie, rota»](docs/CIUDAD.md#17-la-superficie-rota) y las decisiones D-041 y D-053). **La calle no es un plano**: el firme está levantado en placas (más cerca de la Zona Cero), los bordillos van pieza a pieza (faltan o se han movido) y hay diez socavones sobre los colectores, la galería de la calefacción, las tuberías del agua y el túnel del metro. Encima, escombros al pie de las fachadas, basura en las cunetas, contenedores volcados, farolas torcidas, caídas o arrancadas, grietas, baches, tapas abiertas o robadas, pintura a trozos, carriles oxidados, traviesas que faltan y matojos secos. Lo siguiente que se haga fuera (edificios, vehículos, patios) sigue las mismas reglas.
 
 ### Qué hace el jugador
 
@@ -769,11 +822,14 @@ Elegidas en la Fase 1 (F1-13). Las cuatro tienen licencia OFL, español completo
 │   ├── fonts/
 │   └── audio/               # music/, ambience/, sfx/, ui/
 ├── data/                    # recursos .tres: el contenido del juego
+│   ├── items/               # fichas de los objetos
 │   └── ciudad/              # el plano de la ciudad (plano.json, relieve.png y suelo.png), generado
 ├── scenes/                  # depot/, station/, surface/, ui/, actors/, props/, debug/
 ├── scripts/
 │   ├── core/                # autoloads y utilidades
 │   ├── net/                 # sesión, anfitrión, replicación
+│   ├── actors/              # jugador, avatar, manos de primera persona
+│   ├── interaction/         # componentes Interactable
 │   ├── depot/               # objetos, banco, descontaminación, tienda, economía
 │   ├── surface/             # la ciudad (plano, sectores, maqueta), jugador, herramientas, cuaderno…
 │   ├── ai/                  # percepción, conocimiento, criaturas, humanos
@@ -892,7 +948,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Entregable**: *Hola, Tumansk*: una caja generada por receta, importada sola, que dos instancias conectadas ven moverse a la vez.
 **Criterio de salida**: un asset va de la receta al juego sin tocar nada a mano; las dos instancias están sincronizadas; la CI está en verde.
-**Estado**: ✅ terminada. 14 tests y la prueba de red en verde. Captura: [docs/capturas/fase0_hola_tumansk.png](docs/capturas/fase0_hola_tumansk.png).
+**Estado**: ✅ terminada. Tests y prueba de red en verde. Captura: [docs/capturas/fase0_hola_tumansk.png](docs/capturas/fase0_hola_tumansk.png).
 
 ### Fase 1: La Prueba de Tinta (puerta de estilo) · tamaño M
 
@@ -900,7 +956,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 - [x] **F1-01** Shader de sombreado por bandas con rampas por material: luz cálida, sombra fría y luz de borde.
 - [x] **F1-02** Contorno por post-proceso (profundidad y normales), con grosor variable y trazo irregular. Se hace con un rectángulo a pantalla completa ([D-008](docs/DECISIONES.md)).
-- [x] **F1-03** Contorno por casco invertido para objetos clave, personas y criaturas (`InkHull`: normales suavizadas, grosor en píxeles, trazo vivo y miedo).
+- [x] **F1-03** Contorno por casco invertido para objetos clave, personas y criaturas (`InkHull`: normales suavizadas, grosor en píxeles, trazo vivo y miedo). *(En los protagonistas, con `assets/shaders/casco.gdshader`, que también resalta lo que se puede coger.)*
 - [x] **F1-04** Tramado en las sombras (*tonal art maps*), con densidad controlable.
 - [x] **F1-05** Trazo vivo a saltos (4, 8 y 12 fps), controlado por `StyleDirector`.
 - [x] **F1-06** Papel, grano, viñeta y gradación de color por zona (por parámetros en lugar de LUT, [D-011](docs/DECISIONES.md)).
@@ -922,10 +978,11 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Objetivo**: que trabajar en el depósito sea un placer táctil, de principio a fin.
 
-- [ ] **F2-01** Controlador en primera persona, versión depósito: tranquila y sin estamina.
-- [ ] **F2-02** Interacción: raycast, componentes `Interactable` y resaltado dibujado.
-- [ ] **F2-03** Física de objetos: coger, girar, inspeccionar, soltar. El peso se nota.
-- [ ] **F2-04** Modelo de datos de los objetos: categoría, peso, forma en la cuadrícula, estado, contaminación, fragilidad y valor.
+- [ ] **F2-00** Los protagonistas: el chico y la chica, con esqueleto, animaciones (reposo y caminar, con y sin carga), cara dibujada con 8 expresiones, color por jugador y manos de primera persona con los dedos articulados. *(Hechos; segunda pasada tras tu revisión del tono, pendiente de tu visto bueno.)*
+- [x] **F2-01** Controlador en primera persona, versión depósito: tranquila y sin estamina.
+- [x] **F2-02** Interacción: raycast, componentes `Interactable` y resaltado dibujado (el punto de lápiz se convierte en una mano y el objeto gana un contorno de tinta).
+- [x] **F2-03** Física de objetos: coger, girar, inspeccionar, soltar. El peso se nota: lo pesado tarda en seguirte, cuelga más bajo, te frena y se te cae si lo arrastras contra algo. Las manos agarran lo que llevas lo mires como lo mires: por las esquinas de una caja, por los costados de un bidón y con una sola mano lo que cabe en ella; lo grande se lleva más lejos y más bajo para que no tape la vista. Lo que llevas nunca se mete en el cuerpo ni en la cámara, ni se atraviesa al andar contra una pared; con algo grande en las manos no se puede mirar tan abajo.
+- [x] **F2-04** Modelo de datos de los objetos: categoría, peso, forma en la cuadrícula, estado, contaminación, fragilidad y valor. *(10 fichas en `data/items/`.)*
 - [ ] **F2-05** El primer día: telarañas, barrer, fregar, basura, cajas del antiguo dueño, bombilla, persiana atascada.
 - [ ] **F2-06** Dosímetro y descontaminación: lavar, cepillar, embolsar.
 - [ ] **F2-07** Banco de trabajo con reparaciones sencillas (minijuegos táctiles).
@@ -935,10 +992,11 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F2-11** Impuesto diario y comida (el puesto de al lado).
 - [ ] **F2-12** El trozo de estación que se recorre: pasillo, puesto vecino, tablón de avisos y escalera mecánica.
 - [ ] **F2-13** Respuesta táctil: sonidos, polvo y microanimaciones.
-- [ ] **F2-14** Todo sincronizado: dos jugadores pueden trabajar a la vez en el depósito.
+- [ ] **F2-14** Todo sincronizado: dos jugadores pueden trabajar a la vez en el depósito. *(Lo hecho hasta ahora ya lo está: los jugadores se ven, cada uno con su color, y los objetos los mueve el anfitrión. Lo comprueba una prueba con dos instancias.)*
 
 **Entregable**: el depósito, del primer día sucio a la primera venta.
 **Criterio de salida**: se juega todo el recorrido sin una sola caja de texto, y lo prueban 2 o 3 personas: "¿da gusto?".
+**Estado**: 🟨 en curso. Ya se puede andar por el depósito, coger y dejar cosas, solo o con otro jugador. 38 tests y dos pruebas de red en verde. Falta todo lo que convierte eso en un trabajo: limpiar, procesar el botín, vender, los encargos, el impuesto y el trozo de estación.
 
 ### Fase 3: La Superficie jugable · tamaño L
 
@@ -959,12 +1017,12 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [ ] **F3-13** Audio: oclusión, reverberación, ambiente dinámico, nieve.
 - [ ] **F3-14** **Zona 1, La Plaza**: primero con geometría provisional y después estilizada, con al menos 3 rutas a cada objetivo.
 - [x] **F3-15** **Maqueta automática de la ciudad**: un generador en Godot lee `data/ciudad/plano.json` y levanta la ciudad entera en volúmenes sencillos (relieve, calles, edificios a su altura, escombros). Sirve para probar recorridos, vistas, sectores de carga y rendimiento antes de construir. *(Hecha: `scenes/debug/maqueta_ciudad.tscn`, con recorridos de las rutas, hitos a la vista, prueba de rendimiento y 48 sectores con dos niveles de detalle; ver [CIUDAD.md](docs/CIUDAD.md#15-la-maqueta).)*
-- [ ] **F3-16** Kit modular de arquitectura soviética para los tipos del plano (jrushchovka, bloque de 9 plantas, casa estalinista), con daños por nivel e interiores de serie.
+- [ ] **F3-16** Kit modular de arquitectura soviética para los tipos del plano (jrushchovka, bloque de 9 plantas, casa estalinista), con daños por nivel e interiores de serie. *(Hechos los exteriores de las 138 viviendas del plano, en cuatro familias, con sus daños y los falsos interiores que se ven por las ventanas, y los tres primeros edificios singulares: el vestíbulo del metro y el Edificio Partido, con su interior, y la Casa de los Sóviets con su torre; ver [DESARROLLO.md](docs/DESARROLLO.md#el-kit-de-arquitectura-f3-16). Faltan los interiores de serie que se recorren, el resto de los sitios clave y llevarlos a la maqueta.)*
 - [ ] **F3-17** **Red de tránsito de la ciudad** en 3D: calzadas, aceras, bordillos, plazas, sendas, camino, escaleras y el tablero del puente, con muros, pretiles, pasos de cebra, tapas y sumideros, encajados en el relieve y con colisión que se sube andando. *(Hecho en la maqueta todo lo que se pisa y las vías del tren y del tranvía, con la estación, la playa de vías, los desvíos, los topes y los pasos a nivel, y los modelos de detalle de las tapas, los sumideros y las traviesas: ver [CIUDAD.md](docs/CIUDAD.md#16-la-red-de-tránsito). Todo roto como debe estar (el firme levantado en placas, socavones sobre lo que reventó debajo, escombros, basura y farolas caídas, grietas, baches, tapas abiertas o robadas, bordillos que faltan o se han movido, pintura a trozos, óxido y matojos): ver [CIUDAD.md](docs/CIUDAD.md#17-la-superficie-rota). Falta el cruce del tranvía con el apartadero de la fábrica.)*
 
 **Entregable**: una salida de 10 a 20 minutos: subir por la escalera, llegar a un objetivo y volver.
 **Criterio de salida**: en las pruebas, los jugadores planifican antes de salir, dibujan su mapa, usan al menos dos rutas distintas y ninguna muerte se siente injusta.
-**Estado**: 🟨 empezada por la ciudad: F3-15 hecha y F3-17 (la red de tránsito) casi, a falta de tu revisión. La maqueta es geometría provisional y no depende del estilo, así que se ha adelantado mientras se aprueba la Fase 1.
+**Estado**: 🟨 empezada por la ciudad: F3-15 hecha, F3-16 con los exteriores de las viviendas hechos y F3-17 (la red de tránsito) casi, a falta de tu revisión. La maqueta es geometría provisional y no depende del estilo, así que se ha adelantado mientras se aprueba la Fase 1; los edificios del kit siguen el estilo de la Fase 1 tal como está.
 
 ### Fase 4: El mundo vivo · tamaño L
 
@@ -1071,7 +1129,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 |---|---|---|---|---|---|
 | **H0 · Hola, Tumansk** | 0 | Proyecto, red, pipelines y CI | Un asset va de la receta al juego sin pasos manuales; dos instancias sincronizadas | S | ✅ |
 | **H1 · Prueba de Tinta** | 1 | 2 dioramas y guía de estilo | Estilo aprobado por ti | M | 🟨 |
-| **H2 · El depósito abre** | 2 | Depósito jugable | Del depósito sucio a la primera venta, sin cajas de texto | L | ⬜ |
+| **H2 · El depósito abre** | 2 | Depósito jugable | Del depósito sucio a la primera venta, sin cajas de texto | L | 🟨 |
 | **H3 · Primera salida** | 3 | La Plaza, el cuaderno y la Jauría | Se planifica, se dibuja, se usan rutas distintas; muertes justas | L | 🟨 |
 | **H4 · El mundo vivo** | 4 | Las zonas 1 y 2 funcionando sin el jugador | Lo que ves al llegar cuadra con lo que pasó; rutinas y peleas que nadie provoca | L | ⬜ |
 | **H5 · Los primeros días** | 5 | Vertical slice | Bucle completo, 60 fps en tu PC, cooperativo de 2 | XL | ⬜ |

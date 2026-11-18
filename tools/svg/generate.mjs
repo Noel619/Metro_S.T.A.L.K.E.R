@@ -56,7 +56,162 @@ function svg(width, height, drawables) {
     );
 }
 
+// --------------------------------------------------------------------------
+// Caras de los protagonistas
+// --------------------------------------------------------------------------
+// El rostro es un dibujo 2D pegado sobre la cabeza 3D (README 9.3). Cada cara es
+// una lámina de 4 × 2 casillas de 256 px, una por expresión; el material elige
+// la casilla (scripts/actors/player_avatar.gd). La lámina envuelve el frente de
+// la cabeza (116° de lado a lado), así que los ojos van más separados de lo que
+// parece natural, y el centro queda libre: ahí está la nariz, que tiene volumen.
+//
+// El tono es el del juego: dos años bajo tierra. Ojos pequeños y cansados,
+// ojeras, mejillas hundidas, la boca apretada. Nada de colorete ni de brillos.
+
+const EYE_WHITE = "#D6CEBD";
+const FACE_SHADOW = "#6B5548";
+const FACE_DIRT = "#B29782";
+const FACE_CELL = 256;
+const FACE_COLUMNS = 4;
+const FACE_EXPRESSIONS = ["neutro", "parpadeo", "esfuerzo", "miedo", "sonrisa", "sorpresa", "dolor", "cansado"];
+
+/** Trazo de cara: más limpio que el del resto de ilustraciones. */
+function faceInk(seed, extra = {}) {
+    return { seed, stroke: INK, strokeWidth: 4.5, roughness: 0.45, bowing: 0.5, ...extra };
+}
+
+// Por expresión: apertura del ojo (px), radio del iris, cejas [interior, exterior].
+const FACE_POSES = {
+    neutro: { open: 9, iris: 7.5, brows: [4, 0] },
+    parpadeo: { open: 0, iris: 0, brows: [4, 0] },
+    esfuerzo: { open: 6, iris: 6, brows: [11, -4] },
+    miedo: { open: 15, iris: 5.5, brows: [-11, 3] },
+    sonrisa: { open: 8, iris: 7, brows: [1, 0] },
+    sorpresa: { open: 14, iris: 6, brows: [-12, -9] },
+    dolor: { open: -1, iris: 0, brows: [10, -2] },
+    cansado: { open: 5.5, iris: 5.5, brows: [-1, 6] },
+};
+
+function faceSheet(style) {
+    const drawables = [];
+    FACE_EXPRESSIONS.forEach((expression, index) => {
+        const ox = (index % FACE_COLUMNS) * FACE_CELL;
+        const oy = Math.floor(index / FACE_COLUMNS) * FACE_CELL;
+        const seed = style.seed + index * 40;
+        const at = (x, y) => [ox + x, oy + y];
+        const pose = FACE_POSES[expression];
+        const ey = style.eyeY;
+        const w = style.eyeW;
+        [-1, 1].forEach((side, k) => {
+            const ex = 128 + side * style.eyeGap;
+            const s = seed + k * 13;
+            const h = pose.open * style.eyeOpen;
+            if (pose.open > 0) {
+                const [x0, y0] = at(ex - w, ey);
+                const [x1, y1] = at(ex + w, ey);
+                const [cx] = at(ex, ey);
+                drawables.push(
+                    generator.path(
+                        `M ${x0} ${y0} Q ${cx} ${y0 - h * 2.1} ${x1} ${y1} Q ${cx} ${y0 + h * 1.5} ${x0} ${y0} Z`,
+                        faceInk(s, { fill: EYE_WHITE, fillStyle: "solid", stroke: EYE_WHITE, strokeWidth: 1, roughness: 0 }),
+                    ),
+                    generator.circle(cx + side * style.gaze, y0 - 0.5, Math.min(pose.iris, h * 1.15) * 2, faceInk(s + 1, { fill: INK, fillStyle: "solid", strokeWidth: 1 })),
+                    // Párpado de arriba, pesado; el de abajo, apenas una línea.
+                    generator.curve([at(ex - w - 3, ey + 2), at(ex, ey - h * 1.05 - 1), at(ex + w + 3, ey + 1)], faceInk(s + 2, { strokeWidth: style.lid })),
+                    generator.curve([at(ex - w + 4, ey + 3), at(ex, ey + h * 0.72 + 1), at(ex + w - 3, ey + 2)], faceInk(s + 3, { strokeWidth: 2, stroke: FACE_SHADOW })),
+                );
+            } else if (pose.open === 0) {
+                drawables.push(generator.curve([at(ex - w - 2, ey), at(ex, ey + 5), at(ex + w + 2, ey)], faceInk(s + 2, { strokeWidth: style.lid })));
+            } else {
+                // Ojos apretados, con arrugas en el rabillo.
+                drawables.push(
+                    generator.curve([at(ex - w, ey + 3), at(ex, ey - 3), at(ex + w, ey + 2)], faceInk(s + 2, { strokeWidth: style.lid })),
+                    generator.line(...at(ex + side * (w + 3), ey - 1), ...at(ex + side * (w + 12), ey - 7), faceInk(s + 4, { strokeWidth: 2.5 })),
+                    generator.line(...at(ex + side * (w + 3), ey + 3), ...at(ex + side * (w + 12), ey + 7), faceInk(s + 5, { strokeWidth: 2.5 })),
+                );
+            }
+            // Ojeras.
+            const bag = ey + Math.max(h, 4) * 0.72 + 8;
+            drawables.push(generator.curve([at(ex - w + 2, bag - 2), at(ex - side * 2, bag + 3), at(ex + w - 3, bag - 3)], faceInk(s + 6, { strokeWidth: 2.6, stroke: FACE_SHADOW })));
+            if (style.bags > 1 || expression === "cansado") {
+                drawables.push(generator.curve([at(ex - w + 7, bag + 5), at(ex, bag + 8), at(ex + w - 9, bag + 3)], faceInk(s + 7, { strokeWidth: 2, stroke: FACE_SHADOW })));
+            }
+            // Cejas.
+            drawables.push(
+                generator.curve(
+                    [
+                        at(ex - side * style.browW * 0.5, style.browY + pose.brows[0]),
+                        at(ex, style.browY + (pose.brows[0] + pose.brows[1]) / 2 - 2),
+                        at(ex + side * style.browW * 0.5, style.browY + pose.brows[1]),
+                    ],
+                    faceInk(s + 8, { strokeWidth: style.browWeight, stroke: style.browColor }),
+                ),
+            );
+            // Mejillas hundidas: tres rayas de lápiz bajo el pómulo.
+            for (let n = 0; n < 3; n++) {
+                const hx = 128 + side * (style.cheekX + n * 8);
+                const hy = style.cheekY + n * 5;
+                drawables.push(generator.line(...at(hx - side * 5, hy - 10), ...at(hx + side * 4, hy + 10), faceInk(s + 9 + n, { strokeWidth: 2.2, stroke: FACE_SHADOW })));
+            }
+        });
+        // Marcas propias de cada uno: una cicatriz, una mancha de hollín.
+        if (style.scar) {
+            const [sx, sy] = style.scar;
+            drawables.push(
+                generator.line(...at(sx - 12, sy - 7), ...at(sx + 11, sy + 8), faceInk(seed + 60, { strokeWidth: 2.4, stroke: "#8A5A50" })),
+                generator.line(...at(sx - 5, sy + 4), ...at(sx + 1, sy - 5), faceInk(seed + 61, { strokeWidth: 2, stroke: "#8A5A50" })),
+                generator.line(...at(sx + 3, sy + 8), ...at(sx + 8, sy), faceInk(seed + 62, { strokeWidth: 2, stroke: "#8A5A50" })),
+            );
+        }
+        style.dirt.forEach(([dx, dy, dw, dh], n) => {
+            const [cx, cy] = at(dx, dy);
+            drawables.push(generator.ellipse(cx, cy, dw, dh, faceInk(style.seed + 70 + n, { stroke: FACE_DIRT, fill: FACE_DIRT, fillStyle: "solid", strokeWidth: 2, roughness: 1.6 })));
+        });
+        // Boca.
+        const my = style.mouthY;
+        const line = (points, extra = {}) => drawables.push(generator.curve(points.map(([x, y]) => at(128 + x, my + y)), faceInk(seed + 30, extra)));
+        const lip = () => line([[-7, 9], [0, 10], [7, 9]], { strokeWidth: 2, stroke: FACE_SHADOW });
+        if (expression === "sonrisa") {
+            line([[-15, 2], [0, 4], [17, -4]]);
+            lip();
+        } else if (expression === "esfuerzo") {
+            line([[-16, 4], [0, -2], [16, 5]], { strokeWidth: 5 });
+            drawables.push(generator.line(...at(128 - 20, my + 1), ...at(128 - 17, my + 9), faceInk(seed + 31, { strokeWidth: 2.2 })));
+            drawables.push(generator.line(...at(128 + 20, my + 2), ...at(128 + 17, my + 10), faceInk(seed + 32, { strokeWidth: 2.2 })));
+        } else if (expression === "dolor") {
+            drawables.push(generator.linearPath([[-18, 3], [-9, -4], [0, 3], [9, -4], [18, 3]].map(([x, y]) => at(128 + x, my + y)), faceInk(seed + 30)));
+        } else if (expression === "miedo") {
+            const [cx, cy] = at(128, my + 3);
+            drawables.push(generator.ellipse(cx, cy, 24, 11, faceInk(seed + 30, { fill: "#3A2224", fillStyle: "solid", roughness: 0.9, strokeWidth: 3.5 })));
+        } else if (expression === "sorpresa") {
+            const [cx, cy] = at(128, my + 4);
+            drawables.push(generator.ellipse(cx, cy, 13, 16, faceInk(seed + 30, { fill: "#3A2224", fillStyle: "solid", strokeWidth: 3.5 })));
+        } else if (expression === "cansado") {
+            line([[-12, 2], [0, 1], [12, 4]]);
+            lip();
+        } else {
+            line([[-14, 0], [0, 1], [14, 3]]);
+            lip();
+        }
+    });
+    return svg(FACE_CELL * FACE_COLUMNS, FACE_CELL * 2, drawables);
+}
+
+const FACE_CHICO = {
+    seed: 500, eyeGap: 47, eyeY: 78, eyeW: 19, eyeOpen: 1.0, gaze: -1, lid: 5.5,
+    browY: 52, browW: 46, browWeight: 6.5, browColor: "#221C19", bags: 1,
+    cheekX: 74, cheekY: 142, mouthY: 194, scar: [50, 120], dirt: [[198, 176, 36, 12]],
+};
+const FACE_CHICA = {
+    seed: 900, eyeGap: 47, eyeY: 79, eyeW: 21, eyeOpen: 1.15, gaze: 1, lid: 5,
+    browY: 54, browW: 42, browWeight: 4.5, browColor: "#3F2F22", bags: 2,
+    cheekX: 76, cheekY: 144, mouthY: 196, scar: null, dirt: [[52, 172, 34, 12]],
+};
+
 const ASSETS = {
+    "cara_chico.svg": () => faceSheet(FACE_CHICO),
+    "cara_chica.svg": () => faceSheet(FACE_CHICA),
+
     // Etiqueta de precio de cartón, con su agujero y el cordel.
     "etiqueta_precio.svg": () =>
         svg(256, 128, [

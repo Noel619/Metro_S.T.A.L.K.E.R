@@ -1,0 +1,142 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/buildings_diorama.gd" id="1_edificios"]
+[ext_resource type="PackedScene" path="res://scenes/style/ink_post.tscn" id="2_post"]
+
+[sub_resource type="Environment" id="Environment_edificios"]
+tonemap_mode = 2
+
+[node name="DioramaEdificios" type="Node3D"]
+script = ExtResource("1_edificios")
+
+[node name="Entorno" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_edificios")
+
+[node name="Sol" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.82, 0.25, -0.51, 0, 0.9, 0.44, 0.57, -0.36, 0.73, 0, 20, 0)
+light_color = Color(0.86, 0.9, 0.98, 1)
+light_energy = 1.1
+shadow_enabled = true
+directional_shadow_max_distance = 140.0
+
+[node name="InkPost" parent="." instance=ExtResource("2_post")]
+
+[node name="CamaraJrushchovka" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 1.7, 26)
+fov = 62.0
+
+[node name="Mira" type="Marker3D" parent="CamaraJrushchovka"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 7, 0)
+
+[node name="CamaraPortal" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.5, 1.6, 7.5)
+fov = 60.0
+
+[node name="Mira" type="Marker3D" parent="CamaraPortal"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.5, 3.2, 0)
+
+[node name="CamaraBalcones" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 44, 1.7, -34)
+fov = 60.0
+
+[node name="Mira" type="Marker3D" parent="CamaraBalcones"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 34, 8, -12)
+
+[node name="CamaraBloque" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 96, 1.7, 34)
+fov = 64.0
+
+[node name="Mira" type="Marker3D" parent="CamaraBloque"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 108, 13, 6)
+
+[node name="CamaraAerea" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 42, 52)
+fov = 55.0
+
+[node name="Mira" type="Marker3D" parent="CamaraAerea"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 66, 4, -4)
+
+[node name="CamaraBalconesCerca" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22, 1.7, -24)
+fov = 58.0
+
+[node name="Mira" type="Marker3D" parent="CamaraBalconesCerca"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 6, -12)
+
+[node name="CamaraDanos" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 74, 2.2, -16)
+fov = 66.0
+
+[node name="Mira" type="Marker3D" parent="CamaraDanos"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 60, 9, -44)
+
+[node name="CamaraCascaron" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 160, 3, -26)
+fov = 64.0
+
+[node name="Mira" type="Marker3D" parent="CamaraCascaron"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 118, 10, -42)
+
+[node name="CamaraMunones" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 4, -24)
+fov = 62.0
+
+[node name="Mira" type="Marker3D" parent="CamaraMunones"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -60, 2, -44)
+
+[node name="CamaraTorre" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 150, 1.7, 40)
+fov = 66.0
+
+[node name="Mira" type="Marker3D" parent="CamaraTorre"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 169, 20, -1)
+
+[node name="CamaraMercader" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 1.7, 17)
+fov = 64.0
+
+[node name="Mira" type="Marker3D" parent="CamaraMercader"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -38, 5, 0)
+
+[node name="CamaraIsbas" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -110, 3.5, 14)
+fov = 66.0
+
+[node name="Mira" type="Marker3D" parent="CamaraIsbas"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -116, 2.5, -6)
+
+[node name="CamaraBarracon" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -160, 2.2, 18)
+fov = 66.0
+
+[node name="Mira" type="Marker3D" parent="CamaraBarracon"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -180, 4, -6)
+
+[node name="CamaraBarraconRas" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -158, 1.7, 6)
+fov = 60.0
+
+[node name="Mira" type="Marker3D" parent="CamaraBarraconRas"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -190, 3, 3.6)
+
+[node name="CamaraPinon" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -141, 1.7, 7)
+fov = 58.0
+
+[node name="Mira" type="Marker3D" parent="CamaraPinon"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -134, 4.2, -2)

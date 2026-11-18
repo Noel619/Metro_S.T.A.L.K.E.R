@@ -14,6 +14,13 @@ extends Node3D
 ## lejana cuando la cámara está a menos de [member near_distance] del sector (HLOD, con
 ## visibility_parent). Los hitos se dibujan siempre y la niebla nunca los borra del todo.
 ## Los edificios grandes y el relieve son oclusores: lo que tapan no se dibuja.
+##
+## Los edificios que sabe montar el kit de arquitectura (F3-16: las viviendas de las cuatro
+## familias y los singulares) son sus modelos a menos de [member kit_distance] (CityKit, con
+## [member kit_buildings]); más lejos, sus volúmenes. Es un relevo por edificio dentro del
+## de su sector, porque un bloque del kit son unas sesenta mallas. Y las sombras de esas
+## mallas solo se dibujan a menos de [member kit_shadow_distance]: más allá, la sombra del
+## edificio la proyecta su volumen.
 
 const MODELS_DIR: String = "res://assets/models/"
 const RAMPS: String = "res://assets/textures/rampas.png"
@@ -83,6 +90,15 @@ const SMALL_DISTANCE: float = 110.0
 @export var props_distance: float = 300.0
 ## Hasta dónde llega el terreno de alrededor del mapa.
 @export var surroundings_margin: float = 600.0
+## Monta con el kit de arquitectura los edificios que sabe montar (si no, todos son
+## volúmenes, como en la maqueta de F3-15).
+@export var kit_buildings: bool = true
+## Distancia a un edificio del kit a partir de la cual se dibuja su volumen en vez de su
+## modelo (con la niebla del juego, a 200 m apenas se distingue).
+@export var kit_distance: float = 200.0
+## Distancia a un edificio del kit (que no sea singular) a partir de la cual su modelo no
+## proyecta sombras: las proyecta su volumen.
+@export var kit_shadow_distance: float = 60.0
 
 var plan: CityPlan
 ## Los edificios del plano por su id.
@@ -96,6 +112,10 @@ var _builder: CityBuildings
 var _terrain: CityTerrain
 var _props: CityProps
 var _transit: CityTransit
+var _kit: CityKit
+## Los volúmenes de los edificios montados con el kit: de lejos se ven ellos y de cerca, su
+## modelo (su visibility_range_begin es kit_distance).
+var _kit_volumes: Array[GeometryInstance3D] = []
 
 
 ## Levanta la ciudad entera (tarda unos segundos).
@@ -105,12 +125,24 @@ func build(city_plan: CityPlan) -> void:
 	_builder = CityBuildings.new(plan)
 	_terrain = CityTerrain.new(plan)
 	_props = CityProps.new(plan)
-	stats = {"triangulos_cerca": 0, "triangulos_lejos": 0, "vehiculos": 0, "arboles": 0}
+	stats = {
+		"triangulos_cerca": 0,
+		"triangulos_lejos": 0,
+		"vehiculos": 0,
+		"arboles": 0,
+		"kit_edificios": 0,
+		"kit_piezas": 0,
+	}
 	_make_materials()
 	_load_models()
 	_transit = CityTransit.new(plan)
 	_transit.build()
+	_kit = CityKit.new(plan) if kit_buildings else null
+	_kit_volumes.clear()
 	_terrain.holes = _transit.touched
+	if _kit != null:
+		# El terreno no se dibuja donde los singulares bajan bajo la calle.
+		_terrain.holes = _kit.cut_holes(_transit.touched, plan.relief_size, NEAR_STEP)
 	_terrain.hole_step = NEAR_STEP
 	stats["transito"] = _transit.stats
 	var vehicles: Dictionary = _props.vehicles()
@@ -173,6 +205,7 @@ func _build_sector(
 	for building: Dictionary in buildings:
 		var anchor: Vector2 = Vector2(building["centro"][0], building["centro"][1])
 		var offset: Vector3 = Vector3(anchor.x - center.x, 0.0, center.y - anchor.y)
+		# El volumen: la versión lejana, el oclusor y, si no lo monta el kit, todo.
 		var mesh: MeshBuffer = _builder.build(building, anchor)
 		if not CityPlan.is_landmark(building):
 			far.append(mesh, offset)
@@ -205,6 +238,10 @@ func _build_sector(
 	node.add_child(buildings_node)
 	for entry: Array in built:
 		var building: Dictionary = entry[0]
+		buildings_by_id[building["id"]] = building
+		if _kit != null and _kit.supports(building):
+			_add_kit_building(node, buildings_node, building, entry[1], entry[2])
+			continue
 		var landmark: bool = CityPlan.is_landmark(building)
 		var parent_path: NodePath = NodePath() if landmark else NodePath("../../Lejos")
 		var material: Material = _materials["hito" if landmark else "fachada"]
@@ -213,7 +250,6 @@ func _build_sector(
 		)
 		instance.position = entry[2]
 		_add_building_body(node, building, entry[1], entry[2])
-		buildings_by_id[building["id"]] = building
 	if structures is MeshBuffer:
 		_add_mesh(node, "Estructuras", structures, _materials["fachada"], NodePath("../Lejos"))
 		var shape: ConcavePolygonShape3D = ConcavePolygonShape3D.new()
@@ -232,7 +268,8 @@ func _build_sector(
 	node.add_child(occluder_node)
 
 
-## Las alturas de la colisión del relieve de un sector, rebajadas bajo el tránsito.
+## Las alturas de la colisión del relieve de un sector, rebajadas bajo el tránsito y
+## hundidas bajo los huecos de los singulares (el foso de las escaleras del vestíbulo).
 func _carved(sector: Vector2i, heights: PackedFloat32Array) -> PackedFloat32Array:
 	var result: PackedFloat32Array = heights.duplicate()
 	var n: int = _terrain.grid_size(NEAR_STEP)
@@ -243,6 +280,98 @@ func _carved(sector: Vector2i, heights: PackedFloat32Array) -> PackedFloat32Arra
 			var gx: int = mini(first.x + i, _transit.cells.x)
 			var gy: int = mini(first.y + j, _transit.cells.y)
 			result[j * n + i] -= _transit.carve[gy * stride + gx]
+	if _kit != null:
+		_kit.carve(result, plan.sector_rect(sector).position, n, NEAR_STEP)
+	return result
+
+
+## Un edificio montado con el kit de arquitectura (CityKit): su modelo a su cota y, si está
+## en ladera, su zócalo. Su volumen se dibuja en la versión detallada del sector hasta que se
+## está a menos de [member kit_distance]; entonces, el modelo. El volumen de un hito no va en
+## la versión lejana: se dibuja solo, también de lejos. A media distancia, el modelo va sin
+## sombras ([method _add_kit_shadow]). Choca como su volumen, salvo los singulares, que traen
+## su colisión (en ellos se entra).
+func _add_kit_building(
+	sector_node: Node3D, holder: Node3D, building: Dictionary, volume: MeshBuffer, offset: Vector3
+) -> void:
+	var model: Node3D = _kit.build(building)
+	model.position = offset + Vector3.UP * float(building["cota"])
+	holder.add_child(model)
+	var plinth: MeshBuffer = _kit.plinth(building)
+	if not plinth.is_empty():
+		var base: MeshInstance3D = MeshInstance3D.new()
+		base.name = "Zocalo"
+		base.mesh = plinth.to_mesh(_models["caja"][1])
+		model.add_child(base)
+		stats["triangulos_cerca"] += plinth.triangle_count()
+	var landmark: bool = CityPlan.is_landmark(building)
+	var switch: MeshInstance3D = _add_mesh(
+		holder,
+		String(building["id"]) + "_Volumen",
+		volume,
+		_materials["hito" if landmark else "fachada"],
+		NodePath() if landmark else NodePath("../../Lejos")
+	)
+	switch.position = offset
+	switch.visibility_range_begin = kit_distance
+	_kit_volumes.append(switch)
+	var shade: MeshInstance3D = null
+	if not KitSingular.MODELS.has(building["id"]):
+		shade = _add_kit_shadow(holder, building, offset, switch)
+	var bounds: AABB = switch.mesh.get_aabb()
+	for piece: Node in model.find_children("*", "GeometryInstance3D", true, false):
+		var geometry: GeometryInstance3D = piece
+		if shade == null or geometry.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF:
+			geometry.visibility_parent = geometry.get_path_to(switch)
+			continue
+		# De cerca, con su sombra; a media distancia, una copia (que comparte la malla) sin ella.
+		# La copia mide la distancia desde el centro del volumen, como la sombra: así cambian
+		# a la vez.
+		var copy: GeometryInstance3D = geometry.duplicate() as GeometryInstance3D
+		copy.name = String(geometry.name) + "_Medio"
+		copy.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		geometry.get_parent().add_child(copy)
+		copy.custom_aabb = _relative(copy, sector_node).affine_inverse() * switch.transform * bounds
+		copy.visibility_range_begin = kit_shadow_distance
+		copy.visibility_parent = copy.get_path_to(switch)
+		geometry.visibility_parent = geometry.get_path_to(shade)
+	var body: Node = model.get_node_or_null("Colision")
+	if body != null:
+		body.set_meta(&"edificio", building["id"])
+	else:
+		_add_building_body(sector_node, building, volume, offset)
+	stats["kit_edificios"] += 1
+	stats["kit_piezas"] += int(model.get_meta(&"kit_piezas", 0))
+
+
+## La sombra de un edificio del kit a media distancia (de [member kit_shadow_distance] a
+## [member kit_distance]): su volumen, metido hacia dentro para no quitarle la luz a su
+## fachada, que solo proyecta sombra.
+func _add_kit_shadow(
+	holder: Node3D, building: Dictionary, offset: Vector3, switch: MeshInstance3D
+) -> MeshInstance3D:
+	var anchor: Vector2 = Vector2(building["centro"][0], building["centro"][1])
+	var shade: MeshInstance3D = MeshInstance3D.new()
+	shade.name = String(building["id"]) + "_Sombra"
+	shade.mesh = _builder.build(_kit.inset(building), anchor).to_mesh(_materials["fachada"])
+	shade.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY
+	shade.position = offset
+	# Su distancia, desde el centro del volumen.
+	shade.custom_aabb = switch.mesh.get_aabb()
+	holder.add_child(shade)
+	shade.visibility_parent = shade.get_path_to(switch)
+	shade.visibility_range_begin = kit_shadow_distance
+	return shade
+
+
+## La transformación de [param node] respecto a su antepasado [param ancestor] (sin
+## necesidad de estar en el árbol de escena).
+static func _relative(node: Node3D, ancestor: Node) -> Transform3D:
+	var result: Transform3D = Transform3D.IDENTITY
+	var current: Node = node
+	while current != ancestor and current is Node3D:
+		result = (current as Node3D).transform * result
+		current = current.get_parent()
 	return result
 
 
@@ -277,6 +406,13 @@ func set_near_distance(distance: float) -> void:
 		var far: GeometryInstance3D = sector_node.get_node_or_null("Lejos") as GeometryInstance3D
 		if far != null:
 			far.visibility_range_begin = distance
+
+
+## Distancia a la que los edificios del kit pasan de su volumen a su modelo.
+func set_kit_distance(distance: float) -> void:
+	kit_distance = distance
+	for volume: GeometryInstance3D in _kit_volumes:
+		volume.visibility_range_begin = distance
 
 
 func _add_mesh(
@@ -315,6 +451,11 @@ func _add_building_body(
 func _blocks_view(building: Dictionary) -> bool:
 	if float(building["superficie"]) < OCCLUDER_MIN_AREA:
 		return false
+	# Los modelos del kit que dejan ver dentro (los singulares, en los que se entra) o que se
+	# han hundido a su manera no tapan como su volumen.
+	if _kit != null and _kit.supports(building):
+		if KitSingular.MODELS.has(building["id"]) or int(building["dano"]) >= 3:
+			return false
 	return _builder.standing_height(building) >= OCCLUDER_MIN_HEIGHT
 
 

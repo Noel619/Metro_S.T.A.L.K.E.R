@@ -51,6 +51,137 @@ func test_buildings_are_solid_and_known() -> void:
 	assert_true(tested >= 5, "hay bloques intactos que probar")
 
 
+func test_kit_buildings_replace_their_volumes_up_close() -> void:
+	var expected: int = 0
+	for building: Dictionary in _city.plan.data["edificios"]:
+		if BuildingKit.supports_building(building):
+			expected += 1
+	assert_true(expected > 100, "el kit monta la mayoría de las viviendas")
+	assert_eq(int(_city.stats["kit_edificios"]), expected)
+	# Un bloque: en la versión detallada de su sector se ve su volumen hasta que se está cerca;
+	# entonces, su modelo, a su cota. Sus piezas proyectan sombra solo de muy cerca: a media
+	# distancia la proyecta su volumen (metido hacia dentro).
+	var block: Dictionary = _first_kit_building("bloque9")
+	var model: Node3D = _model_of(block)
+	assert_true(model != null and not (model is MeshInstance3D), "el bloque es su modelo")
+	if model == null:
+		return
+	assert_almost(model.position.y, float(block["cota"]), 0.001)
+	var holder: Node = model.get_parent()
+	var volume: GeometryInstance3D = holder.get_node("%s_Volumen" % block["id"])
+	var shade: GeometryInstance3D = holder.get_node("%s_Sombra" % block["id"])
+	assert_eq(volume.get_node(volume.visibility_parent), holder.get_parent().get_node("Lejos"))
+	assert_almost(volume.visibility_range_begin, _city.kit_distance, 0.001)
+	assert_eq(shade.get_node(shade.visibility_parent), volume)
+	assert_eq(shade.cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_SHADOWS_ONLY)
+	assert_almost(shade.visibility_range_begin, _city.kit_shadow_distance, 0.001)
+	var near: int = 0
+	var middle: int = 0
+	for node: Node in model.find_children("*", "GeometryInstance3D", true, false):
+		var piece: GeometryInstance3D = node
+		var parent: Node = piece.get_node_or_null(piece.visibility_parent)
+		if String(piece.name).ends_with("_Medio"):
+			middle += 1
+			assert_eq(parent, volume, "%s, a media distancia" % piece.name)
+			assert_eq(piece.cast_shadow, GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
+		elif piece.cast_shadow == GeometryInstance3D.SHADOW_CASTING_SETTING_OFF:
+			assert_eq(parent, volume, "%s (sin sombra), de cerca y a media distancia" % piece.name)
+		else:
+			near += 1
+			assert_eq(parent, shade, "%s, con su sombra de cerca" % piece.name)
+	assert_true(near > 5 and near == middle, "cada pieza con sombra tiene su copia sin ella")
+	# Un hito: de lejos se ve su volumen, solo, y de cerca, su modelo.
+	var landmark: Dictionary = _city.buildings_by_id["ZC-01"]
+	var ruin: Node3D = _model_of(landmark)
+	var landmark_volume: GeometryInstance3D = ruin.get_parent().get_node("ZC-01_Volumen")
+	assert_true(landmark_volume.visibility_parent.is_empty(), "el hito se ve de lejos")
+	assert_almost(landmark_volume.visibility_range_begin, _city.kit_distance, 0.001)
+	for piece: Node in ruin.find_children("*", "GeometryInstance3D", true, false):
+		var parent_path: NodePath = (piece as GeometryInstance3D).visibility_parent
+		assert_eq(
+			piece.get_node_or_null(parent_path),
+			landmark_volume,
+			"%s cambia con el hito" % piece.name
+		)
+
+
+func test_plinths_face_outward() -> void:
+	# El zócalo de una casa en L, en ladera: un lado por cara, y todas miran hacia fuera de la
+	# huella, también las dos del rincón (que miran hacia el centro de la ficha).
+	var kit: CityKit = CityKit.new(_city.plan)
+	var ring: Array = [[0, 0], [20, 0], [20, 8], [8, 8], [8, 20], [0, 20], [0, 0]]
+	var anchor: Vector2 = Vector2(6.0, 6.0)
+	var building: Dictionary = {
+		"centro": [anchor.x, anchor.y], "huella": [ring], "cota": 5.0, "cota_min": 4.0
+	}
+	var mesh: MeshBuffer = kit.plinth(building)
+	assert_eq(mesh.triangle_count(), 12, "dos triángulos por lado")
+	var outline: PackedVector2Array = CityPlan.ring(ring)
+	for t: int in range(0, mesh.indices.size(), 3):
+		var middle: Vector3 = Vector3.ZERO
+		for k: int in 3:
+			middle += mesh.vertices[mesh.indices[t + k]] / 3.0
+		var normal: Vector3 = mesh.normals[mesh.indices[t]]
+		var probe: Vector2 = anchor + Vector2(middle.x + normal.x, -middle.z - normal.z)
+		assert_false(
+			Geometry2D.is_point_in_polygon(probe, outline), "cara %d hacia fuera" % (t / 3)
+		)
+		assert_almost(normal.y, 0.0, 0.001)
+	# Bajo la cota y hasta 40 cm por debajo del punto más bajo.
+	var lowest: float = INF
+	for vertex: Vector3 in mesh.vertices:
+		lowest = minf(lowest, vertex.y)
+	assert_almost(lowest, -1.0 - CityKit.PLINTH_FOOT, 0.001)
+	assert_true(kit.plinth({"cota": 5.0, "cota_min": 4.95}).is_empty(), "en llano, sin zócalo")
+
+
+func test_singular_buildings_collide_as_their_model() -> void:
+	# En el vestíbulo se entra: en medio de la sala se pisa su suelo, tres escalones por
+	# encima de la acera (su volumen era un bloque macizo).
+	var vestibule: Dictionary = _city.buildings_by_id["PLZ-06"]
+	var hall: Vector2 = Vector2(326.0, 299.5)
+	var ground: float = float(vestibule["cota"])
+	var hit: Dictionary = _ray(hall, ground + 5.0, ground - 30.0)
+	assert_eq(_city.building_of(hit.get("collider")).get("id"), "PLZ-06")
+	assert_true(not hit.is_empty() and hit["position"].y > ground + 0.3, "el suelo de la sala")
+	assert_true(not hit.is_empty() and hit["position"].y < ground + 3.0, "bajo la cúpula")
+
+
+func test_metro_vestibule_goes_below_the_street() -> void:
+	# El terreno no tapa el foso de las escaleras: por algún punto del hueco se ve (y se
+	# pisa) lo que hay bajo la calle. Si el relieve siguiera ahí, todo rayo pararía en él.
+	var vestibule: Dictionary = _city.buildings_by_id["PLZ-06"]
+	var holes: PackedVector2Array = _model_of(vestibule).get_meta(&"kit_huecos")
+	assert_true(holes.size() >= 3, "el vestíbulo dice dónde no va el terreno")
+	var box: Rect2 = Rect2(holes[0], Vector2.ZERO)
+	for point: Vector2 in holes:
+		box = box.expand(point)
+	var ground: float = float(vestibule["cota"])
+	var lowest: float = INF
+	for j: int in int(box.size.y):
+		for i: int in int(box.size.x):
+			var point: Vector2 = box.position + Vector2(i + 0.5, j + 0.5)
+			var hit: Dictionary = _ray(point, ground + 1.5, ground - 30.0)
+			if not hit.is_empty():
+				lowest = minf(lowest, hit["position"].y)
+	assert_true(lowest < ground - 2.0, "se baja bajo la calle (lo más bajo: %.2f)" % lowest)
+
+
+func test_a_walker_climbs_into_the_soviets_breach() -> void:
+	# El escombro del boquete de la fachada noreste de la Casa de los Sóviets sale hasta la
+	# calle: por él se sube al boquete y se baja por dentro al cuarto que quedó detrás. Si la
+	# colisión de la fachada no estuviera abierta, se quedaría arriba, contra el muro (a 9 m).
+	var building: Dictionary = _city.buildings_by_id["CEN-SOV"]
+	var center: Vector2 = Vector2(building["centro"][0], building["centro"][1])
+	# El marco de su receta: u a lo largo de la fachada principal y v hacia el noreste.
+	var turn: float = deg_to_rad(-42.0)
+	var street: Vector2 = center + Vector2(-8.0, 46.0).rotated(turn)
+	var inside: Vector2 = center + Vector2(-8.0, 22.0).rotated(turn)
+	var ground: float = float(building["cota"])
+	var end: float = await _walk(street, inside, 35.0)
+	assert_true(end > ground + 2.5 and end < ground + 6.0, "dentro, a %.1f m" % (end - ground))
+
+
 func test_bridge_deck_is_walkable() -> void:
 	var point: Vector2 = _city.plan.axis_point(455.0)
 	assert_true(_city.plan.height_at(point) < -5.0, "bajo el puente está el hielo")
@@ -322,6 +453,29 @@ func _walk(from: Vector2, to: Vector2, seconds: float) -> float:
 func _detail_count() -> int:
 	var details: Dictionary = _city.plan.transit["detalles"]
 	return details["tapas"].size() + details["sumideros"].size()
+
+
+## El primer edificio de un tipo montado con el kit (intacto, para que tenga todas sus piezas).
+func _first_kit_building(kind: String) -> Dictionary:
+	for building: Dictionary in _city.plan.data["edificios"]:
+		if building["tipo"] == kind and int(building["dano"]) == 1:
+			return building
+	return {}
+
+
+## El nodo del modelo de un edificio montado con el kit (null si no lo hay).
+func _model_of(building: Dictionary) -> Node3D:
+	var center: Vector2 = Vector2(building["centro"][0], building["centro"][1])
+	var sector: String = CityPlan.sector_name(_city.plan.sector_of(center))
+	return _city.get_node_or_null("Sector_%s/Edificios/%s" % [sector, building["id"]]) as Node3D
+
+
+func _ray(point: Vector2, from_height: float, to_height: float) -> Dictionary:
+	var space: PhysicsDirectSpaceState3D = _city.get_world_3d().direct_space_state
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+		CityPlan.to_world(point, from_height), CityPlan.to_world(point, to_height)
+	)
+	return space.intersect_ray(query)
 
 
 func _ray_down(point: Vector2, exclude: Array[RID]) -> Dictionary:

@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/first_person_review.gd" id="1_review"]
+
+[node name="PrimeraPersona" type="Node3D"]
+script = ExtResource("1_review")
+variant = "chica"
+item_id = &"caja_carton_grande"
+inspecting = false

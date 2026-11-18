@@ -174,7 +174,11 @@ def build_shelf() -> bpy.types.Object:
         if abs(v.co.x) < width / 2.0 - 0.05:
             v.co.z -= 0.012 * (1.0 - (2.0 * v.co.x / width) ** 2)
     tb.stain(shelf, RUST, amount=0.75, scale=2.5, coverage=0.28, seed=7)
-    tb.collision_box("estanteria_metalica", (width, depth, height), (0.0, 0.0, height / 2.0), root)
+    # Una colisión por balda, para poder dejar cosas encima de cada una.
+    for index, z in enumerate((0.08, 0.5, 0.92, 1.34, 1.76)):
+        tb.collision_box(f"balda_{index}", (width, depth, 0.03), (0.0, 0.0, z - 0.012), root)
+    for index, x in enumerate((-width / 2.0 + 0.012, width / 2.0 - 0.012)):
+        tb.collision_box(f"costado_{index}", (0.024, depth, height), (x, 0.0, height / 2.0), root)
     tb.paint({shelf: None}, samples=20, seed=7)
     return root
 

@@ -134,14 +134,100 @@ Cada vía del tren tiene su rasante (`tools/ciudad/ferrocarril.py`), que no es l
 
 Donde el tren cruza una calle, la calle sube hasta el carril (no al revés: la vía no puede quebrar su rasante), con una losa de hormigón de lado a lado de la calle y el terreno subiendo con ella como un terraplén; así ningún carril hace escalón con un bordillo y no hacen falta pretiles junto a la vía. El tranvía va siempre a ras de la calzada: donde su vía pisa algo peatonal o la tierra, una cama de losas a la altura de la calzada le abre paso. Sus curvas se redondean a 20 m de radio, porque el trazado del plano giraba en seco.
 
-## D-034 · Desvíos de verdad: la playa de vías se rehace
+## D-034 · Los edificios se montan con piezas, una MultiMesh por pieza
+
+Los edificios de la superficie (F3-16) no se modelan enteros: cada familia (paneles, mampostería, madera) es una biblioteca de piezas, un `.glb` con una malla por pieza que genera su receta, y `BuildingKit` coloca las de cada casa según su ficha del plano. Las piezas miden un vano de ancho y una planta de alto, con el origen en el arranque del vano, en la cara del muro; las reglas de cada familia las estiran lo justo para que los vanos llenen la huella y las plantas tengan su altura. Cada pieza se repite con una `MultiMesh` (una llamada de dibujo por pieza y edificio): el tono de cada casa y de cada panel va en el color de la instancia, y el desgaste y el hollín, en sus datos. El daño sigue las reglas y las semillas de la maqueta (`CityPlan.chance`), así que una casa se hunde por el mismo extremo en los dos.
+
+## D-035 · Los muros se ensucian en el shader, en el espacio del mundo
+
+La suciedad, los chorretones, el aparejo del ladrillo, la plaqueta y el revoque caído los calcula `tinta_muro.gdshader` con la posición en el mundo: siguen de una pieza a la siguiente sin costuras ni repeticiones y no cuestan vértices. Lo que depende de la pieza va en el color de vértice (el alfa marca dónde va la plaqueta o dónde se cae antes el revoque: junto a los huecos y abajo) y lo que depende de la casa llega por instancia (el desgaste, el hollín y de dónde sale). La oclusión, las cavidades y los chorretones de óxido se pintan al generar cada pieza, con lo que tendrá alrededor al montarla.
+
+## D-036 · Nada plano y estrecho: molduras con perfil y juntas enrasadas
+
+El contorno de tinta dibuja a puntos las caras que ocupan menos de un píxel: las de abajo de las molduras vistas desde la calle, las de arriba de los zócalos y los cantos a escuadra de lo que sobresale poco, sobre todo de lejos, a ras y en sombra. Hacer las molduras más gruesas no basta (a ras siguen siendo finas) y tocar el post-proceso cambiaría todo el estilo, así que se modela a prueba de tinta, como la arquitectura clásica: molduras con perfil (vierteaguas y caras de abajo en derrame), cantos inclinados, esquinas a inglete, juntas de color enrasadas y piezas que no se descolocan al montarlas. Las reglas están en [ESTILO.md](ESTILO.md#9-los-edificios-del-kit-f3-16). Los travesaños de las carpinterías se quedan como están: enrasar el cristal quitaría sus puntos, pero también las líneas de los paños de cerca.
+
+## D-037 · Las casas de madera, enteras y por estado
+
+La isba (9 × 8 m) y el barracón (30 × 11 m) tienen las medidas fijas en el plano y casi todos ardieron, así que no se montan por vanos: el kit guarda cada casa entera en cada estado (abandonada, chamuscada, cascarón y quemada) y `KitWhole` escoge la suya por el daño y el incendio de la ficha y la encaja en la huella, por su lado largo y estirada lo poco que haga falta. Una casa entera es una sola llamada de dibujo.
+
+## D-038 · Los hitos y los sitios clave, modelos enteros
+
+Los edificios que no siguen ninguna serie (el vestíbulo del metro, el Edificio Partido, la Casa de los Sóviets…) no se montan con piezas: cada uno es un modelo entero con su receta, hecho en las coordenadas del plano alrededor del «centro» de su ficha, y `KitSingular` lo pone tal cual por su id. Están en el estado que fija el plano, así que no tienen variantes, y llevan dos piezas que no se dibujan: su colisión, hecha a mano y más sencilla que lo que se ve (los escalones y las escaleras, rampas: el jugador no sube escalones), y, si el edificio baja bajo la calle, el hueco del terreno, que el edificio deja en sus metadatos para que quien pone el suelo lo recorte.
+
+## D-039 · Nieve dentro de los edificios abiertos, solo donde entra
+
+Los suelos de un edificio reventado no pueden coger nieve en todas sus caras de arriba, como `nevado`: quedarían blancos hasta el fondo de los pasillos. El material `nevado_parcial` usa la variante del sombreado de los pavimentos (`tinta_transito.gdshader`), que pone la nieve a parches según el alfa del color de vértice: la receta pinta mucha junto al borde roto y las ventanas reventadas y nada al fondo. En las caras de fuera de los antepechos el mismo alfa marca la plaqueta del material `azulejo`.
+
+## D-040 · Desvíos de verdad: la playa de vías se rehace
 
 Las vías que salen de otra lo hacen con un desvío (agujas, corazón, contracarriles y traviesas de madera) de marca 1/9 en la línea y 1/6 en la playa y los apartaderos, y con una curva de enlace hasta su cuerpo; las agujas van en tramos rectos y dos desvíos no se pisan (`tools/ciudad/vias.py` lo comprueba). La playa de vías del plano no se podía construir así: sus diez vías salían de un mismo punto en abanico. Se rehace con un escape en diagonal del que salen las vías una tras otra, como en una playa de verdad; en el mismo sitio y con la misma separación, pero con forma de trapecio y casi todas las vías acabadas en tope. Los apartaderos de la fábrica, el puerto y el carbón cambian de empalme por lo mismo, y las vías de los andenes ahora se unen a la principal por los dos lados. El plano sigue siendo el de la ciudad; lo que cambia es la geometría que no se podía construir.
 
-## D-035 · Nada está intacto: el deterioro, con datos y reglas
+## D-041 · Nada está intacto: el deterioro, con datos y reglas
 
 Tumansk es una ciudad posapocalíptica: la bomba cayó a unos kilómetros y lleva dos inviernos abandonada. Lo de fuera no puede parecer cuidado (README, «La ambientación de la superficie»). El deterioro no se pinta a mano: lo genera `tools/ciudad/deterioro.py` con datos (los socavones, sobre lo que reventó debajo) y reglas (grietas, baches, tapas, bordillos y matojos, con densidades por clase de superficie y el azar fijo de cada clave), y lo comprueba (los socavones, dentro del pavimento y lejos de edificios, vías, árboles y tuberías). Los socavones son huecos de verdad: el tránsito se corta y una malla propia con la altura de cada vértice baja al fondo, porque la rejilla del relieve (2 m, promediada en sus vértices) no puede tallar un hoyo de 5 m; la colisión del relieve se rebaja bajo ella y el relieve natural ya no lleva el socavón de la avenida (tallado ahí, hacía bajar la calle con él). Los baches y los pozos abiertos van encima de la calle (son poco hondos o pequeños, y cortar la calle por cada uno costaría mucho). Las grietas son tiras a ras de lo que se pisa con la nieve de su clase, para que la nieve las tape donde tapa el pavimento.
 
-## D-036 · La calle no es un plano
+## D-042 · Personajes por receta, con el esqueleto humanoide de Godot
+
+Las personas se generan igual que el resto de los modelos (`tools/blender/personaje_bpy.py`): piezas blandas hechas de anillos, con su color y sus pesos de hueso, suavizadas con una subdivisión. Los huesos llevan los nombres del perfil humanoide de Godot (`Hips`, `Spine`, `LeftUpperArm`…): así las animaciones se podrán compartir entre los protagonistas, los clientes y los saqueadores. Es la excepción a la regla de nombrar el contenido en español; los huesos propios de un personaje (`Bufanda1`, `Trenza2`) sí van en español.
+
+## D-043 · Animaciones como funciones, a saltos al reproducirlas
+
+Cada animación es una función del tiempo que devuelve una pose (`tools/blender/personaje_anim.py`). Las piernas se resuelven con cinemática inversa, así que los pies no patinan: basta con reproducir el ciclo a la velocidad a la que anda el personaje. Se guardan suaves; el aspecto de dibujo animado lo pone el juego, que solo avanza la animación 12 veces por segundo (`PlayerAvatar.animation_fps`). La mirada, la bufanda y la trenza van por encima, con suavidad.
+
+## D-044 · Caras dibujadas sobre una cabeza con relieve
+
+El rostro es una lámina 2D de 8 expresiones pegada sobre la cabeza (README 9.3), pero la cabeza no es una bola: tiene cejas, cuencas, pómulos y nariz. Con la luz de arriba, los ojos quedan en sombra y la tinta hace el resto.
+
+## D-045 · El tono de los personajes: nada de juguetes
+
+Revisión de la primera pasada de los protagonistas: eran cabezones, con colorete y ropa limpia, y el mundo no puede ser tan amable. Regla para todas las personas del juego: proporciones reales (unas siete cabezas), caras cansadas y sucias, ropa heredada, remendada y manchada, y equipo que cuente el oficio (mascarilla, gafas, cuerda, palanca). Los personajes se revisan siempre dentro de los dioramas, con la luz de la superficie y la del depósito, nunca sobre un fondo neutro.
+
+## D-046 · Coger cosas: lo pide el jugador, lo mueve el anfitrión
+
+Cada jugador manda sobre su movimiento y su mirada; el anfitrión, sobre la física de los objetos. Quien quiere coger algo se lo pide al anfitrión, que lleva el objeto hacia sus manos con velocidades (no lo teletransporta): así choca con lo que hay por medio y el peso se nota. En los invitados los objetos están congelados y solo siguen la posición replicada.
+
+## D-047 · Los guiones que se lanzan con `-s` no nombran clases del juego
+
+Un guion lanzado con `godot -s` se compila antes de que existan las autocargas. Si nombra una clase que las usa (`Player` usa `Settings`), falla al compilar y, como no llega a llamar a `quit()`, el proceso se queda colgado. Por eso las pruebas de red (`tests/net/`) acceden a los nodos sin tipos; los tests unitarios sí pueden, porque el ejecutor los carga más tarde.
+
+## D-048 · Las manos se colocan con las medidas del objeto
+
+En primera persona, la animación de sujetar deja las manos a una distancia fija, y eso solo vale para un tamaño. `GripModifier` las corrige cada fotograma con la caja que envuelve al objeto y con su posición real: van a sus costados, a algo menos de media altura, y lo que es estrecho y ligero (hasta 14 cm y 1,5 kg: una lata, una botella) se lleva solo con la derecha. La distancia a la que se lleva algo también depende de su tamaño: a partir de 15 cm de medio ancho se aleja, y a partir de 12 cm de medio alto baja, para que una caja grande o el bidón no tapen toda la vista. No hacen falta datos por objeto: sale todo de su malla.
+
+## D-049 · Lo que se lleva va delante del pecho, nunca dentro del cuerpo
+
+Lo que se llevaba iba en un punto fijo respecto a los ojos y colocado por su base: al mirar abajo se metía en el cuerpo (con el bidón, ya a -15°), al girarlo para inspeccionarlo llegaba a la cámara y, como el cuerpo no chocaba con ello, al andar contra una pared el jugador lo atravesaba y la cámara acababa dentro. Reglas:
+
+- Se coloca por su centro, en la vista y por debajo de la mirada, y siempre al menos a 20 cm del eje de los ojos más lo que abulte hacia ellos (el pecho y un hueco). Al inspeccionarlo, lo bastante lejos para que, lo gire como lo gire, no llegue a la cara.
+- Cuanto más abajo se mira, más lejos tendría que ir para no tocar el pecho, y las manos (antebrazos que salen de abajo de la vista) no lo pueden seguir más allá de un punto. Por eso, con algo en las manos la mirada no baja más de lo que las manos lo alcanzan: unos 42° con el bidón o la caja grande, 56° con una caja pequeña y 68° con una lata o una botella (sin nada, 82°). Si se coge algo mirando más abajo, la mirada sube sola.
+- Al mirar arriba, lo ligero sube con la mirada; lo pesado no pasa de la altura del pecho y sale de la vista por abajo.
+- Si hay una pared delante, se acerca al pecho en vez de meterse en ella; cuando ya no cabe, no se puede seguir andando hacia la pared (sí a lo largo). Lo mismo con otro jugador. Las comprobaciones son de solape: un barrido de forma no ve lo que ya toca al empezar.
+- Lo que el jugador anda o gira se sigue sin retraso: si no, al andar se quedaba atrás y acababa dentro del cuerpo. El peso se nota al acomodarlo, en lo que frena y en lo bajo que cuelga, y se cae solo si se queda atascado a más de 50 cm de las manos.
+- Quien lo lleva lo ve dibujado justo en sus manos: las mallas cuelgan de un nodo `Visual` que se pone en el sitio de las manos mientras el cuerpo físico (que va a 60 pasos por segundo y, en los invitados, llega con el retraso de la red) coincida con alguno de los sitios donde han estado las manos en el último medio segundo. Si no coincide, algo lo para de verdad y se dibuja donde está. La física sigue siendo del anfitrión (D-046).
+
+## D-050 · Las manos agarran puntos de la malla, en los ejes del objeto
+
+Sustituye a D-048 en cómo se ponen las manos; lo de no necesitar datos por objeto se mantiene. Las manos se movían cada fotograma a los lados de la caja que envuelve al objeto vista desde la cámara, con límites de alcance: al mirar casi en vertical, al girar deprisa o con lo que no es una caja (la escoba), quedaban lejos y el objeto flotaba. Ahora, cuando el objeto llega a las manos, `GripModifier` busca con rayos sobre su malla dónde apoyar cada palma y guarda esos puntos en los ejes del objeto, así que las manos van pegadas a él aunque se mueva, gire o se mire desde otro ángulo:
+
+- Con dos manos, en la esquina de delante de cada costado, con los dedos rodeándola: más atrás, la cara de delante las taparía. En lo redondo (el bidón, el cubo) esa esquina ya es la cara de delante, así que el agarre se retrasa hacia el costado.
+- Lo que cabe en una mano (hasta 14 cm y 1,5 kg), por el medio, con la derecha y los dedos cerrados alrededor; va un poco a la derecha y se coloca por el agarre, de modo que una escoba sobresale por arriba.
+- Lo que se lleva va derecho en el mundo, así que al mirar abajo gira respecto a la cámara y su parte de abajo se esconde. Al cogerlo se buscan varias alturas en cada costado y se usa la más baja que se vea; si las manos quedan en el borde de la vista, agarran más arriba. Si gira tanto que los costados ya no quedan a los lados (al inspeccionarlo), se vuelven a buscar.
+- Cada antebrazo se orienta para que la palma mire al objeto, sin doblar la muñeca de más y con el final de la manga fuera de la vista: el modelo solo tiene antebrazos.
+
+## D-051 · Los edificios con modelo propio mandan sobre el plano a su alrededor
+
+El plano les apilaba montones de escombro sobre la huella, por su daño, y los dejaba en la ladera del relieve. Los montones tapaban plantas bajas, entradas y el pórtico; y bajo la Casa de los Sóviets el terreno variaba ±0,9 m, así que asomaba dentro de sus patios y en la planta baja abierta del Edificio Partido. Ahora, los edificios con modelo propio (`MODELO_PROPIO` en `tools/ciudad/datos.py`: los de `KitSingular`) no reciben montones del plano, porque su receta trae su escombro, y se asientan en una explanada a su cota (`EXPLANADAS`): llano bajo la huella entera (con lo que haya en sus patios cerrados) y unos metros alrededor (lo que el modelo sale de ella: el basamento del vestíbulo, el escombro del Partido, el pórtico de los Sóviets), y una transición suave hasta el terreno. El tránsito sale del terreno, así que sigue la explanada. Los demás edificios del kit, cerrados, se quedan en su ladera con un zócalo de piedra hasta el punto más bajo de su huella.
+
+## D-052 · El kit en la maqueta: tres escalones de detalle por edificio
+
+Un bloque del kit son unas sesenta mallas (una MultiMesh por pieza), y cada una se dibuja en la pasada de color y en cada cascada de sombras. Con el relevo solo por sectores (a 450 m), a pie de calle se llegaba a 3.600 llamadas de dibujo, seis veces más que con volúmenes. Ahora cada edificio del kit tiene tres escalones dentro de la versión detallada de su sector:
+
+- A más de 200 m (`kit_distance`), su volumen.
+- De 200 a 60 m, su modelo sin sombras. La sombra la proyecta su volumen, metido 40 cm hacia dentro para no quitarle la luz a su propia fachada.
+- A menos de 60 m (`kit_shadow_distance`), el modelo entero, con sus sombras.
+
+Las tres versiones miden la distancia desde el mismo punto (el centro del volumen), para que cambien a la vez. Además, lo que va en los huecos de las fachadas (ventanas, puertas, escaparates y los cuartos de detrás) no proyecta sombra nunca: la sombra de un hueco la hace su muro, y en una calle es la mitad de las mallas. Con eso, las calles con edificios del kit se quedan entre 900 y 1.250 llamadas (con volúmenes, entre 400 y 670). Los singulares, de pocas mallas, se dibujan enteros a menos de 200 m.
+
+## D-053 · La calle no es un plano
 
 Con texturas rotas, grietas pintadas y baches encima, la calle seguía viéndose plana y en buen estado: una superficie lisa que sigue la rasante. El deterioro tiene que estar en la geometría. Zonas de firme roto (`tools/ciudad/firmes.py`) cortan la calle y la sustituyen por su base de grava (una malla propia, como los socavones) y placas sueltas que la maqueta levanta como prismas con colisión: se levantan, se hunden, se inclinan y se montan en lomos de presión, más cerca de la Zona Cero. Los bordillos van pieza a pieza (faltan o se han movido). Lo tirado por la calle y las farolas (`tools/ciudad/restos.py`) son instancias de modelos de Blender, las pequeñas solo de cerca. La rasante de toda la calle no se ondula: obligaría a cortar por la rejilla todos los triángulos que hoy se dibujan enteros y doblaría el tránsito para un efecto que apenas se ve; el relieve se concentra donde la calle está rota. El precio, medido: el doble de triángulos en el tránsito (1,3 millones) y el doble de tiempo al levantarlo (unos 9 s).

@@ -17,6 +17,9 @@ func _run() -> void:
 	var total: int = 0
 	var failed: int = 0
 	for file_name: String in _test_files():
+		# Lo que un archivo deja colgado de la raíz (la ciudad de los tests de la maqueta, que
+		# se levanta una vez para todos) se quita al acabar, para que no estorbe a los demás.
+		var present: Array[Node] = root.get_children()
 		var script: GDScript = load(UNIT_DIR + file_name)
 		for method: Dictionary in script.get_script_method_list():
 			var test_name: String = method["name"]
@@ -38,6 +41,10 @@ func _run() -> void:
 					print("        %s" % failure)
 			test_case.queue_free()
 			await process_frame
+		for child: Node in root.get_children():
+			if not present.has(child):
+				child.free()
+		await physics_frame
 	print("\n%d tests, %d fallos." % [total, failed])
 	quit(1 if failed > 0 else 0)
 

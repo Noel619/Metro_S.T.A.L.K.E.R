@@ -34,7 +34,7 @@ import: ## importa los recursos en Godot
 test: import ## tests unitarios
 	$(GODOT) --headless --path . -s tests/run_tests.gd
 
-test-net: import ## prueba de red con dos instancias (anfitrión e invitado)
+test-net: import ## pruebas de red con dos instancias (anfitrión e invitado)
 	GODOT=$(GODOT) tools/test_net.sh
 
 lint: ## revisa el estilo del código GDScript
@@ -55,6 +55,11 @@ capture: import ## capturas de las escenas de revisión (en capturas/, sin versi
 	tools/capture.sh res://scenes/style/diorama_patio_ventisca.tscn capturas/patio_ventisca.png
 	tools/capture.sh res://scenes/ui/prueba_interfaz.tscn capturas/interfaz.png
 	tools/capture.sh res://scenes/ui/prueba_tipografia.tscn capturas/tipografias.png
+	tools/capture.sh res://scenes/style/personajes_superficie.tscn capturas/personajes_superficie.png
+	tools/capture.sh res://scenes/style/personajes_deposito.tscn capturas/personajes_deposito.png
+	tools/capture.sh res://scenes/style/primera_persona_caja.tscn capturas/primera_persona_caja.png 1600 900 150
+	tools/capture.sh res://scenes/style/primera_persona_caja_grande.tscn capturas/primera_persona_caja_grande.png 1600 900 150
+	tools/capture.sh res://scenes/style/primera_persona_lata.tscn capturas/primera_persona_lata.png 1600 900 150
 
 capturas-docs: import ## rehace las capturas de la documentación (docs/capturas/)
 	tools/capturas_docs.sh

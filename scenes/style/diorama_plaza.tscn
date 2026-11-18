@@ -1,0 +1,63 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/buildings_diorama.gd" id="1_edificios"]
+[ext_resource type="PackedScene" path="res://scenes/style/ink_post.tscn" id="2_post"]
+
+[sub_resource type="Environment" id="Environment_plaza"]
+tonemap_mode = 2
+
+[node name="DioramaPlaza" type="Node3D"]
+script = ExtResource("1_edificios")
+escena = "plaza"
+
+[node name="Entorno" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_plaza")
+
+[node name="Sol" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.82, 0.25, -0.51, 0, 0.9, 0.44, 0.57, -0.36, 0.73, 0, 20, 0)
+light_color = Color(0.86, 0.9, 0.98, 1)
+light_energy = 1.1
+shadow_enabled = true
+directional_shadow_max_distance = 160.0
+
+[node name="InkPost" parent="." instance=ExtResource("2_post")]
+
+[node name="CamaraCurva" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 1.7, -20)
+fov = 66.0
+
+[node name="Mira" type="Marker3D" parent="CamaraCurva"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 13, -88)
+
+[node name="CamaraFachada" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18, 1.7, -62)
+fov = 62.0
+
+[node name="Mira" type="Marker3D" parent="CamaraFachada"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 8, -86)
+
+[node name="CamaraBajos" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, 1.6, 66)
+fov = 60.0
+
+[node name="Mira" type="Marker3D" parent="CamaraBajos"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 4, 88)
+
+[node name="CamaraBanco" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 1.7, -78)
+fov = 64.0
+
+[node name="Mira" type="Marker3D" parent="CamaraBanco"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 50, 11, -124)
+
+[node name="CamaraAerea" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 70, 70, 60)
+fov = 58.0
+
+[node name="Mira" type="Marker3D" parent="CamaraAerea"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -50)
