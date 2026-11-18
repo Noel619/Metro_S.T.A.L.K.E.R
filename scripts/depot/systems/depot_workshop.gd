@@ -110,9 +110,7 @@ func brush(item: Carryable, amount: float) -> void:
 		return
 	var left: float = maxf(0.0, item.state.contamination - amount * BRUSH_RATE)
 	item.set_values({"contamination": left})
-	DustPuff.burst(
-		self, item.body().global_position + Vector3(0, 0.1, 0), 0.3, Color(0.8, 0.85, 0.9)
-	)
+	items.puff.rpc(item.body().global_position + Vector3(0, 0.1, 0), 0.3, Color(0.8, 0.85, 0.9))
 
 
 ## Embolsar: la bolsa que se lleva envuelve el objeto y se gasta.
@@ -138,7 +136,7 @@ func tie_tag(item: Carryable, player: Player) -> void:
 func eat(item: Carryable, player: Player) -> void:
 	GameState.eat(item.state.data.nutrition)
 	items.remove_item(item)
-	DustPuff.burst(self, player.eye_position() - Vector3(0, 0.3, 0), 0.2, Color(0.85, 0.8, 0.7))
+	items.puff.rpc(player.eye_position() - Vector3(0, 0.3, 0), 0.2, Color(0.85, 0.8, 0.7))
 
 
 ## Un paso de reparación: solo en el banco y con lo que pide el paso.

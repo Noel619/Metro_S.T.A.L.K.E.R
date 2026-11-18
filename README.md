@@ -54,7 +54,7 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 | **Siguiente hito** | H1 · *Prueba de Tinta* (Fase 1) y H2 · *El depósito abre* (Fase 2) |
 | **La ciudad** | Plano completo fijado: [docs/CIUDAD.md](docs/CIUDAD.md) · Maqueta en 3D: `scenes/debug/maqueta_ciudad.tscn` (F6 en el editor) |
 
-**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre **el depósito jugable**: WASD para andar, el ratón para mirar, F para coger y soltar, y el botón derecho para acercar un objeto y girarlo. Con F9 abres la partida a otro jugador y con F10 te unes a una. El visor del estilo de la Fase 1 sigue en `scenes/style/visor_estilo.tscn` (F6 en el editor): ← → cambian de diorama, C de cámara, ↑ ↓ suben o bajan el miedo, L enciende la linterna y F1 abre el panel de depuración (hora, clima, miedo, radiación y estilo). Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
+**Para abrirlo**: instala Godot 4.7.2, importa `project.godot` y pulsa F5. Se abre **el depósito jugable** el primer día (o donde lo dejaste: se guarda al dormir; con `-- --nueva` se empieza de cero): WASD para andar, el ratón para mirar, F para coger, soltar, usar y leer, el botón izquierdo mantenido para trabajar con lo que llevas (barrer, fregar, atornillar, pagar, comer…), el botón derecho para acercar un objeto y girarlo y la rueda para el precio de una etiqueta o los billetes de un fajo. Con F9 abres la partida a otro jugador y con F10 te unes a una. Cómo se juega, en [docs/DEPOSITO.md](docs/DEPOSITO.md). El visor del estilo de la Fase 1 sigue en `scenes/style/visor_estilo.tscn` (F6 en el editor): ← → cambian de diorama, C de cámara, ↑ ↓ suben o bajan el miedo, L enciende la linterna y F1 abre el panel de depuración (hora, clima, miedo, radiación y estilo). Todo lo demás (herramientas, órdenes, pipelines) está en [docs/DESARROLLO.md](docs/DESARROLLO.md).
 
 ### Así se ve ahora (Prueba de Tinta, completa)
 
@@ -81,7 +81,20 @@ Todo lo que se ve (los muebles y el equipo, estanterías, cajas, persiana, bloqu
 | ![En el depósito](docs/capturas/fase2_personajes_deposito.jpg) | ![De frente, de perfil y de espaldas](docs/capturas/fase2_personajes_fila.jpg) |
 | ![En marcha: caminar y cargar](docs/capturas/fase2_personajes_marcha.jpg) | ![Primera persona: las manos agarran lo que llevas (caja pequeña, caja grande, lata y bidón)](docs/capturas/fase2_primera_persona.jpg) |
 
-El chico y la chica, también generados por código: modelo, esqueleto, animaciones y las manos que se ven en primera persona. Tras tu primera revisión ("no puede ser un mundo tan *friendly*") son adolescentes flacos y ojerosos, con ropa heredada y remendada y equipo de stalker. Están **pendientes de tu visto bueno**.
+El chico y la chica, también generados por código: modelo, esqueleto, animaciones y las manos que se ven en primera persona. Tras tu primera revisión ("no puede ser un mundo tan *friendly*") son adolescentes flacos y ojerosos, con ropa heredada y remendada y equipo de stalker. **Aprobados.**
+
+### El depósito jugable (Fase 2)
+
+| | |
+|---|---|
+| ![La consigna el primer día: polvo, basura y las cajas del antiguo dueño](docs/capturas/fase2_consigna_primer_dia.jpg) | ![La persiana atascada y la nota de la administración](docs/capturas/fase2_consigna_persiana_atascada.jpg) |
+| ![Una telaraña del rincón](docs/capturas/fase2_consigna_telarana.jpg) | ![El rincón para dormir: catre, estufa, radio y alfombra](docs/capturas/fase2_consigna_dormir.jpg) |
+| ![Abierto: el relojero en la ventanilla](docs/capturas/fase2_consigna_mostrador.jpg) | ![El relojero y su papelito, desde dentro](docs/capturas/fase2_consigna_cliente.jpg) |
+| ![El banco: una radio a medio arreglar, el flexo y las etiquetas](docs/capturas/fase2_consigna_banco.jpg) | ![El corcho de los encargos](docs/capturas/fase2_consigna_encargos.jpg) |
+| ![La ventanilla de la consigna desde el pasillo](docs/capturas/fase2_estacion_ventanilla.jpg) | ![El puesto de la sopa y la vendedora](docs/capturas/fase2_estacion_puesto.jpg) |
+| ![El pasillo: la administración, el buzón y el contenedor](docs/capturas/fase2_estacion_pasillo.jpg) | ![La arquería, el tablón de avisos y la estación al fondo](docs/capturas/fase2_estacion_arcos.jpg) |
+
+La antigua consigna de la estación, de 9 × 7 m, y el pasillo que se recorre, con el primer día entero (limpiar, la bombilla, la persiana, la estufa, las cajas del antiguo dueño), la descontaminación, el banco de trabajo, las etiquetas, el mostrador con tres clientes que compran, venden, regatean y dejan encargos, el libro de cuentas, el impuesto, la comida, el hambre y el día que termina al dormir. Sin sonido por ahora. Todo funciona igual con dos jugadores. Detalles en [docs/DEPOSITO.md](docs/DEPOSITO.md).
 
 ### El plano de la ciudad
 
@@ -180,11 +193,10 @@ Tienen su colisión hecha a mano (los escalones y las escaleras son rampas) y di
 ### Próximos pasos
 
 1. **Fase 1**: revisar las capturas, el [vídeo](docs/capturas/fase1_dioramas.mp4) y las piezas de interfaz, y aprobar el estilo. Con eso empiezan de lleno las Fases 2 y 3.
-2. **Tu revisión de los protagonistas** (capturas de arriba): ¿tienen ya el tono de Tumansk?
-3. **Fase 2**: seguir con el depósito jugable; lo siguiente es el primer día (limpiar) y el procesado del botín.
-4. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos). Ahora, con los edificios del kit, las calles residenciales cuestan entre 900 y 1.250 llamadas: es la medida que más interesa.
-5. **Los edificios** (F3-16): revisar las capturas, recorrer con F6 los dioramas de edificios y los de los tres singulares, y verlos en la maqueta (Ctrl+4 y Ctrl+5: el vestíbulo y la Casa de los Sóviets). Lo siguiente serían los interiores de serie, el resto de los sitios clave y, si el rendimiento lo pide, juntar las piezas iguales de cada manzana.
-6. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
+2. **Fase 2**: jugar el depósito en tu PC, del primer día a la primera venta y a dormir, y contarme qué falla, qué sobra o qué no se entiende sin textos. Pendiente: el sonido (cuando lo decidas).
+3. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos). Ahora, con los edificios del kit, las calles residenciales cuestan entre 900 y 1.250 llamadas: es la medida que más interesa.
+4. **Los edificios** (F3-16): revisar las capturas, recorrer con F6 los dioramas de edificios y los de los tres singulares, y verlos en la maqueta (Ctrl+4 y Ctrl+5: el vestíbulo y la Casa de los Sóviets). Lo siguiente serían los interiores de serie, el resto de los sitios clave y, si el rendimiento lo pide, juntar las piezas iguales de cada manzana.
+5. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
 
 ---
 
@@ -983,16 +995,16 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 - [x] **F2-02** Interacción: raycast, componentes `Interactable` y resaltado dibujado (el punto de lápiz se convierte en una mano y el objeto gana un contorno de tinta).
 - [x] **F2-03** Física de objetos: coger, girar, inspeccionar, soltar. El peso se nota: lo pesado tarda en seguirte, cuelga más bajo, te frena y se te cae si lo arrastras contra algo. Las manos agarran lo que llevas lo mires como lo mires: por las esquinas de una caja, por los costados de un bidón y con una sola mano lo que cabe en ella; lo grande se lleva más lejos y más bajo para que no tape la vista. Lo que llevas nunca se mete en el cuerpo ni en la cámara, ni se atraviesa al andar contra una pared; con algo grande en las manos no se puede mirar tan abajo.
 - [x] **F2-04** Modelo de datos de los objetos: categoría, peso, forma en la cuadrícula, estado, contaminación, fragilidad y valor. *(10 fichas en `data/items/`.)*
-- [ ] **F2-05** El primer día: telarañas, barrer, fregar, basura, cajas del antiguo dueño, bombilla, persiana atascada.
-- [ ] **F2-06** Dosímetro y descontaminación: lavar, cepillar, embolsar.
-- [ ] **F2-07** Banco de trabajo con reparaciones sencillas (minijuegos táctiles).
-- [ ] **F2-08** Báscula, etiquetas de precio (escribir y atar) y clasificación en estanterías.
-- [ ] **F2-09** Mostrador: un cliente; compra, venta y regateo sencillo.
-- [ ] **F2-10** Tablón de encargos y libro de cuentas.
-- [ ] **F2-11** Impuesto diario y comida (el puesto de al lado).
-- [ ] **F2-12** El trozo de estación que se recorre: pasillo, puesto vecino, tablón de avisos y escalera mecánica.
-- [ ] **F2-13** Respuesta táctil: sonidos, polvo y microanimaciones.
-- [ ] **F2-14** Todo sincronizado: dos jugadores pueden trabajar a la vez en el depósito. *(Lo hecho hasta ahora ya lo está: los jugadores se ven, cada uno con su color, y los objetos los mueve el anfitrión. Lo comprueba una prueba con dos instancias.)*
+- [x] **F2-05** El primer día: telarañas, barrer, fregar, basura, cajas del antiguo dueño, bombilla, persiana atascada. *(Y la estufa; la nota de la puerta se tacha sola.)*
+- [x] **F2-06** Dosímetro y descontaminación: lavar, cepillar, embolsar.
+- [x] **F2-07** Banco de trabajo con reparaciones sencillas (minijuegos táctiles). *(Radio de bolsillo, linterna y botas, en `data/reparaciones/`.)*
+- [x] **F2-08** Báscula, etiquetas de precio (escribir y atar) y clasificación en estanterías.
+- [x] **F2-09** Mostrador: un cliente; compra, venta y regateo sencillo. *(El relojero, la vecina y el chatarrero, en `data/clientes/`.)*
+- [x] **F2-10** Tablón de encargos y libro de cuentas.
+- [x] **F2-11** Impuesto diario y comida (el puesto de al lado). *(Recibo a la mañana siguiente, precinto por deudas, hambre.)*
+- [x] **F2-12** El trozo de estación que se recorre: pasillo, puesto vecino, tablón de avisos y escalera mecánica.
+- [x] **F2-13** Respuesta táctil: sonidos, polvo y microanimaciones. *(Sin sonido por ahora, por decisión: polvo, papeles que se asientan, agujas con inercia, tapas, la lámpara que se balancea.)*
+- [x] **F2-14** Todo sincronizado: dos jugadores pueden trabajar a la vez en el depósito. *(Lo cambia el anfitrión y lo ven todos; la prueba con dos instancias coge, barre y vende.)*
 
 **Entregable**: el depósito, del primer día sucio a la primera venta.
 **Criterio de salida**: se juega todo el recorrido sin una sola caja de texto, y lo prueban 2 o 3 personas: "¿da gusto?".

@@ -8,11 +8,10 @@ const DIR: String = "res://data/clientes/"
 @export var id: StringName = &""
 ## Cómo firma sus papeles.
 @export var signature: String = ""
-@export_enum("chico", "chica") var variant: String = "chico"
+## Su modelo: una clave de [constant PlayerAvatar.MODELS] ("relojero", "vendedora"…).
+@export var variant: String = "chico"
+## El color de su bufanda.
 @export var cloth_color: Color = Color("#6e6a5f")
-## Lo que lleva encima para distinguirlo: "gorra", "gafas", "panuelo" (varios,
-## separados por comas).
-@export var accessories: String = ""
 ## Lo que busca: categorías ([enum ItemData.Category]) y objetos concretos.
 @export var wants_categories: Array[int] = []
 @export var wants_items: Array[StringName] = []

@@ -6,9 +6,8 @@
 script = ExtResource("1_cliente")
 id = &"chatarrero"
 signature = "Gleb, el chatarrero"
-variant = "chico"
+variant = "chatarrero"
 cloth_color = Color(0.3529, 0.3529, 0.2275, 1)
-accessories = "gorra"
 wants_categories = Array[int]([5, 2])
 wants_items = Array[StringName]([])
 buy_factor = 0.9

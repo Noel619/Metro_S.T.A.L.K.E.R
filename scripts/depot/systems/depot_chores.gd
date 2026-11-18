@@ -32,19 +32,20 @@ const DIRT: Array = [
 	[DirtFixture.Kind.DUST, Vector3(1.5, 0.0, 0.6), 0.55, 2.0],
 	[DirtFixture.Kind.DUST, Vector3(-2.9, 0.0, 0.4), 0.5, 3.0],
 	[DirtFixture.Kind.DUST, Vector3(2.9, 0.0, -1.6), 0.6, 4.0],
-	[DirtFixture.Kind.DUST, Vector3(-3.0, 0.0, -2.2), 0.5, 5.0],
+	[DirtFixture.Kind.DUST, Vector3(-0.6, 0.0, -2.9), 0.5, 5.0],
 	[DirtFixture.Kind.DUST, Vector3(0.6, 0.0, -0.9), 0.5, 6.0],
 	[DirtFixture.Kind.STAIN, Vector3(3.3, 0.0, 1.2), 0.45, 7.0],
 	[DirtFixture.Kind.STAIN, Vector3(-0.2, 0.0, 2.35), 0.4, 8.0],
 	[DirtFixture.Kind.STAIN, Vector3(2.2, 0.0, -2.6), 0.5, 9.0],
 ]
-## [posición, giro (grados), tamaño] de cada telaraña.
+## [posición, giro (grados), tamaño] de cada telaraña: en los rincones, cruzando
+## el ángulo de los dos muros, colgadas de donde empieza la bóveda.
 const COBWEBS: Array = [
-	[Vector3(-4.38, 2.55, 3.0), Vector3(0.0, 120.0, 0.0), 0.8],
-	[Vector3(4.38, 2.55, 3.05), Vector3(0.0, -120.0, 0.0), 0.7],
-	[Vector3(-4.4, 2.5, -1.2), Vector3(0.0, 90.0, 0.0), 0.75],
-	[Vector3(4.4, 2.5, -3.5), Vector3(0.0, -135.0, 0.0), 0.8],
-	[Vector3(-1.2, 2.45, 1.45), Vector3(0.0, 180.0, 0.0), 0.6],
+	[Vector3(-4.2, 2.42, 2.95), Vector3(0.0, 135.0, 0.0), 1.4],
+	[Vector3(4.2, 2.45, 2.95), Vector3(0.0, -135.0, 0.0), 1.2],
+	[Vector3(-4.22, 2.4, -1.22), Vector3(0.0, 45.0, 0.0), 1.3],
+	[Vector3(4.2, 2.42, -3.45), Vector3(0.0, -45.0, 0.0), 1.4],
+	[Vector3(4.47, 2.38, -1.5), Vector3(0.0, -90.0, 0.0), 1.1],
 ]
 ## La nota de la puerta, por dentro.
 const NOTE_AT: Vector3 = Vector3(3.88, 1.5, DepotRoom.FRONT_INNER - 0.035)
@@ -262,4 +263,4 @@ func open_box(item: Carryable) -> void:
 		var extra: Dictionary = item.state.extra.duplicate(true)
 		extra.erase("contenido")
 		item.set_values({"extra": extra})
-	DustPuff.burst(self, Vector3(center.x, top.y, center.z), 1.0)
+	items.puff.rpc(Vector3(center.x, top.y, center.z), 1.0)

@@ -18,6 +18,8 @@ extends Node
 signal holder_changed(peer_id: int)
 ## Ha cambiado su estado (en todos los equipos).
 signal state_changed
+## Ha caído al suelo (o sobre algo) desde [param speed] m/s. Solo en el anfitrión.
+signal landed(speed: float)
 
 ## Peer que puede pedir sin que haya red de por medio (el propio anfitrión).
 const HOST_PEER: int = 1
@@ -52,6 +54,10 @@ const GUEST_SLACK: float = 0.05
 const IN_HANDS: float = 0.1
 ## Rapidez con la que el dibujo vuelve a su sitio al soltarlo.
 const SETTLE: float = 12.0
+## Lo que se nota que cae algo: velocidad de caída desde la que cuenta y la que
+## tiene que perder de golpe.
+const LANDING_SPEED: float = 1.6
+const LANDED_SPEED: float = 0.4
 
 var state: ItemState
 ## Quién lo lleva (0: nadie).
@@ -70,6 +76,8 @@ var _visual: Node3D
 var _bounds: AABB = AABB()
 var _cast_shape: BoxShape3D
 var _stuck_time: float = 0.0
+## La caída más rápida desde que se soltó (para saber cuándo da contra algo).
+var _falling: float = 0.0
 ## El sitio de las manos y cómo estaba quien lo lleva en el paso anterior.
 var _last_target: Transform3D = Transform3D.IDENTITY
 var _last_eyes: Vector3 = Vector3.ZERO
@@ -220,7 +228,10 @@ func _set_holder(peer: int) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if not is_held() or not multiplayer.is_server():
+	if not multiplayer.is_server():
+		return
+	if not is_held():
+		_watch_landing()
 		return
 	var player: Player = Player.find(get_tree(), holder_peer)
 	if player == null:
@@ -270,6 +281,16 @@ func _physics_process(delta: float) -> void:
 	_stuck_time = _stuck_time + delta if offset.length() > BREAK_DISTANCE else 0.0
 	if _stuck_time > STUCK_TIME:
 		_set_holder.rpc(0)
+
+
+## Lo que cae y se para de golpe ha dado contra algo: se avisa (polvo).
+func _watch_landing() -> void:
+	var fall: float = -_body.linear_velocity.y
+	if fall > LANDING_SPEED:
+		_falling = maxf(_falling, fall)
+	elif _falling > 0.0 and fall < LANDED_SPEED:
+		landed.emit(_falling)
+		_falling = 0.0
 
 
 func _process(delta: float) -> void:

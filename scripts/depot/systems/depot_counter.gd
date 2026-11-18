@@ -60,7 +60,10 @@ var _customers: Node3D
 var _spawner: MultiplayerSpawner
 var _cooldown: float = 3.0
 var _timer: float = 0.0
+## Lo que lleva quieto en el mostrador cada objeto (por su uid), en segundos.
 var _seen: Dictionary = {}
+## Qué día vino por última vez cada cliente a recoger su encargo (por id del encargo).
+var _job_visits: Dictionary = {}
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
@@ -169,8 +172,9 @@ func start_visit(next: Array) -> void:
 func _next_visit() -> Array:
 	for job: Dictionary in GameState.jobs:
 		if str(job.get("state", "")) == "abierto" and int(job.get("since", 0)) < GameState.day:
-			if not _seen.has("job_%d" % int(job["id"])):
-				_seen["job_%d" % int(job["id"])] = true
+			# Una vez al día como mucho.
+			if int(_job_visits.get(int(job["id"]), 0)) != GameState.day:
+				_job_visits[int(job["id"])] = GameState.day
 				return [StringName(str(job.get("client_id", ""))), "encargo", int(job["id"])]
 	var visits: Dictionary = GameState.flags.get("visitas", {})
 	for first: Array in FIRST_VISITS:

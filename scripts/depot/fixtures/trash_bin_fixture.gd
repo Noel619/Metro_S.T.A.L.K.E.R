@@ -59,7 +59,7 @@ func _on_used(_player: Player, _action: StringName) -> void:
 	var where: Vector3 = model.global_position + Vector3(0.0, 0.05, -0.55)
 	items.spawn_with(&"bolsa_basura", Transform3D(Basis.IDENTITY, where), {"bolsas": count()})
 	set_values({"llenado": 0, "sacadas": int(value("sacadas", 0)) + 1})
-	DustPuff.burst(self, where + Vector3(0.0, 0.2, 0.0), 0.4)
+	items.puff.rpc(where + Vector3(0.0, 0.2, 0.0), 0.4)
 
 
 func _refresh() -> void:

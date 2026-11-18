@@ -75,9 +75,7 @@ func save_state() -> Dictionary:
 
 func load_state(data: Dictionary) -> void:
 	var loaded: Variant = data.get("estados", {})
-	_states = (loaded as Dictionary).duplicate(true) if loaded is Dictionary else {}
-	for id: String in _states:
-		state_changed.emit(id)
+	_replace((loaded as Dictionary).duplicate(true) if loaded is Dictionary else {})
 	if multiplayer.is_server() and multiplayer.get_peers().size() > 0:
 		_receive_all.rpc(_states)
 
@@ -90,8 +88,18 @@ func _apply(id: String, state: Dictionary) -> void:
 
 @rpc("authority", "call_remote", "reliable")
 func _receive_all(states: Dictionary) -> void:
+	_replace(states)
+
+
+## Cambia todo el estado de golpe y avisa a cada cosa que tenía o tiene estado
+## (lo que deja de tenerlo vuelve a como era al principio).
+func _replace(states: Dictionary) -> void:
+	var touched: Array = _states.keys()
 	_states = states
 	for id: String in _states:
+		if not touched.has(id):
+			touched.append(id)
+	for id: String in touched:
 		state_changed.emit(id)
 
 

@@ -278,6 +278,23 @@ func test_food_tax_and_sleep() -> void:
 	assert_true(_player.global_position.distance_to(DepotDay.WAKE_SPOTS[0]) < 0.3, "junto al catre")
 
 
+func test_starving_starts_over() -> void:
+	var chores: DepotChores = _level.chores
+	_level.world.set_value(chores.dirt[0].fixture_id, "suciedad", 0.0)
+	GameState.hungry_days = GameState.HUNGRY_DEATH - 1
+	GameState.minute = 20.0 * 60.0
+	_level.day.sleep()
+	await _seconds(DepotDay.FADE + 0.5)
+	assert_false(SaveSystem.has_save(), "la partida se borra")
+	await _seconds(DepotDay.RESTART_DELAY + 1.0)
+	CloseUp.active.close()
+	assert_eq(GameState.day, 1, "vuelve a ser el primer día")
+	assert_eq(GameState.hungry_days, 0)
+	assert_almost(chores.dirt[0].dirt(), 1.0, 0.001, "el local, sucio otra vez")
+	assert_eq(_items.items().size(), 28, "con lo que dejó el antiguo dueño")
+	assert_true(GameState.clock_running, "y la hora corre")
+
+
 ## Pone [param item_id] en las manos del jugador.
 func _hold(item_id: StringName) -> void:
 	await _drop()

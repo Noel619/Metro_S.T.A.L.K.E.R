@@ -6,6 +6,5 @@
 script = ExtResource("1_cliente")
 id = &"vendedora"
 signature = "Zina, la de la sopa"
-variant = "chica"
+variant = "vendedora"
 cloth_color = Color(0.6, 0.38, 0.28, 1)
-accessories = "panuelo"

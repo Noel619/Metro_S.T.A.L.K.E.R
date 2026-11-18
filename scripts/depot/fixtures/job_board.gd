@@ -132,7 +132,8 @@ func _rebuild() -> void:
 		var card: PaperCard = PaperCard.create(paper)
 		card.name = "Ficha_%d" % int(job.get("id", index))
 		var cell: Vector2 = ORIGIN + Vector2(index % COLUMNS, index / COLUMNS) * STEP
-		card.position = Vector3(cell.x, cell.y, 0.006 + index * 0.0004)
+		# Delante del corcho (su cara está a 2,5 cm de la pared).
+		card.position = Vector3(cell.x, cell.y, 0.03 + index * 0.0004)
 		card.rotation.z = deg_to_rad((index * 37 % 9) - 4.0)
 		_cards.add_child(card)
 		var area: Area3D = Area3D.new()

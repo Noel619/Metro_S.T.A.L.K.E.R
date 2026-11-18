@@ -4,8 +4,8 @@
 # la documentación y con qué nombre. Necesita Pillow (para el JPG).
 #
 # Uso: tools/capturas_docs.sh [filtro]
-#   filtro: solo los grupos cuyo nombre lo contenga (deposito, equipo, patio, interfaz,
-#   maqueta, kit, singulares).
+#   filtro: solo los grupos cuyo nombre lo contenga (deposito, consigna, equipo, patio,
+#   interfaz, maqueta, kit, singulares).
 set -eu
 cd "$(dirname "$0")/.."
 FILTER="${1:-}"
@@ -40,6 +40,24 @@ if want deposito; then
     capture style/diorama_deposito_abandonado abandonado
     keep abandonado_camara_fondo fase1_deposito_abandonado
     keep abandonado_camara_persiana fase1_deposito_abandonado_persiana
+fi
+if want consigna; then
+    # El depósito jugable (Fase 2): el primer día y el local abierto, con el relojero.
+    capture debug/revision_deposito primer "--sin-ayuda" 40
+    keep primer_camara_sala fase2_consigna_primer_dia
+    keep primer_camara_mostrador fase2_consigna_persiana_atascada
+    keep primer_camara_telarana fase2_consigna_telarana
+    keep primer_camara_dormir fase2_consigna_dormir
+    capture debug/revision_deposito abierto "--sin-ayuda --abierto" 50
+    keep abierto_camara_mostrador fase2_consigna_mostrador
+    keep abierto_camara_cliente fase2_consigna_cliente
+    keep abierto_camara_banco fase2_consigna_banco
+    keep abierto_camara_encargos fase2_consigna_encargos
+    keep abierto_camara_ventanilla fase2_estacion_ventanilla
+    keep abierto_camara_puesto fase2_estacion_puesto
+    keep abierto_camara_pasillo fase2_estacion_pasillo
+    keep abierto_camara_arcos fase2_estacion_arcos
+    keep abierto_camara_escaleras fase2_estacion_escaleras
 fi
 if want equipo; then
     capture style/diorama_equipo equipo

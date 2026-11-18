@@ -46,5 +46,5 @@ void fragment() {
 	alpha *= smoothstep(0.0, 0.35, amount) * mix(0.35, 1.0, amount);
 	alpha *= step(1.0 - amount * 1.1, shape * grain + 0.25);
 	ALBEDO = color.rgb * mix(0.85, 1.1, grain);
-	ALPHA = clamp(alpha, 0.0, 0.85);
+	ALPHA = clamp(alpha * 1.15, 0.0, 0.92);
 }

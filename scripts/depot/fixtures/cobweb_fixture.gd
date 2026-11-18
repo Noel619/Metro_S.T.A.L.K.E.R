@@ -15,6 +15,11 @@ func _ready() -> void:
 	_card = PaperCard.create({"svg": "telarana", "ancho_m": size, "rotulos": []})
 	_card.name = "Dibujo"
 	add_child(_card)
+	# Gris de polvo: sobre el encalado se tiene que ver.
+	var drawing: MeshInstance3D = _card.get_node(^"Papel") as MeshInstance3D
+	var tinted: ShaderMaterial = (drawing.material_override as ShaderMaterial).duplicate()
+	tinted.set_shader_parameter("albedo_color", Color(0.3, 0.28, 0.26))
+	drawing.material_override = tinted
 	var box: BoxShape3D = BoxShape3D.new()
 	box.size = Vector3(size * 0.8, size * 0.4, 0.2)
 	_area = add_reach_area(box, Vector3.ZERO)

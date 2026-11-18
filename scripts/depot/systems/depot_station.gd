@@ -73,7 +73,8 @@ func _ready() -> void:
 	# La vendedora: está siempre detrás de su mostrador. La pone cada equipo.
 	vendor = Customer.new()
 	vendor.setup(&"vendedora", Station.STALL_VENDOR)
-	vendor.rotation.y = 0.0
+	# De cara al pasillo (los cuerpos miran hacia -Z).
+	vendor.rotation.y = PI
 	add_child(vendor)
 	EventBus.day_started.connect(_on_day_started)
 	GameState.changed.connect(_refresh_seal)

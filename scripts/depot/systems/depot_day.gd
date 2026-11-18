@@ -11,6 +11,8 @@ extends Node3D
 const SLEEP_FROM: float = 18.0
 ## Lo que dura el fundido a negro (segundos).
 const FADE: float = 1.2
+## Lo que se queda la nota de la muerte antes de empezar de cero (segundos).
+const RESTART_DELAY: float = 5.0
 ## Dónde despierta cada jugador (junto al catre, de cara al paso de la manta) y
 ## hacia dónde mira.
 const WAKE_SPOTS: Array[Vector3] = [
@@ -87,6 +89,11 @@ func sleep() -> void:
 		_starved()
 		return
 	SaveSystem.save_game()
+	await wake_everyone()
+
+
+## Todos despiertan junto al catre y empieza a correr la hora (solo el anfitrión).
+func wake_everyone() -> void:
 	var index: int = 0
 	for node: Node in get_tree().get_nodes_in_group(Player.GROUP):
 		var player: Player = node as Player
@@ -100,12 +107,14 @@ func sleep() -> void:
 	_sleeping = false
 
 
-## Se ha muerto de hambre: la nota y una partida nueva (la otra se borra).
+## Se ha muerto de hambre: la nota, y la partida se borra. El depósito vuelve a
+## empezar ([signal EventBus.game_over]: lo rehace [DepotLevel]).
 func _starved() -> void:
 	SaveSystem.delete_save()
-	EventBus.game_over.emit()
 	_show_death.rpc()
-	_sleeping = false
+	await get_tree().create_timer(RESTART_DELAY).timeout
+	EventBus.game_over.emit()
+	await wake_everyone()
 
 
 @rpc("authority", "call_local", "reliable")

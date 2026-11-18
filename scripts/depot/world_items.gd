@@ -173,6 +173,13 @@ static func _array_to_transform(values: Variant) -> Transform3D:
 	)
 
 
+## Una nube de polvo que ven todos (al abrir una caja, al caer algo pesado, al
+## sacar la bolsa del cubo…). La llama el anfitrión.
+@rpc("authority", "call_local", "unreliable")
+func puff(where: Vector3, amount: float = 1.0, color: Color = Color(0.62, 0.56, 0.48)) -> void:
+	DustPuff.burst(self, where, amount, color)
+
+
 ## El componente [Carryable] de todos los objetos.
 func items() -> Array[Carryable]:
 	var found: Array[Carryable] = []

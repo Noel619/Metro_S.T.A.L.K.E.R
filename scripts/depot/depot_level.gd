@@ -83,6 +83,7 @@ func _ready() -> void:
 	_players.add_child(_player_spawner)
 	_player_spawner.spawn_path = _player_spawner.get_path_to(_players)
 	_add_help()
+	EventBus.game_over.connect(_on_game_over)
 	NetSession.joined.connect(_on_joined)
 	NetSession.peer_left.connect(_on_peer_left)
 	NetSession.ended.connect(_on_session_ended)
@@ -138,6 +139,20 @@ func _start_as_host() -> void:
 	GameState.clock_running = true
 	GameState.push()
 	_spawn_player(multiplayer.get_unique_id(), _variant)
+
+
+## Se ha perdido la partida (muerte permanente): el depósito vuelve a estar como
+## el primer día. Solo el anfitrión.
+func _on_game_over() -> void:
+	if not multiplayer.is_server():
+		return
+	if counter != null:
+		counter.close_for_the_night()
+	for item: Carryable in items.items():
+		item.force_drop()
+	world.load_state({})
+	items.clear()
+	_new_game()
 
 
 ## El primer día: el local como lo dejó el antiguo dueño.

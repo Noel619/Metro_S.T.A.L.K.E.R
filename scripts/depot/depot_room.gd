@@ -143,6 +143,26 @@ func _furniture() -> void:
 	place("lista_deudas", Vector3(1.92, 1.46, FRONT_INNER), 180.0)
 	place("planta_muerta", Vector3(-2.25, FLOOR, 2.98), 40.0)
 	place("maletas", Vector3(-3.85, FLOOR, 2.82), 12.0)
+	# La gotera de la tubería oxidada del muro derecho, al fondo.
+	var drip: Drip = Drip.new()
+	drip.name = "Gotera"
+	drip.position = Vector3(4.18, FLOOR, -3.3)
+	drip.height = 2.35
+	_static.add_child(drip)
+	# Las rayas con las que el antiguo dueño contaba los días, junto al catre.
+	var tally: Label3D = Label3D.new()
+	tally.name = "Rayas"
+	tally.text = "IIII IIII IIII IIII IIII IIII\nIIII IIII IIII IIII IIII II"
+	tally.font = UiFonts.get_font(&"manuscrita")
+	tally.font_size = 64
+	tally.pixel_size = 0.0011
+	tally.modulate = Color(0.24, 0.23, 0.25, 0.85)
+	tally.outline_size = 0
+	tally.shaded = true
+	tally.double_sided = false
+	tally.position = Vector3(-3.05, 0.72, BACK + 0.016)
+	tally.rotation_degrees.z = 2.5
+	_static.add_child(tally)
 
 
 func _lights() -> void:

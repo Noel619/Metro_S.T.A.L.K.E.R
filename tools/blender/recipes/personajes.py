@@ -379,12 +379,12 @@ def build_hand(
 class Character:
     """Construye un protagonista pieza a pieza."""
 
-    def __init__(self, look: Look, torso: pb.Profile, hem_follow: float) -> None:
+    def __init__(self, look: Look, torso: pb.Profile, hem_follow: float, prefix: str = "jugador") -> None:
         self.look = look
         self.j = joints(look)
         self.torso = torso
         self.hem_follow = hem_follow
-        self.root = tb.empty(f"jugador_{look.name}")
+        self.root = tb.empty(f"{prefix}_{look.name}")
         self.specs = body_bones(self.j)
         names = [spec.name for spec in self.specs]
         self.cloth = pb.Sculpt(names, look.seed)
@@ -1424,10 +1424,286 @@ def build_first_person_hands(look: Look) -> bpy.types.Object:
     return root
 
 
+# --------------------------------------------------------------------------
+# La gente de la estación (clientes y la vendedora del puesto)
+# --------------------------------------------------------------------------
+# Más años que los protagonistas y otra ropa: abrigo largo o chaqueta acolchada,
+# gorra de visera, pañuelo o el pelo al aire, a veces un delantal. Sin mochila
+# ni máscara: viven abajo. La bufanda la tiñe el juego, como la de los jugadores.
+
+RELOJERO = Look(
+    name="relojero", scale=0.97, shoulder=0.15,
+    coat="#3B3842", coat_dark="#2C2A31", cuff="#46434D",
+    trousers="#35322E", hair="#8E8A84",
+    boot="#2A2622", boot_cuff="#36302B", seed=300,
+)
+VENDEDORA = Look(
+    name="vendedora", scale=0.93, shoulder=0.148,
+    coat="#5E4E40", coat_dark="#4A3D32", cuff="#6E5E4E",
+    trousers="#3A322C", hair="#77706A",
+    boot="#4E4842", boot_cuff="#5A544C", seed=400,
+)
+VECINA = Look(
+    name="vecina", scale=0.95, shoulder=0.146,
+    coat="#4C5A5E", coat_dark="#3C474A", cuff="#5A686C",
+    trousers="#3A3530", hair="#4A3628",
+    boot="#3A3430", boot_cuff="#48413B", seed=500,
+)
+CHATARRERO = Look(
+    name="chatarrero", scale=1.02, shoulder=0.165,
+    coat="#4E4A36", coat_dark="#3E3B2B", cuff="#5E5A44",
+    trousers="#3E3A32", hair="#2A2420",
+    boot="#2C2824", boot_cuff="#3A3530", seed=600,
+)
+
+
+def _man_torso(belly: float) -> pb.Profile:
+    """El tronco de un hombre (el del chico, con algo de tripa si los años la dan)."""
+    rows = [
+        (0.500, 0.196, 0.146, 0.142, 0.004),
+        (0.640, 0.188, 0.140, 0.136, 0.004),
+        (0.760, 0.180 + belly * 0.5, 0.131 + belly, 0.129, 0.004),
+        (0.840, 0.185 + belly * 0.7, 0.136 + belly * 1.4, 0.133, 0.004),
+        (0.930, 0.176 + belly * 0.6, 0.128 + belly * 1.3, 0.126, 0.004),
+        (0.998, 0.165 + belly * 0.3, 0.12 + belly * 0.7, 0.116, 0.004),
+        (1.070, 0.171, 0.126, 0.122, 0.005),
+        (1.170, 0.187, 0.134, 0.128, 0.007),
+        (1.270, 0.195, 0.132, 0.126, 0.010),
+        (1.338, 0.187, 0.120, 0.118, 0.012),
+        (1.388, 0.134, 0.098, 0.100, 0.012),
+        (1.422, 0.078, 0.068, 0.072, 0.010),
+    ]
+    return pb.Profile(rows, power=2.5)
+
+
+def _woman_torso() -> pb.Profile:
+    """El tronco de una mujer de la estación, más ancho de caderas que la chica."""
+    rows = [
+        (0.480, 0.222, 0.168, 0.172, 0.006),
+        (0.600, 0.214, 0.160, 0.164, 0.005),
+        (0.740, 0.198, 0.148, 0.150, 0.004),
+        (0.860, 0.180, 0.136, 0.134, 0.004),
+        (0.955, 0.166, 0.126, 0.120, 0.004),
+        (1.040, 0.172, 0.132, 0.122, 0.005),
+        (1.140, 0.182, 0.136, 0.124, 0.007),
+        (1.230, 0.184, 0.128, 0.120, 0.010),
+        (1.292, 0.174, 0.114, 0.112, 0.012),
+        (1.340, 0.125, 0.093, 0.095, 0.012),
+        (1.372, 0.074, 0.065, 0.069, 0.010),
+    ]
+    return pb.Profile(rows, power=2.4)
+
+
+def _long_coat(c: Character, hem: float, belt: str | None) -> None:
+    """Abrigo largo cruzado, con botones (falta alguno) y, si lo hay, cinturón."""
+    torso, look, weights = c.torso, c.look, c.torso_weights
+    top = torso.rows[-1][0]
+    heights = [hem + 0.02 + k * 0.06 for k in range(int((1.3 - hem) / 0.06))]
+    rings = [torso.ring(hem + 0.02, scale=0.86, color=LINING), torso.ring(hem, color=look.coat_dark), torso.ring(hem + 0.022)]
+    rings += [torso.ring(z) for z in heights[1:]]
+    rings += [torso.ring(z) for z in (1.31, 1.338, 1.36, 1.39, 1.41) if z < top]
+    faces = c.cloth.tube(rings, look.coat, segments=22, weights=weights, cap_start=0.0, cap_end=0.01)
+    c.cloth.move(
+        faces,
+        lambda co: Vector((co.x, co.y - 0.004, 0.0)).normalized()
+        * 0.012 * ramp(0.9 - co.z, 0.0, 0.4) * math.sin(math.atan2(co.y, co.x) * 6.0),
+    )
+    c.ragged_hem(faces, hem, 0.012)
+    grid, normals = torso.patch(spread(112.0, 70.0, 5), spread(1.3, hem + 0.01, 10), 0.006)
+    c.cloth.panel(grid, 0.012, look.coat, weights, normals=normals, jitter=0.02)
+    for z in (1.18, 1.05, 0.92, 0.79):
+        for degrees in (100.0, 78.0):
+            if c.rng.random() < 0.15:
+                continue
+            point, _ = torso.on(degrees, z, 0.016)
+            c.cloth.blob(point, (0.013, 0.007, 0.013), DULL_METAL, weights, segments=8, rings=3)
+    if belt is not None:
+        z0 = 0.975
+        strap = [torso.ring(z0 - 0.02, 0.0), torso.ring(z0 - 0.02, 0.012), torso.ring(z0 + 0.02, 0.012), torso.ring(z0 + 0.02, 0.0)]
+        c.cloth.tube(strap, belt, segments=22, weights=weights, closed=True)
+    c.patch(spread(240.0, 266.0, 4), spread(1.12, 1.04, 4), look.cuff)
+
+
+def _quilted_jacket(c: Character, hem: float) -> None:
+    """Chaqueta acolchada (la de todo el mundo bajo tierra), hasta la cadera."""
+    torso, look, weights = c.torso, c.look, c.torso_weights
+
+    def quilt(index: int) -> float:
+        return 0.972 if index % 2 == 0 else 1.0
+
+    rings = [torso.ring(hem + 0.018, scale=0.8, color=LINING), torso.ring(hem, color=look.coat_dark), torso.ring(hem + 0.02)]
+    z = hem + 0.06
+    while z < 1.3:
+        rings.append(torso.ring(z, ripple=quilt))
+        z += 0.045
+    for z in (1.31, 1.338, 1.365, 1.388, 1.407):
+        rings.append(torso.ring(z))
+    faces = c.cloth.tube(rings, look.coat, segments=24, weights=weights, cap_start=0.0, cap_end=0.01)
+    c.ragged_hem(faces, hem, 0.01)
+    grid, normals = torso.patch(spread(98.0, 84.0, 3), spread(1.36, hem + 0.01, 9), 0.006)
+    c.cloth.panel(grid, 0.011, look.coat_dark, weights, normals=normals)
+    c.patch([90.0 - a for a in spread(-50.0, -22.0, 4)], spread(1.2, 1.12, 4), look.cuff)
+
+
+def _skirt(c: Character, top: float, hem: float, color: str) -> None:
+    """Falda de lana larga, que se abre hacia abajo."""
+    torso, weights = c.torso, c.torso_weights
+    rings = [torso.ring(hem + 0.015, scale=0.92, color=LINING), torso.ring(hem, inflate=0.03, color=color)]
+    z = hem + 0.05
+    while z < top:
+        rings.append(torso.ring(z, inflate=0.03 * (top - z) / (top - hem) + 0.006))
+        z += 0.06
+    faces = c.cloth.tube(rings, color, segments=22, weights=weights, cap_start=0.0, cap_end=None)
+    c.ragged_hem(faces, hem, 0.01)
+
+
+def _apron(c: Character, color: str) -> None:
+    """Delantal de faena atado a la cintura, con el peto y la tira al cuello."""
+    torso, weights = c.torso, c.torso_weights
+    grid, normals = torso.patch(spread(122.0, 58.0, 6), spread(0.97, 0.55, 7), 0.038)
+    c.cloth.panel(grid, 0.006, color, weights, normals=normals, jitter=0.03)
+    bib, bib_normals = torso.patch(spread(108.0, 72.0, 4), spread(1.22, 0.98, 4), 0.026)
+    c.cloth.panel(bib, 0.006, color, weights, normals=bib_normals)
+    tie = [torso.ring(0.965, 0.024), torso.ring(0.965, 0.03), torso.ring(0.985, 0.03), torso.ring(0.985, 0.024)]
+    c.cloth.tube(tie, color, segments=22, weights=weights, closed=True)
+    pocket, pocket_normals = torso.patch(spread(104.0, 82.0, 3), spread(0.84, 0.74, 3), 0.036)
+    c.cloth.panel(pocket, 0.005, "#A89A80", weights, normals=pocket_normals)
+
+
+def _hair(c: Character, color: str, crown: bool, bun: bool = False) -> None:
+    """El pelo: mechones en las sienes y la nuca; con ``crown``, también arriba
+    (sin gorra); con ``bun``, recogido en un moño."""
+    head = {"Head": 1.0}
+    hp, z = c.head, c.head_z
+    for sign in (1.0, -1.0):
+        lock = [[hp.surface(90.0 - sign * a, z(t), 0.004) for a in spread(66.0, 110.0, 4)] for t in (0.7, 0.6, 0.5, 0.42)]
+        c.cloth.panel(lock, 0.008, color, head, jitter=0.05)
+    nape = [[hp.surface(d, z(t), 0.004) for d in spread(196.0, 344.0, 9)] for t in (0.7, 0.56, 0.42, 0.32)]
+    c.cloth.panel(nape, 0.009, color, head, jitter=0.05)
+    if crown:
+        rings = [hp.ring(z(0.66), 0.006), hp.ring(z(0.8), 0.012), hp.ring(z(0.92), 0.012)]
+        top = hp.ring(z(0.92), 0.012, scale=0.7)
+        top.center.z = z(1.0)
+        rings.append(top)
+        c.cloth.tube(rings, color, segments=16, weights=head, cap_start=None, cap_end=0.004, jitter=0.04)
+    if bun:
+        back = hp.surface(270.0, z(0.72), 0.03)
+        c.cloth.blob(back, (0.045, 0.04, 0.04), color, head, segments=10, rings=5)
+
+
+def _flat_cap(c: Character, color: str) -> None:
+    """Gorra de visera de paño, calada hasta las cejas."""
+    head = {"Head": 1.0}
+    hp, z = c.head, c.head_z
+    rings = [hp.ring(z(0.64), 0.008), hp.ring(z(0.72), 0.02), hp.ring(z(0.84), 0.034, scale=1.04)]
+    top = hp.ring(z(0.88), 0.03, scale=0.95)
+    top.center.z = z(0.95)
+    top.center.y -= 0.012
+    rings.append(top)
+    c.cloth.tube(rings, color, segments=18, weights=head, cap_start=None, cap_end=0.004)
+    brim, _ = hp.on(90.0, z(0.665), 0.03)
+    c.cloth.box(
+        (0.13, 0.065, 0.012), brim + FRONT * 0.025 + UP * 0.004, LINING, head,
+        rotation=Quaternion(LEFT, math.radians(-12.0)), bevel=0.004,
+    )
+
+
+def _headscarf(c: Character, color: str) -> None:
+    """Pañuelo de lana atado a la nuca: tapa el pelo y las orejas, la cara al aire."""
+    head = {"Head": 1.0}
+    hp, z = c.head, c.head_z
+    back = [[hp.surface(d, z(t), 0.012 + 0.004 * (1.0 - t)) for d in spread(140.0, 400.0, 14)] for t in (0.97, 0.86, 0.72, 0.58, 0.44, 0.32)]
+    c.cloth.panel(back, 0.008, color, head, jitter=0.03)
+    brow = [[hp.surface(d, z(t), 0.012) for d in spread(48.0, 132.0, 6)] for t in (0.98, 0.9, 0.78)]
+    c.cloth.panel(brow, 0.008, color, head, jitter=0.03)
+    knot = hp.surface(270.0, z(0.3), 0.03)
+    c.cloth.blob(knot, (0.03, 0.024, 0.026), color, head, segments=8, rings=4)
+    for swing in (-1.0, 1.0):
+        tail = knot + Vector((swing * 0.025, 0.02, -0.06))
+        c.cloth.box((0.035, 0.008, 0.07), (knot + tail) / 2.0, color, head, rotation=Quaternion(FRONT, swing * 0.3), bevel=0.003)
+
+
+def _station_person(
+    look: Look,
+    torso: pb.Profile,
+    *,
+    coat: str,
+    hem: float,
+    headwear: str,
+    headwear_color: str = "",
+    apron: str | None = None,
+    skirt: str | None = None,
+    belt: str | None = None,
+    felt: bool = False,
+    scarf_side: float = 1.0,
+) -> bpy.types.Object:
+    c = Character(look, torso, hem_follow=0.4, prefix="persona")
+    c.add_bones(c.scarf_bones(scarf_side, 0.14))
+    if skirt is not None:
+        _skirt(c, 0.98, 0.42, skirt)
+    if coat == "largo":
+        _long_coat(c, hem, belt)
+    else:
+        _quilted_jacket(c, hem)
+    if apron is not None:
+        _apron(c, apron)
+    c.build_legs(kneepads=False)
+    c.build_boots(felt=felt)
+    c.build_sleeves(quilted=coat != "largo")
+    c.build_hands()
+    c.build_head()
+    c.build_scarf(scarf_side, 0.14)
+    if headwear == "gorra":
+        _hair(c, look.hair, crown=False)
+        _flat_cap(c, headwear_color)
+    elif headwear == "panuelo":
+        _headscarf(c, headwear_color)
+    else:
+        _hair(c, look.hair, crown=True, bun=headwear == "mono")
+    return c.finish(f"cara_{look.name}")
+
+
+def build_relojero() -> bpy.types.Object:
+    """Lev Abrámovich, el relojero: abrigo largo gris con cinturón, gorra de paño
+    y gafas redondas (dibujadas en la cara), bigote cano."""
+    return _station_person(
+        RELOJERO, _man_torso(0.006), coat="largo", hem=0.56, headwear="gorra",
+        headwear_color="#34322E", belt=LEATHER, scarf_side=-1.0,
+    )
+
+
+def build_vendedora() -> bpy.types.Object:
+    """Zina, la de la sopa: chaqueta acolchada, falda, delantal y pañuelo, y botas
+    de fieltro de estar de pie todo el día."""
+    return _station_person(
+        VENDEDORA, _woman_torso(), coat="acolchada", hem=0.9, headwear="panuelo",
+        headwear_color="#7A5A6E", apron="#C8B89A", skirt="#3E3530", felt=True,
+    )
+
+
+def build_vecina() -> bpy.types.Object:
+    """Nadia, la de la lavandería: abrigo largo de paño y el pelo recogido."""
+    return _station_person(
+        VECINA, _woman_torso(), coat="largo", hem=0.5, headwear="mono", felt=True, scarf_side=-1.0,
+    )
+
+
+def build_chatarrero() -> bpy.types.Object:
+    """Gleb, el chatarrero: chaqueta acolchada sucia y gorra; barba de días."""
+    return _station_person(
+        CHATARRERO, _man_torso(0.012), coat="acolchada", hem=0.74, headwear="gorra",
+        headwear_color="#4A4232", belt=None,
+    )
+
+
 def models() -> dict:
     return {
         "jugador_chico": build_chico,
         "jugador_chica": build_chica,
         "manos_chico": lambda: build_first_person_hands(CHICO),
         "manos_chica": lambda: build_first_person_hands(CHICA),
+        "persona_relojero": build_relojero,
+        "persona_vendedora": build_vendedora,
+        "persona_vecina": build_vecina,
+        "persona_chatarrero": build_chatarrero,
     }

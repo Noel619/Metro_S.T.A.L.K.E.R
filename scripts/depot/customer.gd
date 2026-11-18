@@ -13,12 +13,6 @@ const WALK_SPEED: float = 1.05
 const TURN_SPEED: float = 6.0
 const ARRIVE_DISTANCE: float = 0.06
 const SYNCED: PackedStringArray = [".:position", ".:rotation", ".:walking", ".:face"]
-## Los complementos: [hueso, malla, color, posición, giro, escala].
-const ACCESSORY_COLORS: Dictionary = {
-	"gorra": Color("#3a3634"),
-	"gafas": Color("#c8b070"),
-	"panuelo": Color("#7a5a8a"),
-}
 
 var data: CustomerData
 ## Anda (lo ve el avatar).
@@ -64,8 +58,6 @@ func setup(customer_id: StringName, where: Vector3) -> void:
 
 func _ready() -> void:
 	_facing = rotation.y
-	if data != null and not data.accessories.is_empty():
-		_add_accessories.call_deferred()
 
 
 ## Echa a andar por [param points] (en el mundo). Solo el anfitrión.
@@ -104,71 +96,3 @@ func _process(delta: float) -> void:
 			_facing = atan2(-flat.x, -flat.z)
 			global_position += flat.normalized() * minf(WALK_SPEED * delta, flat.length())
 	rotation.y = lerp_angle(rotation.y, _facing, minf(1.0, TURN_SPEED * delta))
-
-
-## La gorra, las gafas o el pañuelo, colgados del hueso de la cabeza.
-func _add_accessories() -> void:
-	if _avatar == null:
-		return
-	var skeleton: Skeleton3D = _avatar.get_skeleton()
-	if skeleton == null:
-		return
-	var head: int = skeleton.find_bone("Head")
-	if head < 0:
-		return
-	var attachment: BoneAttachment3D = BoneAttachment3D.new()
-	attachment.name = "Complementos"
-	attachment.bone_name = "Head"
-	skeleton.add_child(attachment)
-	for accessory: String in data.accessories.split(",", false):
-		var mesh: MeshInstance3D = _accessory_mesh(accessory.strip_edges())
-		if mesh != null:
-			attachment.add_child(mesh)
-
-
-func _accessory_mesh(kind: String) -> MeshInstance3D:
-	var material: StandardMaterial3D = StandardMaterial3D.new()
-	material.albedo_color = ACCESSORY_COLORS.get(kind, Color.GRAY)
-	material.roughness = 0.9
-	var mesh: MeshInstance3D = MeshInstance3D.new()
-	mesh.name = kind
-	match kind:
-		"gorra":
-			var cap: CylinderMesh = CylinderMesh.new()
-			cap.top_radius = 0.1
-			cap.bottom_radius = 0.115
-			cap.height = 0.07
-			mesh.mesh = cap
-			mesh.position = Vector3(0.0, 0.16, 0.0)
-			var brim: MeshInstance3D = MeshInstance3D.new()
-			var board: BoxMesh = BoxMesh.new()
-			board.size = Vector3(0.18, 0.012, 0.09)
-			brim.mesh = board
-			brim.material_override = material
-			brim.position = Vector3(0.0, -0.03, -0.11)
-			brim.rotation.x = deg_to_rad(-10.0)
-			mesh.add_child(brim)
-		"gafas":
-			var rim: TorusMesh = TorusMesh.new()
-			rim.inner_radius = 0.016
-			rim.outer_radius = 0.021
-			mesh.mesh = rim
-			mesh.position = Vector3(0.033, 0.07, -0.1)
-			mesh.rotation.x = PI / 2.0
-			var other: MeshInstance3D = MeshInstance3D.new()
-			other.mesh = rim
-			other.material_override = material
-			other.position = Vector3(-0.066, 0.0, 0.0)
-			mesh.add_child(other)
-		"panuelo":
-			var scarf: SphereMesh = SphereMesh.new()
-			scarf.radius = 0.125
-			scarf.height = 0.2
-			scarf.is_hemisphere = true
-			mesh.mesh = scarf
-			mesh.position = Vector3(0.0, 0.09, 0.012)
-			mesh.scale = Vector3(1.0, 1.1, 1.08)
-		_:
-			return null
-	mesh.material_override = material
-	return mesh

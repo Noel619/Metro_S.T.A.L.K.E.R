@@ -32,6 +32,13 @@ static func attach(items: WorldItems, body: RigidBody3D, item: Carryable) -> voi
 		var update: Callable = func() -> void: _update_repair(repair, recipe, item.state)
 		item.state_changed.connect(update)
 		update.call()
+	# Lo pesado que cae levanta polvo (lo que pesa poco no se nota).
+	item.landed.connect(
+		func(speed: float) -> void:
+			var amount: float = clampf(item.state.data.weight / 6.0 + speed / 6.0, 0.0, 1.2)
+			if amount > 0.35:
+				items.puff.rpc(item.body().global_position, amount)
+	)
 	var view: ItemView = ItemView.new()
 	view.name = "Vista"
 	view.item = item

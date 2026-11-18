@@ -10,10 +10,14 @@ extends Node3D
 ## lleva algo en las manos y hacia dónde mira. El avatar mira hacia -Z, como
 ## cualquier cuerpo de Godot.
 
-## Los dos protagonistas (tools/blender/recipes/personajes.py).
+## Los dos protagonistas y la gente de la estación (tools/blender/recipes/personajes.py).
 const MODELS: Dictionary = {
 	"chico": "res://assets/models/jugador_chico.glb",
 	"chica": "res://assets/models/jugador_chica.glb",
+	"relojero": "res://assets/models/persona_relojero.glb",
+	"vendedora": "res://assets/models/persona_vendedora.glb",
+	"vecina": "res://assets/models/persona_vecina.glb",
+	"chatarrero": "res://assets/models/persona_chatarrero.glb",
 }
 ## Color de la bufanda de cada jugador, por orden de llegada (docs/ESTILO.md).
 ## El rojo se reserva para lo importante, así que no hay jugador rojo.
