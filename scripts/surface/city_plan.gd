@@ -44,6 +44,9 @@ var transit_grid: PackedByteArray = PackedByteArray()
 ## Cuánto se rebaja la colisión del relieve en cada punto de la rejilla (rebaje.png), en
 ## metros, fila a fila de sur a norte.
 var transit_carve: PackedFloat32Array = PackedFloat32Array()
+## El río (rio.json): la superficie del agua abierta y las placas de hielo. Vacío si el
+## plano no lo trae.
+var river: Dictionary = {}
 ## Qué falló al cargar; vacío si nada.
 var error: String = ""
 
@@ -170,7 +173,20 @@ func load_from(directory: String) -> Error:
 		if zone["poligono"] != null:
 			_zones[key.to_int()] = ring(zone["poligono"][0])
 	_river = ring(data["rio"]["poligono"][0])
-	return _load_transit(directory)
+	var loaded: Error = _load_transit(directory)
+	return loaded if loaded != OK else _load_river(directory)
+
+
+## El río (si el plano lo trae): el agua abierta y el hielo.
+func _load_river(directory: String) -> Error:
+	var file_name: String = String(data["rio"].get("archivo", ""))
+	if file_name.is_empty():
+		return OK
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(directory + file_name))
+	if not parsed is Dictionary:
+		return _fail("No se puede leer el río (%s)." % file_name)
+	river = parsed
+	return OK
 
 
 ## ¿Se cargó bien?

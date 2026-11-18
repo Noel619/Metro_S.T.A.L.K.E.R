@@ -124,6 +124,8 @@ if want maqueta; then
     keep maqueta_vista_atasco fase3_vehiculos_atasco
     keep maqueta_vista_tendido fase3_deterioro_tendido
     keep maqueta_vista_barcos fase3_vehiculos_barcos
+    keep maqueta_vista_canal fase3_rio_canal
+    keep maqueta_vista_central fase3_rio_central
     capture debug/maqueta_ciudad ciegos \
         "--call=MaquetaCiudad:survey_landmarks --call=MaquetaCiudad:capture_only:aerea" 10
     keep ciegos fase3_maqueta_hitos

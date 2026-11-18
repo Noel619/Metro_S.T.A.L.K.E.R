@@ -44,6 +44,7 @@ import ferrocarril as F  # noqa: E402
 import vias as V  # noqa: E402
 import deterioro as DT  # noqa: E402
 import transito as T  # noqa: E402
+import rio as RI  # noqa: E402
 from geo import ALTO, ANCHO, SECTOR, banda, coords, distancia, sector_de  # noqa: E402
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -448,7 +449,8 @@ def alturas_en_el_transito(trazado, alturas) -> None:
             cosa["z"] = round(max(z, float(alturas.terreno([x], [y])[0])), 3)
 
 
-def exportar_json(escombros: list[dict], meta_relieve: dict, meta_suelo: dict, calles, meta_transito: dict) -> dict:
+def exportar_json(escombros: list[dict], meta_relieve: dict, meta_suelo: dict, calles, meta_transito: dict,
+                  meta_rio: dict) -> dict:
     def pts(lista):
         return [(round(x, 1), round(y, 1)) for x, y in lista]
 
@@ -485,7 +487,8 @@ def exportar_json(escombros: list[dict], meta_relieve: dict, meta_suelo: dict, c
         "niveles_dano": {str(k): {"nombre": v[0], "descripcion": v[1]} for k, v in NIVELES_DANO.items()},
         "tipos": D.TIPOS,
         "zonas": {str(k): {**v, "poligono": coords(D.ZONA_POLIGONOS[k]) if k in D.ZONA_POLIGONOS else None} for k, v in D.ZONAS.items()},
-        "rio": {"nombre": "Tumán", "eje": D.R.RIO_EJE, "poligono": coords(D.RIO), "hielo": D.R.NIVEL_HIELO},
+        "rio": {"nombre": "Tumán", "eje": D.R.RIO_EJE, "poligono": coords(D.RIO), "hielo": D.R.NIVEL_HIELO,
+                "agua": RI.NIVEL_AGUA, **meta_rio},
         "relieve": meta_relieve,
         "suelo": meta_suelo,
         "transito": meta_transito,
@@ -572,11 +575,17 @@ def main() -> int:
     # Lo que estaba encima de un socavón cae dentro (antes de darle su altura).
     DT.hundir_vehiculos()
     alturas_en_el_transito(trazado, alturas)
+    # El río: el agua abierta, el hielo y los témpanos (y los barcos, a su nivel).
+    rio = RI.calcular()
+    for v in D.VEHICULOS:
+        if "z" not in v and D.RIO.contains(Point(v["pos"])):
+            v["z"] = round(RI.nivel_en(rio, *v["pos"]), 3)
+    meta_rio = RI.exportar(rio, SALIDA_DATOS)
     meta = exportar_relieve(relieve, 2.0)
     exportar_relieve(rasante, 2.0, "rasante.png")
     meta_transito = {"archivo": "transito.json", **T.exportar(trazado, alturas, SALIDA_DATOS)}
     meta_suelo = exportar_suelo(escombros, 1.0)
-    estadisticas = exportar_json(escombros, meta, meta_suelo, calles, meta_transito)
+    estadisticas = exportar_json(escombros, meta, meta_suelo, calles, meta_transito, meta_rio)
     print(json.dumps(estadisticas, ensure_ascii=False, indent=1))
     if problemas:
         print(f"\n{len(problemas)} problemas:")

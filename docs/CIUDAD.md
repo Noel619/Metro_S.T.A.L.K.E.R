@@ -140,6 +140,8 @@ El relieve se exporta en `data/ciudad/relieve.png`: 16 bits, 2 m por píxel, y m
 | **El puente del ferrocarril** (este) | Celosía de acero intacta, pero dentro del rastro radiactivo |
 | **El túnel inundado** (metro) | Bajo el río, a oscuras, con el agua helada al pecho. Territorio del Llamador |
 
+El río no está helado del todo: la corriente y el agua templada de la central abren agua de verdad, pero los cinco cruces siguen helados (ver [El río: hielo y agua](#el-río-hielo-y-agua)).
+
 ## 7. El subsuelo
 
 - **Línea 1 (roja):** bajo la avenida y bajo el río.
@@ -271,6 +273,7 @@ La maqueta (`scenes/debug/maqueta_ciudad.tscn`, F3-15) levanta la ciudad entera 
 
 - **Lo que se levanta:**
   - El relieve, cada 2 m, pintado con el suelo del plano (el hielo, las vías, los patios y los escombros) bajo la nieve vieja.
+  - El río: el hielo con su grosor, que se pisa, y el agua abierta ([abajo](#el-río-hielo-y-agua)).
   - La red de tránsito: calzadas, aceras, plazas, sendas, escaleras y el tablero del puente, con sus bordillos, muros, pretiles, pasos de cebra, tapas y sumideros. Ver [la sección 16](#16-la-red-de-tránsito).
   - Los 357 edificios, a su altura y con lo que queda en pie según su daño. Las torres llevan aguja (la de la Casa de los Sóviets, doblada hacia el suroeste), las chimeneas se estrechan, las torres de refrigeración tienen su forma y las casas de madera y las de antes de la revolución llevan tejado a dos aguas.
   - Los 142 que sabe montar el kit de arquitectura (las 138 viviendas y los cuatro singulares) son, de cerca, sus modelos; de lejos, sus volúmenes ([la sección de abajo](#los-edificios-del-kit-en-la-maqueta)).
@@ -298,6 +301,21 @@ Los edificios que sabe montar el kit (F3-16) se levantan con su ficha del plano:
 | | |
 |---|---|
 | ![El vestíbulo del metro en su plaza, en la maqueta](capturas/fase3_maqueta_vestibulo.jpg) | ![La Casa de los Sóviets cierra la avenida, en la maqueta](capturas/fase3_maqueta_soviets.jpg) |
+
+### El río: hielo y agua
+
+El Tumán ya no es una textura: es hielo con su grosor sobre agua de verdad (`tools/ciudad/rio.py`, [D-060](DECISIONES.md)). Casi todo el río está helado de orilla a orilla y se cruza a pie por los cruces de siempre, pero la corriente y el calor abren unos 16.000 m² de agua:
+
+- **El canal de la corriente** serpentea por el centro del río y se abre y se cierra (hasta 22 m de ancho). Lo cortan puentes de hielo donde se cruza: el tubo, el puente hundido (su vano caído descansa en el hielo) y el hielo frente al puerto.
+- **Las bolsas del hielo fino del plano**: el agua templada de la central, la mayor, que corre río abajo pegada a la orilla sur (en ella flota el remolcador); la de los desagües del puerto, donde se quedó una barcaza; los remolinos junto a las pilas del puente hundido y la de bajo la autovía caída.
+
+Alrededor del agua el hielo es fino (oscuro y casi sin nieve, unos 22.000 m²), y en su borde está roto en unos 1.600 témpanos, con el agua entre ellos y alguno montado sobre los demás; un centenar van sueltos por el agua. El hielo de orilla es gris azulado, con la nieve a parches que deja el viento, para que el río se distinga de la tierra nevada. El agua es negra y fría (`assets/shaders/agua.gdshader`): refleja el cielo de refilón, sus rizos bajan con la corriente (el Tumán corre al oeste), tiene aguanieve junto al hielo y hielo menudo flotando, y a veces brilla el sol en ella. Debajo está el lecho, que baja hasta 3,5 m bajo el hielo en el centro del río.
+
+En la maqueta, el hielo son losas con su grosor que se pisan (tienen colisión); el agua no se pisa, y quien entra cae al lecho. Los barcos están a la altura del agua o del hielo, según dónde se quedaron.
+
+| | |
+|---|---|
+| ![El canal de la corriente, entre el hielo del Tumán](capturas/fase3_rio_canal.jpg) | ![El agua templada de la central no deja helarse el río](capturas/fase3_rio_central.jpg) |
 
 ### Lo que ha enseñado la maqueta
 

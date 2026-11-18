@@ -30,7 +30,7 @@ func test_every_sector_and_building_is_built() -> void:
 func test_vehicles_are_their_models() -> void:
 	# Cada vehículo es su modelo a la medida del plano (ninguno queda como caja), los
 	# quemados tienen el suyo, los tranvías volcados yacen de costado y los barcos del río
-	# están en el hielo.
+	# están en el hielo o en el agua.
 	var placed: Dictionary = {}
 	for by_model: Dictionary in _city.props.vehicles().values():
 		for model: String in by_model:
@@ -54,9 +54,12 @@ func test_vehicles_are_their_models() -> void:
 		if absf(tram.basis.y.normalized().y) < 0.2:
 			lying += 1
 	assert_eq(lying, 2, "tranvías de costado")
-	var ice: float = float(_city.plan.data["rio"]["hielo"])
+	# Las barcazas, metidas en el hielo o en el agua de los desagües del puerto.
+	var ice: float = float(_city.plan.river["hielo"])
+	var water: float = float(_city.plan.river["agua"])
 	for barge: Transform3D in placed["barcaza"]:
-		assert_almost(barge.origin.y, ice, 0.05, "barcaza en el hielo")
+		var y: float = barge.origin.y
+		assert_true(absf(y - ice) < 0.05 or absf(y - water) < 0.05, "barcaza a %.2f" % y)
 
 
 func test_ground_collision_follows_the_relief() -> void:
@@ -65,8 +68,46 @@ func test_ground_collision_follows_the_relief() -> void:
 	for point: Vector2 in [Vector2(395.0, 345.0), Vector2(1000.0, 830.0), Vector2(700.0, 706.0)]:
 		var hit: Dictionary = _ray_down(point, [])
 		assert_false(hit.is_empty(), "nada bajo %s" % point)
+		# En el río se pisa el hielo: el relieve es su lecho, debajo.
+		var expected: float = _city.plan.height_at(point)
+		if _city.plan.is_on_river(point):
+			expected = maxf(expected, float(_city.plan.river["hielo"]))
 		if not hit.is_empty():
-			assert_almost(hit["position"].y, _city.plan.height_at(point), 0.35, "en %s" % point)
+			assert_almost(hit["position"].y, expected, 0.35, "en %s" % point)
+
+
+func test_the_river_has_open_water_and_ice() -> void:
+	# El agua abierta no se pisa (se cae al lecho) y el hielo sí, a su nivel; el remolcador
+	# flota en el agua templada de la central.
+	var river: Dictionary = _city.plan.river
+	var level: float = float(river["agua"])
+	assert_true(int(_city.stats["rio"]["triangulos_agua"]) > 2000, "triángulos de agua")
+	assert_true(int(_city.stats["rio"]["placas"]) > 1000, "placas de hielo")
+	var flat: Array = river["superficie"]["puntos"]
+	var triangles: Array = river["superficie"]["triangulos"]
+	var slush: Array = river["superficie"]["orilla"]
+	var tested: int = 0
+	var fell: int = 0
+	for t: int in range(0, triangles.size(), 3 * 41):
+		var center: Vector2 = Vector2.ZERO
+		var edge: float = 0.0
+		for k: int in 3:
+			var v: int = int(triangles[t + k])
+			center += Vector2(flat[v * 2], flat[v * 2 + 1]) / 3.0
+			edge += float(slush[v])
+		if edge > 0.0:
+			continue
+		tested += 1
+		var hit: Dictionary = _ray_down(center, [])
+		if not hit.is_empty() and hit["position"].y < level - 0.3:
+			fell += 1
+	assert_true(tested > 20, "puntos de agua: %d" % tested)
+	assert_true(fell > tested * 0.85, "se cae al agua en %d de %d" % [fell, tested])
+	var on_ice: Dictionary = _ray_down(Vector2(700.0, 706.0), [])
+	assert_almost(on_ice["position"].y, float(river["hielo"]), 0.05, "el hielo de orilla")
+	for by_model: Dictionary in _city.props.vehicles().values():
+		for entry: Array in by_model.get("remolcador", []):
+			assert_almost((entry[0] as Transform3D).origin.y, level, 0.05, "el remolcador flota")
 
 
 func test_buildings_are_solid_and_known() -> void:

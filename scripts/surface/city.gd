@@ -115,6 +115,7 @@ var _builder: CityBuildings
 var _terrain: CityTerrain
 var _props: CityProps
 var _transit: CityTransit
+var _river: CityRiver
 var _kit: CityKit
 ## Los volúmenes de los edificios montados con el kit: de lejos se ven ellos y de cerca, su
 ## modelo (su visibility_range_begin es kit_distance).
@@ -140,6 +141,9 @@ func build(city_plan: CityPlan) -> void:
 	_load_models()
 	_transit = CityTransit.new(plan)
 	_transit.build()
+	_river = CityRiver.new(plan)
+	_river.build()
+	stats["rio"] = _river.stats
 	_kit = CityKit.new(plan) if kit_buildings else null
 	_kit_volumes.clear()
 	_terrain.holes = _transit.touched
@@ -217,6 +221,8 @@ func _build_sector(
 		built.append([building, mesh, offset])
 	if structures is MeshBuffer:
 		far.append(structures)
+	if _river.far.has(sector):
+		far.append(_river.far[sector])
 	var far_node: MeshInstance3D = MeshInstance3D.new()
 	far_node.name = "Lejos"
 	far_node.mesh = far.to_mesh(_materials["lejos"])
@@ -236,6 +242,7 @@ func _build_sector(
 	var near_terrain: MeshBuffer = _terrain.grid_mesh(rect, NEAR_STEP, heights, center, 3.0)
 	_add_mesh(node, "Terreno", near_terrain, _materials["suelo"], NodePath("../Lejos"))
 	_add_transit(node, sector, body)
+	_add_river(node, sector, body)
 	var buildings_node: Node3D = Node3D.new()
 	buildings_node.name = "Edificios"
 	node.add_child(buildings_node)
@@ -402,6 +409,22 @@ func _add_transit(node: Node3D, sector: Vector2i, body: StaticBody3D) -> void:
 	_add_props(node, _transit.instances.get(sector, {}), "Detalles")
 
 
+## El río del sector: el agua (sin colisión: debajo está el lecho) y el hielo, que se pisa.
+func _add_river(node: Node3D, sector: Vector2i, body: StaticBody3D) -> void:
+	if _river.water.has(sector):
+		_add_mesh(node, "Agua", _river.water[sector], _materials["agua"], NodePath("../Lejos"))
+	if _river.ice.has(sector):
+		_add_mesh(node, "Hielo", _river.ice[sector], _materials["hielo"], NodePath("../Lejos"))
+	if _river.collision.has(sector):
+		var shape: ConcavePolygonShape3D = ConcavePolygonShape3D.new()
+		shape.backface_collision = true
+		shape.set_faces(_river.collision[sector])
+		var holder: CollisionShape3D = CollisionShape3D.new()
+		holder.name = "Hielo"
+		holder.shape = shape
+		body.add_child(holder)
+
+
 ## Distancia a la que cada sector pasa a su versión lejana (muy grande: todo detallado).
 func set_near_distance(distance: float) -> void:
 	near_distance = distance
@@ -542,6 +565,11 @@ func _make_materials() -> void:
 	var far: ShaderMaterial = ShaderMaterial.new()
 	far.shader = load(SHADERS_DIR + "tinta_silueta.gdshader")
 	_materials["lejos"] = far
+	var water: ShaderMaterial = ShaderMaterial.new()
+	water.shader = load(SHADERS_DIR + "agua.gdshader")
+	water.set_shader_parameter("ramps", ramps)
+	_materials["agua"] = water
+	_materials["hielo"] = _shader_material("tinta_transito", ramps, 0.9)
 	for kind: String in TRANSIT_MATERIALS:
 		var settings: Array = TRANSIT_MATERIALS[kind]
 		# La pintura vial se recorta por el alfa de su textura: queda a trozos.

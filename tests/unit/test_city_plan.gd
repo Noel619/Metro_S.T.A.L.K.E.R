@@ -29,7 +29,10 @@ func test_relief_keeps_its_16_bits() -> void:
 
 
 func test_heights_at_known_places() -> void:
-	assert_almost(_shared.height_at(Vector2(700.0, 706.0)), -6.0, 0.01, "hielo del río")
+	# En el centro del río, el relieve es su lecho, 3,5 m bajo el hielo (rio.json).
+	assert_almost(_shared.height_at(Vector2(700.0, 706.0)), -9.5, 0.05, "lecho del río")
+	assert_almost(float(_shared.river["hielo"]), -6.0, 0.01, "hielo del río")
+	assert_true(float(_shared.river["agua"]) < -6.0, "el agua, bajo el hielo")
 	assert_almost(_shared.height_at(Vector2(430.0, 330.0)), 0.0, 0.5, "plaza del Trabajo")
 	assert_true(_shared.height_at(Vector2(1500.0, 1110.0)) < -17.0, "fondo del cráter")
 	assert_true(_shared.height_at(Vector2(1000.0, 1000.0)) > 11.0, "meseta del centro")
