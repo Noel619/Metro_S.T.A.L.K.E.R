@@ -167,6 +167,42 @@ function faceSheet(style) {
             const [cx, cy] = at(dx, dy);
             drawables.push(generator.ellipse(cx, cy, dw, dh, faceInk(style.seed + 70 + n, { stroke: FACE_DIRT, fill: FACE_DIRT, fillStyle: "solid", strokeWidth: 2, roughness: 1.6 })));
         });
+        // Lo que traen los años (solo en las caras que lo piden): arrugas en la
+        // frente y en el rabillo, bigote, barba de días y gafas redondas.
+        for (let n = 0; n < (style.wrinkles || 0); n++) {
+            const wy = style.browY - 14 - n * 9;
+            drawables.push(generator.curve([at(128 - 34 + n * 4, wy + 2), at(128, wy - 2), at(128 + 34 - n * 4, wy + 2)], faceInk(seed + 80 + n, { strokeWidth: 2, stroke: FACE_SHADOW })));
+        }
+        if (style.crow) {
+            [-1, 1].forEach((side, k) => {
+                const ex = 128 + side * (style.eyeGap + style.eyeW + 6);
+                for (let n = 0; n < 2; n++) {
+                    drawables.push(generator.line(...at(ex, ey - 2 + n * 7), ...at(ex + side * 10, ey - 6 + n * 12), faceInk(seed + 90 + k * 3 + n, { strokeWidth: 1.8, stroke: FACE_SHADOW })));
+                }
+            });
+        }
+        if (style.stubble) {
+            for (let n = 0; n < 46; n++) {
+                const angle = Math.PI * (0.08 + 0.84 * ((n * 37) % 46) / 46);
+                const radius = 40 + ((n * 13) % 17);
+                const [dx, dy] = at(128 - Math.cos(angle) * radius * 1.4, style.mouthY - 22 + Math.sin(angle) * radius * 0.75);
+                drawables.push(generator.circle(dx, dy, 2.2, faceInk(seed + 120 + n, { stroke: FACE_SHADOW, fill: FACE_SHADOW, fillStyle: "solid", strokeWidth: 0.6, roughness: 0.3 })));
+            }
+        }
+        if (style.mustache) {
+            const mc = style.mustache;
+            drawables.push(generator.path(
+                `M ${at(128 - 26, style.mouthY - 4).join(" ")} Q ${at(128 - 12, style.mouthY - 18).join(" ")} ${at(128, style.mouthY - 9).join(" ")} Q ${at(128 + 12, style.mouthY - 18).join(" ")} ${at(128 + 26, style.mouthY - 4).join(" ")} Q ${at(128, style.mouthY - 6).join(" ")} ${at(128 - 26, style.mouthY - 4).join(" ")} Z`,
+                faceInk(seed + 170, { fill: mc, fillStyle: "solid", stroke: mc, strokeWidth: 2, roughness: 0.7 }),
+            ));
+        }
+        if (style.glasses) {
+            [-1, 1].forEach((side, k) => {
+                const [cx, cy] = at(128 + side * style.eyeGap, ey + 1);
+                drawables.push(generator.circle(cx, cy, (style.eyeW + 9) * 2, faceInk(seed + 180 + k, { strokeWidth: 3.5, stroke: "#5A4A30" })));
+            });
+            drawables.push(generator.curve([at(128 - style.eyeGap + style.eyeW + 8, ey - 2), at(128, ey - 6), at(128 + style.eyeGap - style.eyeW - 8, ey - 2)], faceInk(seed + 183, { strokeWidth: 3, stroke: "#5A4A30" })));
+        }
         // Boca.
         const my = style.mouthY;
         const line = (points, extra = {}) => drawables.push(generator.curve(points.map(([x, y]) => at(128 + x, my + y)), faceInk(seed + 30, extra)));
@@ -208,9 +244,39 @@ const FACE_CHICA = {
     cheekX: 76, cheekY: 144, mouthY: 196, scar: null, dirt: [[52, 172, 34, 12]],
 };
 
+// La gente de la estación: más años y más cansancio que los protagonistas.
+const FACE_RELOJERO = {
+    seed: 1300, eyeGap: 45, eyeY: 80, eyeW: 17, eyeOpen: 0.75, gaze: 1, lid: 6,
+    browY: 52, browW: 50, browWeight: 8, browColor: "#8A857C", bags: 2,
+    cheekX: 72, cheekY: 140, mouthY: 198, scar: null, dirt: [],
+    wrinkles: 3, crow: true, mustache: "#9A958C", glasses: true,
+};
+const FACE_VENDEDORA = {
+    seed: 1400, eyeGap: 46, eyeY: 80, eyeW: 18, eyeOpen: 0.85, gaze: -1, lid: 5.5,
+    browY: 54, browW: 40, browWeight: 4, browColor: "#5E544C", bags: 2,
+    cheekX: 74, cheekY: 146, mouthY: 196, scar: null, dirt: [],
+    wrinkles: 2, crow: true,
+};
+const FACE_VECINA = {
+    seed: 1500, eyeGap: 47, eyeY: 79, eyeW: 19, eyeOpen: 0.95, gaze: 1, lid: 5,
+    browY: 55, browW: 40, browWeight: 4, browColor: "#3F2F22", bags: 2,
+    cheekX: 76, cheekY: 146, mouthY: 196, scar: null, dirt: [[196, 168, 26, 10]],
+    wrinkles: 1,
+};
+const FACE_CHATARRERO = {
+    seed: 1600, eyeGap: 48, eyeY: 78, eyeW: 18, eyeOpen: 0.9, gaze: -1, lid: 6.5,
+    browY: 51, browW: 48, browWeight: 8, browColor: "#2A2420", bags: 1,
+    cheekX: 74, cheekY: 142, mouthY: 196, scar: [196, 112], dirt: [[60, 176, 38, 12]],
+    wrinkles: 1, stubble: true, mustache: "#3A322C",
+};
+
 const ASSETS = {
     "cara_chico.svg": () => faceSheet(FACE_CHICO),
     "cara_chica.svg": () => faceSheet(FACE_CHICA),
+    "cara_relojero.svg": () => faceSheet(FACE_RELOJERO),
+    "cara_vendedora.svg": () => faceSheet(FACE_VENDEDORA),
+    "cara_vecina.svg": () => faceSheet(FACE_VECINA),
+    "cara_chatarrero.svg": () => faceSheet(FACE_CHATARRERO),
 
     // Etiqueta de precio de cartón, con su agujero y el cordel.
     "etiqueta_precio.svg": () =>

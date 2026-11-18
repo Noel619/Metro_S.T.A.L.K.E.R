@@ -13,3 +13,5 @@ grid_shape = Array[Vector2i]([Vector2i(0, 0), Vector2i(0, 1), Vector2i(0, 2), Ve
 fragility = 0.1
 base_value = 5
 sold_by_weight = false
+tool = &"escoba"
+tip = Vector3(0, 0.04, 0)

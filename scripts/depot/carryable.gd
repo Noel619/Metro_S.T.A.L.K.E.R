@@ -16,6 +16,10 @@ extends Node
 ## Solo cuando algo lo para de verdad se dibuja donde está.
 
 signal holder_changed(peer_id: int)
+## Ha cambiado su estado (en todos los equipos).
+signal state_changed
+## Ha caído al suelo (o sobre algo) desde [param speed] m/s. Solo en el anfitrión.
+signal landed(speed: float)
 
 ## Peer que puede pedir sin que haya red de por medio (el propio anfitrión).
 const HOST_PEER: int = 1
@@ -50,10 +54,21 @@ const GUEST_SLACK: float = 0.05
 const IN_HANDS: float = 0.1
 ## Rapidez con la que el dibujo vuelve a su sitio al soltarlo.
 const SETTLE: float = 12.0
+## Lo que se nota que cae algo: velocidad de caída desde la que cuenta y la que
+## tiene que perder de golpe.
+const LANDING_SPEED: float = 1.6
+const LANDED_SPEED: float = 0.4
 
 var state: ItemState
 ## Quién lo lleva (0: nadie).
 var holder_peer: int = 0
+## Su estado tal como se replica ([method ItemState.to_dict]): lo cambia el
+## anfitrión con [method set_values] y lo recibe quien llega tarde.
+var synced_state: Dictionary = {}:
+	set(value):
+		synced_state = value
+		if state != null and not value.is_empty():
+			_load_values(value)
 
 var _body: RigidBody3D
 var _visual: Node3D
@@ -61,6 +76,8 @@ var _visual: Node3D
 var _bounds: AABB = AABB()
 var _cast_shape: BoxShape3D
 var _stuck_time: float = 0.0
+## La caída más rápida desde que se soltó (para saber cuándo da contra algo).
+var _falling: float = 0.0
 ## El sitio de las manos y cómo estaba quien lo lleva en el paso anterior.
 var _last_target: Transform3D = Transform3D.IDENTITY
 var _last_eyes: Vector3 = Vector3.ZERO
@@ -90,6 +107,21 @@ static func follow_stiffness(mass: float) -> float:
 
 func is_held() -> bool:
 	return holder_peer != 0
+
+
+## Cambia valores de su estado (las claves de [method ItemState.to_dict]). Solo
+## el anfitrión: lo ven todos.
+func set_values(values: Dictionary) -> void:
+	if not multiplayer.is_server():
+		return
+	var merged: Dictionary = state.to_dict()
+	merged.merge(values.duplicate(true), true)
+	synced_state = merged
+
+
+## El cuerpo físico del objeto.
+func body() -> RigidBody3D:
+	return _body
 
 
 ## La caja que envuelve sus mallas, en sus propios ejes.
@@ -147,6 +179,26 @@ func request_grab() -> void:
 	_set_holder.rpc(peer)
 
 
+## El anfitrión se lo pone en las manos a [param peer] (lo que sale de la caja
+## de los rublos, una etiqueta en blanco, una bolsa del rollo).
+func give_to(peer: int) -> void:
+	if not multiplayer.is_server() or is_held():
+		return
+	var player: Player = Player.find(get_tree(), peer)
+	if player != null and player.held_item() == null:
+		# Aparece en sus manos (no viene volando desde donde estuviera).
+		_body.global_transform = player.hold_transform(state.data.weight, _bounds)
+		_body.linear_velocity = Vector3.ZERO
+		_body.angular_velocity = Vector3.ZERO
+		_set_holder.rpc(peer)
+
+
+## El anfitrión se lo quita de las manos a quien lo lleve (porque desaparece).
+func force_drop() -> void:
+	if multiplayer.is_server() and is_held():
+		_set_holder.rpc(0)
+
+
 ## Quien lo lleva pide soltarlo.
 @rpc("any_peer", "call_local", "reliable")
 func request_drop() -> void:
@@ -176,7 +228,10 @@ func _set_holder(peer: int) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if not is_held() or not multiplayer.is_server():
+	if not multiplayer.is_server():
+		return
+	if not is_held():
+		_watch_landing()
 		return
 	var player: Player = Player.find(get_tree(), holder_peer)
 	if player == null:
@@ -212,7 +267,10 @@ func _physics_process(delta: float) -> void:
 	_last_look = Vector2(player.rotation.y, player.head_pitch)
 	_has_last = true
 	var stiffness: float = follow_stiffness(_body.mass)
-	var correction: Vector3 = (offset * stiffness).limit_length(MAX_CORRECTION)
+	# Se corrige lo que falta después de seguir a las manos (si no, lo que se ha
+	# movido el jugador se contaría dos veces y el objeto se le adelantaría, y al
+	# chocar con algo se metería en ello).
+	var correction: Vector3 = ((offset - carried * delta) * stiffness).limit_length(MAX_CORRECTION)
 	_body.linear_velocity = (carried + correction).limit_length(MAX_SPEED)
 	var error: Vector3 = _rotation_vector(
 		wanted_turn * _body.global_basis.get_rotation_quaternion().inverse()
@@ -223,6 +281,16 @@ func _physics_process(delta: float) -> void:
 	_stuck_time = _stuck_time + delta if offset.length() > BREAK_DISTANCE else 0.0
 	if _stuck_time > STUCK_TIME:
 		_set_holder.rpc(0)
+
+
+## Lo que cae y se para de golpe ha dado contra algo: se avisa (polvo).
+func _watch_landing() -> void:
+	var fall: float = -_body.linear_velocity.y
+	if fall > LANDING_SPEED:
+		_falling = maxf(_falling, fall)
+	elif _falling > 0.0 and fall < LANDED_SPEED:
+		landed.emit(_falling)
+		_falling = 0.0
 
 
 func _process(delta: float) -> void:
@@ -258,8 +326,20 @@ func _process(delta: float) -> void:
 	var slack: float = 0.0 if multiplayer.is_server() else GUEST_SLACK
 	var stuck: float = smoothstep(SHOWN_NEAR + slack, SHOWN_FAR + slack, gap)
 	_in_hands = stuck < IN_HANDS
-	var shown: Transform3D = target.interpolate_with(_body.global_transform, stuck)
+	# Trabajando, se dibuja sobre lo que se trabaja (la física sigue en las manos).
+	var pose: Transform3D = player.work_pose(self) if player.working else target
+	var shown: Transform3D = pose.interpolate_with(_body.global_transform, stuck)
 	_visual.transform = _body.global_transform.affine_inverse() * shown
+
+
+func _load_values(values: Dictionary) -> void:
+	var fresh: ItemState = ItemState.from_dict(values)
+	state.condition = fresh.condition
+	state.contamination = fresh.contamination
+	state.price = fresh.price
+	state.bagged = fresh.bagged
+	state.extra = fresh.extra
+	state_changed.emit()
 
 
 ## El giro [param turn] como un vector: su eje por el ángulo (el camino corto).

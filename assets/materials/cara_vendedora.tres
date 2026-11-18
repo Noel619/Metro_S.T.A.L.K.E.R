@@ -1,0 +1,14 @@
+[gd_resource type="ShaderMaterial" load_steps=4 format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/tinta_recorte.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" path="res://assets/textures/rampas.png" id="2_ramps"]
+[ext_resource type="Texture2D" path="res://assets/ui/cara_vendedora.svg" id="3_cara"]
+
+[resource]
+resource_name = "cara_vendedora"
+shader = ExtResource("1_shader")
+shader_parameter/albedo_texture = ExtResource("3_cara")
+shader_parameter/use_vertex_color = false
+shader_parameter/ramps = ExtResource("2_ramps")
+shader_parameter/ramp_row = 3
+shader_parameter/uv_scale = Vector2(0.25, 0.5)

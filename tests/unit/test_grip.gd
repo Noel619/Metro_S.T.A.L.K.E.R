@@ -3,11 +3,11 @@ extends "res://tests/test_case.gd"
 ## y lo que se lleva nunca se mete en el cuerpo ni en los ojos (F2-03).
 
 const LEVEL: String = "res://scenes/depot/deposito.tscn"
-## Un sitio despejado del pasillo, mirando hacia la sala.
-const OPEN_SPOT: Vector3 = Vector3(3.4, 0.03, 3.4)
-## Delante de la pared del fondo del pasillo (su cara está en z = 7.25).
-const WALL_SPOT: Vector3 = Vector3(3.4, 0.03, 5.4)
-const WALL_FACE: float = 7.25
+## Un sitio despejado de la consigna, mirando hacia el fondo.
+const OPEN_SPOT: Vector3 = Vector3(0.8, 0.03, 1.4)
+## En la consigna, de cara al muro del fondo (su cara está en z = -3,75).
+const WALL_SPOT: Vector3 = Vector3(1.6, 0.03, -1.4)
+const WALL_FACE: float = -3.75
 ## El pecho: un eje vertical bajo los ojos y su radio.
 const TORSO_RADIUS: float = 0.16
 ## Lo más lejos que puede quedar una palma de lo que sujeta.
@@ -130,7 +130,7 @@ func test_hands_hold_it_while_turning_fast() -> void:
 
 
 func test_carried_things_keep_up_when_walking() -> void:
-	var item: Carryable = await _carry(&"bidon", Vector3(-3.0, 0.03, 3.0), -PI / 2.0)
+	var item: Carryable = await _carry(&"bidon", Vector3(-6.0, 0.03, 6.5), -PI / 2.0)
 	var body: RigidBody3D = item.get_parent()
 	var center: Vector3 = item.bounds().get_center()
 	_player.scripted_input = Vector2(0.0, -1.0)
@@ -145,21 +145,21 @@ func test_carried_things_keep_up_when_walking() -> void:
 
 
 func test_cannot_walk_through_what_you_carry() -> void:
-	var item: Carryable = await _carry(&"caja_carton_pequena", WALL_SPOT, PI)
+	var item: Carryable = await _carry(&"caja_carton_pequena", WALL_SPOT, 0.0)
 	var body: RigidBody3D = item.get_parent()
 	_player.scripted_input = Vector2(0.0, -1.0)
 	var closest: float = INF
-	var deepest: float = -INF
+	var deepest: float = INF
 	for _i in 150:
 		await get_tree().physics_frame
 		var box: Array = _box(body)
 		closest = minf(closest, _distance(_player.eye_position(), box))
-		deepest = maxf(deepest, _farthest_along(box, Vector3.BACK))
+		deepest = minf(deepest, -_farthest_along(box, Vector3.FORWARD))
 	_player.scripted_input = Vector2.ZERO
 	assert_true(_player.held_item() == item, "la sigue llevando")
 	assert_true(closest > 0.15, "la cámara nunca se mete en la caja (%.2f m)" % closest)
-	assert_true(deepest < WALL_FACE + 0.02, "la caja no se mete en la pared")
-	assert_true(_player.global_position.z < WALL_FACE - 0.4, "el jugador se para antes")
+	assert_true(deepest > WALL_FACE - 0.02, "la caja no se mete en la pared (%.3f)" % deepest)
+	assert_true(_player.global_position.z > WALL_FACE + 0.4, "el jugador se para antes")
 
 
 func test_inspecting_never_reaches_the_eyes() -> void:

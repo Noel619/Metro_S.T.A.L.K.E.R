@@ -16,6 +16,11 @@ var condition: float = 1.0
 var contamination: float = 0.0
 ## Precio escrito en su etiqueta; -1 si no tiene.
 var price: int = -1
+## Metido en una bolsa de plástico: ya no contamina lo de alrededor.
+var bagged: bool = false
+## Lo propio de cada clase de objeto (lo que lleva un fajo, si una caja está
+## abierta, los pasos de una reparación…): valores que se pueden guardar en JSON.
+var extra: Dictionary = {}
 
 
 static func create(item_id: StringName, new_uid: int = 0) -> ItemState:
@@ -38,6 +43,9 @@ static func from_dict(values: Dictionary) -> ItemState:
 	state.condition = clampf(float(values.get("condition", 1.0)), 0.0, 1.0)
 	state.contamination = clampf(float(values.get("contamination", 0.0)), 0.0, 1.0)
 	state.price = int(values.get("price", -1))
+	state.bagged = bool(values.get("bagged", false))
+	var more: Variant = values.get("extra", {})
+	state.extra = (more as Dictionary).duplicate(true) if more is Dictionary else {}
 	return state
 
 
@@ -48,9 +56,16 @@ func to_dict() -> Dictionary:
 		"condition": condition,
 		"contamination": contamination,
 		"price": price,
+		"bagged": bagged,
+		"extra": extra.duplicate(true),
 	}
 
 
 ## Lo que vale ahora mismo, sin regatear.
 func value() -> int:
 	return data.value(condition, contamination)
+
+
+## Cuánto contamina lo de alrededor: nada si está embolsado.
+func emission() -> float:
+	return 0.0 if bagged else contamination

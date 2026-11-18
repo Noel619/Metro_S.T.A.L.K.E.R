@@ -214,10 +214,21 @@ Lo que se mueve o se enciende en el juego es un nodo propio dentro del modelo, c
 | `prismaticos` | `lentes`, `rueda_enfoque` | Los cristales llevan `vidrio.tres` (para el reflejo); la rueda gira en `rotation.z` |
 | `despertador` | `aguja_horas`, `aguja_minutos`, `aguja_alarma` | `rotation.z` negativo va en el sentido del reloj; a 0° marcan las doce |
 | `despertador` | `martillo`, `llave_cuerda` | El badajo oscila entre las campanas y la llave gira, los dos en `rotation.z` |
+| `consigna_persiana` | `cortina` (con `lama_00`…`lama_22`) | La cortina sube en Y; las lamas que entran en el cajón se ocultan |
+| `consigna_puerta` | `hoja` | Gira en `rotation.y` sobre las bisagras (hacia dentro, -100°) |
+| `caja_rublos`, `contenedor_estacion` | `tapa` | `rotation.x` negativo la levanta (el origen, en las bisagras de atrás) |
+| `libro_cuentas` | `tapa` | `rotation.z` de 0 a 180° la abre sobre el lomo |
+| `cubo_basura` | `bolsa` | Se oculta o se muestra |
+| `reloj_pared` | `aguja_horas`, `aguja_minutos` | `rotation.z` negativo va en el sentido del reloj; a 0° marcan las doce |
+| `flexo` | `foco` | Punto donde colgar la luz |
+| `radio_bolsillo` | `tapa`, `tornillo_0`…`tornillo_3`, `contactos` | Los tornillos giran y salen hacia atrás; la tapa se aparta; los contactos se tiñen al limpiarlos |
+| `botas` | `costura` | La raja se cierra al coserla (escala) |
 
 Las herramientas que se empuñan (`martillo`, `palanca`, `navaja`) llevan un nodo vacío `agarre` en el punto por donde las coge la mano. La `cizalla`, que es de dos manos, lleva `agarre` y `agarre_2`.
 
 ### Personajes
+
+Además de los protagonistas, la receta hace a la gente de la estación (`persona_relojero`, `persona_vendedora`, `persona_vecina`, `persona_chatarrero`): mismo esqueleto y animaciones, otra ropa y su lámina de caras (`assets/ui/cara_<nombre>.svg`, con su material `assets/materials/cara_<nombre>.tres`). En `PlayerAvatar.MODELS` cada uno tiene su clave, que es la que usa `CustomerData.variant`.
 
 - `tools/blender/personaje_bpy.py`: piezas blandas con color y pesos de hueso (`Sculpt`), volúmenes sobre los que colocar correas y bolsillos (`Profile`), el esqueleto y las poses con cinemática inversa.
 - `tools/blender/personaje_anim.py`: las animaciones, como funciones del tiempo. Un nombre que acaba en `-loop` se importa en bucle.
@@ -284,6 +295,6 @@ CAPTURE_ARGS="--call=VisorEstilo:_load:3 --call=DioramaPatio:set_hour:18.75 --ca
 El juego arranca siempre como anfitrión sin invitados (`NetSession`). `make test-net` lanza dos pruebas con un anfitrión y un invitado en la misma máquina:
 
 - **caja**: el invitado ve moverse la caja de "Hola, Tumansk".
-- **deposito**: el invitado entra en el depósito, recibe su jugador y los 22 objetos, anda, coge una lata, se la lleva y la suelta; el anfitrión comprueba que lo ve andar y llevarla.
+- **deposito**: el invitado entra en el depósito, recibe su jugador y los 28 objetos, anda, coge una lata, se la lleva y la suelta; coge la escoba y barre una mancha de polvo; el anfitrión abre el mostrador y hace venir al relojero, y el invitado coge los billetes que deja por un despertador. El anfitrión comprueba que lo ve andar y llevar cosas, que la mancha está limpia y que la venta está apuntada; el invitado, que le llegan la mancha limpia y el dinero.
 
 Quién manda sobre qué está en [D-003](DECISIONES.md) y [D-046](DECISIONES.md).
