@@ -10,7 +10,6 @@ extends RefCounted
 
 const SKY_SHADER: String = "res://assets/shaders/cielo.gdshader"
 const CLOUD_NOISE: String = "res://assets/textures/nubes.png"
-const HATCHING: String = "res://assets/textures/tramado.png"
 
 const MOODS: Dictionary = {
 	"dia":
@@ -23,7 +22,7 @@ const MOODS: Dictionary = {
 		"glow": Color("#f0dcb6"),
 		"glow_strength": 0.35,
 		"glow_size": 5.0,
-		"coverage": 0.74,
+		"coverage": 0.85,
 		"ambient": Color("#706f6c"),
 		"ambient_energy": 0.62,
 		"fog": Color("#85827a"),
@@ -36,19 +35,19 @@ const MOODS: Dictionary = {
 	"anochecer":
 	{
 		"zenith": Color("#2e3040"),
-		"horizon": Color("#a8775a"),
+		"horizon": Color("#8c7466"),
 		"ground": Color("#2b2725"),
-		"cloud_light": Color("#b9876a"),
-		"cloud_dark": Color("#3e3541"),
-		"glow": Color("#f29a66"),
-		"glow_strength": 1.2,
+		"cloud_light": Color("#9a8174"),
+		"cloud_dark": Color("#3f3c45"),
+		"glow": Color("#d89a74"),
+		"glow_strength": 0.8,
 		"glow_size": 4.0,
-		"coverage": 0.62,
-		"ambient": Color("#5a5262"),
+		"coverage": 0.8,
+		"ambient": Color("#56545e"),
 		"ambient_energy": 0.6,
-		"fog": Color("#5e4d45"),
+		"fog": Color("#5a514d"),
 		"fog_density": 0.012,
-		"sun": Color("#ffa06a"),
+		"sun": Color("#e8aa82"),
 		"sun_energy": 0.8,
 		"sun_rotation": Vector3(-7.0, -24.0, 0.0),
 		"style": &"superficie",
@@ -63,7 +62,7 @@ const MOODS: Dictionary = {
 		"glow": Color("#8fa0c8"),
 		"glow_strength": 0.35,
 		"glow_size": 14.0,
-		"coverage": 0.6,
+		"coverage": 0.8,
 		"ambient": Color("#1c2333"),
 		"ambient_energy": 0.22,
 		"fog": Color("#0b0d12"),
@@ -161,7 +160,7 @@ static func apply_values(
 	var material: ShaderMaterial = ShaderMaterial.new()
 	material.shader = load(SKY_SHADER)
 	material.set_shader_parameter("cloud_noise", load(CLOUD_NOISE))
-	material.set_shader_parameter("hatching", load(HATCHING))
+	material.set_shader_parameter("haze_color", values["fog"])
 	for key: String in ["zenith", "horizon", "ground", "cloud_light", "cloud_dark", "glow"]:
 		var parameter: String = (
 			key + "_color" if key != "cloud_light" and key != "cloud_dark" else key

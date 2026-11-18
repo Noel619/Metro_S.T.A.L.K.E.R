@@ -16,6 +16,9 @@
 //   sin repetirse; el hollín de los incendios sale de los datos de cada instancia.
 
 global uniform int tinta_rampa;
+// Luz que queda en la sombra, en fracción del tono medio de la rampa: sin ella, lo que
+// no da al sol solo recibe la luz ambiente y se hunde en negro.
+global uniform float tinta_sombra;
 #ifdef TINTA_MURO
 // Datos de cada instancia (MultiMesh con use_custom_data, ver BuildingKit): r, el
 // desgaste (cuánto revoque se ha caído); g, el hollín de un incendio; b y a, de dónde
@@ -246,11 +249,19 @@ void fragment() {
 
 void light() {
 	float row = float(ramp_row < 0 ? tinta_rampa : ramp_row);
+	float v = (row + 0.5) / RAMP_ROWS;
 	// Las bandas dependen solo del ángulo con la luz; la caída con la distancia y
 	// las sombras proyectadas (ATTENUATION) se aplican después, suaves.
 	float t = clamp(dot(NORMAL, LIGHT) * 0.5 + 0.5, 0.0, 1.0);
 	// Las rampas se guardan a la mitad para admitir brillos por encima de 1.
-	vec3 band = texture(ramps, vec2(t, (row + 0.5) / RAMP_ROWS)).rgb * 2.0;
+	vec3 band = texture(ramps, vec2(t, v)).rgb * 2.0;
+	// Relleno de la sombra: el tono medio de la rampa (frío en la calle, cálido en el
+	// depósito), rebajado. Las sombras propias y las proyectadas reciben lo mismo.
+	vec3 fill = texture(ramps, vec2(0.56, v)).rgb * 2.0 * tinta_sombra;
 	// LIGHT_COLOR ya viene multiplicado por PI.
-	DIFFUSE_LIGHT += band * LIGHT_COLOR / PI * ATTENUATION;
+	if (LIGHT_IS_DIRECTIONAL) {
+		DIFFUSE_LIGHT += max(band * ATTENUATION, fill) * LIGHT_COLOR / PI;
+	} else {
+		DIFFUSE_LIGHT += max(band, fill) * LIGHT_COLOR / PI * ATTENUATION;
+	}
 }

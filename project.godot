@@ -259,6 +259,10 @@ tinta_rampa={
 "type": "int",
 "value": 1
 }
+tinta_sombra={
+"type": "float",
+"value": 0.5
+}
 tinta_color={
 "type": "color",
 "value": Color(0.105882354, 0.101960786, 0.13333334, 1)

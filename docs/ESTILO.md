@@ -6,6 +6,8 @@ Estado: **Fase 1 completa**, pendiente de tu aprobación final. Los valores de e
 
 **Revisión 2**: el exterior transmite la sensación; hay que mantener ese nivel en toda la ciudad. La noche, mucho más oscura (sin linterna casi no se ve). El anochecer, bien, con un ligero retoque: ahora es algo más marrón y menos saturado.
 
+**Revisión 3**: todo era demasiado chillón; las sombras, demasiado oscuras, con un rayado que las ensuciaba, y el cielo y las nubes no gustaban nada. Cambios: menos saturación (depósito 0,72; superficie 0,5) y un anochecer menos naranja; la sombra recibe luz propia (`tinta_sombra`: el tono medio de la rampa, rebajado), así que ya no se hunde en negro; el tramado pesa la mitad y solo entra en lo muy oscuro; y el cielo es nuevo: un techo continuo de nubes de invierno, estirado por el viento, sin contorno de tinta ni tramado, que se funde con la niebla en el horizonte.
+
 **Cierre de la Fase 1**:
 
 - Contorno de casco invertido para los objetos clave.
@@ -49,16 +51,17 @@ El contorno del post-proceso es fino y uniforme. Lo importante lleva además un 
 | `trazo_fps` | 4 | 8 | 8 | Cuántas veces por segundo se "redibuja" el contorno |
 | `trazo_amplitud` | 0,6 px | 1,0 px | 1,0 px | Cuánto tiembla el contorno |
 | `grosor` | 1,6 px | 2,2 px | 2,2 px | Grosor del contorno a 1080p |
-| `tramado` | 0,5 | 0,85 | 0,75 | Fuerza de las rayas de lápiz |
-| `tramado_umbral` | 0,07 | 0,30 | 0,10 | Luminancia por debajo de la cual empieza el tramado |
-| `relleno` | 0,003 | 0,018 | 0,002 | Luminancia por debajo de la cual todo es tinta |
-| `saturacion` | 1,0 | 0,62 | 0,7 | Saturación del color |
-| `contraste` | 1,05 | 1,18 | 1,1 | Contraste alrededor del gris medio |
+| `tramado` | 0,3 | 0,4 | 0,5 | Fuerza de las rayas de lápiz |
+| `tramado_umbral` | 0,07 | 0,16 | 0,10 | Luminancia por debajo de la cual empieza el tramado |
+| `relleno` | 0,003 | 0,008 | 0,002 | Luminancia por debajo de la cual todo es tinta |
+| `saturacion` | 0,72 | 0,5 | 0,55 | Saturación del color |
+| `contraste` | 1,0 | 1,08 | 1,1 | Contraste alrededor del gris medio |
 | `papel` | 0,3 | 0,4 | 0,35 | Cuánto se nota el grano del papel |
 | `grano` | 0,025 | 0,06 | 0,07 | Grano de película |
 | `vineta` | 0,3 | 0,5 | 0,45 | Oscurecimiento de los bordes |
 | `rampa` | 1 | 2 | 2 | Fila de `rampas.png` |
-| `tinte` | `#FFF7EB` | `#F7F2E6` | `#E6F2FF` | Tinte de la imagen |
+| `sombra` | 0,55 | 0,5 | 0,35 | Luz que queda en la sombra (propia y proyectada), en fracción del tono medio de la rampa |
+| `tinte` | `#FFFAF2` | `#F7F2E6` | `#E6F2FF` | Tinte de la imagen |
 | `negro` | 0 | 0 | 1 | Cuánto se oscurece el relleno de tinta; con 1 casi negro, y los contornos desaparecen donde no llega la luz |
 
 **Miedo** (`StyleDirector.fear`, de 0 a 1): el trazo tiembla hasta 3,5 veces más y más deprisa, el contorno engorda hasta 1,5 px, el color pierde saturación y el tramado invade la imagen desde los bordes. **Radiación** (`StyleDirector.radiation`): el grano crece. Con la opción de accesibilidad "trazo vivo reducido", el temblor baja al 30 % y no pasa de 4 fps.
@@ -89,7 +92,7 @@ El contorno del post-proceso es fino y uniforme. Lo importante lleva además un 
 | Óxido | `#7E4128` |
 | Corteza | `#34302C` |
 
-**Cielo** (`scripts/surface/atmosphere.gd`). Nunca es negro del todo, pero la noche es muy oscura: sin linterna solo se distinguen el cielo y las siluetas (revisión 2).
+**Cielo** (`assets/shaders/cielo.gdshader`, valores en `scripts/surface/atmosphere.gd`). Siempre encapotado: un techo continuo de nubes con vetas largas que estira el viento, pintado a pinceladas suaves y sin contorno de tinta (el dibujo se reserva para el mundo). El sol es un resplandor difuso detrás, al anochecer queda una franja de luz baja en el horizonte y abajo todo se funde con la niebla. Nunca es negro del todo, pero la noche es muy oscura: sin linterna solo se distinguen el cielo y las siluetas (revisión 2).
 
 - **Hora continua:** `Atmosphere.apply_hour(entorno, sol, hora)` interpola entre los momentos de referencia.
 
@@ -107,7 +110,7 @@ El contorno del post-proceso es fino y uniforme. Lo importante lleva además un 
 | Momento | Cénit | Horizonte | Nubes (claro / oscuro) | Luz |
 |---|---|---|---|---|
 | Día | `#6E7273` | `#9A968C` | `#AEABA2` / `#6A6967` | Sol velado `#F2E6CC` |
-| Anochecer | `#2E3040` | `#B47A55` | `#C58560` / `#3E3541` | Sol bajo `#FFA06A` |
+| Anochecer | `#2E3040` | `#8C7466` | `#9A8174` / `#3F3C45` | Sol bajo `#E8AA82` |
 | Noche | `#0A0D14` | `#161B25` | `#2A3142` / `#0E1118` | Luna muy débil `#7D8DB5` |
 
 Regla: el rojo (`#C8323C`) se reserva para lo importante.
