@@ -29,6 +29,8 @@ import bmesh  # isort: skip
 from mathutils import Matrix, Quaternion, Vector
 from mathutils.bvhtree import BVHTree
 
+import tumansk_bpy as tb
+
 FRONT = Vector((0.0, -1.0, 0.0))
 UP = Vector((0.0, 0.0, 1.0))
 LEFT = Vector((1.0, 0.0, 0.0))
@@ -521,13 +523,15 @@ class Sculpt:
         matrix = Matrix.LocRotScale(Vector(center), rotation or Quaternion(), Vector(size))
         result = bmesh.ops.create_cube(self.bm, size=1.0, matrix=matrix)
         if cuts > 0:
-            edges = list({edge for vert in result["verts"] for edge in vert.link_edges})
+            # Sin conjuntos: su orden cambia de una ejecución a otra, y con él el de los
+            # vértices que salen al subdividir (el modelo dejaría de ser idéntico).
+            edges = list(dict.fromkeys(edge for vert in result["verts"] for edge in vert.link_edges))
             bmesh.ops.subdivide_edges(self.bm, edges=edges, cuts=cuts, use_grid_fill=True)
         if bevel > 0.0:
             self.bm.normal_update()
             edges = [
                 edge
-                for edge in {e for f in self.bm.faces if f not in before_faces for e in f.edges}
+                for edge in dict.fromkeys(e for f in self.bm.faces if f not in before_faces for e in f.edges)
                 if len(edge.link_faces) == 2 and edge.calc_face_angle(0.0) > 0.5
             ]
             bmesh.ops.bevel(self.bm, geom=edges, offset=bevel, segments=1, profile=0.5, affect="EDGES")
@@ -540,7 +544,7 @@ class Sculpt:
 
     def move(self, faces: Iterable[bmesh.types.BMFace], offset: Callable[[Vector], Vector]) -> None:
         """Desplaza los vértices de unas caras (abombar, arrugar)."""
-        for vert in {v for f in faces for v in f.verts}:
+        for vert in dict.fromkeys(v for f in faces for v in f.verts):
             vert.co += offset(vert.co)
 
     # -- final -------------------------------------------------------------
@@ -553,6 +557,9 @@ class Sculpt:
         *,
         subdivide: int = 1,
     ) -> bpy.types.Object:
+        # El biselado no devuelve las caras siempre en el mismo orden: se ordena todo
+        # por posición antes de subdividir, o dos ejecuciones darían archivos distintos.
+        tb._sort_geometry(self.bm)
         mesh = bpy.data.meshes.new(name)
         self.bm.to_mesh(mesh)
         self.bm.free()
