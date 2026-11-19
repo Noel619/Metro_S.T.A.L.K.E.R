@@ -80,6 +80,9 @@ if want superficie; then
     keep superficie_asomado fase3_superficie_asomado
     capture surface/patio_pruebas superficie_ruido "--sin-ayuda --call=PatioPruebas:view:ruido" 40
     keep superficie_ruido fase3_superficie_ruido
+    # Cómo ven los demás al que se esconde: agachado, andando agachado, corriendo y asomado.
+    capture style/personajes_superficie personajes
+    keep personajes_camara_sigilo fase3_superficie_sigilo
 fi
 if want botin; then
     # El botín de la superficie (F3-18): la mesa entera y una cámara por cada cuatro objetos.

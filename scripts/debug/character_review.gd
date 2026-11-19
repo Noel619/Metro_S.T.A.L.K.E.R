@@ -76,6 +76,25 @@ func _build_surface() -> void:
 		avatar.preview(pose[1], pose[2])
 		avatar.expression = pose[4]
 	_camera("Marcha", Vector3(6.2, 1.1, 11.6), Vector3(6.1, 0.9, 6.5), 30.0)
+	# Fuera, a escondidas (F3-01): agachado, andando agachado, corriendo (con las
+	# manos libres y cargando) y asomándose agachado.
+	var stealth: Array[Array] = [
+		["chico", &"agachado", 0.4, -35.0, 0.0],
+		["chica", &"caminar_agachado", 0.25, -80.0, 0.0],
+		["chico", &"correr", 0.12, -75.0, 0.0],
+		["chica", &"correr_cargando", 0.62, -70.0, 0.0],
+		["chico", &"agachado", 1.6, 10.0, 1.0],
+	]
+	for index: int in stealth.size():
+		var pose: Array = stealth[index]
+		var avatar: PlayerAvatar = _avatar(pose[0], (index + 2) % 4)
+		avatar.position = Vector3(-2.1 + index * 1.1, 0.0, 8.3 + (index % 2) * 0.35)
+		avatar.rotation_degrees.y = 180.0 + float(pose[3])
+		avatar.preview(pose[1], pose[2])
+		avatar.lean = pose[4]
+		if String(pose[1]).begins_with("correr"):
+			avatar.expression = &"esfuerzo"
+	_camera("Sigilo", Vector3(0.2, 1.0, 14.6), Vector3(0.1, 0.62, 8.4), 30.0)
 
 
 func _build_depot() -> void:

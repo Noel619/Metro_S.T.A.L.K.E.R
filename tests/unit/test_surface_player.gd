@@ -132,6 +132,27 @@ func test_broken_glass_is_louder_than_snow() -> void:
 	assert_true(_noises.min() > snow.max() * 2.0, "sobre cristales, cada paso suena mucho más")
 
 
+func test_others_see_the_posture() -> void:
+	var avatar: PlayerAvatar = _player.get_node(^"Avatar") as PlayerAvatar
+	_player.set_crouching(true)
+	await _frames(5)
+	assert_eq(avatar.animation(), &"agachado", "agachado y quieto")
+	_player.scripted_input = Vector2(0.0, -1.0)
+	await _frames(30)
+	assert_eq(avatar.animation(), &"caminar_agachado", "andando agachado")
+	_player.set_crouching(false)
+	_player.scripted_run = true
+	await _frames(40)
+	assert_eq(avatar.animation(), &"correr", "corriendo")
+	assert_eq(avatar.expression, &"esfuerzo", "y se le nota el esfuerzo en la cara")
+	_player.scripted_run = false
+	_player.scripted_input = Vector2.ZERO
+	_player.scripted_lean = 1.0
+	await _frames(40)
+	assert_true(avatar.lean > 0.9, "el tronco se inclina al asomarse")
+	assert_eq(avatar.expression, &"neutro")
+
+
 func test_the_depot_stays_calm() -> void:
 	_player.surface = false
 	var calm: float = await _move_for(0.8, true)

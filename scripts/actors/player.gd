@@ -162,6 +162,8 @@ var _focus: Interactable
 var _reach_share: float = 1.0
 ## La mochila abierta a la que apunta con algo en la mano (donde lo metería).
 var _stash: Backpack
+## Si la cápsula del cuerpo es la de agachado (en todos los equipos).
+var _body_crouched: bool = false
 ## Lo que se trabaja ahora (o se trabajaría al pulsar), dónde y de cara a dónde.
 var _work_target: Workable
 var _work_point: Vector3 = Vector3.ZERO
@@ -312,6 +314,14 @@ func _process(delta: float) -> void:
 	_avatar.speed = move_speed
 	_avatar.look_pitch = head_pitch
 	_avatar.carrying = _held != null
+	_avatar.crouching = crouching
+	_avatar.running = running and move_speed > PlayerAvatar.WALK_THRESHOLD
+	_avatar.lean = lean
+	var face: StringName = &"esfuerzo" if _avatar.running else &"neutro"
+	if _avatar.expression != face:
+		_avatar.expression = face
+	if not is_local() and crouching != _body_crouched:
+		_fit_body()
 
 
 func _physics_process(delta: float) -> void:
@@ -569,9 +579,17 @@ func set_crouching(value: bool) -> void:
 		return
 	crouching = value
 	motion.crouching = value
+	_fit_body()
+
+
+## Ajusta la cápsula del cuerpo a la postura. Los demás equipos lo hacen al
+## llegarles que se ha agachado: así lo que llevan los demás tampoco choca con
+## una cabeza que no está.
+func _fit_body() -> void:
+	_body_crouched = crouching
 	var body: CollisionShape3D = get_node(^"Cuerpo") as CollisionShape3D
 	var capsule: CapsuleShape3D = body.shape as CapsuleShape3D
-	capsule.height = BODY_HEIGHT * (SurfaceMotion.CROUCH_BODY if value else 1.0)
+	capsule.height = BODY_HEIGHT * (SurfaceMotion.CROUCH_BODY if crouching else 1.0)
 	body.position.y = capsule.height / 2.0
 
 

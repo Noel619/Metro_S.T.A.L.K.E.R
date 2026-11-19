@@ -196,11 +196,12 @@ La mochila del stalker ya está en el depósito, en el suelo junto a la mesa de 
 
 ### El jugador en la superficie (F3-01)
 
-| | | |
-|---|---|---|
-| ![El patio de pruebas: la mochila en el banco y lo del coche a su lado](docs/capturas/fase3_superficie_patio.jpg) | ![Agachado detrás del quiosco, asomándose por la esquina](docs/capturas/fase3_superficie_asomado.jpg) | ![Lo que se oye un paso: agachado, andando y corriendo por la nieve, y andando sobre cristales rotos](docs/capturas/fase3_superficie_ruido.jpg) |
+| | |
+|---|---|
+| ![El patio de pruebas: la mochila en el banco y lo del coche a su lado](docs/capturas/fase3_superficie_patio.jpg) | ![Agachado detrás del quiosco, asomándose por la esquina](docs/capturas/fase3_superficie_asomado.jpg) |
+| ![Lo que se oye un paso: agachado, andando y corriendo por la nieve, y andando sobre cristales rotos](docs/capturas/fase3_superficie_ruido.jpg) | ![Cómo te ven los demás: agachado, andando agachado, corriendo, corriendo con algo en las manos y asomado](docs/capturas/fase3_superficie_sigilo.jpg) |
 
-Fuera ya no se anda como en el depósito: **C** (o Ctrl) agacha, **Q** y **E** asoman la cabeza por una esquina sin meterla en la pared, y **Mayús** corre mientras dure el aliento, que se gasta antes cuanto más llevas; sin aliento, la vista sube y baja con la respiración hasta que lo recuperas. Cada paso hace ruido según cómo andas, lo que llevas y lo que pisas: agachado por la nieve apenas se oye, y andando sobre cristales rotos se oye más que corriendo. Todavía no hay nadie que lo oiga (llegará con la percepción, F3-09), así que el **patio de pruebas** (`scenes/surface/patio_pruebas.tscn`, F6) dibuja cada paso como un círculo rojo hasta donde llegaría. Tiene botín tirado donde se encontraría, la mochila en el banco, cristales junto al coche quemado y un charco helado, y se puede jugar con otros (F9 y F10). Los controles, en [DESARROLLO.md](docs/DESARROLLO.md#el-patio-de-pruebas-de-la-superficie-f3-01).
+Fuera ya no se anda como en el depósito: **C** (o Ctrl) agacha, **Q** y **E** asoman la cabeza por una esquina sin meterla en la pared, y **Mayús** corre mientras dure el aliento, que se gasta antes cuanto más llevas; sin aliento, la vista sube y baja con la respiración hasta que lo recuperas. Cada paso hace ruido según cómo andas, lo que llevas y lo que pisas: agachado por la nieve apenas se oye, y andando sobre cristales rotos se oye más que corriendo. Todavía no hay nadie que lo oiga (llegará con la percepción, F3-09), así que el **patio de pruebas** (`scenes/surface/patio_pruebas.tscn`, F6) dibuja cada paso como un círculo rojo hasta donde llegaría. Los demás jugadores te ven como vas: agachado, andando agachado, corriendo (con la cara del esfuerzo) o asomado, con el tronco inclinado. Tiene botín tirado donde se encontraría, la mochila en el banco, cristales junto al coche quemado y un charco helado, y se puede jugar con otros (F9 y F10). Los controles, en [DESARROLLO.md](docs/DESARROLLO.md#el-patio-de-pruebas-de-la-superficie-f3-01).
 
 ### Decisiones tomadas
 
@@ -1058,7 +1059,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Objetivo**: una salida corta en la que planificar sirva y la Jauría dé miedo de verdad.
 
-- [ ] **F3-01** Controlador de superficie: agacharse, asomarse, correr con aliento; ruido según el suelo, la postura y el peso. *(Hecho el controlador, con el ruido de los pasos y el patio de pruebas para probarlo, a falta de tu revisión: ver [DESARROLLO.md](docs/DESARROLLO.md#el-patio-de-pruebas-de-la-superficie-f3-01) y [D-065](docs/DECISIONES.md). Falta que los demás jugadores te vean agachado, corriendo o asomado.)*
+- [x] **F3-01** Controlador de superficie: agacharse, asomarse, correr con aliento; ruido según el suelo, la postura y el peso. *(Hecho, con el ruido de los pasos, las animaciones con las que te ven los demás y el patio de pruebas para probarlo, a falta de tu revisión: ver [DESARROLLO.md](docs/DESARROLLO.md#el-patio-de-pruebas-de-la-superficie-f3-01) y [D-065](docs/DECISIONES.md).)*
 - [ ] **F3-02** Visibilidad: luz, sombra, silueta y movimiento determinan cuánto se te ve.
 - [ ] **F3-03** Mochila en cuadrícula y cinturón de 3 huecos. Abrirla en la superficie es lento. *(Hecha la mochila en el depósito: la cuadrícula de 6 × 5, abrirla, meter y sacar, lo que pesa y lo que suena suelto, replicada y guardada; ver [DEPOSITO.md](docs/DEPOSITO.md#411-la-mochila-f3-03). Faltan el cinturón, llevarla puesta y abrirla en la superficie.)*
 - [ ] **F3-04** **El cuaderno**: dibujar a mano (lápiz, goma, regla, colores, símbolos, notas), con trazos vectoriales que se guardan.
@@ -1079,7 +1080,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Entregable**: una salida de 10 a 20 minutos: subir por la escalera, llegar a un objetivo y volver.
 **Criterio de salida**: en las pruebas, los jugadores planifican antes de salir, dibujan su mapa, usan al menos dos rutas distintas y ninguna muerte se siente injusta.
-**Estado**: 🟨 empezada por la ciudad: F3-15 hecha, F3-16 con los exteriores de las viviendas hechos y F3-17 (la red de tránsito) casi, a falta de tu revisión. F3-18 (el botín) hecha, también a falta de tu revisión. Empezados el jugador en la superficie (F3-01, con su patio de pruebas) y la mochila (F3-03, en el depósito). La maqueta es geometría provisional y no depende del estilo, así que se ha adelantado mientras se aprueba la Fase 1; los edificios del kit siguen el estilo de la Fase 1 tal como está.
+**Estado**: 🟨 empezada por la ciudad: F3-15 hecha, F3-16 con los exteriores de las viviendas hechos y F3-17 (la red de tránsito) casi, a falta de tu revisión. F3-18 (el botín) hecha, también a falta de tu revisión. F3-01 (el jugador en la superficie, con su patio de pruebas) hecha, a falta de tu revisión, y empezada la mochila (F3-03, en el depósito). La maqueta es geometría provisional y no depende del estilo, así que se ha adelantado mientras se aprueba la Fase 1; los edificios del kit siguen el estilo de la Fase 1 tal como está.
 
 ### Fase 4: El mundo vivo · tamaño L
 

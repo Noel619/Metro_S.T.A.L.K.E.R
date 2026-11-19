@@ -52,7 +52,7 @@ Los modelos, las texturas y las ilustraciones ya vienen generados en el reposito
 | F5 | Vuelve a poner el botín |
 | F9 · F10 | Abre la partida o se une a una de esta máquina, como en el depósito |
 
-El movimiento de la superficie está en `Player` (con `surface = true`) y en `SurfaceMotion` (`scripts/actors/surface_motion.gd`), que tiene todas las medidas: velocidades, aliento, lo que suena cada paso y cada suelo. Cómo se calcula el ruido y quién lo oye, en [D-065](DECISIONES.md). Para que un suelo suene distinto, se le pone la meta `suelo` (`nieve`, `nieve_helada`, `hormigon`, `escombros`, `metal` o `cristales`) a su cuerpo, o se pone encima un `Area3D` en la capa 6 (detectores) con esa meta, como hace el patio (`SurfaceSandbox._build_ground`).
+El movimiento de la superficie está en `Player` (con `surface = true`) y en `SurfaceMotion` (`scripts/actors/surface_motion.gd`), que tiene todas las medidas: velocidades, aliento, lo que suena cada paso y cada suelo. Si va agachado, si corre y lo que se asoma se replican, y con eso cada equipo pone a los demás en su postura ([Personajes](#personajes)) y les ajusta la cápsula. Cómo se calcula el ruido y quién lo oye, en [D-065](DECISIONES.md). Para que un suelo suene distinto, se le pone la meta `suelo` (`nieve`, `nieve_helada`, `hormigon`, `escombros`, `metal` o `cristales`) a su cuerpo, o se pone encima un `Area3D` en la capa 6 (detectores) con esa meta, como hace el patio (`SurfaceSandbox._build_ground`).
 
 ## La maqueta de la ciudad (F3-15)
 
@@ -276,9 +276,10 @@ Lo que se puede juntar arriba, de lo común a lo muy raro: 35 modelos en cuatro 
 Además de los protagonistas, la receta hace a la gente de la estación (`persona_relojero`, `persona_vendedora`, `persona_vecina`, `persona_chatarrero`): mismo esqueleto y animaciones, otra ropa y su lámina de caras (`assets/ui/cara_<nombre>.svg`, con su material `assets/materials/cara_<nombre>.tres`). En `PlayerAvatar.MODELS` cada uno tiene su clave, que es la que usa `CustomerData.variant`.
 
 - `tools/blender/personaje_bpy.py`: piezas blandas con color y pesos de hueso (`Sculpt`), volúmenes sobre los que colocar correas y bolsillos (`Profile`), el esqueleto y las poses con cinemática inversa.
-- `tools/blender/personaje_anim.py`: las animaciones, como funciones del tiempo. Un nombre que acaba en `-loop` se importa en bucle.
+- `tools/blender/personaje_anim.py`: las animaciones, como funciones del tiempo. Un nombre que acaba en `-loop` se importa en bucle. Hay `reposo`, `caminar`, `agachado`, `caminar_agachado` y `correr`, cada una también con `_cargando` (con algo entre las manos). Los metros que avanza cada ciclo (`WALK_DISTANCE`, `CROUCH_DISTANCE` y `RUN_DISTANCE`) tienen que ser los de `PlayerAvatar`, que los usa para que los pies no patinen.
 - `tools/blender/recipes/personajes.py`: `jugador_chico`, `jugador_chica` y las manos de primera persona (`manos_*`).
-- En Godot, `PlayerAvatar` (`scripts/actors/player_avatar.gd`) carga el modelo y lo anima: `speed`, `carrying`, `look_pitch`, `expression`, y la mochila, el zurrón y la mascarilla, que se pueden ocultar.
+- En Godot, `PlayerAvatar` (`scripts/actors/player_avatar.gd`) carga el modelo y lo anima: `speed`, `carrying`, `crouching`, `running`, `look_pitch`, `lean` (asomarse: `LookModifier` inclina el tronco), `expression`, y la mochila, el zurrón y la mascarilla, que se pueden ocultar.
+- Para revisar las posturas de la superficie (agachado, andando agachado, corriendo y asomado): la cámara `CamaraSigilo` de `scenes/style/personajes_superficie.tscn`.
 - Para revisarlos: `tools/capture.sh res://scenes/style/personajes_superficie.tscn salida.png`.
 - Las manos de primera persona las maneja `FirstPersonArms`; `GripModifier` las pone sobre lo que se sujeta, en puntos de su malla ([D-050](DECISIONES.md)). Dónde se lleva cada cosa lo decide `Player` ([D-049](DECISIONES.md)). Para verlo con distintos objetos: `scenes/style/primera_persona_*.tscn` (con `tools/capture.sh` y 150 fotogramas de espera).
 

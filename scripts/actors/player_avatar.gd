@@ -7,7 +7,8 @@ extends Node3D
 ## la animación solo avanza unas pocas veces por segundo ([member animation_fps]).
 ##
 ## Quien controla al jugador solo tiene que decirle a qué velocidad anda, si
-## lleva algo en las manos y hacia dónde mira. El avatar mira hacia -Z, como
+## lleva algo en las manos y hacia dónde mira; en la superficie, también si va
+## agachado, si corre y lo que se asoma (F3-01). El avatar mira hacia -Z, como
 ## cualquier cuerpo de Godot.
 
 ## Los dos protagonistas y la gente de la estación (tools/blender/recipes/personajes.py).
@@ -35,8 +36,11 @@ const FACE_COLUMNS: int = 4
 const FACE_ROWS: int = 2
 ## Expresiones con los ojos abiertos: las únicas en las que se parpadea.
 const BLINKING: Array[StringName] = [&"neutro", &"esfuerzo", &"cansado"]
-## Metros que avanza el ciclo de caminar (tools/blender/personaje_anim.py).
+## Metros que avanza el ciclo de caminar, el de andar agachado y el de correr
+## (tools/blender/personaje_anim.py).
 const WALK_DISTANCE: float = 0.9
+const CROUCH_WALK_DISTANCE: float = 0.7
+const RUN_DISTANCE: float = 2.4
 const WALK_THRESHOLD: float = 0.15
 const BLEND_TIME: float = 0.25
 const BLINK_TIME: float = 0.13
@@ -84,6 +88,15 @@ const LOOSE_CHAINS: Array[PackedStringArray] = [["Bufanda1", "Bufanda2"], ["Tren
 var speed: float = 0.0
 ## Lleva algo entre las manos.
 var carrying: bool = false
+## Va agachado; corre (con la cara del esfuerzo).
+var crouching: bool = false
+var running: bool = false
+## Lo que se asoma, de -1 (a la izquierda) a 1 (a la derecha): inclina el tronco.
+var lean: float = 0.0:
+	set(value):
+		lean = value
+		if _look != null:
+			_look.lean = value
 ## Hacia dónde mira, en radianes: positivo hacia arriba.
 var look_pitch: float = 0.0:
 	set(value):
@@ -143,6 +156,11 @@ func get_skeleton() -> Skeleton3D:
 	return _skeleton
 
 
+## La animación que está sonando (para las pruebas).
+func animation() -> StringName:
+	return StringName(_player.current_animation) if _player != null else &""
+
+
 func _rebuild() -> void:
 	if _model != null:
 		_model.free()
@@ -158,6 +176,7 @@ func _rebuild() -> void:
 	_look = LookModifier.new()
 	_look.name = "Mirada"
 	_look.pitch = look_pitch
+	_look.lean = lean
 	_skeleton.add_child(_look)
 	_add_loose_chains()
 	_face = _own_material("cara")
@@ -201,12 +220,19 @@ func _add_loose_chains() -> void:
 
 func _choose_animation() -> void:
 	var walking: bool = speed > WALK_THRESHOLD
-	var animation: StringName = &"caminar" if walking else &"reposo"
+	var animation: String = "caminar" if walking else "reposo"
+	var distance: float = WALK_DISTANCE
+	if crouching:
+		animation = "caminar_agachado" if walking else "agachado"
+		distance = CROUCH_WALK_DISTANCE
+	elif walking and running:
+		animation = "correr"
+		distance = RUN_DISTANCE
 	if carrying:
-		animation = StringName(String(animation) + "_cargando")
-	_player.speed_scale = speed / WALK_DISTANCE if walking else 1.0
+		animation += "_cargando"
+	_player.speed_scale = speed / distance if walking else 1.0
 	if _player.current_animation != animation:
-		_player.play(animation, BLEND_TIME)
+		_player.play(StringName(animation), BLEND_TIME)
 
 
 func _blink(delta: float) -> void:
