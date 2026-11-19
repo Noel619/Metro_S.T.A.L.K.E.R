@@ -98,23 +98,25 @@ func _build_surface() -> void:
 	for index: int in 2:
 		var climber: PlayerAvatar = _avatar("chico" if index == 0 else "chica", index)
 		climber.position = Vector3(12.0 + index * 1.7, 0.4 + index * 0.5, -3.0)
-		climber.rotation_degrees.y = 180.0 + (35.0 if index == 0 else -35.0)
+		climber.rotation_degrees.y = 35.0 if index == 0 else -35.0
 		climber.preview(&"trepar", 0.1 + index * 0.45)
 		climber.expression = &"esfuerzo"
 		climber.add_child(_ladder())
 	_camera("Trepar", Vector3(12.85, 1.9, 2.6), Vector3(12.85, 1.4, -3.0), 40.0)
 
 
-## Una escalera de pates delante de quien trepa (en su marco: +z es su frente).
+## Una escalera de pates delante de quien trepa (en su marco: -z es su frente).
 static func _ladder() -> Node3D:
 	var ladder: Node3D = Node3D.new()
 	ladder.name = "Escalera"
 	var steel: StandardMaterial3D = StandardMaterial3D.new()
 	steel.albedo_color = Color("#4a4e50")
 	for x: float in [-0.24, 0.24]:
-		ladder.add_child(_bar(Vector3(0.05, 4.0, 0.03), Vector3(x, 1.0, 0.36), steel))
+		ladder.add_child(_bar(Vector3(0.05, 4.0, 0.03), Vector3(x, 1.0, -0.36), steel))
 	for k: int in 14:
-		ladder.add_child(_bar(Vector3(0.5, 0.03, 0.03), Vector3(0.0, -0.6 + k * 0.28, 0.36), steel))
+		ladder.add_child(
+			_bar(Vector3(0.5, 0.03, 0.03), Vector3(0.0, -0.6 + k * 0.28, -0.36), steel)
+		)
 	return ladder
 
 
