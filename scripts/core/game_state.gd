@@ -84,6 +84,8 @@ func reset_for_new_game(new_player_name: String, new_protagonist: String = "chic
 	debt = 0
 	flags.clear()
 	minute = WAKE_MINUTE
+	# El reloj echa a andar cuando se entra en el local (DepotLevel).
+	clock_running = false
 	fed_today = 0.0
 	hungry_days = 0
 	dose = 0.0

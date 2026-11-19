@@ -10,6 +10,8 @@ extends Node3D
 ## Alguien ha trabajado un objeto con algo en la mano (solo en el anfitrión):
 ## etiquetarlo, embolsarlo, cepillarlo, repararlo, abrirlo, comérselo…
 signal item_worked(item: Carryable, player: Node, tool: StringName, amount: float, point: Vector3)
+## Algo ha caído (en el anfitrión): lo lanzado, lo soltado, lo que se ha volcado.
+signal item_landed(item: Carryable, speed: float)
 
 const GROUP: StringName = &"world_items"
 const MODELS_DIR: String = "res://assets/models/"

@@ -120,6 +120,12 @@ func _ready() -> void:
 	wounds = Wounds.new()
 	wounds.name = "Heridas"
 	add_child(wounds)
+	var loose: SurfaceItems = SurfaceItems.new()
+	loose.setup(items)
+	add_child(loose)
+	var chalk: ChalkMarks = ChalkMarks.new()
+	chalk.setup(world)
+	add_child(chalk)
 	jauria = SurfacePack.new()
 	jauria.setup(plan, city)
 	add_child(jauria)

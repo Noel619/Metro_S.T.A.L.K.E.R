@@ -735,6 +735,104 @@ def build_alarm_clock() -> bpy.types.Object:
     return root
 
 
+def build_wristwatch() -> bpy.types.Object:
+    """El reloj de pulsera (F3-05), puesto: la muñeca con el puño de la manga de punto,
+    la correa de cuero y el reloj de cara arriba (+Z), con el 12 hacia +Y. No es un
+    objeto suelto: lo enseña el juego al levantar la muñeca (R).
+
+    Nodos propios, con el origen en su eje: ``aguja_horas`` y ``aguja_minutos`` (giran
+    sobre Z; en Godot, ``rotation.y``, en el sentido del reloj hacia negativo).
+    """
+    root = tb.empty("reloj_pulsera")
+    mb = tb.MeshBuilder(seed=401)
+    # La muñeca (la piel, a lo largo de Y) y el puño de la manga, de lana.
+    mb.cylinder(0.026, 0.13, (0.0, -0.02, -0.03), "#C9A58B", rotation=(90.0, 0.0, 0.0), segments=14)
+    mb.cylinder(0.036, 0.07, (0.0, 0.075, -0.03), "#4A4540", rotation=(90.0, 0.0, 0.0), segments=14)
+    for k in range(9):
+        y = 0.044 + k * 0.007
+        mb.cylinder(0.0375, 0.0025, (0.0, y, -0.03), "#3E3A35", rotation=(90.0, 0.0, 0.0), segments=14)
+    # La correa: una banda alrededor de la muñeca, bajo el reloj.
+    mb.cylinder(0.0285, 0.018, (0.0, -0.01, -0.03), LEATHER_DARK, rotation=(90.0, 0.0, 0.0), segments=16)
+    # La caja: cromada, con el cristal rayado; la esfera crema.
+    centre = Vector((0.0, -0.01, 0.0))
+    mb.lathe(((0.0, -0.004), (0.017, -0.004), (0.0185, 0.0), (0.018, 0.004), (0.016, 0.0055), (0.0, 0.0055)), centre, CHROME, segments=28)
+    mb.cylinder(0.0145, 0.0008, centre + Vector((0.0, 0.0, 0.0058)), DIAL_CREAM, segments=28)
+    mb.box((0.003, 0.004, 0.003), centre + Vector((0.0, 0.019, 0.001)), CHROME, bevel=0.0008)
+    for hour in range(12):
+        angle = math.radians(90.0 - hour * 30.0)
+        long = 0.003 if hour % 3 == 0 else 0.0018
+        at = centre + Vector((math.cos(angle) * 0.0118, math.sin(angle) * 0.0118, 0.0067))
+        mb.box((0.0009, long, 0.0003), at, INK, rotation=(0.0, 0.0, math.degrees(angle) - 90.0))
+    case = mb.finish("reloj", tb.material("metal", CHROME), root)
+    tb.stain(case, "#4A4038", amount=0.4, scale=30.0, coverage=0.3, seed=401)
+    parts = {case: None}
+    for name, length, width, lift, shown in (
+        ("aguja_horas", 0.008, 0.0016, 0.0072, 300.0),
+        ("aguja_minutos", 0.012, 0.0011, 0.0076, 40.0),
+    ):
+        hand = tb.MeshBuilder(seed=403)
+        hand.prism(((-width / 2.0, -0.0015), (width / 2.0, -0.0015), (0.0, length)), 0.0003, centre + Vector((0.0, 0.0, lift)), INK)
+        hand.cylinder(0.0011, 0.0004, centre + Vector((0.0, 0.0, lift)), INK, segments=8)
+        hand_obj = hand.finish(name, tb.material("metal", INK), root)
+        tb.set_origin(hand_obj, centre + Vector((0.0, 0.0, lift)))
+        hand_obj.rotation_euler = (0.0, 0.0, math.radians(-shown))
+        parts[hand_obj] = None
+    bpy.context.view_layer.update()
+    tb.paint(parts, ao_distance=0.01, ao=0.4, ground_z=None, seed=401)
+    return root
+
+
+def build_pedometer() -> bpy.types.Object:
+    """El podómetro (F3-05): una caja redonda de chapa con su pinza, de cara arriba, con
+    la ventanilla de las cifras (las escribe el juego en el nodo ``ventana``) y el botón
+    de poner a cero."""
+    root = tb.empty("podometro-fisico")
+    mb = tb.MeshBuilder(seed=411)
+    mb.lathe(((0.0, 0.0), (0.024, 0.0), (0.026, 0.004), (0.026, 0.012), (0.024, 0.016), (0.0, 0.016)), (0.0, 0.0, 0.0), STEEL, segments=28)
+    mb.cylinder(0.021, 0.0008, (0.0, 0.0, 0.0164), DIAL_CREAM, segments=28)
+    mb.box((0.03, 0.009, 0.0008), (0.0, 0.004, 0.0172), INK, bevel=0.0005)
+    mb.box((0.012, 0.006, 0.001), (0.0, -0.011, 0.0172), SIGNAL_RED)
+    mb.cylinder(0.004, 0.005, (0.0, 0.027, 0.008), CHROME, rotation=(90.0, 0.0, 0.0), segments=10)
+    mb.box((0.01, 0.002, 0.03), (0.0, -0.0275, 0.015), STEEL_DARK, rotation=(10.0, 0.0, 0.0))
+    body = mb.finish("podometro", tb.material("metal", STEEL), root)
+    tb.stain(body, RUST, amount=0.4, scale=24.0, coverage=0.2, seed=411)
+    tb.empty("ventana", root).location = (0.0, 0.004, 0.0178)
+    tb.collision_box("podometro", (0.054, 0.06, 0.018), (0.0, 0.0, 0.009), root)
+    tb.paint({body: None}, ao_distance=0.01, ao=0.4, seed=411)
+    return root
+
+
+def build_chalk() -> bpy.types.Object:
+    """Un trozo de tiza blanca, gastado por una punta (F3-08)."""
+    root = tb.empty("tiza-fisico")
+    mb = tb.MeshBuilder(seed=421)
+    mb.lathe(((0.0, 0.0), (0.0055, 0.0), (0.0058, 0.05), (0.004, 0.056), (0.0, 0.057)), (0.0, 0.0, 0.006), "#E8E4DA", rotation=(0.0, 90.0, 0.0), segments=12, jitter=0.05)
+    chalk = mb.finish("tiza", tb.material("papel", "#E8E4DA"), root)
+    tb.collision_box("tiza", (0.06, 0.012, 0.012), (0.028, 0.0, 0.006), root)
+    tb.paint({chalk: None}, ao_distance=0.01, ao=0.3, seed=421)
+    return root
+
+
+def build_lockpicks() -> bpy.types.Object:
+    """Las ganzúas (F3-06): un rollo de lona abierto con tres ganzúas de alambre de acero y
+    la llave de tensión en L."""
+    root = tb.empty("ganzuas-fisico")
+    mb = tb.MeshBuilder(seed=431)
+    mb.box((0.11, 0.06, 0.003), (0.0, 0.0, 0.0015), "#6B6250", bevel=0.001, jitter=0.03)
+    mb.box((0.11, 0.012, 0.004), (0.0, -0.022, 0.004), "#5A5242", bevel=0.001)
+    for k, (length, tip) in enumerate(((0.09, "gancho"), (0.085, "diamante"), (0.088, "ondas"))):
+        y = -0.012 + k * 0.012
+        mb.box((length, 0.0016, 0.0012), (0.0, y, 0.006), STEEL, rotation=(0.0, 0.0, -2.0 + k * 2.0))
+        mb.box((0.012, 0.0045, 0.002), (-length / 2.0 + 0.004, y, 0.006), STEEL_DARK, bevel=0.0005)
+        mb.box((0.004, 0.003, 0.0012), (length / 2.0 - 0.001, y + 0.0015, 0.006), STEEL)
+    mb.box((0.05, 0.0025, 0.0015), (0.01, 0.024, 0.006), STEEL)
+    mb.box((0.0025, 0.012, 0.0015), (-0.0145, 0.019, 0.006), STEEL)
+    picks = mb.finish("ganzuas", tb.material("metal", STEEL), root)
+    tb.collision_box("ganzuas", (0.11, 0.06, 0.01), (0.0, 0.0, 0.005), root)
+    tb.paint({picks: None}, ao_distance=0.008, ao=0.3, seed=431)
+    return root
+
+
 def models() -> dict:
     return {
         "dosimetro": build_dosimeter,
@@ -744,4 +842,8 @@ def models() -> dict:
         "linterna_dinamo": build_dynamo_flashlight,
         "prismaticos": build_binoculars,
         "despertador": build_alarm_clock,
+        "reloj_pulsera": build_wristwatch,
+        "podometro": build_pedometer,
+        "tiza": build_chalk,
+        "ganzuas": build_lockpicks,
     }

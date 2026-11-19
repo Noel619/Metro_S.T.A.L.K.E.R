@@ -266,6 +266,41 @@ def blood_drops(size: int = 128) -> Image.Image:
     return Image.fromarray((color * 255).astype(np.uint8), "RGBA")
 
 
+def _chalk(strokes, seed: int, size: int = 128) -> Image.Image:
+    """Una marca de tiza: trazos blancos de borde roto, con el grano de la pared."""
+    from PIL import ImageFilter
+
+    rng = np.random.default_rng(seed)
+    scale = 3
+    mask = Image.new("L", (size * scale, size * scale), 0)
+    draw = ImageDraw.Draw(mask)
+    for stroke in strokes:
+        points = [(x * size * scale, y * size * scale) for x, y in stroke]
+        jittered = [(x + rng.uniform(-3, 3), y + rng.uniform(-3, 3)) for x, y in points]
+        draw.line(jittered, fill=255, width=int(size * scale * 0.075), joint="curve")
+    mask = mask.resize((size, size), Image.LANCZOS).filter(ImageFilter.GaussianBlur(0.6))
+    alpha = np.asarray(mask).astype(np.float32) / 255.0
+    grain = fft_noise(size, 0.8, seed=seed + 1)
+    alpha = np.clip(alpha * (0.55 + 0.6 * grain), 0, 1)
+    color = np.zeros((size, size, 4), np.float32)
+    color[..., :3] = 0.9 + 0.08 * grain[..., None]
+    color[..., 3] = alpha
+    return Image.fromarray((color * 255).astype(np.uint8), "RGBA")
+
+
+def _arc(cx: float, cy: float, r: float, start: float = 0.0, end: float = 360.0, steps: int = 24):
+    return [(cx + r * math.cos(math.radians(a)), cy + r * math.sin(math.radians(a))) for a in np.linspace(start, end, steps)]
+
+
+CHALK_MARKS = {
+    "tiza_flecha.png": ([[(0.2, 0.5), (0.8, 0.5)], [(0.6, 0.3), (0.8, 0.5), (0.6, 0.7)]], 341),
+    "tiza_peligro.png": ([[(0.25, 0.25), (0.75, 0.75)], [(0.75, 0.25), (0.25, 0.75)], _arc(0.5, 0.5, 0.36)], 342),
+    "tiza_botin.png": ([_arc(0.5, 0.5, 0.3), [(0.5, 0.35), (0.5, 0.65)], [(0.35, 0.5), (0.65, 0.5)]], 343),
+    "tiza_sin_salida.png": ([[(0.25, 0.25), (0.75, 0.75)], [(0.75, 0.25), (0.25, 0.75)], [(0.2, 0.85), (0.8, 0.85)]], 344),
+    "tiza_perro.png": ([_arc(0.5, 0.55, 0.12), _arc(0.3, 0.32, 0.06), _arc(0.43, 0.24, 0.06), _arc(0.57, 0.24, 0.06), _arc(0.7, 0.32, 0.06)], 345),
+}
+
+
 def grid_page(width: int = 544, height: int = 808) -> Image.Image:
     """Página cuadriculada (136 × 202 mm a 4 px/mm). Casi blanca: el color del papel lo pone el modelo."""
     rng = np.random.default_rng(31)
@@ -307,6 +342,8 @@ def main() -> None:
         "pagina_cuadriculada.png": grid_page,
         "gotas_sangre.png": blood_drops,
     }
+    for mark_name, (strokes, seed) in CHALK_MARKS.items():
+        outputs[mark_name] = lambda strokes=strokes, seed=seed: _chalk(strokes, seed)
     # Con nombres de archivo como argumentos, solo esos.
     wanted = [arg for arg in sys.argv[1:] if arg.endswith(".png")]
     if wanted:

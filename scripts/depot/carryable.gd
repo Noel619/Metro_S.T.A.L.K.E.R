@@ -20,6 +20,8 @@ signal holder_changed(peer_id: int)
 signal state_changed
 ## Ha caído al suelo (o sobre algo) desde [param speed] m/s. Solo en el anfitrión.
 signal landed(speed: float)
+## Lo acaban de lanzar (en el anfitrión).
+signal thrown
 
 ## Peer que puede pedir sin que haya red de por medio (el propio anfitrión).
 const HOST_PEER: int = 1
@@ -56,6 +58,9 @@ const IN_HANDS: float = 0.1
 const SETTLE: float = 12.0
 ## Lo que se nota que cae algo: velocidad de caída desde la que cuenta y la que
 ## tiene que perder de golpe.
+## Lanzar: lo más que pesa lo que se lanza y lo más rápido que sale (m/s).
+const THROW_MAX_WEIGHT: float = 2.0
+const THROW_MAX_SPEED: float = 13.0
 const LANDING_SPEED: float = 1.6
 const LANDED_SPEED: float = 0.4
 
@@ -191,6 +196,23 @@ func give_to(peer: int) -> void:
 		_body.linear_velocity = Vector3.ZERO
 		_body.angular_velocity = Vector3.ZERO
 		_set_holder.rpc(peer)
+
+
+## Quien lo lleva lo lanza con [param velocity] (F3-07). Decide el anfitrión: que lo
+## lleve él, que no pese demasiado y que no vaya más rápido de lo que se lanza.
+@rpc("any_peer", "call_local", "reliable")
+func request_throw(velocity: Vector3) -> void:
+	if not multiplayer.is_server() or holder_peer != _sender() or not is_held():
+		return
+	if state.data.weight > THROW_MAX_WEIGHT:
+		return
+	_set_holder.rpc(0)
+	_body.linear_velocity = velocity.limit_length(THROW_MAX_SPEED)
+	_body.angular_velocity = Vector3(
+		randf_range(-6.0, 6.0), randf_range(-4.0, 4.0), randf_range(-6.0, 6.0)
+	)
+	_body.sleeping = false
+	thrown.emit()
 
 
 ## El anfitrión se lo quita de las manos a quien lo lleve (porque desaparece).

@@ -255,10 +255,10 @@ Cada objetivo tiene al menos tres maneras de llegar:
 | F3-02 Visibilidad | Hecha (el cálculo): la luz de la hora, la sombra del sol, el techo, la silueta contra el cielo, la postura, el movimiento, el clima y lo que te tapa; la usa la vista de la IA |
 | F3-03 Mochila y cinturón | Hecha: la cuadrícula de 6 × 5 con formas y giros, el cinturón de 3 huecos, el peso y lo que suena suelto; abrirla y guardar en la superficie es arrodillarse. La mochila abierta se ve en 3D y se coge con el ratón |
 | F3-04 El cuaderno | Pendiente |
-| F3-05 Instrumentos | Pendiente |
+| F3-05 Instrumentos | Hechos: la brújula (la aguja busca el norte), el reloj de pulsera (R), el podómetro (cuenta las zancadas desde que se pone a cero) y los prismáticos (botón derecho) |
 | F3-06 Herramientas de acceso | Pendiente |
-| F3-07 Distracciones | Pendiente |
-| F3-08 Tiza | Pendiente |
+| F3-07 Distracciones | Hechas: lanzar lo que se lleva (mantener y soltar), el ruido al caer según lo que es y dónde cae, las botellas que se rompen y el despertador con cuerda |
+| F3-08 Tiza | Hecha: cinco símbolos (la rueda los cambia), dibujados a mano en paredes y suelo, guardados con el mundo |
 | F3-09 Percepción | Hecha: vista que se fija poco a poco, oído con muros y viento, olfato con viento y rastros; memoria, prueba de justicia y la herramienta de depuración (F3) |
 | F3-10 La Jauría | Hecha: seis perros con su modelo y sus animaciones, la manada con sus modos, su rutina, sus rutas por la rejilla del plano, sus ladridos y sus tres escenarios de prueba |
 | F3-11 Miedo | Hecho: sube con los perros a la vista o al oído, los golpes, la oscuridad y la sangre perdida; tiemblan las manos y la linterna y reacciona el dibujo |

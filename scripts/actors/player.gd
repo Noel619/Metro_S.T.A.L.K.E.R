@@ -115,7 +115,7 @@ const SWAY_RETURN: float = 6.0
 const LONG_TOOL: float = 0.6
 ## Lo que se puede ajustar con la rueda mientras se lleva (el precio de una
 ## etiqueta, los billetes de un fajo).
-const ADJUSTABLE: Array[StringName] = [&"etiqueta", &"billetes"]
+const ADJUSTABLE: Array[StringName] = [&"etiqueta", &"billetes", &"tiza"]
 ## Con hambre se anda más despacio y tiembla lo que se lleva.
 const HUNGRY_SPEED: float = 0.8
 const HUNGRY_TREMBLE: float = 0.006
@@ -159,8 +159,12 @@ var footsteps: Footsteps
 var condition: PlayerCondition
 ## Su mochila y su cinturón (F3-03).
 var pack: PlayerPack
+## El reloj de pulsera y los prismáticos (F3-05; solo en su equipo).
+var optics: PlayerOptics
 ## Lo que tiemblan las manos por el miedo (metros; lo pone [Fear], en su equipo).
 var tremble: float = 0.0
+## Lo cargado para lanzar (de 0 a 1): lo que se lleva se echa atrás.
+var throw_charge: float = 0.0
 
 var _head: Node3D
 var _camera: Camera3D
@@ -171,6 +175,8 @@ var _moves: PlayerMoves = PlayerMoves.new()
 var _torch: SpotLight3D
 var _jump_queued: bool = false
 var _backpack_view: BackpackView
+var _throw: PlayerThrow = PlayerThrow.new()
+var _chalk: PlayerChalk = PlayerChalk.new()
 var _avatar: PlayerAvatar
 var _arms: FirstPersonArms
 var _reticle: Reticle
@@ -283,6 +289,9 @@ func _ready() -> void:
 	_reticle = Reticle.new()
 	_reticle.name = "PuntoDeMira"
 	add_child(_reticle)
+	optics = PlayerOptics.new()
+	optics.setup(self)
+	add_child(optics)
 	if DisplayServer.get_name() != "headless":
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -316,6 +325,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			turn_held(motion.relative * INSPECT_TURN_SPEED)
 		else:
 			var sensitivity: float = deg_to_rad(Settings.mouse_sensitivity)
+			if optics != null:
+				sensitivity *= optics.look_scale()
 			look(-motion.relative.x * sensitivity, -motion.relative.y * sensitivity)
 	elif event.is_action_pressed(&"interact"):
 		interact()
@@ -339,13 +350,22 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(delta: float) -> void:
 	if is_local():
 		var reading: bool = CloseUp.is_open()
-		inspecting = (_held != null and not reading and Input.is_action_pressed(&"use_secondary"))
+		var looking: bool = optics != null and optics.looking_through()
+		inspecting = (
+			_held != null
+			and not reading
+			and not looking
+			and _held.state.data.tool != &"prismaticos"
+			and Input.is_action_pressed(&"use_secondary")
+		)
 		var pressing: bool = (
 			Input.is_action_pressed(&"use_primary")
 			and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 			and not reading
 		)
 		_update_work(delta, pressing)
+		_chalk.update(self, delta, pressing and _backpack_view == null)
+		_throw.update(self, delta, pressing and _backpack_view == null and not _chalk.aiming)
 		var pad: Vector2 = Input.get_vector(&"look_left", &"look_right", &"look_up", &"look_down")
 		if pad != Vector2.ZERO:
 			look(-pad.x * PAD_LOOK_SPEED * delta, -pad.y * PAD_LOOK_SPEED * delta)
@@ -707,6 +727,9 @@ func carry_target(item: Carryable, cast: bool = true) -> Transform3D:
 	if shake > 0.0:
 		var t: float = Time.get_ticks_msec() / 1000.0
 		center += Vector3(sin(t * 23.0) + sin(t * 37.0) * 0.5, sin(t * 29.0 + 1.3), 0.0) * shake
+	if throw_charge > 0.0:
+		# Cargando el brazo: atrás y algo arriba.
+		center += (-direction * 0.16 + Vector3.UP * 0.06) * throw_charge
 	return Transform3D(turn, center - turn * bounds.get_center())
 
 
