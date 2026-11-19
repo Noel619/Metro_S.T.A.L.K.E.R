@@ -106,7 +106,7 @@ Cada objeto reparable tiene su receta de pasos (`data/reparaciones/`). Solo se r
 
 - **La báscula** del mostrador: lo que se deja en los platos mueve la aguja (hasta 20 kg), que oscila antes de pararse. La chatarra y los metales (el cobre, la leña) se venden al peso.
 - **Las etiquetas**: la caja de las etiquetas está en el banco; F da una en blanco. Con la etiqueta en la mano, la rueda cambia el precio y lo escribe a lápiz en ella; mantener el botón sobre un objeto la ata con su cordel. El precio se ve en la etiqueta, colgando del objeto.
-- **Las estanterías**: cada piso de las baldas de la consigna lleva el cartel de su categoría (comida, medicinas, herramientas, electrónica, ropa, chatarra, envases), escrito en papel nuevo: son tuyos.
+- **Las estanterías**: cada piso de las baldas de la consigna lleva el cartel de su categoría (comida, medicinas, herramientas, electrónica, ropa, chatarra, envases y objetos, que son los personales y los de valor), escrito en papel nuevo: son tuyos.
 
 ### 4.5 El mostrador y los clientes (F2-09)
 

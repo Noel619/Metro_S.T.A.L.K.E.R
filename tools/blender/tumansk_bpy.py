@@ -483,6 +483,27 @@ class MeshBuilder:
                 self.bm.faces.new((grid[j][i], grid[j][i + 1], grid[j + 1][i + 1], grid[j + 1][i]))
         return self._finish_piece(before, color, jitter, smooth=False)
 
+    def sheet(
+        self,
+        grid: Iterable[Iterable[Iterable[float]]],
+        color: str,
+        *,
+        smooth: bool = True,
+        jitter: float = 0.0,
+    ) -> list:
+        """Lámina de una cara a partir de una rejilla de puntos (filas de puntos).
+
+        La cara mira hacia ``u × v``: ``u`` avanza a lo largo de cada fila y ``v``
+        de una fila a la siguiente. Sirve para etiquetas pegadas a una lata, papel
+        doblado o tela que cae, con las esquinas compartidas y sombreado suave.
+        """
+        before = set(self.bm.faces)
+        rows = [[self.bm.verts.new(Vector(p)) for p in row] for row in grid]
+        for lower, upper in zip(rows, rows[1:]):
+            for i in range(len(lower) - 1):
+                self.bm.faces.new((lower[i], lower[i + 1], upper[i + 1], upper[i]))
+        return self._finish_piece(before, color, jitter, smooth=smooth)
+
     def polygon(self, points: Iterable[Iterable[float]], color: str, *, jitter: float = 0.0) -> list:
         """Cara suelta de varios lados, plana y convexa (en sentido antihorario vista desde
         delante)."""

@@ -14,3 +14,4 @@ fragility = 0.0
 base_value = 2
 sold_by_weight = true
 tool = &"lena"
+found_in = Array[StringName]([&"trastero", &"huerto", &"piso"])

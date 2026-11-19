@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/depot/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"leche_condensada"
+display_name = "Leche condensada"
+category = 0
+model = "leche_condensada"
+weight = 0.4
+grid_shape = Array[Vector2i]([Vector2i(0, 0)])
+fragility = 0.05
+base_value = 16
+sold_by_weight = false
+tool = &"comida"
+nutrition = 0.5
+found_in = Array[StringName]([&"piso", &"tienda", &"quiosco", &"comedor"])

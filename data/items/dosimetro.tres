@@ -14,3 +14,5 @@ fragility = 0.5
 base_value = 80
 sold_by_weight = false
 tool = &"dosimetro"
+rarity = 2
+found_in = Array[StringName]([&"militar", &"refugio", &"laboratorio"])

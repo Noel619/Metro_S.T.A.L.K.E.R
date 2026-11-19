@@ -8,7 +8,7 @@ extends Node
 
 const ZOOM_FOV: float = 11.0
 const ZOOM_SPEED: float = 5.0
-const WATCH_MODEL: String = "res://assets/models/reloj_pulsera.glb"
+const WATCH_MODEL: String = "res://assets/models/reloj_puesto.glb"
 const MASK_SHADER: String = "res://assets/shaders/prismaticos.gdshader"
 ## Dónde se ve la muñeca levantada (en el marco de la cámara) y lo que tarda en subir.
 const WATCH_UP: Vector3 = Vector3(-0.07, -0.085, -0.26)

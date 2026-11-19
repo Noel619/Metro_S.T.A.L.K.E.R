@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/depot/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"quinque"
+display_name = "Quinqué"
+category = 2
+model = "quinque"
+weight = 0.9
+grid_shape = Array[Vector2i]([Vector2i(0, 0), Vector2i(0, 1), Vector2i(0, 2)])
+fragility = 0.7
+base_value = 35
+sold_by_weight = false
+rarity = 1
+found_in = Array[StringName]([&"piso", &"trastero", &"garaje"])

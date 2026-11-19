@@ -78,7 +78,7 @@ const RACK_SIGNS: Array = [
 	[
 		ItemData.Category.CHATARRA,
 		ItemData.Category.ENVASES,
-		ItemData.Category.ELECTRONICA,
+		ItemData.Category.OBJETOS,
 		ItemData.Category.COMIDA
 	],
 ]
@@ -90,6 +90,7 @@ const CATEGORY_NAMES: Dictionary = {
 	ItemData.Category.ROPA: "Ropa",
 	ItemData.Category.CHATARRA: "Chatarra",
 	ItemData.Category.ENVASES: "Envases",
+	ItemData.Category.OBJETOS: "Objetos",
 }
 
 var _static: Node3D

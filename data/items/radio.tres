@@ -13,3 +13,5 @@ grid_shape = Array[Vector2i]([Vector2i(0, 0), Vector2i(1, 0), Vector2i(2, 0), Ve
 fragility = 0.5
 base_value = 70
 sold_by_weight = false
+rarity = 1
+found_in = Array[StringName]([&"piso", &"oficina", &"taller"])

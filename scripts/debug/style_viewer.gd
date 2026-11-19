@@ -13,6 +13,7 @@ const SCENES: PackedStringArray = [
 	"res://scenes/style/diorama_patio_noche.tscn",
 	"res://scenes/style/diorama_patio_ventisca.tscn",
 	"res://scenes/style/diorama_equipo.tscn",
+	"res://scenes/style/diorama_botin.tscn",
 	"res://scenes/style/personajes_superficie.tscn",
 	"res://scenes/style/personajes_deposito.tscn",
 ]

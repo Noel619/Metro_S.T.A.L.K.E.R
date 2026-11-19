@@ -743,7 +743,7 @@ def build_wristwatch() -> bpy.types.Object:
     Nodos propios, con el origen en su eje: ``aguja_horas`` y ``aguja_minutos`` (giran
     sobre Z; en Godot, ``rotation.y``, en el sentido del reloj hacia negativo).
     """
-    root = tb.empty("reloj_pulsera")
+    root = tb.empty("reloj_puesto")
     mb = tb.MeshBuilder(seed=401)
     # La muñeca (la piel, a lo largo de Y) y el puño de la manga, de lana.
     mb.cylinder(0.026, 0.13, (0.0, -0.02, -0.03), "#C9A58B", rotation=(90.0, 0.0, 0.0), segments=14)
@@ -842,7 +842,7 @@ def models() -> dict:
         "linterna_dinamo": build_dynamo_flashlight,
         "prismaticos": build_binoculars,
         "despertador": build_alarm_clock,
-        "reloj_pulsera": build_wristwatch,
+        "reloj_puesto": build_wristwatch,
         "podometro": build_pedometer,
         "tiza": build_chalk,
         "ganzuas": build_lockpicks,
