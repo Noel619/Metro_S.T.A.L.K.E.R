@@ -14,3 +14,4 @@ fragility = 0.0
 base_value = 3
 sold_by_weight = false
 tool = &"cerillas"
+found_in = Array[StringName]([&"piso", &"quiosco", &"tienda"])

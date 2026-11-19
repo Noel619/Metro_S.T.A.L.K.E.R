@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/depot/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"pila_petaca"
+display_name = "Pila de petaca"
+category = 3
+model = "pila_petaca"
+weight = 0.16
+grid_shape = Array[Vector2i]([Vector2i(0, 0)])
+fragility = 0.05
+base_value = 20
+sold_by_weight = false
+rarity = 1
+found_in = Array[StringName]([&"tienda", &"quiosco", &"piso", &"taller"])

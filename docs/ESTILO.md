@@ -268,3 +268,18 @@ Los edificios singulares (los hitos y los sitios clave, [DESARROLLO.md](DESARROL
 | ![La fachada de una estalinista: recercados con orejetas, frontones, alféizares sobre ménsulas, imposta y escaparates](capturas/fase3_kit_estalinka_fachada.jpg) | ![El portal de una jrushchovka](capturas/fase3_kit_portal.jpg) |
 | ![Las isbas: abandonada, chamuscada y quemada](capturas/fase3_kit_isbas.jpg) | ![El barrio de los mercaderes, cerca de la bomba](capturas/fase3_kit_mercaderes.jpg) |
 | ![Muñones de una jrushchovka con su escombro](capturas/fase3_kit_munones.jpg) | ![Una isba de noche, con linterna](capturas/fase3_kit_noche_isba.jpg) |
+
+## 10. El botín de la superficie (F3-18)
+
+Lo que se junta arriba sigue las reglas de todo lo de fuera: nada está intacto. Pero se mira de cerca (al cogerlo, al girarlo, en el banco), así que lleva el detalle del equipo, no el del escenario. Son 35 objetos en cuatro rarezas; cómo se hacen, en [DESARROLLO.md](DESARROLLO.md#el-botín-de-la-superficie-f3-18).
+
+- **Dos años de abandono.** Etiquetas desvaídas y despegadas a jirones, con la hojalata asomando; óxido en los cantos y las pestañas; el esmalte desconchado hasta el hierro; el cartón con cercos de agua; chorretones de yodo; goma cuarteada; latón ennegrecido y con cardenillo; hollín en el tubo del quinqué.
+- **Sin letras.** Una etiqueta es una banda de color con rayas de tinta, como en una ilustración ([D-007](DECISIONES.md)): la leche condensada se reconoce por sus ondas azules, las pastillas antirradiación por el trébol negro sobre amarillo y el botiquín del ejército por su naranja.
+- **El vidrio es opaco**, como todo el cristal del juego (con su borde de luz). Lo que hay dentro se pinta en el propio vidrio (la salmuera, el polvo de los viales, el espejo y las placas de las válvulas, el tizne del quinqué) o asoma un poco por fuera, como en un dibujo: los pepinillos, los ajos y la pimienta del tarro.
+- **Cada rareza, su materia.** Lo común es de todos los días y de colores apagados (hojalata, cartón, lana, parafina); lo raro y lo muy raro llama la atención por el material y el detalle (latón, plata, esmalte, cromo, la cubierta repujada del icono), sin brillar de más: también está sucio.
+- **Las mismas reglas de modelado** que el resto ([sección 4](#4-reglas-de-modelado-recetas)): biseles, imperfección con semilla, color por vértice con oclusión y manchas, y lo pintado a ras (la etiqueta de una lata es una lámina pegada, sin canto, así que no dibuja contorno).
+
+| | |
+|---|---|
+| ![La mesa del botín: una fila por rareza, de lo común (delante) a lo muy raro (al fondo)](capturas/fase3_botin_mesa.jpg) | ![Lo muy raro: la insulina, el microscopio, el icono y el reloj de bolsillo](capturas/fase3_botin_muy_raro.jpg) |
+

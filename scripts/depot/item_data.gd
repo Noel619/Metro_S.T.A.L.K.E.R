@@ -5,8 +5,36 @@ extends Resource
 ## Lo que cambia de un ejemplar a otro (su estado, lo contaminado que está) va
 ## en [ItemState]. Las fichas son recursos de texto en data/items/.
 
-enum Category { COMIDA, MEDICINAS, HERRAMIENTAS, ELECTRONICA, ROPA, CHATARRA, ENVASES }
+## OBJETOS son los personales y los de valor: fotos, medallas, iconos, samovares.
+enum Category { COMIDA, MEDICINAS, HERRAMIENTAS, ELECTRONICA, ROPA, CHATARRA, ENVASES, OBJETOS }
+## Lo difícil que es dar con él en la superficie.
+enum Rarity { COMUN, POCO_COMUN, RARO, MUY_RARO }
 
+## Los sitios de la ciudad donde puede aparecer el botín (los usos de los
+## edificios del plano, agrupados): lo que admite [member found_in].
+const PLACES: Array[StringName] = [
+	&"piso",
+	&"trastero",
+	&"huerto",
+	&"garaje",
+	&"vehiculo",
+	&"quiosco",
+	&"tienda",
+	&"comedor",
+	&"farmacia",
+	&"hospital",
+	&"taller",
+	&"fabrica",
+	&"refugio",
+	&"militar",
+	&"escuela",
+	&"laboratorio",
+	&"oficina",
+	&"correos",
+	&"banos",
+	&"iglesia",
+	&"museo",
+]
 ## Lo que pierde de valor un objeto contaminado del todo.
 const CONTAMINATION_PENALTY: float = 0.8
 ## Por debajo de este estado, el objeto solo vale como chatarra.
@@ -41,6 +69,12 @@ const SCRAP_SHARE: float = 0.1
 @export_range(0.0, 2.0, 0.05) var nutrition: float = 0.0
 ## Es basura: su sitio es la bolsa del cubo.
 @export var trash: bool = false
+## Lo que cuesta encontrarlo arriba: cuanto más raro, menos ejemplares en la
+## ciudad y más lejos de la estación.
+@export var rarity: Rarity = Rarity.COMUN
+## Dónde se encuentra en la superficie (ver [constant PLACES]). Vacío: no se
+## encuentra arriba (lo que se compra o se hace en la estación).
+@export var found_in: Array[StringName] = []
 
 
 ## Ancho y alto de la forma en la cuadrícula de la mochila.

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/depot/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"reloj_bolsillo"
+display_name = "Reloj de bolsillo"
+category = 3
+model = "reloj_bolsillo"
+weight = 0.12
+grid_shape = Array[Vector2i]([Vector2i(0, 0)])
+fragility = 0.3
+base_value = 180
+sold_by_weight = false
+rarity = 3
+found_in = Array[StringName]([&"piso", &"museo", &"oficina"])

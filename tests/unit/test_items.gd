@@ -20,6 +20,29 @@ func test_every_item_file_is_valid() -> void:
 		assert_true(data.weight > 0.0 and (data.base_value > 0 or not goods), file_name)
 
 
+func test_surface_loot_says_where_it_is_found() -> void:
+	var tiers: Dictionary = {}
+	for file_name: String in DirAccess.get_files_at(ItemState.ITEMS_DIR):
+		if not file_name.ends_with(".tres"):
+			continue
+		var data: ItemData = load(ItemState.ITEMS_DIR + file_name)
+		for place: StringName in data.found_in:
+			assert_true(
+				ItemData.PLACES.has(place), "lugar desconocido en %s: %s" % [file_name, place]
+			)
+		if data.found_in.is_empty():
+			continue
+		assert_true(data.base_value > 0 and not data.trash, "el botín vale algo: " + file_name)
+		tiers[data.rarity] = int(tiers.get(data.rarity, 0)) + 1
+	# Hay botín de todas las rarezas, y lo común abunda más que lo muy raro.
+	for tier: int in ItemData.Rarity.values():
+		assert_true(int(tiers.get(tier, 0)) > 0, "falta botín de rareza %d" % tier)
+	assert_true(
+		int(tiers[ItemData.Rarity.COMUN]) > int(tiers[ItemData.Rarity.MUY_RARO]),
+		"lo común abunda más que lo muy raro"
+	)
+
+
 func test_grid_shape_size_and_rotation() -> void:
 	var broom: ItemData = ItemState.load_data(&"escoba")
 	assert_eq(broom.grid_size(), Vector2i(1, 4))

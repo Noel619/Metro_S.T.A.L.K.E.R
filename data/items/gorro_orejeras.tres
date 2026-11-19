@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/depot/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"gorro_orejeras"
+display_name = "Gorro de orejeras"
+category = 4
+model = "gorro_orejeras"
+weight = 0.35
+grid_shape = Array[Vector2i]([Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, 1)])
+fragility = 0.0
+base_value = 28
+sold_by_weight = false
+found_in = Array[StringName]([&"piso", &"tienda", &"vehiculo", &"militar"])

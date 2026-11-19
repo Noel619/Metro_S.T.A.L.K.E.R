@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/depot/item_data.gd" id="1_item"]
+
+[resource]
+script = ExtResource("1_item")
+id = &"camara_fotos"
+display_name = "Cámara de fotos"
+category = 3
+model = "camara_fotos"
+weight = 0.65
+grid_shape = Array[Vector2i]([Vector2i(0, 0), Vector2i(1, 0)])
+fragility = 0.6
+base_value = 100
+sold_by_weight = false
+rarity = 2
+found_in = Array[StringName]([&"piso", &"tienda"])

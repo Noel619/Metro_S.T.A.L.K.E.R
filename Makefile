@@ -49,6 +49,7 @@ capture: import ## capturas de las escenas de revisión (en capturas/, sin versi
 	tools/capture.sh res://scenes/style/diorama_deposito_limpio.tscn capturas/deposito_limpio.png
 	tools/capture.sh res://scenes/style/diorama_deposito_abandonado.tscn capturas/deposito_abandonado.png
 	tools/capture.sh res://scenes/style/diorama_equipo.tscn capturas/equipo.png
+	tools/capture.sh res://scenes/style/diorama_botin.tscn capturas/botin.png
 	tools/capture.sh res://scenes/style/diorama_patio_dia.tscn capturas/patio_dia.png
 	tools/capture.sh res://scenes/style/diorama_patio_anochecer.tscn capturas/patio_anochecer.png
 	tools/capture.sh res://scenes/style/diorama_patio_noche.tscn capturas/patio_noche.png

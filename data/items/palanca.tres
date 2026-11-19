@@ -15,3 +15,4 @@ base_value = 15
 sold_by_weight = false
 tool = &"palanca"
 tip = Vector3(0.23, 0.01, -0.09)
+found_in = Array[StringName]([&"taller", &"garaje", &"vehiculo"])

@@ -223,8 +223,28 @@ Lo que se mueve o se enciende en el juego es un nodo propio dentro del modelo, c
 | `flexo` | `foco` | Punto donde colgar la luz |
 | `radio_bolsillo` | `tapa`, `tornillo_0`…`tornillo_3`, `contactos` | Los tornillos giran y salen hacia atrás; la tapa se aparta; los contactos se tiñen al limpiarlos |
 | `botas` | `costura` | La raja se cierra al coserla (escala) |
+| `reloj_pulsera`, `reloj_bolsillo` | `aguja_horas`, `aguja_minutos` | `rotation.y` negativo va en el sentido del reloj; a 0° marcan las doce (vienen a las diez y diez) |
+| `reloj_bolsillo` | `tapa` | `rotation.z` sobre la bisagra de las nueve: a 0° está cerrada (viene abierta, a 125°) |
+| `medalla` | `tapa` | `rotation.x` sobre la bisagra de atrás: a 0° está cerrada (viene abierta, a -104°) |
+| `quinque` | `foco` | Punto donde colgar la luz de la llama |
 
-Las herramientas que se empuñan (`martillo`, `palanca`, `navaja`) llevan un nodo vacío `agarre` en el punto por donde las coge la mano. La `cizalla`, que es de dos manos, lleva `agarre` y `agarre_2`.
+Las herramientas que se empuñan (`martillo`, `palanca`, `navaja`, `llave_inglesa`, `alicates`) llevan un nodo vacío `agarre` en el punto por donde las coge la mano. La `cizalla`, que es de dos manos, lleva `agarre` y `agarre_2`.
+
+### El botín de la superficie (F3-18)
+
+Lo que se puede juntar arriba, de lo común a lo muy raro: 35 modelos en cuatro recetas (`tools/blender/recipes/botin_*.py`), con sus utilidades en `tools/blender/botin_bpy.py`: etiquetas pegadas alrededor de una lata y rasgadas por los extremos (`band`), rayas de imprenta (`ink_lines`), contornos redondeados, elipses, estrellas y trozos de corona, desconchones y sellos (`disc`), color por posición (`recolor`) y la cinta del derecho (`strap`, [D-061](DECISIONES.md)). Las reglas de estilo, en [ESTILO.md](ESTILO.md#10-el-botín-de-la-superficie-f3-18).
+
+| Receta | Modelos |
+|---|---|
+| `botin_despensa.py` | `leche_condensada`, `lata_espadines`, `tarro_pepinillos`, `azucar`, `velas`, `jabon`, `taza_esmaltada`, `manoplas`, `gorro_orejeras`, `marco_foto`, `paquete_correos` |
+| `botin_taller.py` | `cinta_aislante`, `clavos`, `llave_inglesa`, `alicates`, `pila_petaca`, `valvulas`, `bateria_coche`, `quinque`, `hornillo` |
+| `botin_botica.py` | `filtro`, `analgesicos`, `yodo`, `jeringa`, `antibioticos`, `pastillas_antirradiacion`, `botiquin_militar`, `insulina` |
+| `botin_valor.py` | `reloj_pulsera`, `camara_fotos`, `medalla`, `samovar`, `microscopio`, `icono`, `reloj_bolsillo` |
+
+- Cada modelo tiene su ficha en `data/items/`, con el mismo nombre, su rareza (`rarity`) y dónde se encuentra (`found_in`); los lugares posibles están en `ItemData.PLACES` y `test_items.gd` comprueba que las fichas no usan otros ([D-060](DECISIONES.md)).
+- **Para verlos**: `scenes/style/diorama_botin.tscn` (F6), la mesa del botín. Hay una fila por rareza, con su cartel, y cada objeto lleva su etiqueta con el nombre de la ficha. La mesa se reparte sola según lo que mide cada objeto y crea una cámara de cerca por cada cuatro objetos (`CamaraComun1`… `CamaraMuyRaro1`), además de la de la mesa entera (`CamaraMesa`). También está en el visor de estilo (← → para llegar a ella y C para cambiar de cámara).
+- **Una sola cámara**: `CAPTURE_ARGS="--call=MesaBotin:only:CamaraRaro2" tools/capture.sh res://scenes/style/diorama_botin.tscn salida.png`.
+- **Para añadir un objeto**: su función en la receta que le toque (y en su `models()`), su ficha en `data/items/` y su línea en la fila de su rareza (`ROWS`, en `scripts/debug/loot_diorama.gd`).
 
 ### Personajes
 
@@ -278,7 +298,7 @@ Opciones extra con la variable `CAPTURE_ARGS`:
 - `--hide=InkPost`: captura sin el post-proceso del estilo.
 - `--post=debug_view=N`: muestra una capa del post-proceso (ver `docs/ESTILO.md`).
 
-Las escenas de revisión del estilo están en `scenes/style/` y se describen en [ESTILO.md](ESTILO.md). `tools/capturas_docs.sh [filtro]` rehace las capturas de `docs/capturas/` (o solo las de un grupo: `deposito`, `equipo`, `patio`, `interfaz`, `maqueta`, `kit`); dice qué cámara de cada escena va a la documentación y con qué nombre. Las de interfaz (`scenes/ui/prueba_interfaz.tscn` y `prueba_tipografia.tscn`) son 2D: se capturan igual, sin cámara.
+Las escenas de revisión del estilo están en `scenes/style/` y se describen en [ESTILO.md](ESTILO.md). `tools/capturas_docs.sh [filtro]` rehace las capturas de `docs/capturas/` (o solo las de un grupo: `deposito`, `equipo`, `botin`, `patio`, `interfaz`, `maqueta`, `kit`); dice qué cámara de cada escena va a la documentación y con qué nombre. Las de interfaz (`scenes/ui/prueba_interfaz.tscn` y `prueba_tipografia.tscn`) son 2D: se capturan igual, sin cámara.
 
 Con `CAPTURE_ARGS="--call=Nodo:metodo[:valor]"` se llama a un método antes de capturar; por ejemplo, el panel de depuración abierto a las 18:45:
 
