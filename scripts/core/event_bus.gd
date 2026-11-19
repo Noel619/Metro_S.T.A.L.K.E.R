@@ -22,5 +22,9 @@ signal game_over
 ## Un jugador gira la rueda con algo en la mano (en el anfitrión): el precio de
 ## una etiqueta, los billetes de un fajo. [param step] es +1 o -1.
 signal item_adjusted(player: Node, item: Node, step: int)
+## Algo ha hecho ruido en [param where] (un paso, algo que cae, un golpe), con esa
+## [param loudness] (un paso normal es 0,35; correr, casi 1). Lo oirán las criaturas
+## y los saqueadores (F3-09). Solo en el anfitrión.
+signal noise_made(where: Vector3, loudness: float, source: Node)
 
 @warning_ignore_restore("unused_signal")

@@ -275,3 +275,11 @@ La mochila es un objeto como los demás (se coge, se lleva, se guarda donde se d
 ## D-064 · Un test que da un error de script falla
 
 Un error de script (leer algo ya liberado, llamar a un método que no existe) corta la función del test en ese punto, y el ejecutor lo daba por bueno si no había fallado ningún assert antes. Ahora `tests/run_tests.gd` registra un `Logger` (Godot 4.5 o más) que recoge los errores de script mientras corre cada test y los cuenta como fallos. Ningún test de los que había escondía uno; uno de la mochila, sí.
+
+## D-065 · Los pasos hacen ruido, y lo oye el anfitrión
+
+En la superficie, cada paso de cada jugador es un ruido con un volumen (`SurfaceMotion.step_noise`): lo que suena según cómo se anda (agachado 0,12, andando 0,35, corriendo 0,85), multiplicado por lo que suena el suelo (nieve 0,7; hormigón 1; nieve helada 1,3; escombros 1,4; chapa 1,5; cristales rotos 1,9) y sumando lo que se lleva encima (0,1 por cada 10 kg) y lo que va suelto en la mochila (0,08 por cada objeto que suena entero, [D-063](#d-063--la-mochila-guarda-lo-que-lleva-en-su-propio-estado)). Los pasos los cuenta el anfitrión para todos los jugadores (con lo que ya se replica: la velocidad, si va agachado y si corre) y los anuncia con `EventBus.noise_made(donde, volumen, quien)`: las criaturas y los saqueadores (F3-09) solo tendrán que escuchar esa señal. El volumen no es una distancia; cada uno decidirá desde dónde lo oye. Para verlo mientras tanto, el patio de pruebas dibuja cada paso como un círculo de 12 m por unidad (`SurfaceMotion.METERS_PER_LOUDNESS`). El tipo de suelo es una meta (`suelo`) en lo que se pisa: el cuerpo del suelo o un `Area3D` encima, en la capa de los detectores; lo que no la lleva suena como el hormigón. Así las zonas (F3-14) solo tienen que marcar sus suelos.
+
+## D-066 · Los montones de escombros se suben andando
+
+La colisión de `escombros` y `escombros_grande` era una caja tan alta como el montón y tan ancha como su diámetro: en las esquinas había una pared invisible de casi 2 m donde solo se veía nieve, y lo que caía cerca se quedaba flotando encima. Ahora es una forma convexa con laderas de unos 40°: un tronco de cono con la punta, que se sube andando (el jugador sube hasta 45°). Afecta también a los montones que el kit de arquitectura pone junto a los edificios hundidos, que se escalan igual.

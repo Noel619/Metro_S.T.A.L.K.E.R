@@ -4,7 +4,7 @@
 # la documentación y con qué nombre. Necesita Pillow (para el JPG).
 #
 # Uso: tools/capturas_docs.sh [filtro]
-#   filtro: solo los grupos cuyo nombre lo contenga (deposito, consigna, equipo, botin, mochila, patio,
+#   filtro: solo los grupos cuyo nombre lo contenga (deposito, consigna, equipo, botin, mochila, superficie, patio,
 #   interfaz, maqueta, kit, singulares).
 set -eu
 cd "$(dirname "$0")/.."
@@ -70,6 +70,16 @@ if want mochila; then
     keep mochila fase3_mochila
     capture debug/revision_deposito planificar "--sin-ayuda --mochila --abierto --call=RevisionDeposito:only:Camara_planificar" 40
     keep planificar fase3_mochila_planificar
+fi
+if want superficie; then
+    # El jugador en la superficie (F3-01), en el patio de pruebas: el patio con el botín,
+    # asomado detrás del quiosco y lo que suena cada forma de andar, desde arriba.
+    capture surface/patio_pruebas superficie_patio "--sin-ayuda --call=PatioPruebas:view:patio" 40
+    keep superficie_patio fase3_superficie_patio
+    capture surface/patio_pruebas superficie_asomado "--sin-ayuda --call=PatioPruebas:view:asomado" 40
+    keep superficie_asomado fase3_superficie_asomado
+    capture surface/patio_pruebas superficie_ruido "--sin-ayuda --call=PatioPruebas:view:ruido" 40
+    keep superficie_ruido fase3_superficie_ruido
 fi
 if want botin; then
     # El botín de la superficie (F3-18): la mesa entera y una cámara por cada cuatro objetos.

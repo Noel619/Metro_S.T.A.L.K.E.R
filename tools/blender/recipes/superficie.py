@@ -441,7 +441,13 @@ def build_rubble(name: str, seed: int, radius: float) -> bpy.types.Object:
         mb.bar(start, end, 0.012, REBAR, 5)
     rubble = mb.finish("escombros", _snow_material(), root)
     tb.stain(rubble, SOOT, amount=0.5, scale=1.5, coverage=0.3, seed=seed)
-    tb.collision_box(name, (2.0 * radius, 2.0 * radius, 0.55 * radius), (0.0, 0.0, 0.27 * radius), root)
+    # La colisión es un montículo que se sube andando (laderas de unos 40°): un
+    # tronco de cono con la punta. Una caja dejaba paredes invisibles lejos del
+    # borde, en las esquinas, y lo que caía cerca se quedaba flotando.
+    hull = tb.MeshBuilder(seed=seed)
+    hull.cylinder(radius * 0.92, radius * 0.36, (0.0, 0.0, radius * 0.18), CONCRETE, radius_top=radius * 0.5, segments=12)
+    hull.box((0.1, 0.1, 0.04), (0.0, 0.0, radius * 0.47), CONCRETE)
+    hull.finish(f"{name}-colconvexa", None, root)
     tb.paint({rubble: None}, samples=10, ao=0.55, seed=seed)
     return root
 

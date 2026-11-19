@@ -34,6 +34,26 @@ El **visor del estilo** de la Fase 1 sigue en `scenes/style/visor_estilo.tscn` (
 
 Los modelos, las texturas y las ilustraciones ya vienen generados en el repositorio: no hace falta instalar nada más para jugar o abrir las escenas.
 
+## El patio de pruebas de la superficie (F3-01)
+
+`scenes/surface/patio_pruebas.tscn` (ábrela y pulsa F6) es el patio de Los Bloques de los dioramas, para andar por él: sirve para probar cómo se mueve el jugador fuera y lo que suenan sus pasos. Hay botín tirado donde se encontraría (junto a los coches, en la repisa del quiosco, al pie del bloque), la mochila en el banco, unos cristales rotos junto al coche quemado y un charco helado. No se guarda nada.
+
+| Control | Qué hace |
+|---|---|
+| W A S D · ratón | Andar y mirar |
+| Mayús | Correr, mientras dure el aliento (se gasta más cuanto más llevas; sin él, la vista sube y baja con la respiración) |
+| C o Ctrl | Agacharse o levantarse (debajo de algo no se puede) |
+| Q · E | Asomarse a la izquierda o a la derecha (la cabeza no se mete en las paredes) |
+| T | Linterna |
+| F · botones del ratón | Como en el depósito: coger, soltar, usar, abrir la mochila, acercar y girar |
+| F1 | Panel de depuración (la hora, el clima, el miedo…) |
+| F2 | Quita o pone los círculos de ruido: cada paso, un círculo rojo hasta donde llegaría |
+| F3 | Oculta la ayuda y la línea del aliento, el paso y el suelo |
+| F5 | Vuelve a poner el botín |
+| F9 · F10 | Abre la partida o se une a una de esta máquina, como en el depósito |
+
+El movimiento de la superficie está en `Player` (con `surface = true`) y en `SurfaceMotion` (`scripts/actors/surface_motion.gd`), que tiene todas las medidas: velocidades, aliento, lo que suena cada paso y cada suelo. Cómo se calcula el ruido y quién lo oye, en [D-065](DECISIONES.md). Para que un suelo suene distinto, se le pone la meta `suelo` (`nieve`, `nieve_helada`, `hormigon`, `escombros`, `metal` o `cristales`) a su cuerpo, o se pone encima un `Area3D` en la capa 6 (detectores) con esa meta, como hace el patio (`SurfaceSandbox._build_ground`).
+
 ## La maqueta de la ciudad (F3-15)
 
 Tumansk entera, levantada desde el plano en volúmenes sencillos para probar recorridos, vistas, sectores de carga y rendimiento. Para abrirla: en Godot, abre `scenes/debug/maqueta_ciudad.tscn` y pulsa **F6** (ejecutar la escena actual). Tarda unos segundos en levantar la ciudad (la red de tránsito se levanta sector a sector en varios hilos). Empiezas a pie en la salida del metro, a mediodía.
@@ -157,7 +177,7 @@ Solo hacen falta para cambiar recetas o generadores.
 | `make assets` | Regenera texturas, ilustraciones y modelos |
 | `make models` | Solo los modelos (`tools/blender/recipes/`) |
 | `make import` | Importa los recursos en Godot |
-| `make test` | Tests unitarios, sin pantalla |
+| `make test` | Tests unitarios, sin pantalla (solo unos archivos: `godot --headless --path . -s tests/run_tests.gd -- mochila surface`, con parte de sus nombres) |
 | `make test-net` | Pruebas de red: un anfitrión y un invitado en la misma máquina (la caja de la Fase 0 y el depósito) |
 | `make lint` | Revisa el estilo del código GDScript |
 | `make capture` | Capturas de las escenas de revisión en `capturas/` |
@@ -303,7 +323,7 @@ Opciones extra con la variable `CAPTURE_ARGS`:
 - `--hide=InkPost`: captura sin el post-proceso del estilo.
 - `--post=debug_view=N`: muestra una capa del post-proceso (ver `docs/ESTILO.md`).
 
-Las escenas de revisión del estilo están en `scenes/style/` y se describen en [ESTILO.md](ESTILO.md). `tools/capturas_docs.sh [filtro]` rehace las capturas de `docs/capturas/` (o solo las de un grupo: `deposito`, `equipo`, `botin`, `patio`, `interfaz`, `maqueta`, `kit`); dice qué cámara de cada escena va a la documentación y con qué nombre. Las de interfaz (`scenes/ui/prueba_interfaz.tscn` y `prueba_tipografia.tscn`) son 2D: se capturan igual, sin cámara.
+Las escenas de revisión del estilo están en `scenes/style/` y se describen en [ESTILO.md](ESTILO.md). `tools/capturas_docs.sh [filtro]` rehace las capturas de `docs/capturas/` (o solo las de un grupo: `deposito`, `equipo`, `botin`, `mochila`, `patio`, `superficie`, `interfaz`, `maqueta`, `kit`); dice qué cámara de cada escena va a la documentación y con qué nombre. Las de interfaz (`scenes/ui/prueba_interfaz.tscn` y `prueba_tipografia.tscn`) son 2D: se capturan igual, sin cámara.
 
 Con `CAPTURE_ARGS="--call=Nodo:metodo[:valor]"` se llama a un método antes de capturar; por ejemplo, el panel de depuración abierto a las 18:45:
 
@@ -320,6 +340,6 @@ CAPTURE_ARGS="--call=VisorEstilo:_load:3 --call=DioramaPatio:set_hour:18.75 --ca
 El juego arranca siempre como anfitrión sin invitados (`NetSession`). `make test-net` lanza dos pruebas con un anfitrión y un invitado en la misma máquina:
 
 - **caja**: el invitado ve moverse la caja de "Hola, Tumansk".
-- **deposito**: el invitado entra en el depósito, recibe su jugador y los 28 objetos, anda, coge una lata, se la lleva y la suelta; coge la escoba y barre una mancha de polvo; el anfitrión abre el mostrador y hace venir al relojero, y el invitado coge los billetes que deja por un despertador. El anfitrión comprueba que lo ve andar y llevar cosas, que la mancha está limpia y que la venta está apuntada; el invitado, que le llegan la mancha limpia y el dinero.
+- **deposito**: el invitado entra en el depósito, recibe su jugador y los 29 objetos, anda, coge una lata, se la lleva y la suelta; coge la escoba y barre una mancha de polvo; el anfitrión abre el mostrador y hace venir al relojero, y el invitado coge los billetes que deja por un despertador. El anfitrión comprueba que lo ve andar y llevar cosas, que la mancha está limpia y que la venta está apuntada; el invitado, que le llegan la mancha limpia y el dinero.
 
 Quién manda sobre qué está en [D-003](DECISIONES.md) y [D-046](DECISIONES.md).

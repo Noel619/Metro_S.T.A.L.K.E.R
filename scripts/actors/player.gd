@@ -1,6 +1,8 @@
 class_name Player
 extends CharacterBody3D
-## Un jugador en primera persona. Versión del depósito: tranquila, sin estamina.
+## Un jugador en primera persona. En el depósito, tranquilo y sin estamina; en la
+## superficie ([member surface], F3-01) se agacha, se asoma, corre mientras le
+## dura el aliento y sus pasos hacen ruido ([SurfaceMotion]).
 ##
 ## Cada jugador manda sobre su propio movimiento (no hay retraso al andar ni al
 ## mirar) y lo replica a los demás; el anfitrión manda sobre el mundo. Los demás
@@ -31,6 +33,12 @@ const INSPECT_TURN_SPEED: float = 0.012
 ## Kilos que reducen la velocidad a la mitad.
 const HALF_SPEED_WEIGHT: float = 22.0
 const EYE_HEIGHTS: Dictionary = {"chico": 1.57, "chica": 1.51}
+## El cuerpo (la cápsula con la que choca), de pie.
+const BODY_RADIUS: float = 0.27
+const BODY_HEIGHT: float = 1.7
+## Lo que sube y baja la vista al respirar fuerte, y lo deprisa.
+const HEAVE_HEIGHT: float = 0.018
+const HEAVE_RATE: float = 4.2
 ## Campo de visión vertical de la cámara, en grados.
 const FOV: float = 72.0
 ## Cómo se lleva algo pequeño: su centro, a esta distancia de los ojos y así de
@@ -76,6 +84,8 @@ const MASK_PLAYERS: int = (1 << 0) | (1 << 2)
 const MASK_REACH: int = (1 << 0) | (1 << 2) | (1 << 4)
 ## Lo que para a lo que se lleva: el mundo y los demás jugadores.
 const MASK_CARRY: int = (1 << 0) | (1 << 1)
+## Lo que se pisa: el mundo y las manchas de suelo (cristales, chapa) de los detectores.
+const MASK_GROUND: int = (1 << 0) | (1 << 5)
 const SYNCED: PackedStringArray = [
 	".:position",
 	".:rotation",
@@ -84,6 +94,9 @@ const SYNCED: PackedStringArray = [
 	".:hold_rotation",
 	".:inspecting",
 	".:working",
+	".:crouching",
+	".:running",
+	".:lean",
 ]
 ## Píxeles de ratón que hacen una unidad de cada gesto: una pasada de escoba, un
 ## frote, un tirón de palanca. Los círculos se miden en vueltas y mantener, en
@@ -125,6 +138,17 @@ var inspecting: bool = false
 var working: bool = false
 ## Para pruebas y bots: sustituye a las teclas de movimiento.
 var scripted_input: Vector2 = Vector2.ZERO
+## Para pruebas y bots: correr y asomarse (de -1 a 1) sin teclas.
+var scripted_run: bool = false
+var scripted_lean: float = 0.0
+## Está en la superficie: se agacha, se asoma, corre con aliento y hace ruido.
+var surface: bool = false
+## Va agachado, corriendo y lo que se asoma (de -1 a 1): lo ven todos.
+var crouching: bool = false
+var running: bool = false
+var lean: float = 0.0
+## El aliento, la postura y los pasos en la superficie.
+var motion: SurfaceMotion = SurfaceMotion.new()
 
 var _head: Node3D
 var _camera: Camera3D
@@ -173,12 +197,12 @@ func setup(new_peer: int, new_variant: String, new_slot: int) -> void:
 	collision_layer = LAYER_PLAYERS
 	collision_mask = MASK_PLAYERS
 	var capsule: CapsuleShape3D = CapsuleShape3D.new()
-	capsule.radius = 0.27
-	capsule.height = 1.7
+	capsule.radius = BODY_RADIUS
+	capsule.height = BODY_HEIGHT
 	var shape: CollisionShape3D = CollisionShape3D.new()
 	shape.name = "Cuerpo"
 	shape.shape = capsule
-	shape.position.y = 0.85
+	shape.position.y = BODY_HEIGHT / 2.0
 	add_child(shape)
 	_head = Node3D.new()
 	_head.name = "Cabeza"
@@ -245,17 +269,21 @@ func _unhandled_input(event: InputEvent) -> void:
 			request_adjust.rpc_id(Carryable.HOST_PEER, step)
 			get_viewport().set_input_as_handled()
 			return
-	var motion: InputEventMouseMotion = event as InputEventMouseMotion
-	if motion != null and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	var mouse: InputEventMouseMotion = event as InputEventMouseMotion
+	if mouse != null and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if working:
-			feed_gesture(motion.relative)
+			feed_gesture(mouse.relative)
 		elif inspecting:
-			turn_held(motion.relative * INSPECT_TURN_SPEED)
+			turn_held(mouse.relative * INSPECT_TURN_SPEED)
 		else:
 			var sensitivity: float = deg_to_rad(Settings.mouse_sensitivity)
-			look(-motion.relative.x * sensitivity, -motion.relative.y * sensitivity)
+			look(-mouse.relative.x * sensitivity, -mouse.relative.y * sensitivity)
 	elif event.is_action_pressed(&"interact"):
 		interact()
+	elif surface and event.is_action_pressed(&"crouch"):
+		set_crouching(not crouching)
+	elif surface and event.is_action_pressed(&"flashlight") and _camera != null:
+		Flashlight.toggle(_camera)
 	elif event.is_action_pressed(&"pause") and DisplayServer.get_name() != "headless":
 		var captured: bool = Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if captured else Input.MOUSE_MODE_CAPTURED
@@ -279,23 +307,34 @@ func _process(delta: float) -> void:
 		if head_pitch < lowest:
 			head_pitch = move_toward(head_pitch, lowest, PITCH_RECOVERY * delta)
 	_head.rotation.x = head_pitch
+	if surface:
+		_update_head(delta)
 	_avatar.speed = move_speed
 	_avatar.look_pitch = head_pitch
 	_avatar.carrying = _held != null
 
 
 func _physics_process(delta: float) -> void:
+	if surface and multiplayer.is_server():
+		_hear_steps(delta)
 	if not is_local():
 		return
 	var input: Vector2 = scripted_input
-	if (
-		input == Vector2.ZERO
-		and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
-		and not CloseUp.is_open()
-	):
+	var controls: bool = Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not CloseUp.is_open()
+	if input == Vector2.ZERO and controls:
 		input = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
 	var wish: Vector3 = (basis * Vector3(input.x, 0.0, input.y)).limit_length(1.0)
-	var target: Vector3 = wish * WALK_SPEED * carry_slowdown() * hunger_slowdown()
+	var speed: float = WALK_SPEED
+	if surface:
+		var wants_run: bool = scripted_run or (controls and Input.is_action_pressed(&"sprint"))
+		running = wants_run and input != Vector2.ZERO and motion.can_run()
+		if crouching:
+			speed = SurfaceMotion.CROUCH_SPEED
+		elif running:
+			speed = SurfaceMotion.RUN_SPEED
+		var moving: bool = input != Vector2.ZERO
+		motion.update_breath(delta, running, moving, carried_weight())
+	var target: Vector3 = wish * speed * carry_slowdown() * hunger_slowdown()
 	var planar: Vector3 = Vector3(velocity.x, 0.0, velocity.z).move_toward(
 		target, ACCELERATION * delta
 	)
@@ -517,6 +556,30 @@ func set_held_item(item: Carryable) -> void:
 			_arms.hold(null)
 
 
+## Lo que lleva encima (kg): lo que tiene en las manos.
+func carried_weight() -> float:
+	return _held.state.weight() if _held != null else 0.0
+
+
+## Se agacha o se levanta (si cabe de pie). Solo en la superficie.
+func set_crouching(value: bool) -> void:
+	if not surface or value == crouching:
+		return
+	if not value and not _can_stand():
+		return
+	crouching = value
+	motion.crouching = value
+	var body: CollisionShape3D = get_node(^"Cuerpo") as CollisionShape3D
+	var capsule: CapsuleShape3D = body.shape as CapsuleShape3D
+	capsule.height = BODY_HEIGHT * (SurfaceMotion.CROUCH_BODY if value else 1.0)
+	body.position.y = capsule.height / 2.0
+
+
+## La altura de los ojos de pie.
+func standing_eyes() -> float:
+	return EYE_HEIGHTS[variant]
+
+
 ## Cuánto frena lo que lleva: de 1 (nada) hacia 0.
 func carry_slowdown() -> float:
 	if _held == null:
@@ -695,6 +758,82 @@ func _push_objects() -> void:
 		if item != null and item.is_held():
 			continue
 		body.apply_central_impulse(-collision.get_normal() * 0.35 * minf(body.mass, 4.0))
+
+
+## Los ojos bajan al agacharse, la cabeza se aparta al asomarse (sin meterse en
+## una pared) y, sin aliento, la vista sube y baja con la respiración.
+func _update_head(delta: float) -> void:
+	if is_local():
+		var want: float = scripted_lean
+		if want == 0.0 and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not CloseUp.is_open():
+			want = Input.get_axis(&"lean_left", &"lean_right")
+		if running:
+			want = 0.0
+		want = clampf(want, -_lean_room(-1.0), _lean_room(1.0))
+		motion.lean = move_toward(motion.lean, want, SurfaceMotion.LEAN_SPEED * delta)
+		lean = motion.lean
+	var eyes: float = standing_eyes() * (SurfaceMotion.CROUCH_EYES if crouching else 1.0)
+	var target: float = (
+		eyes + sin(Time.get_ticks_msec() / 1000.0 * HEAVE_RATE) * HEAVE_HEIGHT * motion.heave()
+	)
+	_head.position.y = lerpf(_head.position.y, target, 1.0 - exp(-10.0 * delta))
+	_head.position.x = lean * SurfaceMotion.LEAN_DISTANCE
+	_head.rotation.z = -lean * SurfaceMotion.LEAN_ROLL
+
+
+## Lo que se puede asomar hacia [param side] (-1 a la izquierda, 1 a la derecha)
+## antes de meter la cabeza en una pared: de 0 a 1.
+func _lean_room(side: float) -> float:
+	var from: Vector3 = global_position + Vector3.UP * _head.position.y
+	var reach: float = SurfaceMotion.LEAN_DISTANCE + SurfaceMotion.LEAN_CLEARANCE
+	var to: Vector3 = from + global_basis.x * side * reach
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+		from, to, MASK_PLAYERS, [get_rid()]
+	)
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	if hit.is_empty():
+		return 1.0
+	var room: float = from.distance_to(hit["position"]) - SurfaceMotion.LEAN_CLEARANCE
+	return clampf(room / SurfaceMotion.LEAN_DISTANCE, 0.0, 1.0)
+
+
+## ¿Cabe de pie donde está? (Para levantarse debajo de algo, no.)
+func _can_stand() -> bool:
+	var capsule: CapsuleShape3D = CapsuleShape3D.new()
+	capsule.radius = BODY_RADIUS - 0.02
+	capsule.height = BODY_HEIGHT - 0.04
+	var query: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
+	query.shape = capsule
+	query.transform = Transform3D(
+		Basis.IDENTITY, global_position + Vector3.UP * (BODY_HEIGHT / 2.0 + 0.02)
+	)
+	query.collision_mask = MASK_PLAYERS
+	query.exclude = [get_rid()]
+	return get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
+
+
+## Los pasos de cada jugador, en el anfitrión: lo que suenan según cómo anda, lo
+## que lleva y lo que pisa (lo ven todos: la velocidad, si va agachado o corriendo).
+func _hear_steps(delta: float) -> void:
+	var gait: SurfaceMotion.Gait = SurfaceMotion.gait_of(move_speed, crouching, running)
+	if not motion.tick_steps(delta, gait):
+		return
+	var ground: float = SurfaceMotion.ground_loudness(ground_kind())
+	var loudness: float = SurfaceMotion.step_noise(gait, carried_weight(), 0.0, ground)
+	EventBus.noise_made.emit(global_position, loudness, self)
+
+
+## Lo que pisa: el tipo de suelo ([constant SurfaceMotion.GROUNDS]) o vacío si es
+## uno normal. Mira debajo de los pies, así que vale también para los demás
+## jugadores (en el anfitrión, que es quien oye los pasos de todos).
+func ground_kind() -> StringName:
+	var from: Vector3 = global_position + Vector3.UP * 0.3
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+		from, from + Vector3.DOWN * 0.6, MASK_GROUND, [get_rid()]
+	)
+	query.collide_with_areas = true
+	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+	return &"" if hit.is_empty() else SurfaceMotion.ground_kind(hit["collider"])
 
 
 func _update_focus() -> void:

@@ -5,6 +5,8 @@ extends SceneTree
 ## el test se cortaba en ese punto y contaba como bueno.
 ##
 ## Uso: godot --headless --path . -s tests/run_tests.gd
+## Solo algunos archivos: añade "-- " y parte de sus nombres
+## (godot --headless --path . -s tests/run_tests.gd -- backpack surface).
 
 const UNIT_DIR: String = "res://tests/unit/"
 
@@ -88,9 +90,15 @@ func _run() -> void:
 
 
 func _test_files() -> PackedStringArray:
+	var wanted: PackedStringArray = OS.get_cmdline_user_args()
 	var files: PackedStringArray = []
 	for file_name: String in DirAccess.get_files_at(UNIT_DIR):
-		if file_name.begins_with("test_") and file_name.ends_with(".gd"):
+		if not file_name.begins_with("test_") or not file_name.ends_with(".gd"):
+			continue
+		if (
+			wanted.is_empty()
+			or Array(wanted).any(func(part: String) -> bool: return part in file_name)
+		):
 			files.append(file_name)
 	files.sort()
 	return files
