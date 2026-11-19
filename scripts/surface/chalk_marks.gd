@@ -18,6 +18,8 @@ const DRAW_SECONDS: float = 0.7
 ## Como mucho, tantas marcas (las más viejas se borran).
 const MAX_MARKS: int = 200
 const WORLD_ID: String = "tiza"
+## La tiza de tu padre: azulada y gastada, de hace tiempo.
+const FATHER_TINT: Color = Color(0.72, 0.8, 0.95, 0.7)
 ## Lo que se deja de margen al alcance de quien dibuja.
 const REACH_SLACK: float = 0.6
 
@@ -53,6 +55,27 @@ func _ready() -> void:
 ## Las marcas que hay: {"p": [x, y, z], "n": [x, y, z], "s": símbolo}.
 func marks() -> Array:
 	return world.value(WORLD_ID, "marcas", [])
+
+
+## Pone una marca sin que nadie la dibuje (la de tu padre, que ya estaba): en
+## [param position], sobre [param normal], girada [param turn] radianes sobre la normal.
+## Solo el anfitrión.
+func place_mark(
+	position: Vector3, normal: Vector3, symbol: int, turn: float = 0.0, father: bool = false
+) -> void:
+	if not multiplayer.is_server():
+		return
+	var list: Array = marks().duplicate(true)
+	var mark: Dictionary = {
+		"p": [position.x, position.y, position.z],
+		"n": [normal.x, normal.y, normal.z],
+		"s": clampi(symbol, 0, SYMBOLS.size() - 1),
+		"r": turn,
+	}
+	if father:
+		mark["padre"] = true
+	list.append(mark)
+	world.set_value(WORLD_ID, "marcas", list)
 
 
 ## Quien dibuja pide una marca en [param position], sobre la superficie de normal
@@ -115,6 +138,8 @@ func _refresh() -> void:
 			Vector3(n[0], n[1], n[2]),
 			int(mark.get("s", 0))
 		)
+		_drawn[index].rotate_object_local(Vector3.UP, float(mark.get("r", 0.0)))
+		_drawn[index].modulate = FATHER_TINT if mark.get("padre", false) else Color.WHITE
 
 
 func _decal() -> Decal:

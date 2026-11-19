@@ -145,13 +145,32 @@ func nearest_walkable(point: Vector2, search: int = 6) -> Vector2:
 
 ## Marca como obstáculo lo que queda dentro de un polígono del plano.
 func block_polygon(outline: PackedVector2Array) -> void:
+	_fill_polygon(outline, true)
+
+
+## Abre lo que queda dentro de un polígono del plano: el interior de un edificio en el
+## que se entra (sus muros siguen siendo obstáculo; se pasa por sus puertas).
+func open_polygon(outline: PackedVector2Array) -> void:
+	_fill_polygon(outline, false)
+
+
+## Marca ([param solid]) o abre las casillas de unos puntos del plano: el paso de una
+## puerta, que se cierra y se abre.
+func set_points(points: PackedVector2Array, solid: bool) -> void:
+	for point: Vector2 in points:
+		var cell: Vector2i = cell_of(point)
+		if grid.is_in_boundsv(cell):
+			grid.set_point_solid(cell, solid)
+
+
+func _fill_polygon(outline: PackedVector2Array, solid: bool) -> void:
 	var box: Rect2 = _rect_of(outline)
 	var low: Vector2i = cell_of(box.position)
 	var high: Vector2i = cell_of(box.end)
 	for x: int in range(maxi(low.x, 0), mini(high.x + 1, region.size.x)):
 		for y: int in range(maxi(low.y, 0), mini(high.y + 1, region.size.y)):
 			if Geometry2D.is_point_in_polygon(point_of(Vector2i(x, y)), outline):
-				grid.set_point_solid(Vector2i(x, y), true)
+				grid.set_point_solid(Vector2i(x, y), solid)
 
 
 ## Marca un rectángulo de [param size] (largo, ancho) centrado en [param center] y

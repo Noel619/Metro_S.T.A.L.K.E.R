@@ -102,6 +102,9 @@ const SMALL_DISTANCE: float = 110.0
 var plan: CityPlan
 ## Los edificios del plano por su id.
 var buildings_by_id: Dictionary = {}
+## Los edificios montados con el kit: id del plano -> su nodo (con sus metadatos: las
+## puertas y el botín de los menores, KitMinor).
+var kit_models: Dictionary = {}
 ## Cifras de la construcción: segundos, sectores, triángulos, instancias…
 var stats: Dictionary = {}
 ## Lo que hay por la calle (los vehículos, los árboles y las estructuras) y dónde queda.
@@ -300,6 +303,7 @@ func _add_kit_building(
 	var model: Node3D = _kit.build(building)
 	model.position = offset + Vector3.UP * float(building["cota"])
 	holder.add_child(model)
+	kit_models[building["id"]] = model
 	var plinth: MeshBuffer = _kit.plinth(building)
 	if not plinth.is_empty():
 		var base: MeshInstance3D = MeshInstance3D.new()
@@ -412,6 +416,14 @@ func set_near_distance(distance: float) -> void:
 
 
 ## Distancia a la que los edificios del kit pasan de su volumen a su modelo.
+## Una malla del kit de arquitectura por su nombre (la hoja de una puerta, el candado), o
+## null.
+func kit_mesh(piece: String) -> Mesh:
+	if _kit == null:
+		return null
+	return _kit.kit.meshes_for("").get(piece) as Mesh
+
+
 func set_kit_distance(distance: float) -> void:
 	kit_distance = distance
 	for volume: GeometryInstance3D in _kit_volumes:

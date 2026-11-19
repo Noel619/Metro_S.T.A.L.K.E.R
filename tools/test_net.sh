@@ -7,18 +7,18 @@ cd "$(dirname "$0")/.."
 LOG_DIR="$(mktemp -d)"
 FAILED=0
 
-# run_pair nombre guion "argumentos del anfitrión" "argumentos del invitado"
+# run_pair nombre guion "argumentos del anfitrión" "argumentos del invitado" [segundos]
 run_pair() {
-    local name="$1" script="$2" host_args="$3" client_args="$4"
+    local name="$1" script="$2" host_args="$3" client_args="$4" limit="${5:-90}"
     # shellcheck disable=SC2086
     "$GODOT" --headless --path . -s "$script" -- --role=host $host_args >"$LOG_DIR/$name-host.log" 2>&1 &
     local host_pid=$!
     sleep 2
     # shellcheck disable=SC2086
-    timeout 90 "$GODOT" --headless --path . -s "$script" -- --role=client $client_args >"$LOG_DIR/$name-client.log" 2>&1
+    timeout "$limit" "$GODOT" --headless --path . -s "$script" -- --role=client $client_args >"$LOG_DIR/$name-client.log" 2>&1
     local client_status=$?
     local waited=0
-    while kill -0 "$host_pid" 2>/dev/null && [ "$waited" -lt 60 ]; do sleep 1; waited=$((waited + 1)); done
+    while kill -0 "$host_pid" 2>/dev/null && [ "$waited" -lt "$limit" ]; do sleep 1; waited=$((waited + 1)); done
     kill -9 "$host_pid" 2>/dev/null
     wait "$host_pid"
     local host_status=$?
@@ -35,4 +35,5 @@ run_pair() {
 
 run_pair "caja" tests/net/net_smoke.gd "" ""
 run_pair "deposito" tests/net/net_depot.gd "--host" "--join=127.0.0.1 --chica"
+run_pair "superficie" tests/net/net_surface.gd "--host" "--join=127.0.0.1 --chica" 240
 exit "$FAILED"

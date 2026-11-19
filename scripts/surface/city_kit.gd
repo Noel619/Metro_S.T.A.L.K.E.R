@@ -77,6 +77,7 @@ func build(building: Dictionary) -> Node3D:
 	var spec: Dictionary = {
 		"tipo": building["tipo"],
 		"clave": building["id"],
+		"nombre": building.get("nombre", ""),
 		"huella": CityPlan.ring(building["huella"][0]),
 		"centro": anchor,
 		"origen": anchor,

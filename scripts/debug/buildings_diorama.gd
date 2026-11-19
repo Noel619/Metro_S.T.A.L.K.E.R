@@ -180,6 +180,7 @@ func _plan_specs() -> Array[Dictionary]:
 				{
 					"tipo": building["tipo"],
 					"clave": building["id"],
+					"nombre": building.get("nombre", ""),
 					"huella": CityPlan.ring(building["huella"][0]),
 					"centro": at,
 					"pisos": int(building["pisos"]),

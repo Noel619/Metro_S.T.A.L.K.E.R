@@ -95,6 +95,8 @@ func kill(player: Player) -> void:
 	player.condition.wounds.clear()
 	player.condition.blood = 0.0
 	player.condition.set_state.rpc(0.0, false, true)
+	# El cuaderno se pierde contigo.
+	GameState.lose_notebook(player.slot)
 	EventBus.player_died.emit(player.peer_id)
 	for node: Node in get_tree().get_nodes_in_group(Player.GROUP):
 		if not (node as Player).condition.dead:

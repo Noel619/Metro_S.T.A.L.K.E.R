@@ -129,6 +129,14 @@ Dentro de su campo de visión y de ese alcance, **no te ven de golpe**: se van f
 | Cizalla | Cadenas y candados | Apretar (tirar hacia abajo) | 12 m |
 | Cuerda | Bajar por el socavón o desde un sitio alto | Atarla donde hay de qué (una barandilla, un tubo) y bajar o subir por ella. Se queda puesta: es un atajo para la próxima vez | — |
 
+Cómo está hecho:
+
+- **Las puertas** (`SurfaceDoor`) giran sobre su bisagra y su estado vive en el mundo (`DepotWorld`, que se guarda): abierta o no, su cierre (cerradura, candado, cadena, atrancada, rota o nada) y lo que se lleva hecho con la palanca y la cizalla. Cerrada, con F se sacude y suena un poco: así se sabe. El candado y la cadena se ven; la cerradura y lo atrancado, no. Cómo empieza cada una sale de su nombre (siempre igual).
+- **La palanca** son tirones (cuatro; cada uno cruje): al ceder, la puerta se abre de golpe y se oye en 30 m. **La cizalla**, dos apretones: corta y se oye en 12 m. Las dos van como los trabajos del depósito (`Workable`).
+- **Las ganzúas** abren una vista de la cerradura delante de ti (`LockpickView`): la cerradura cortada, con sus pines, la ganzúa y la llave de tensión. Con el ratón, a los lados se pasa de pin en pin (con la ganzúa abajo) y arriba se sube el pin; en su punto, quieto un momento, se queda puesto y la llave cede un poco. Pasarse lo atasca (hay que bajar la ganzúa) y forzar deprisa tuerce la ganzúa hasta partirla (se gastan las ganzúas). El miedo hace temblar la punta. Una cerradura tiene 4 o 5 pines; un candado, 3. Ver D-068.
+- **Trepar** (`Climbable`): por una escalera o una cuerda se sube empujando hacia ella; arriba se sale al rellano y, desde el rellano, andando hacia el borde se agarra uno mirando abajo para bajar (mirando abajo, adelante es bajar). Saltar suelta. Los perros no trepan.
+- **La cuerda** (`RopeAnchor`): con la cuerda en la mano, mantener el botón sobre una argolla la ata; queda colgando hasta el suelo y se guarda con el mundo.
+
 ### 4.4 Distracciones
 
 - **Lo que se lanza** (una lata vacía, una botella, un cascote): mantener el botón izquierdo y soltar; cuanto más se mantiene, más lejos. Al caer suena según lo que es y dónde cae, y quien lo oye va a ver qué ha sido.
@@ -146,6 +154,13 @@ Con la tiza en la mano, el botón izquierdo sobre una pared o el suelo dibuja un
 - **Notas**: se escriben con el teclado y quedan a mano, en la letra del cuaderno.
 - **Las páginas** se pasan con A y D; hay 24.
 - **Los trazos son vectores** (listas de puntos suavizados) y se guardan con la partida. El miedo hace temblar el trazo. Si mueres, el cuaderno se pierde contigo.
+
+Cómo está hecho:
+
+- **Los datos** (`Notebook`): 24 páginas con sus trazos (la tinta y los puntos de la página, de 0 a 1, aligerados con Ramer-Douglas-Peucker al guardarlos), sus sellos y sus notas. Viven en el estado de la partida, por el puesto de cada jugador (`GameState.notebooks`), como la mochila: se guardan con ella y llegan a todos los equipos. Lo cambia el anfitrión cuando lo pide su dueño (`PlayerNotebook`); nadie más puede escribir en él. Al morir, se borra.
+- **La vista** (`NotebookView`): el modelo del cuaderno abierto delante de la cámara, con las dos hojas pintadas por dos `SubViewport` (`NotebookPage`: el papel cuadriculado, los trazos, los sellos con la tinta violeta de un tampón y las notas en Caveat). El papel lo ilumina la escena, así que a oscuras no se ve lo que se dibuja. Un lápiz (el modelo de verdad) sigue al ratón con la punta en el papel; con la goma se le da la vuelta. Abajo, con letra de cuaderno, la herramienta que llevas.
+- **Las manos**: hay que tenerlas libres para sacarlo; mientras está abierto no se anda y el botón izquierdo dibuja (no lanza ni trabaja).
+- `scenes/style/primera_persona_cuaderno.tscn` abre el cuaderno en el depósito con un mapa de La Plaza dibujado desde el plano, para las capturas.
 
 ## 6. Percepción y conocimiento (F3-09)
 
@@ -211,7 +226,16 @@ Nadie decide nada a partir de lo que no ha percibido. Cada agente tiene **sentid
 
 ### 9.1 Objetivos y rutas
 
-Cada objetivo tiene al menos tres maneras de llegar:
+En la Fase 3 los sitios que se saquean son los edificios menores, que se recorren enteros (D-067); Correos, el Gastronom y el paso subterráneo quedan para cuando se puedan recorrer las casas. Lo que hay hoy:
+
+| Objetivo | Qué hay | Cómo se entra | Rutas |
+|---|---|---|---|
+| Los quioscos de la plaza (Q1 a Q5) · ● | Periódicos, cerillas, latas, tabaco, algún billete | La puerta de atrás: cerradura (ganzúas o palanca), candado (cizalla o ganzúas) o atrancada (palanca). Los de la avenida, destrozados, sin puerta ni cristales: se entra encaramándose | **Por la plaza**: el granito abierto, rápido y a la vista. **Pegado a las fachadas** de las Casas Curvas, a la sombra. **Desde el mirador**: se mira antes de salir y se baja por la cuerda hacia la plaza |
+| Los trasteros del primer patio (P1, P2) y el palomar (P3) · ● | Leña, tarros de conservas, herramientas, bombillas; en el altillo del palomar, los prismáticos del palomero | Cada caseta con su candado (o una cadena, o atrancada); alguna hundida, abierta. El altillo del palomar, con candado, por su escalera | **Por el arco** de Juventud 1. **Rodeando** la Casa Curva Norte. Desde el palomar se ve el patio y los perros no suben |
+| Las tiendas de la evacuación y los quioscos de la Estación (C1 a C4, Q6 a Q9) · ●● | Trapos, latas, vendas, botas, cuerda, alguna máscara o linterna | Las tiendas están abiertas (la puerta de lona enrollada); se entra agachado y dentro no se ve desde fuera | **Por la avenida**: abierta, con mucha vista y el viento de lado. **Entre el atasco**: de coche en coche, a cubierto, pero la chapa suena. **Por detrás de las casas de la avenida**. Es territorio de la Jauría: hay huesos roídos |
+| El centro de transformación (T1) y los trasteros del patio sur (P4) · ●● | Chatarra de cobre (pesa y vale), bombillas | La puerta de chapa del transformador, con cadena (cizalla) | **Por la plaza** hasta la Casa Curva Sur y por su lado. **Por el control del ejército** y la boca este. El transformador es además el refugio |
+
+El plan de cada objetivo era este (queda para cuando se recorran las casas):
 
 | Objetivo | Qué hay | Rutas |
 |---|---|---|
@@ -222,10 +246,12 @@ Cada objetivo tiene al menos tres maneras de llegar:
 
 ### 9.2 Sitios
 
-- **Puntos altos para observar**: la azotea del peristilo del vestíbulo (por la escalera de servicio, desde la sala), la escalera de la Torre Norte (14 plantas: desde arriba se ve la avenida hasta la estación) y el techo del blindado del control.
-- **Refugio**: la cámara acorazada del Banco (una puerta de acero; sin ventanas, la luz no sale).
-- **Pasos obligados**: las cuatro bocas del paso subterráneo y el arco del primer patio.
-- **La marca de tu padre**: en el paso subterráneo, su símbolo en tiza señala al noreste.
+- **El mirador**: la azotea del peristilo del vestíbulo. En la sala, una escalera de pates de servicio sube (diez metros, apartada del muro para salvar la cornisa) hasta un ventanal alto sin cristal; por él se sale, agachado, a la azotea, y desde allí se ve la plaza entera y la avenida. En el antepecho que da a la plaza hay una argolla: con una cuerda, se baja por fuera hasta el basamento (y se sube por ella la próxima vez). Los perros no llegan.
+- **El palomar** del primer patio: su plataforma, a tres metros, por su escalera de mano.
+- **Refugio**: el centro de transformación (puerta de chapa, sin ventanas: la luz no sale). La cámara acorazada del Banco, cuando se recorran las casas.
+- **Pasos obligados**: la puerta del vestíbulo y el arco del primer patio.
+- **Las señales de la Jauría**: huesos roídos donde come (la plaza de la Estación, la avenida y cerca del vestíbulo) y, en la nieve, sus huellas.
+- **La marca de tu padre**: en el muro del vestíbulo, junto a la puerta, una flecha de tiza azulada y gastada señala al noreste.
 
 ## 10. El tiempo y el viento
 
@@ -254,9 +280,9 @@ Cada objetivo tiene al menos tres maneras de llegar:
 | F3-01 Controlador de superficie | Hecha: agacharse, asomarse, correr con aliento, saltar y encaramarse; los pasos suenan según el paso, el suelo y la carga, y se ven en las ondas de tinta |
 | F3-02 Visibilidad | Hecha (el cálculo): la luz de la hora, la sombra del sol, el techo, la silueta contra el cielo, la postura, el movimiento, el clima y lo que te tapa; la usa la vista de la IA |
 | F3-03 Mochila y cinturón | Hecha: la cuadrícula de 6 × 5 con formas y giros, el cinturón de 3 huecos, el peso y lo que suena suelto; abrirla y guardar en la superficie es arrodillarse. La mochila abierta se ve en 3D y se coge con el ratón |
-| F3-04 El cuaderno | Pendiente |
+| F3-04 El cuaderno | Hecho: 24 páginas cuadriculadas en 3D, lápiz de grafito y de colores, goma, regla, siete sellos (el del reloj escribe la hora), notas a mano, el temblor del miedo; se guarda con la partida y se pierde al morir |
 | F3-05 Instrumentos | Hechos: la brújula (la aguja busca el norte), el reloj de pulsera (R), el podómetro (cuenta las zancadas desde que se pone a cero) y los prismáticos (botón derecho) |
-| F3-06 Herramientas de acceso | Pendiente |
+| F3-06 Herramientas de acceso | Hechas: las puertas con su cierre (cerradura, candado, cadena, atrancada), la palanca, la cizalla, las ganzúas con su vista de la cerradura y el temblor del miedo, trepar por escaleras y cuerdas, y la cuerda atada que se queda |
 | F3-07 Distracciones | Hechas: lanzar lo que se lleva (mantener y soltar), el ruido al caer según lo que es y dónde cae, las botellas que se rompen y el despertador con cuerda |
 | F3-08 Tiza | Hecha: cinco símbolos (la rueda los cambia), dibujados a mano en paredes y suelo, guardados con el mundo |
 | F3-09 Percepción | Hecha: vista que se fija poco a poco, oído con muros y viento, olfato con viento y rastros; memoria, prueba de justicia y la herramienta de depuración (F3) |
@@ -264,4 +290,4 @@ Cada objetivo tiene al menos tres maneras de llegar:
 | F3-11 Miedo | Hecho: sube con los perros a la vista o al oído, los golpes, la oscuridad y la sangre perdida; tiemblan las manos y la linterna y reacciona el dibujo |
 | F3-12 Heridas | Hechas: la mordedura, la sangre que gotea y se huele, vendarse, morir y perder la partida |
 | F3-13 Audio | Aplazado: sin sonido por ahora (D-061); el ruido existe para la IA y se ve en las ondas de tinta |
-| F3-14 La Plaza | Empezada: la salida entera (la reja y la escalera del depósito, la esclusa y la compuerta del vestíbulo, y la vuelta, con el depósito como se dejó) |
+| F3-14 La Plaza | La salida entera (la reja y la escalera del depósito, la esclusa y la compuerta del vestíbulo, y la vuelta, con el depósito como se dejó); los edificios menores enteros y por dentro (quioscos, tiendas, trasteros, palomar, transformador) con sus puertas y su botín; el mirador del vestíbulo con su escalera y su argolla; las señales de la Jauría y la marca de tu padre. Pendientes: Correos, el Gastronom, el Banco y el paso subterráneo (D-067) |

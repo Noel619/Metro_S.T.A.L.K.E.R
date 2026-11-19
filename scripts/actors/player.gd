@@ -159,6 +159,8 @@ var footsteps: Footsteps
 var condition: PlayerCondition
 ## Su mochila y su cinturón (F3-03).
 var pack: PlayerPack
+## Su cuaderno (F3-04).
+var notebook: PlayerNotebook
 ## El reloj de pulsera y los prismáticos (F3-05; solo en su equipo).
 var optics: PlayerOptics
 ## Lo que tiemblan las manos por el miedo (metros; lo pone [Fear], en su equipo).
@@ -237,7 +239,10 @@ func setup(new_peer: int, new_variant: String, new_slot: int) -> void:
 	add_child(condition)
 	pack = PlayerPack.new()
 	pack.setup(self)
+	notebook = PlayerNotebook.new()
+	notebook.setup(self)
 	add_child(pack)
+	add_child(notebook)
 	pack.changed.connect(func() -> void: footsteps.loose_items = pack.contents().loose_items())
 	_head = Node3D.new()
 	_head.name = "Cabeza"
@@ -304,7 +309,7 @@ func _exit_tree() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_local() or CloseUp.is_open():
+	if not is_local() or CloseUp.is_open() or LockpickView.is_open() or NotebookView.is_open():
 		return
 	var wheel: InputEventMouseButton = event as InputEventMouseButton
 	if wheel != null and wheel.pressed and _held != null:
@@ -338,6 +343,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_jump_queued = true
 	elif event.is_action_pressed(&"backpack"):
 		_use_backpack()
+	elif event.is_action_pressed(&"notebook"):
+		notebook.toggle(_camera)
 	elif event.is_action_pressed(&"pause") and DisplayServer.get_name() != "headless":
 		var captured: bool = Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if captured else Input.MOUSE_MODE_CAPTURED
@@ -349,7 +356,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	if is_local():
-		var reading: bool = CloseUp.is_open()
+		var reading: bool = CloseUp.is_open() or NotebookView.is_open()
 		var looking: bool = optics != null and optics.looking_through()
 		inspecting = (
 			_held != null
@@ -403,6 +410,8 @@ func _physics_process(delta: float) -> void:
 	var keys: bool = (
 		Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 		and not CloseUp.is_open()
+		and not LockpickView.is_open()
+		and not NotebookView.is_open()
 		and not pack.is_busy()
 	)
 	body.forced_crouch = pack.is_busy() or _backpack_view != null
@@ -410,6 +419,11 @@ func _physics_process(delta: float) -> void:
 		input = Vector2.ZERO
 	if input == Vector2.ZERO and keys:
 		input = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
+	# En una escalera o una cuerda se trepa (saltar es soltarse).
+	var letting_go: bool = _jump_queued and _moves.climbing()
+	_jump_queued = _jump_queued and not letting_go
+	if _moves.step_climb(self, input, letting_go, _capsule.radius, delta):
+		return
 	var lean_input: float = 0.0
 	if keys:
 		lean_input = Input.get_axis(&"lean_left", &"lean_right")
@@ -611,6 +625,11 @@ func _open_backpack() -> void:
 	_backpack_view = BackpackView.new()
 	_backpack_view.open(pack, _camera)
 	_backpack_view.closed.connect(func() -> void: _backpack_view = null)
+
+
+## Está trepando por una escalera o una cuerda.
+func is_climbing() -> bool:
+	return _moves.climbing()
 
 
 ## Lo alto que es ahora (agachado, menos).
@@ -923,6 +942,8 @@ func _update_work_target() -> void:
 func _update_work(delta: float, pressing: bool) -> void:
 	var was_working: bool = working
 	working = pressing and _work_target != null and is_instance_valid(_work_target)
+	if working and not was_working:
+		_work_target.begin(self)
 	if working and _work_target.gesture == Workable.Gesture.HOLD:
 		_work_pending += delta / HOLD_SECONDS
 	if not working:

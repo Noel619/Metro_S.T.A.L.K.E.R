@@ -32,6 +32,23 @@ const LOCK_HALF_WIDTH: float = 3.0
 const ARRIVALS: Array[Vector2] = [
 	Vector2(2.7, -1.5), Vector2(2.7, 1.5), Vector2(3.3, -0.5), Vector2(3.3, 0.6)
 ]
+## El mirador (singular_vestibulo.py): la escalera de servicio sube por dentro del lado 12
+## del tambor, apartada del muro, hasta su ventanal alto (por él se sale a la azotea del
+## peristilo); la argolla de la cuerda está en el antepecho del lado 19, sobre la plaza, y
+## la cuerda se aparta para librar la cornisa.
+const BAYS: int = 20
+const LADDER_BAY: int = 12
+const LADDER_RADIUS: float = 8.47
+const LADDER_TOP: float = 11.05
+const ROPE_BAY: int = 19
+const ROPE_RADIUS: float = 12.5
+const PARAPET_TOP: float = 11.34
+const ROPE_OFFSET: float = 0.55
+## La marca de tu padre: una flecha de tiza en el muro, junto a la puerta, hacia el noreste.
+const FATHER_BAY: int = 16
+const FATHER_RADIUS: float = 9.59
+const FATHER_HEIGHT: float = 1.9
+const NORTH_EAST: Vector2 = Vector2(0.7071, 0.7071)
 ## Segundos que tienen que estar todos en la esclusa, con la compuerta cerrada, para bajar.
 const LEAVE_SECONDS: float = 2.0
 ## Cada cuánto se rehace el cielo con la hora (segundos reales).
@@ -57,6 +74,10 @@ var items: WorldItems
 var hatch: Hatch
 var jauria: SurfacePack
 var wounds: Wounds
+var sites: SurfaceSites
+var chalk: ChalkMarks
+var lookout: Climbable
+var rope_anchor: RopeAnchor
 
 var _sync: LevelSync
 var _players: Node3D
@@ -123,13 +144,16 @@ func _ready() -> void:
 	var loose: SurfaceItems = SurfaceItems.new()
 	loose.setup(items)
 	add_child(loose)
-	var chalk: ChalkMarks = ChalkMarks.new()
+	chalk = ChalkMarks.new()
 	chalk.setup(world)
 	add_child(chalk)
 	jauria = SurfacePack.new()
 	jauria.setup(plan, city)
 	add_child(jauria)
 	_build_vestibule()
+	sites = SurfaceSites.new()
+	sites.setup(city, world, items)
+	add_child(sites)
 	_players = Node3D.new()
 	_players.name = "Jugadores"
 	add_child(_players)
@@ -204,6 +228,9 @@ func _start_as_host() -> void:
 	# Al llegar, la compuerta está cerrada: la cerró la guardia detrás del último.
 	world.set_values("compuerta", {"abierta": false, "giro": 0.0})
 	hatch.snap()
+	# La primera vez en la partida: el botín y la flecha de tu padre.
+	sites.seed_loot()
+	_mark_from_father()
 	_spawn_player(multiplayer.get_unique_id(), _variant)
 	for peer: int in _sync.infos:
 		_spawn_player(peer, String((_sync.infos[peer] as Dictionary).get("variant", "chico")))
@@ -213,6 +240,7 @@ func _start_as_host() -> void:
 	)
 	_give_back_what_they_carried.call_deferred()
 	jauria.start()
+	sites.carve(jauria.nav)
 	EventBus.game_over.connect(_on_game_over)
 	Sortie.arrived()
 
@@ -298,6 +326,71 @@ func _build_vestibule() -> void:
 			if id == "compuerta" and hatch.is_open():
 				_armed = true
 	)
+	_build_lookout()
+
+
+## El mirador: la escalera de servicio de la sala a la azotea del peristilo y la argolla
+## del antepecho, donde se puede atar una cuerda para bajar a la plaza.
+func _build_lookout() -> void:
+	var radial: Vector2 = Vector2.from_angle(TAU * LADDER_BAY / BAYS)
+	var foot: Vector3 = vestibule_point(
+		radial.x * LADDER_RADIUS, radial.y * LADDER_RADIUS, HALL_FLOOR
+	)
+	var inward: Vector3 = (
+		vestibule_point(
+			radial.x * (LADDER_RADIUS - 1.0), radial.y * (LADDER_RADIUS - 1.0), HALL_FLOOR
+		)
+		- foot
+	)
+	lookout = Climbable.make(
+		Transform3D(_upright(inward), foot), Vector3(0.5, LADDER_TOP - HALL_FLOOR, 0.8)
+	)
+	lookout.name = "EscaleraServicio"
+	add_child(lookout)
+	var out: Vector2 = Vector2.from_angle(TAU * ROPE_BAY / BAYS)
+	var edge: Vector3 = vestibule_point(out.x * ROPE_RADIUS, out.y * ROPE_RADIUS, PARAPET_TOP)
+	var outward: Vector3 = (
+		vestibule_point(out.x * (ROPE_RADIUS + 1.0), out.y * (ROPE_RADIUS + 1.0), PARAPET_TOP)
+		- edge
+	)
+	rope_anchor = RopeAnchor.new()
+	rope_anchor.offset = ROPE_OFFSET
+	rope_anchor.landing_depth = ROPE_OFFSET + 1.0
+	rope_anchor.setup("cuerda_vestibulo", Transform3D(_upright(outward), edge))
+	add_child(rope_anchor)
+
+
+## En el anfitrión, la primera vez: la flecha de tu padre en el muro del vestíbulo, junto
+## a la puerta, señalando al noreste.
+func _mark_from_father() -> void:
+	if bool(world.value(ChalkMarks.WORLD_ID, "padre", false)):
+		return
+	var radial: Vector2 = Vector2.from_angle(TAU * FATHER_BAY / BAYS)
+	var at: Vector3 = vestibule_point(
+		radial.x * FATHER_RADIUS, radial.y * FATHER_RADIUS, FATHER_HEIGHT
+	)
+	var normal: Vector3 = (
+		(
+			vestibule_point(
+				radial.x * (FATHER_RADIUS + 1.0), radial.y * (FATHER_RADIUS + 1.0), FATHER_HEIGHT
+			)
+			- at
+		)
+		. normalized()
+	)
+	# La flecha de la tiza apunta a lo largo del muro (arriba × normal); si el noreste queda
+	# hacia el otro lado, se da la vuelta.
+	var along: Vector3 = Vector3.UP.cross(normal)
+	var north_east: Vector3 = Vector3(NORTH_EAST.x, 0.0, -NORTH_EAST.y)
+	var turn: float = 0.0 if along.dot(north_east) >= 0.0 else PI
+	chalk.place_mark(at, normal, ChalkMarks.SYMBOLS.find("flecha"), turn, true)
+	world.set_value(ChalkMarks.WORLD_ID, "padre", true)
+
+
+## Una base de pie (y arriba) con su z hacia [param forward] (en horizontal).
+static func _upright(forward: Vector3) -> Basis:
+	var z: Vector3 = Vector3(forward.x, 0.0, forward.z).normalized()
+	return Basis(Vector3.UP.cross(z), Vector3.UP, z)
 
 
 ## En el anfitrión: si todos los vivos están en la esclusa con la compuerta cerrada

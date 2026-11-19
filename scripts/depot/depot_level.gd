@@ -366,6 +366,18 @@ func _stock() -> void:
 			_content(&"brujula", 0.8),
 		]
 	)
+	# Junto a la mesa de planificación, la caja con lo que tu padre usaba para subir.
+	_box(
+		&"caja_madera",
+		Vector3(1.1, FLOOR + 0.01, -3.3),
+		[
+			_content(&"ganzuas", 0.9),
+			_content(&"tiza"),
+			_content(&"cizalla", 0.85),
+			_content(&"podometro", 0.9),
+		],
+		{"padre": true}
+	)
 	# Para trabajar: la escoba, la fregona, el cepillo, la palanca, el dosímetro y
 	# la leña.
 	var bench: Vector3 = DepotRoom.BENCH_CENTER
@@ -412,11 +424,11 @@ static func _content(
 	return entry
 
 
-func _box(item_id: StringName, where: Vector3, contents: Array) -> void:
+func _box(item_id: StringName, where: Vector3, contents: Array, more: Dictionary = {}) -> void:
+	var extra: Dictionary = {"contenido": contents}
+	extra.merge(more)
 	items.spawn_with(
-		item_id,
-		Transform3D(Basis.from_euler(Vector3(0.0, PI / 2.0, 0.0)), where),
-		{"contenido": contents}
+		item_id, Transform3D(Basis.from_euler(Vector3(0.0, PI / 2.0, 0.0)), where), extra
 	)
 
 

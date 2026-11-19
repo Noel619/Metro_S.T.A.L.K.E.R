@@ -1,0 +1,49 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/debug/buildings_diorama.gd" id="1_edificios"]
+[ext_resource type="PackedScene" path="res://scenes/style/ink_post.tscn" id="2_post"]
+
+[sub_resource type="Environment" id="Environment_menores"]
+tonemap_mode = 2
+
+[node name="DioramaTiendas" type="Node3D"]
+script = ExtResource("1_edificios")
+escena = "plaza"
+center = Vector2(222.0, 98.0)
+radius = 45.0
+
+[node name="Entorno" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_menores")
+
+[node name="Sol" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.82, 0.25, -0.51, 0, 0.9, 0.44, 0.57, -0.36, 0.73, 0, 20, 0)
+light_color = Color(0.86, 0.9, 0.98, 1)
+light_energy = 1.1
+shadow_enabled = true
+directional_shadow_max_distance = 120.0
+
+[node name="InkPost" parent="." instance=ExtResource("2_post")]
+
+[node name="CamaraTiendas" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -19.0, 1.7, 19.0)
+fov = 62.0
+
+[node name="Mira" type="Marker3D" parent="CamaraTiendas"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0, 1.2, -0.0)
+
+[node name="CamaraTiendaDentro" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.4, 1.5, 6.0)
+fov = 75.0
+
+[node name="Mira" type="Marker3D" parent="CamaraTiendaDentro"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.0, 0.8, 5.0)
+
+[node name="CamaraQuiosco" type="Camera3D" parent="." groups=["capture_camera"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -23.0, 1.7, -40.0)
+fov = 62.0
+
+[node name="Mira" type="Marker3D" parent="CamaraQuiosco"]
+top_level = true
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30.0, 1.5, -32.0)
