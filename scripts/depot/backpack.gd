@@ -12,8 +12,10 @@ extends Node
 ## modelos, sin física, encogidas si no caben en sus casillas) y la mochila pesa
 ## lo que lleva.
 
-## Lo que hay que mantener las manos para abrirla o cerrarla (en segundos).
+## Lo que hay que mantener las manos para abrirla o cerrarla (en segundos). Fuera
+## es lento: se abre de rodillas, con todo a la vista (README 6.5).
 const TOGGLE_WORK: float = 0.35
+const TOGGLE_WORK_OUTSIDE: float = 1.6
 ## La cuadrícula en los ejes de la mochila (tools/blender/recipes/mochila.py):
 ## el lado de una casilla, la esquina de la casilla (0, 0) (al fondo, a la
 ## izquierda) y la altura del suelo de dentro.
@@ -182,12 +184,13 @@ func toggle() -> void:
 	item.set_values({"extra": extra})
 
 
-## Mantener las manos sobre ella la abre o la cierra.
-func on_worked(_player: Node, tool: StringName, amount: float, _point: Vector3) -> void:
+## Mantener las manos sobre ella la abre o la cierra (fuera, más rato).
+func on_worked(player: Node, tool: StringName, amount: float, _point: Vector3) -> void:
 	if tool != Workable.HANDS or amount <= 0.0 or item.is_held():
 		return
+	var outside: bool = player is Player and (player as Player).surface
 	_hold += amount
-	if _hold >= TOGGLE_WORK:
+	if _hold >= (TOGGLE_WORK_OUTSIDE if outside else TOGGLE_WORK):
 		_hold = 0.0
 		toggle()
 

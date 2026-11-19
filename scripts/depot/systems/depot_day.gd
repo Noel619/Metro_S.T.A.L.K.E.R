@@ -88,6 +88,10 @@ func sleep() -> void:
 	if GameState.hungry_days >= GameState.HUNGRY_DEATH:
 		_starved()
 		return
+	# Para dormir, cada uno deja a sus pies la mochila y lo del cinturón: así se
+	# guarda con lo demás del depósito.
+	for node: Node in get_tree().get_nodes_in_group(Player.GROUP):
+		(node as Player).gear.unload()
 	SaveSystem.save_game()
 	await wake_everyone()
 

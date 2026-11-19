@@ -14,6 +14,8 @@ Cómo poner en marcha el proyecto, generar los assets y comprobar que todo funci
 | W A S D · ratón | Andar y mirar |
 | F | Coger lo que tienes delante (el punto de lápiz se convierte en una mano) y soltarlo |
 | Botón derecho, mantenido | Acerca el objeto a los ojos; el ratón lo gira |
+| I | Ponerse o quitarse la mochila |
+| 1 · 2 · 3 | Colgar del cinturón lo que llevas, o sacar lo que hay |
 | Esc | Suelta o recupera el ratón |
 | F9 | Abre la partida a otro jugador (puerto 24680) |
 | F10 | Te une a una partida abierta en la misma máquina |
@@ -45,7 +47,8 @@ Los modelos, las texturas y las ilustraciones ya vienen generados en el reposito
 | C o Ctrl | Agacharse o levantarse (debajo de algo no se puede) |
 | Q · E | Asomarse a la izquierda o a la derecha (la cabeza no se mete en las paredes) |
 | T | Linterna |
-| F · botones del ratón | Como en el depósito: coger, soltar, usar, abrir la mochila, acercar y girar |
+| F · botones del ratón | Como en el depósito: coger, soltar, usar, abrir la mochila (aquí, despacio), acercar y girar |
+| I · 1 2 3 | Ponerse o quitarse la mochila (para quitársela, se agacha) · colgar o sacar del cinturón |
 | F1 | Panel de depuración (la hora, el clima, el miedo…) |
 | F2 | Quita o pone los círculos de ruido: cada paso, un círculo rojo hasta donde llegaría |
 | F3 | Oculta la ayuda y la línea del aliento, el paso y el suelo |
@@ -341,6 +344,6 @@ CAPTURE_ARGS="--call=VisorEstilo:_load:3 --call=DioramaPatio:set_hour:18.75 --ca
 El juego arranca siempre como anfitrión sin invitados (`NetSession`). `make test-net` lanza dos pruebas con un anfitrión y un invitado en la misma máquina:
 
 - **caja**: el invitado ve moverse la caja de "Hola, Tumansk".
-- **deposito**: el invitado entra en el depósito, recibe su jugador y los 29 objetos, anda, coge una lata, se la lleva y la suelta; coge la escoba y barre una mancha de polvo; el anfitrión abre el mostrador y hace venir al relojero, y el invitado coge los billetes que deja por un despertador. El anfitrión comprueba que lo ve andar y llevar cosas, que la mancha está limpia y que la venta está apuntada; el invitado, que le llegan la mancha limpia y el dinero.
+- **deposito**: el invitado entra en el depósito, recibe su jugador y los 29 objetos, anda, coge una lata, se la lleva y la suelta; coge la escoba y barre una mancha de polvo; el anfitrión abre el mostrador y hace venir al relojero, y el invitado coge los billetes que deja por un despertador; al final, se pone la mochila. El anfitrión comprueba que lo ve andar, llevar cosas y con la mochila puesta, que la mancha está limpia, que la venta está apuntada y que al irse deja la mochila en el suelo; el invitado, que le llegan la mancha limpia, el dinero y la mochila puesta.
 
 Quién manda sobre qué está en [D-003](DECISIONES.md) y [D-046](DECISIONES.md).

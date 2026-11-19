@@ -149,6 +149,8 @@ var running: bool = false
 var lean: float = 0.0
 ## El aliento, la postura y los pasos en la superficie.
 var motion: SurfaceMotion = SurfaceMotion.new()
+## La mochila puesta y el cinturón (F3-03): manda el anfitrión.
+var gear: PlayerGear
 
 var _head: Node3D
 var _camera: Camera3D
@@ -227,6 +229,7 @@ func setup(new_peer: int, new_variant: String, new_slot: int) -> void:
 	sync.replication_config = config
 	add_child(sync)
 	set_multiplayer_authority(peer_id)
+	gear = PlayerGear.attach(self)
 
 
 func _ready() -> void:
@@ -282,6 +285,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			look(-mouse.relative.x * sensitivity, -mouse.relative.y * sensitivity)
 	elif event.is_action_pressed(&"interact"):
 		interact()
+	elif event.is_action_pressed(&"backpack"):
+		toggle_backpack()
+	elif _belt_slot(event) >= 0:
+		gear.request_belt.rpc_id(Carryable.HOST_PEER, _belt_slot(event))
 	elif surface and event.is_action_pressed(&"crouch"):
 		set_crouching(not crouching)
 	elif surface and event.is_action_pressed(&"flashlight") and _camera != null:
@@ -320,6 +327,8 @@ func _process(delta: float) -> void:
 	var face: StringName = &"esfuerzo" if _avatar.running else &"neutro"
 	if _avatar.expression != face:
 		_avatar.expression = face
+	if _avatar.backpack_visible != gear.wearing():
+		_avatar.backpack_visible = gear.wearing()
 	if not is_local() and crouching != _body_crouched:
 		_fit_body()
 
@@ -394,6 +403,22 @@ func interact() -> void:
 		if _arms != null:
 			_arms.reach()
 		_focus.interact(self)
+
+
+## Se pone la mochila (la que lleva en las manos o la que mira) o se la quita y
+## la deja en el suelo, delante. Fuera, para quitársela se agacha: abrirla allí
+## es lento y deja expuesto.
+func toggle_backpack() -> void:
+	if gear.wearing():
+		if surface:
+			set_crouching(true)
+		gear.request_backpack.rpc_id(Carryable.HOST_PEER, 0)
+		return
+	var target: Carryable = _held
+	if target == null and _focus != null and is_instance_valid(_focus):
+		target = _focus.get_parent().get_node_or_null(^"Carryable") as Carryable
+	if target != null and target.state.data.id == &"mochila":
+		gear.request_backpack.rpc_id(Carryable.HOST_PEER, target.state.uid)
 
 
 func eye_position() -> Vector3:
@@ -566,9 +591,10 @@ func set_held_item(item: Carryable) -> void:
 			_arms.hold(null)
 
 
-## Lo que lleva encima (kg): lo que tiene en las manos.
+## Lo que lleva encima (kg): lo que tiene en las manos y lo que lleva puesto.
 func carried_weight() -> float:
-	return _held.state.weight() if _held != null else 0.0
+	var hands: float = _held.state.weight() if _held != null else 0.0
+	return hands + (gear.weight() if gear != null else 0.0)
 
 
 ## Se agacha o se levanta (si cabe de pie). Solo en la superficie.
@@ -580,6 +606,14 @@ func set_crouching(value: bool) -> void:
 	crouching = value
 	motion.crouching = value
 	_fit_body()
+
+
+## El hueco del cinturón que pide [param event] (0, 1 o 2), o -1.
+static func _belt_slot(event: InputEvent) -> int:
+	for slot: int in PlayerGear.BELT_SLOTS:
+		if event.is_action_pressed(StringName("belt_%d" % (slot + 1))):
+			return slot
+	return -1
 
 
 ## Ajusta la cápsula del cuerpo a la postura. Los demás equipos lo hacen al
@@ -598,11 +632,14 @@ func standing_eyes() -> float:
 	return EYE_HEIGHTS[variant]
 
 
-## Cuánto frena lo que lleva: de 1 (nada) hacia 0.
+## Cuánto frena lo que lleva: de 1 (nada) hacia 0. Lo que va a la espalda o en
+## el cinturón frena menos que lo que se lleva en las manos.
 func carry_slowdown() -> float:
-	if _held == null:
+	var hands: float = _held.state.weight() if _held != null else 0.0
+	var worn: float = gear.weight() * PlayerGear.WORN_SLOWDOWN if gear != null else 0.0
+	if hands + worn <= 0.0:
 		return 1.0
-	return 1.0 / (1.0 + _held.state.weight() / HALF_SPEED_WEIGHT)
+	return 1.0 / (1.0 + (hands + worn) / HALF_SPEED_WEIGHT)
 
 
 ## Lo más que puede bajar la mirada ahora: sin nada en las manos, el límite de
@@ -837,7 +874,7 @@ func _hear_steps(delta: float) -> void:
 	if not motion.tick_steps(delta, gait):
 		return
 	var ground: float = SurfaceMotion.ground_loudness(ground_kind())
-	var loudness: float = SurfaceMotion.step_noise(gait, carried_weight(), 0.0, ground)
+	var loudness: float = SurfaceMotion.step_noise(gait, carried_weight(), gear.rattle(), ground)
 	EventBus.noise_made.emit(global_position, loudness, self)
 
 

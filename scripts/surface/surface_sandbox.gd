@@ -66,7 +66,8 @@ const HELP: String = (
 	"WASD andar · Mayús correr (mientras dure el aliento) · C o Ctrl agacharse · Q E asomarse"
 	+ " · T linterna\n"
 	+ "F coger, soltar y usar · botón izquierdo (mantener): abrir la mochila"
-	+ " · botón derecho: acercar y girar\n"
+	+ " · botón derecho: acercar y girar · I ponerse o quitarse la mochila"
+	+ " · 1 2 3 cinturón\n"
 	+ "F1 panel (hora, clima, miedo) · F2 círculos de ruido · F3 ocultar esto"
 	+ " · F5 reponer el botín · F9 abrir la partida · F10 unirse · Esc soltar el ratón"
 )
@@ -209,7 +210,11 @@ func restock() -> void:
 	for item: Carryable in items.items():
 		if not item.is_held():
 			items.remove_item(item)
+	var worn: bool = players().any(func(player: Player) -> bool: return player.gear.wearing())
 	for entry: Array in LOOT:
+		# La mochila es una: si alguien la lleva puesta, no sale otra.
+		if entry[0] == &"mochila" and worn:
+			continue
 		_drop_item(entry[0], entry[1], entry[2])
 
 
@@ -285,6 +290,7 @@ func _on_peer_left(peer: int) -> void:
 		return
 	if player.held_item() != null:
 		player.held_item().request_drop()
+	player.gear.unload()
 	player.queue_free()
 
 

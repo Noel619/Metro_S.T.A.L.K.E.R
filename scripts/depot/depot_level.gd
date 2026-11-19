@@ -24,7 +24,8 @@ const SPAWN_POINTS: Array[Vector3] = DepotDay.WAKE_SPOTS
 const HELP: String = (
 	"WASD andar · F coger, soltar y usar · botón izquierdo (mantener): trabajar con lo que llevas"
 	+ " · botón derecho: acercar y girar · rueda: precio y billetes\n"
-	+ "F9 abrir la partida · F10 unirse a una partida de esta máquina · F1 ocultar"
+	+ "I ponerse o quitarse la mochila · 1 2 3 colgar o sacar del cinturón"
+	+ " · F9 abrir la partida · F10 unirse a una partida de esta máquina · F1 ocultar"
 	+ " · Esc soltar el ratón"
 )
 
@@ -153,6 +154,8 @@ func _on_game_over() -> void:
 		return
 	if counter != null:
 		counter.close_for_the_night()
+	for player: Player in players():
+		player.gear.clear()
 	for item: Carryable in items.items():
 		item.force_drop()
 	world.load_state({})
@@ -246,6 +249,7 @@ func _on_peer_left(peer: int) -> void:
 		return
 	if player.held_item() != null:
 		player.held_item().request_drop()
+	player.gear.unload()
 	player.queue_free()
 
 

@@ -192,7 +192,7 @@ Lo que se puede ir juntando arriba, de lo más común a lo muy raro: **35 objeto
 |---|---|
 | ![La mochila abierta, con el botín de una salida en su cuadrícula](docs/capturas/fase3_mochila.jpg) | ![La mochila junto a la mesa de planificar](docs/capturas/fase3_mochila_planificar.jpg) |
 
-La mochila del stalker ya está en el depósito, en el suelo junto a la mesa de planificar: se abre manteniendo las manos sobre ella, y dentro tiene la cuadrícula de 6 × 5 de la que habla el diseño. Con algo en la mano, **F** lo mete en la casilla a la que apuntas (o donde quepa, girado si hace falta); con las manos vacías, **F** saca lo que hay. Cerrada se lleva como cualquier cosa y **pesa lo que lleva**, también en la báscula. Ya sabe qué suena si va suelto (el metal y el cristal) y qué se puede romper, para cuando haya superficie. Cómo se usa, en [DEPOSITO.md](docs/DEPOSITO.md#411-la-mochila-f3-03).
+La mochila del stalker ya está en el depósito, en el suelo junto a la mesa de planificar: se abre manteniendo las manos sobre ella, y dentro tiene la cuadrícula de 6 × 5 de la que habla el diseño. Con algo en la mano, **F** lo mete en la casilla a la que apuntas (o donde quepa, girado si hace falta); con las manos vacías, **F** saca lo que hay. Cerrada se lleva como cualquier cosa y **pesa lo que lleva**, también en la báscula. Ya sabe qué suena si va suelto (el metal y el cristal) y qué se puede romper. Con **I** te la pones a la espalda (pesa, pero frena menos que en las manos, y lo suelto suena a cada paso) y te la quitas: queda en el suelo, cerrada, y fuera abrirla es lento. El **cinturón** tiene tres huecos de acceso rápido (**1**, **2** y **3**) para lo pequeño: la linterna, la navaja, la brújula, la palanca. Cómo se usa, en [DEPOSITO.md](docs/DEPOSITO.md#411-la-mochila-f3-03).
 
 ### El jugador en la superficie (F3-01)
 
@@ -238,7 +238,7 @@ Fuera ya no se anda como en el depósito: **C** (o Ctrl) agacha, **Q** y **E** a
 2. **Fase 2**: jugar el depósito en tu PC, del primer día a la primera venta y a dormir, y contarme qué falla, qué sobra o qué no se entiende sin textos. Pendiente: el sonido (cuando lo decidas).
 3. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos). Ahora, con los edificios del kit, las calles residenciales cuestan entre 900 y 1.250 llamadas: es la medida que más interesa.
 4. **Los edificios** (F3-16): revisar las capturas, recorrer con F6 los dioramas de edificios y los de los tres singulares, y verlos en la maqueta (Ctrl+4 y Ctrl+5: el vestíbulo y la Casa de los Sóviets). Lo siguiente serían los interiores de serie, el resto de los sitios clave y, si el rendimiento lo pide, juntar las piezas iguales de cada manzana.
-5. **La mochila** (F3-03): en el depósito, mantener el botón sobre ella para abrirla y meter y sacar cosas con F. Decir si se entiende sin textos y si la cuadrícula se lee bien.
+5. **La mochila** (F3-03): en el depósito, mantener el botón sobre ella para abrirla y meter y sacar cosas con F; ponérsela y quitársela con I y colgar cosas del cinturón con 1, 2 y 3 (también en el patio de pruebas, donde abrirla es lento). Decir si se entiende sin textos y si la cuadrícula se lee bien.
 6. **El botín** (F3-18): revisar las capturas de la mesa del botín o abrirla con F6 (`scenes/style/diorama_botin.tscn`; C cambia de cámara) y decir si sobra o falta algo, o si alguna rareza o algún precio no cuadra.
 7. **El patio de pruebas** (F3-01): abrir `scenes/surface/patio_pruebas.tscn` con F6, agacharse, asomarse y correr hasta quedarse sin aliento, y decir si las velocidades, lo que dura el aliento y lo que suena cada paso se sienten bien.
 8. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
@@ -1061,7 +1061,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 - [x] **F3-01** Controlador de superficie: agacharse, asomarse, correr con aliento; ruido según el suelo, la postura y el peso. *(Hecho, con el ruido de los pasos, las animaciones con las que te ven los demás y el patio de pruebas para probarlo, a falta de tu revisión: ver [DESARROLLO.md](docs/DESARROLLO.md#el-patio-de-pruebas-de-la-superficie-f3-01) y [D-065](docs/DECISIONES.md).)*
 - [ ] **F3-02** Visibilidad: luz, sombra, silueta y movimiento determinan cuánto se te ve.
-- [ ] **F3-03** Mochila en cuadrícula y cinturón de 3 huecos. Abrirla en la superficie es lento. *(Hecha la mochila en el depósito: la cuadrícula de 6 × 5, abrirla, meter y sacar, lo que pesa y lo que suena suelto, replicada y guardada; ver [DEPOSITO.md](docs/DEPOSITO.md#411-la-mochila-f3-03). Faltan el cinturón, llevarla puesta y abrirla en la superficie.)*
+- [x] **F3-03** Mochila en cuadrícula y cinturón de 3 huecos. Abrirla en la superficie es lento. *(Hecha, a falta de tu revisión: la cuadrícula de 6 × 5, abrirla, meter y sacar, lo que pesa y lo que suena suelto, llevarla puesta, el cinturón y abrirla despacio fuera, replicado y guardado; ver [DEPOSITO.md](docs/DEPOSITO.md#411-la-mochila-f3-03) y [D-067](docs/DECISIONES.md). Que lo frágil se rompa al correr o al caer queda para cuando haya caídas.)*
 - [ ] **F3-04** **El cuaderno**: dibujar a mano (lápiz, goma, regla, colores, símbolos, notas), con trazos vectoriales que se guardan.
 - [ ] **F3-05** Instrumentos: brújula, podómetro, reloj y prismáticos.
 - [ ] **F3-06** Herramientas de acceso: ganzúas, palanca, cuerda y cizalla.
@@ -1080,7 +1080,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Entregable**: una salida de 10 a 20 minutos: subir por la escalera, llegar a un objetivo y volver.
 **Criterio de salida**: en las pruebas, los jugadores planifican antes de salir, dibujan su mapa, usan al menos dos rutas distintas y ninguna muerte se siente injusta.
-**Estado**: 🟨 empezada por la ciudad: F3-15 hecha, F3-16 con los exteriores de las viviendas hechos y F3-17 (la red de tránsito) casi, a falta de tu revisión. F3-18 (el botín) hecha, también a falta de tu revisión. F3-01 (el jugador en la superficie, con su patio de pruebas) hecha, a falta de tu revisión, y empezada la mochila (F3-03, en el depósito). La maqueta es geometría provisional y no depende del estilo, así que se ha adelantado mientras se aprueba la Fase 1; los edificios del kit siguen el estilo de la Fase 1 tal como está.
+**Estado**: 🟨 empezada por la ciudad: F3-15 hecha, F3-16 con los exteriores de las viviendas hechos y F3-17 (la red de tránsito) casi, a falta de tu revisión. F3-18 (el botín) hecha, también a falta de tu revisión. F3-01 (el jugador en la superficie, con su patio de pruebas) y F3-03 (la mochila, puesta y con su cinturón) hechas, a falta de tu revisión. La maqueta es geometría provisional y no depende del estilo, así que se ha adelantado mientras se aprueba la Fase 1; los edificios del kit siguen el estilo de la Fase 1 tal como está.
 
 ### Fase 4: El mundo vivo · tamaño L
 

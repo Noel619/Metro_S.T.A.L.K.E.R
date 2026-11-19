@@ -157,7 +157,10 @@ La mochila está desde el primer día en el suelo, a la izquierda de la mesa de 
 - **Meter**: con algo en la mano, F sobre la mochila abierta. Va a la casilla a la que apuntas si cabe ahí (girado, si hace falta), y si no, a la primera donde quepa. Si no cabe en ningún sitio, se queda en tu mano. Otra mochila no entra.
 - **Sacar**: con las manos vacías, F sobre lo que quieras de dentro: vuelve a tus manos, el mismo objeto, con su estado y su etiqueta.
 - **Abierta no se coge**: primero se cierra. Cerrada se lleva como cualquier cosa, y **pesa lo que lleva** (también en la báscula).
-- **Lo que suena**: el metal y el cristal sueltos (latas, botellas, herramientas) suenan; rodeados de otras cosas, no. Todavía no se oye (no hay sonido), pero la mochila ya lo sabe para cuando haya superficie.
+- **Lo que suena**: el metal y el cristal sueltos (latas, botellas, herramientas) suenan; rodeados de otras cosas, no. En la superficie, cada paso con la mochila puesta suena más cuanto más va suelto ([D-065](DECISIONES.md)).
+- **Ponérsela**: **I** con la mochila en las manos, o mirándola (si está abierta, se cierra sola). Puesta pesa, pero frena la mitad que en las manos; los demás te la ven a la espalda. **I** otra vez y te la quitas: queda en el suelo delante de ti, cerrada. Fuera te agachas para quitártela, y abrirla allí es lento (más de un segundo y medio con las manos encima): te deja expuesto.
+- **El cinturón**: tres huecos de acceso rápido, **1**, **2** y **3**. Con algo pequeño en la mano (hasta tres casillas en fila y 2,5 kg: la linterna, la navaja, la brújula, la palanca…), lo cuelga de ese hueco, y si había algo, te lo cambia a la mano; con las manos vacías, lo saca. Lo grande no se cuelga.
+- **Al dormir** cada uno deja a sus pies la mochila y lo del cinturón: así se guardan con lo demás del depósito. Lo mismo hace quien se va de la partida.
 
 ## 5. Cómo está hecho
 
@@ -177,6 +180,7 @@ La mochila está desde el primer día en el suelo, a la izquierda de la mesa de 
 | `DepotStation` | El puesto de comida y la vendedora, el buzón de los pagos, los avisos, el recibo y el precinto |
 | `DepotDay` | Dormir, medianoche, guardar, despertar y el hambre |
 | `Backpack`, `BackpackGrid` | La mochila: abrir, meter y sacar (lo pide quien lo hace y lo decide el anfitrión), y su cuadrícula (dónde va cada cosa, qué cabe, cuánto pesa y cuánto suena). Lo que lleva va en el estado de la propia mochila ([D-063](DECISIONES.md)) |
+| `PlayerGear` | Lo que cada jugador lleva puesto: la mochila y los tres huecos del cinturón. Es un nodo del jugador, pero manda el anfitrión ([D-067](DECISIONES.md)) |
 
 Los datos: las fichas de los objetos (`data/items/`, con qué herramienta son y qué hacen), las reparaciones (`data/reparaciones/`) y los clientes (`data/clientes/`).
 

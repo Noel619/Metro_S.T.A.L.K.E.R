@@ -10,9 +10,11 @@ extends SceneTree
 ## 3. El anfitrión abre (persiana, hora) y hace venir al relojero, que deja dinero
 ##    por un despertador con su etiqueta. El invitado coge los billetes del
 ##    mostrador: es aceptar, y ve entrar el dinero en la caja.
+## 4. El invitado se pone la mochila (F3-03): ya no está en el suelo y la lleva.
+##    Al irse, el anfitrión la deja en el suelo, donde estaba él.
 ##
 ## Cada uno comprueba lo que ve del otro: el anfitrión, que el invitado anda,
-## lleva cosas, barre y vende; el invitado, que todo eso le llega.
+## lleva cosas, barre, vende y se pone la mochila; el invitado, que todo eso le llega.
 ##
 ## No se lanza a mano: lo hace tools/test_net.sh. Este guion no nombra las
 ## clases del juego: se compila antes de que existan las autocargas.
@@ -31,6 +33,7 @@ var _finished: bool = false
 var _level: Node
 var _guest_seen_moving: bool = false
 var _guest_seen_carrying: bool = false
+var _guest_seen_wearing: bool = false
 var _guest_start: Vector3 = Vector3.INF
 var _sale_started: bool = false
 
@@ -82,6 +85,8 @@ func _watch_guest() -> void:
 			_guest_seen_moving = true
 		if player.held_item() != null:
 			_guest_seen_carrying = true
+		if player.gear.wearing():
+			_guest_seen_wearing = true
 	if not _sale_started and _dust().call("is_clean"):
 		_sale_started = true
 		_open_for_a_sale()
@@ -124,7 +129,11 @@ func _play_as_guest() -> void:
 		return
 	if not await _sweep(me):
 		return
-	await _accept_a_sale(me)
+	if not await _accept_a_sale(me):
+		return
+	if not await _wear_backpack(me):
+		return
+	_finish(true, "ha barrido, ha vendido el despertador por %d ₽ y lleva la mochila" % SALE_PRICE)
 
 
 ## El invitado va a por una lata del banco, la coge, se la lleva y la suelta.
@@ -187,7 +196,7 @@ func _sweep(me: Node) -> bool:
 
 
 ## Espera al relojero y coge sus billetes del mostrador.
-func _accept_a_sale(me: Node) -> void:
+func _accept_a_sale(me: Node) -> bool:
 	var state: Node = root.get_node("GameState")
 	var wad: Array = [null]
 	var offered: Callable = func() -> bool:
@@ -197,22 +206,51 @@ func _accept_a_sale(me: Node) -> void:
 				return true
 		return false
 	if not await _until(offered, "el relojero no deja dinero"):
-		return
+		return false
 	var start: int = state.get("rubles")
 	# Coger los billetes es aceptar: el anfitrión los quita enseguida (entran en la caja).
 	if not await _pick_up(me, wad[0], "los billetes", Vector3(-0.3, 0.03, 2.45), false):
-		return
+		return false
 	var paid: Callable = func() -> bool: return int(state.get("rubles")) == start + SALE_PRICE
 	if not await _until(paid, "los billetes no entran en la caja"):
-		return
+		return false
 	var gone: Callable = func() -> bool:
 		for item: Node in _level.items.items():
 			if item.state.data.id == &"despertador":
 				return false
 		return true
 	if not await _until(gone, "el relojero no se lleva el despertador"):
-		return
-	_finish(true, "ha barrido, ha vendido el despertador por %d ₽ y lo ve todo" % SALE_PRICE)
+		return false
+	print("[client] ha vendido el despertador y ve el dinero en la caja")
+	return true
+
+
+## Se pone la mochila que hay en el suelo. Lo decide el anfitrión cuando lo ve a
+## su lado: la petición se repite cada segundo hasta que llega puesta.
+func _wear_backpack(me: Node) -> bool:
+	var bag: Node = null
+	for item: Node in _level.items.items():
+		if item.state.data.id == &"mochila":
+			bag = item
+	if bag == null:
+		_finish(false, "no encuentra la mochila")
+		return false
+	var uid: int = bag.state.uid
+	me.position = bag.get_parent().global_position + Vector3(0.0, 0.03, 0.9)
+	me.rotation.y = 0.0
+	while not me.gear.wearing():
+		me.gear.request_backpack.rpc_id(1, uid)
+		var waited: float = _elapsed
+		while not me.gear.wearing() and _elapsed - waited < 1.0:
+			if _finished or _elapsed > TIMEOUT - 1.0:
+				_finish(false, "no le llega la mochila puesta")
+				return false
+			await physics_frame
+	var lifted: Callable = func() -> bool: return _level.items.find_item(uid) == null
+	if not await _until(lifted, "la mochila puesta sigue en el suelo"):
+		return false
+	print("[client] lleva la mochila puesta y ya no la ve en el suelo")
+	return true
 
 
 ## Se pone delante de [param item], lo mira y lo coge (lo decide el anfitrión).
@@ -291,14 +329,29 @@ func _on_guest_left(_peer_id: int) -> void:
 	var sales: Array = root.get_node("GameState").get("ledger").filter(
 		func(entry: Dictionary) -> bool: return entry["kind"] == "venta"
 	)
+	# Al irse, su mochila se queda en el suelo del depósito.
+	var left_behind: bool = _level.items.items().any(
+		func(item: Node) -> bool: return item.state.data.id == &"mochila"
+	)
 	var seen: bool = (
-		_guest_seen_moving and _guest_seen_carrying and _dust().is_clean() and sales.size() == 1
+		_guest_seen_moving
+		and _guest_seen_carrying
+		and _dust().is_clean()
+		and sales.size() == 1
+		and _guest_seen_wearing
+		and left_behind
 	)
 	_finish(
 		seen,
 		(
-			"invitado visto andando: %s; llevando cosas: %s; mancha barrida: %s; ventas: %d"
-			% [_guest_seen_moving, _guest_seen_carrying, _dust().is_clean(), sales.size()]
+			(
+				"invitado visto andando: %s; llevando cosas: %s; mancha barrida: %s; ventas: %d;"
+				% [_guest_seen_moving, _guest_seen_carrying, _dust().is_clean(), sales.size()]
+			)
+			+ (
+				" con la mochila puesta: %s; la deja al irse: %s"
+				% [_guest_seen_wearing, left_behind]
+			)
 		)
 	)
 
