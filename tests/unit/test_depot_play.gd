@@ -291,7 +291,7 @@ func test_starving_starts_over() -> void:
 	assert_eq(GameState.day, 1, "vuelve a ser el primer día")
 	assert_eq(GameState.hungry_days, 0)
 	assert_almost(chores.dirt[0].dirt(), 1.0, 0.001, "el local, sucio otra vez")
-	assert_eq(_items.items().size(), 28, "con lo que dejó el antiguo dueño")
+	assert_eq(_items.items().size(), 29, "con lo que dejó el antiguo dueño y la mochila")
 	assert_true(GameState.clock_running, "y la hora corre")
 
 

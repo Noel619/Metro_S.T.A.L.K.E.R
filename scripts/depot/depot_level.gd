@@ -28,6 +28,10 @@ const HELP: String = (
 	+ " · Esc soltar el ratón"
 )
 
+## Donde está la mochila el primer día: en el suelo, a la izquierda de la mesa
+## de planificar.
+const BACKPACK_SPOT: Vector3 = Vector3(1.45, DepotRoom.FLOOR + 0.005, -3.0)
+
 ## Seguir la partida guardada si la hay (los tests lo apagan).
 static var continue_saved: bool = true
 
@@ -136,6 +140,7 @@ func _start_as_host() -> void:
 		loaded = SaveSystem.load_game() == OK
 	if not loaded:
 		_new_game()
+	_ensure_backpack()
 	GameState.clock_running = true
 	GameState.push()
 	_spawn_player(multiplayer.get_unique_id(), _variant)
@@ -153,6 +158,7 @@ func _on_game_over() -> void:
 	world.load_state({})
 	items.clear()
 	_new_game()
+	_ensure_backpack()
 
 
 ## El primer día: el local como lo dejó el antiguo dueño.
@@ -344,6 +350,18 @@ func _stock() -> void:
 		[&"lata_vacia", Vector3(-3.4, FLOOR + 0.02, 1.0)],
 	]:
 		_item(entry[0], entry[1], rng.randf_range(0.0, 360.0))
+
+
+## La mochila, tirada en el suelo junto a la mesa de planificar: está desde el
+## primer día y, si falta (una partida guardada de antes de que existiera), se
+## pone ahí. Solo el anfitrión.
+func _ensure_backpack() -> void:
+	if not multiplayer.is_server():
+		return
+	for item: Carryable in items.items():
+		if item.state.data.id == &"mochila":
+			return
+	_item(&"mochila", BACKPACK_SPOT, 8.0)
 
 
 ## Un sitio en una balda: [param rack] (de [constant DepotRoom.RACKS]), a lo

@@ -69,6 +69,9 @@ const SCRAP_SHARE: float = 0.1
 @export_range(0.0, 2.0, 0.05) var nutrition: float = 0.0
 ## Es basura: su sitio es la bolsa del cubo.
 @export var trash: bool = false
+## Suena si va suelto en la mochila: el metal y el cristal (latas, botellas,
+## herramientas). Ver [method BackpackGrid.rattle].
+@export var rattles: bool = false
 ## Lo que cuesta encontrarlo arriba: cuanto más raro, menos ejemplares en la
 ## ciudad y más lejos de la estación.
 @export var rarity: Rarity = Rarity.COMUN

@@ -7,7 +7,8 @@ extends Node3D
 ## cajas del antiguo dueño. Con "--abierto" (después de "--"), el local ya
 ## limpio y abierto: el relojero en la ventanilla con su papelito, un encargo en
 ## el corcho, una radio a medio arreglar en el banco, la pila corriendo y la
-## vendedora en su puesto.
+## vendedora en su puesto. Con "--mochila", la mochila abierta junto a la mesa de
+## planificar, llena del botín de una salida.
 
 const LEVEL: String = "res://scenes/depot/deposito.tscn"
 ## [nombre, desde, hacia] de cada cámara.
@@ -25,6 +26,24 @@ const VIEWS: Array = [
 	["cliente", Vector3(0.2, 1.55, 2.3), Vector3(0.0, 1.35, 4.3)],
 	["telarana", Vector3(-2.6, 1.7, 1.6), Vector3(-4.38, 2.4, 3.0)],
 	["encargos", Vector3(-2.2, 1.5, 1.8), Vector3(-3.0, 1.4, 3.25)],
+	["mochila", Vector3(1.47, 0.95, -2.42), Vector3(1.45, 0.03, -3.0)],
+	["planificar", Vector3(2.9, 1.6, -1.25), Vector3(1.75, 0.3, -3.05)],
+]
+## Lo que se mete en la mochila con "--mochila": una salida que ha ido bien.
+const LOOT: Array[StringName] = [
+	&"bateria_coche",
+	&"gorro_orejeras",
+	&"leche_condensada",
+	&"lata_espadines",
+	&"filtro",
+	&"pila_petaca",
+	&"manoplas",
+	&"tarro_pepinillos",
+	&"analgesicos",
+	&"cinta_aislante",
+	&"reloj_pulsera",
+	&"velas",
+	&"botiquin_militar",
 ]
 
 var level: DepotLevel
@@ -43,7 +62,29 @@ func _ready() -> void:
 		camera.look_at_from_position(view[1], view[2])
 	if OS.get_cmdline_user_args().has("--abierto"):
 		_open_for_business.call_deferred()
+	if OS.get_cmdline_user_args().has("--mochila"):
+		_fill_backpack.call_deferred()
 	_hide_player.call_deferred()
+
+
+## La mochila abierta junto a la mesa de planificar, con el botín de una salida.
+func _fill_backpack() -> void:
+	await get_tree().physics_frame
+	for item: Carryable in level.items.items():
+		var backpack: Backpack = Backpack.of(item.body())
+		if backpack == null:
+			continue
+		backpack.toggle()
+		for item_id: StringName in LOOT:
+			backpack.stash(ItemState.create(item_id, 0))
+		return
+
+
+## Deja solo una cámara para las capturas (con --call=RevisionDeposito:only:Camara_mochila).
+func only(camera_name: String) -> void:
+	for camera: Node in get_tree().get_nodes_in_group(&"capture_camera"):
+		if camera.name != camera_name:
+			camera.remove_from_group(&"capture_camera")
 
 
 ## Las manos de primera persona del jugador no se ven desde otras cámaras.

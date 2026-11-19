@@ -13,4 +13,5 @@ grid_shape = Array[Vector2i]([Vector2i(0, 0), Vector2i(1, 0), Vector2i(0, 1), Ve
 fragility = 0.0
 base_value = 2
 sold_by_weight = true
+rattles = true
 found_in = Array[StringName]([&"garaje", &"taller", &"fabrica", &"vehiculo"])

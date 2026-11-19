@@ -147,6 +147,18 @@ Sin sonido por ahora (decisión del equipo). Polvo al barrer, al quitar telarañ
 
 Todo lo hace el anfitrión y lo ven todos: la limpieza, el estado de cada cosa, el dinero, la hora, los clientes y los tratos. Cada jugador trabaja con lo suyo (lo que lleva en las manos, lo que mira de cerca) y pide al anfitrión que lo aplique.
 
+### 4.11 La mochila (F3-03)
+
+![La mochila abierta, con el botín de una salida en su cuadrícula](capturas/fase3_mochila.jpg)
+
+La mochila está desde el primer día en el suelo, a la izquierda de la mesa de planificar: es donde se prepara una salida y donde se vacía al volver.
+
+- **Abrirla y cerrarla**: con las manos vacías, mantener el botón izquierdo sobre ella (como las cajas del antiguo dueño). La tapa cae hacia atrás y se ve el fondo, cosido en una cuadrícula de 6 × 5 compartimentos.
+- **Meter**: con algo en la mano, F sobre la mochila abierta. Va a la casilla a la que apuntas si cabe ahí (girado, si hace falta), y si no, a la primera donde quepa. Si no cabe en ningún sitio, se queda en tu mano. Otra mochila no entra.
+- **Sacar**: con las manos vacías, F sobre lo que quieras de dentro: vuelve a tus manos, el mismo objeto, con su estado y su etiqueta.
+- **Abierta no se coge**: primero se cierra. Cerrada se lleva como cualquier cosa, y **pesa lo que lleva** (también en la báscula).
+- **Lo que suena**: el metal y el cristal sueltos (latas, botellas, herramientas) suenan; rodeados de otras cosas, no. Todavía no se oye (no hay sonido), pero la mochila ya lo sabe para cuando haya superficie.
+
 ## 5. Cómo está hecho
 
 | Pieza | Qué es |
@@ -164,10 +176,11 @@ Todo lo hace el anfitrión y lo ven todos: la limpieza, el estado de cada cosa, 
 | `DepotCounter` | La caja de los rublos, el libro, el corcho, el reloj y los clientes (`Customer`, con sus datos en `CustomerData`) |
 | `DepotStation` | El puesto de comida y la vendedora, el buzón de los pagos, los avisos, el recibo y el precinto |
 | `DepotDay` | Dormir, medianoche, guardar, despertar y el hambre |
+| `Backpack`, `BackpackGrid` | La mochila: abrir, meter y sacar (lo pide quien lo hace y lo decide el anfitrión), y su cuadrícula (dónde va cada cosa, qué cabe, cuánto pesa y cuánto suena). Lo que lleva va en el estado de la propia mochila ([D-063](DECISIONES.md)) |
 
 Los datos: las fichas de los objetos (`data/items/`, con qué herramienta son y qué hacen), las reparaciones (`data/reparaciones/`) y los clientes (`data/clientes/`).
 
-Para verlo sin jugar: `scenes/debug/revision_deposito.tscn` monta el depósito con cámaras fijas (el primer día; con `--abierto`, el local limpio y abierto, con el relojero en la ventanilla). Las pruebas están en `tests/unit/test_depot_play.gd` (el recorrido entero en solitario) y `tests/net/net_depot.gd` (dos equipos).
+Para verlo sin jugar: `scenes/debug/revision_deposito.tscn` monta el depósito con cámaras fijas (el primer día; con `--abierto`, el local limpio y abierto, con el relojero en la ventanilla; con `--mochila`, la mochila abierta y llena; `--call=RevisionDeposito:only:Camara_mochila` deja una sola cámara). Las pruebas están en `tests/unit/test_depot_play.gd` (el recorrido entero en solitario), `tests/unit/test_backpack.gd` y `test_backpack_play.gd` (la mochila) y `tests/net/net_depot.gd` (dos equipos).
 
 ## 6. Estado
 

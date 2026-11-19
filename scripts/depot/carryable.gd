@@ -62,6 +62,8 @@ const LANDED_SPEED: float = 0.4
 var state: ItemState
 ## Quién lo lleva (0: nadie).
 var holder_peer: int = 0
+## Se puede coger (una mochila abierta, no: lo que se hace con ella es meter y sacar).
+var grabbable: bool = true
 ## Su estado tal como se replica ([method ItemState.to_dict]): lo cambia el
 ## anfitrión con [method set_values] y lo recibe quien llega tarde.
 var synced_state: Dictionary = {}:
@@ -161,14 +163,14 @@ func hold_target() -> Transform3D:
 
 
 func _on_interacted(player: Node) -> void:
-	if not is_held() and player is Player and (player as Player).can_carry():
+	if grabbable and not is_held() and player is Player and (player as Player).can_carry():
 		request_grab.rpc_id(HOST_PEER)
 
 
 ## Un jugador pide coger el objeto. Decide el anfitrión.
 @rpc("any_peer", "call_local", "reliable")
 func request_grab() -> void:
-	if not multiplayer.is_server() or is_held():
+	if not multiplayer.is_server() or is_held() or not grabbable:
 		return
 	var peer: int = _sender()
 	var player: Player = Player.find(get_tree(), peer)
@@ -187,7 +189,7 @@ func give_to(peer: int) -> void:
 	var player: Player = Player.find(get_tree(), peer)
 	if player != null and player.held_item() == null:
 		# Aparece en sus manos (no viene volando desde donde estuviera).
-		_body.global_transform = player.hold_transform(state.data.weight, _bounds)
+		_body.global_transform = player.hold_transform(state.weight(), _bounds)
 		_body.linear_velocity = Vector3.ZERO
 		_body.angular_velocity = Vector3.ZERO
 		_set_holder.rpc(peer)
@@ -222,7 +224,7 @@ func _set_holder(peer: int) -> void:
 		player.set_held_item(self)
 	if multiplayer.is_server():
 		_body.gravity_scale = 0.0 if is_held() else 1.0
-		_body.continuous_cd = is_held() or state.data.weight < CCD_WEIGHT
+		_body.continuous_cd = is_held() or state.weight() < CCD_WEIGHT
 		_body.sleeping = false
 	holder_changed.emit(peer)
 

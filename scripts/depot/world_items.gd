@@ -76,7 +76,17 @@ func give(player: Player, item_id: StringName, extra: Dictionary = {}) -> Carrya
 	if state.data == null:
 		return null
 	state.extra = extra.duplicate(true)
-	var where: Transform3D = player.hold_transform(state.data.weight)
+	return give_state(player, state)
+
+
+## Pone en las manos de [param player] un objeto con su estado (lo que se saca de
+## la mochila). Solo el anfitrión.
+func give_state(player: Player, state: ItemState) -> Carryable:
+	if not multiplayer.is_server() or player == null or player.held_item() != null:
+		return null
+	if state == null or state.data == null:
+		return null
+	var where: Transform3D = player.hold_transform(state.weight())
 	var holder: Node3D = spawn_state(state, where)
 	var item: Carryable = holder.find_child("Carryable", true, false) as Carryable
 	var peer: int = player.peer_id
@@ -194,10 +204,10 @@ func _build(values: Dictionary) -> Node:
 	holder.name = "objeto_%d" % state.uid
 	var body: RigidBody3D = holder.find_children("*", "RigidBody3D", true, false)[0]
 	body.transform = values["where"]
-	body.mass = state.data.weight
+	body.mass = maxf(0.05, state.weight())
 	body.collision_layer = LAYER_OBJECTS
 	body.collision_mask = MASK_OBJECTS
-	body.continuous_cd = state.data.weight < Carryable.CCD_WEIGHT
+	body.continuous_cd = state.weight() < Carryable.CCD_WEIGHT
 	# Las mallas cuelgan de un nodo propio: quien lo lleva lo dibuja en sus manos
 	# aunque el cuerpo físico vaya un poco por detrás (Carryable).
 	var visual: Node3D = Node3D.new()

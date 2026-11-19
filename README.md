@@ -186,6 +186,14 @@ Lo que se puede ir juntando arriba, de lo más común a lo muy raro: **35 objeto
 - **Para verlos**: en Godot, `scenes/style/diorama_botin.tscn` con **F6** (C cambia de cámara), o en el visor de estilo. Cómo se hacen y cómo se añaden más, en [DESARROLLO.md](docs/DESARROLLO.md#el-botín-de-la-superficie-f3-18).
 - **Falta**: repartirlos por la ciudad, que llega con las zonas (F3-14 y F6-08).
 
+### La mochila (F3-03)
+
+| | |
+|---|---|
+| ![La mochila abierta, con el botín de una salida en su cuadrícula](docs/capturas/fase3_mochila.jpg) | ![La mochila junto a la mesa de planificar](docs/capturas/fase3_mochila_planificar.jpg) |
+
+La mochila del stalker ya está en el depósito, en el suelo junto a la mesa de planificar: se abre manteniendo las manos sobre ella, y dentro tiene la cuadrícula de 6 × 5 de la que habla el diseño. Con algo en la mano, **F** lo mete en la casilla a la que apuntas (o donde quepa, girado si hace falta); con las manos vacías, **F** saca lo que hay. Cerrada se lleva como cualquier cosa y **pesa lo que lleva**, también en la báscula. Ya sabe qué suena si va suelto (el metal y el cristal) y qué se puede romper, para cuando haya superficie. Cómo se usa, en [DEPOSITO.md](docs/DEPOSITO.md#411-la-mochila-f3-03).
+
 ### Decisiones tomadas
 
 | Tema | Decisión |
@@ -221,8 +229,9 @@ Lo que se puede ir juntando arriba, de lo más común a lo muy raro: **35 objeto
 2. **Fase 2**: jugar el depósito en tu PC, del primer día a la primera venta y a dormir, y contarme qué falla, qué sobra o qué no se entiende sin textos. Pendiente: el sonido (cuando lo decidas).
 3. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos). Ahora, con los edificios del kit, las calles residenciales cuestan entre 900 y 1.250 llamadas: es la medida que más interesa.
 4. **Los edificios** (F3-16): revisar las capturas, recorrer con F6 los dioramas de edificios y los de los tres singulares, y verlos en la maqueta (Ctrl+4 y Ctrl+5: el vestíbulo y la Casa de los Sóviets). Lo siguiente serían los interiores de serie, el resto de los sitios clave y, si el rendimiento lo pide, juntar las piezas iguales de cada manzana.
-5. **El botín** (F3-18): revisar las capturas de la mesa del botín o abrirla con F6 (`scenes/style/diorama_botin.tscn`; C cambia de cámara) y decir si sobra o falta algo, o si alguna rareza o algún precio no cuadra.
-6. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
+5. **La mochila** (F3-03): en el depósito, mantener el botón sobre ella para abrirla y meter y sacar cosas con F. Decir si se entiende sin textos y si la cuadrícula se lee bien.
+6. **El botín** (F3-18): revisar las capturas de la mesa del botín o abrirla con F6 (`scenes/style/diorama_botin.tscn`; C cambia de cámara) y decir si sobra o falta algo, o si alguna rareza o algún precio no cuadra.
+7. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
 
 ---
 
@@ -1042,7 +1051,7 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 - [ ] **F3-01** Controlador de superficie: agacharse, asomarse, correr con aliento; ruido según el suelo, la postura y el peso.
 - [ ] **F3-02** Visibilidad: luz, sombra, silueta y movimiento determinan cuánto se te ve.
-- [ ] **F3-03** Mochila en cuadrícula y cinturón de 3 huecos. Abrirla en la superficie es lento.
+- [ ] **F3-03** Mochila en cuadrícula y cinturón de 3 huecos. Abrirla en la superficie es lento. *(Hecha la mochila en el depósito: la cuadrícula de 6 × 5, abrirla, meter y sacar, lo que pesa y lo que suena suelto, replicada y guardada; ver [DEPOSITO.md](docs/DEPOSITO.md#411-la-mochila-f3-03). Faltan el cinturón, llevarla puesta y abrirla en la superficie.)*
 - [ ] **F3-04** **El cuaderno**: dibujar a mano (lápiz, goma, regla, colores, símbolos, notas), con trazos vectoriales que se guardan.
 - [ ] **F3-05** Instrumentos: brújula, podómetro, reloj y prismáticos.
 - [ ] **F3-06** Herramientas de acceso: ganzúas, palanca, cuerda y cizalla.

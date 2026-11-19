@@ -4,7 +4,7 @@
 # la documentación y con qué nombre. Necesita Pillow (para el JPG).
 #
 # Uso: tools/capturas_docs.sh [filtro]
-#   filtro: solo los grupos cuyo nombre lo contenga (deposito, consigna, equipo, botin, patio,
+#   filtro: solo los grupos cuyo nombre lo contenga (deposito, consigna, equipo, botin, mochila, patio,
 #   interfaz, maqueta, kit, singulares).
 set -eu
 cd "$(dirname "$0")/.."
@@ -63,6 +63,13 @@ if want equipo; then
     capture style/diorama_equipo equipo
     keep equipo_camara_mesa fase1_equipo
     keep equipo_camara_detalle fase1_equipo_detalle
+fi
+if want mochila; then
+    # La mochila (F3-03): abierta y llena junto a la mesa de planificar.
+    capture debug/revision_deposito mochila "--sin-ayuda --mochila --abierto --call=RevisionDeposito:only:Camara_mochila" 40
+    keep mochila fase3_mochila
+    capture debug/revision_deposito planificar "--sin-ayuda --mochila --abierto --call=RevisionDeposito:only:Camara_planificar" 40
+    keep planificar fase3_mochila_planificar
 fi
 if want botin; then
     # El botín de la superficie (F3-18): la mesa entera y una cámara por cada cuatro objetos.

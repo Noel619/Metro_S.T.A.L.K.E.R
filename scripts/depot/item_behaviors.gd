@@ -26,6 +26,16 @@ static func attach(items: WorldItems, body: RigidBody3D, item: Carryable) -> voi
 		_add(items, body, item, "Comer", [&"comida"], Workable.Gesture.HOLD).self_use = true
 	if item.state.extra.has("contenido"):
 		_add(items, body, item, "Abrir", [Workable.HANDS], Workable.Gesture.PULL)
+	if data.id == &"mochila":
+		var backpack: Backpack = Backpack.new()
+		backpack.name = "Mochila"
+		backpack.item = item
+		backpack.items = items
+		body.add_child(backpack)
+		var flap: Workable = _add(
+			items, body, item, "Abrir", [Workable.HANDS], Workable.Gesture.HOLD
+		)
+		flap.worked.connect(backpack.on_worked)
 	var recipe: RepairRecipe = RepairRecipe.for_item(data.id)
 	if recipe != null:
 		var repair: Workable = _add(items, body, item, "Reparar", [], Workable.Gesture.STROKE)
@@ -35,7 +45,7 @@ static func attach(items: WorldItems, body: RigidBody3D, item: Carryable) -> voi
 	# Lo pesado que cae levanta polvo (lo que pesa poco no se nota).
 	item.landed.connect(
 		func(speed: float) -> void:
-			var amount: float = clampf(item.state.data.weight / 6.0 + speed / 6.0, 0.0, 1.2)
+			var amount: float = clampf(item.state.weight() / 6.0 + speed / 6.0, 0.0, 1.2)
 			if amount > 0.35:
 				items.puff.rpc(item.body().global_position, amount)
 	)

@@ -13,4 +13,5 @@ grid_shape = Array[Vector2i]([Vector2i(0, 0)])
 fragility = 0.4
 base_value = 20
 sold_by_weight = false
+rattles = true
 found_in = Array[StringName]([&"piso"])

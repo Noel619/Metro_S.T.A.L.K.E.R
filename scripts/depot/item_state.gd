@@ -6,6 +6,8 @@ extends RefCounted
 ## puede replicar (README 13.1): por eso el estado viaja como diccionario.
 
 const ITEMS_DIR: String = "res://data/items/"
+## La clave de [member extra] con lo que pesa lo que lleva dentro.
+const INSIDE_WEIGHT: String = "peso_dentro"
 
 var data: ItemData
 ## Identificador único en la partida.
@@ -64,6 +66,14 @@ func to_dict() -> Dictionary:
 ## Lo que vale ahora mismo, sin regatear.
 func value() -> int:
 	return data.value(condition, contamination)
+
+
+## Lo que pesa, con lo que lleva dentro (una mochila llena pesa más que vacía):
+## lo de dentro lo apunta el anfitrión al meter o sacar algo, en [constant INSIDE_WEIGHT].
+func weight() -> float:
+	if data == null:
+		return 0.0
+	return data.weight + float(extra.get(INSIDE_WEIGHT, 0.0))
 
 
 ## Cuánto contamina lo de alrededor: nada si está embolsado.

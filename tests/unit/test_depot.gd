@@ -25,7 +25,7 @@ func test_player_spawns_on_the_floor_with_everything_in_place() -> void:
 	assert_true(_player.is_on_floor(), "pisa el suelo")
 	assert_eq(_player.slot, 0, "el anfitrión es el primer color")
 	var items: Array[Carryable] = (_level.get("items") as WorldItems).items()
-	assert_eq(items.size(), 28)
+	assert_eq(items.size(), 29, "lo del antiguo dueño y la mochila")
 	for item: Carryable in items:
 		var body: RigidBody3D = item.get_parent()
 		assert_true(body.global_position.y > -0.05, "%s no atraviesa el suelo" % item.state.data.id)

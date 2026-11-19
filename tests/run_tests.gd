@@ -1,13 +1,49 @@
 extends SceneTree
 ## Ejecuta todos los tests de tests/unit/ sin pantalla.
-## Sale con código 1 si alguno falla.
+## Sale con código 1 si alguno falla. Un test también falla si provoca un error
+## de script (un acceso a algo ya liberado, un método que no existe…): sin esto,
+## el test se cortaba en ese punto y contaba como bueno.
 ##
 ## Uso: godot --headless --path . -s tests/run_tests.gd
 
 const UNIT_DIR: String = "res://tests/unit/"
 
+var _errors: ScriptErrors = ScriptErrors.new()
+
+
+## Recoge los errores de script mientras corre un test.
+class ScriptErrors:
+	extends Logger
+	var _lines: PackedStringArray = []
+	var _mutex: Mutex = Mutex.new()
+
+	func _log_error(
+		function: String,
+		file: String,
+		line: int,
+		code: String,
+		_rationale: String,
+		_editor_notify: bool,
+		error_type: int,
+		_script_backtrace: Array[ScriptBacktrace]
+	) -> void:
+		if error_type != ERROR_TYPE_SCRIPT:
+			return
+		_mutex.lock()
+		_lines.append("error de script: %s (%s:%d, %s)" % [code, file.get_file(), line, function])
+		_mutex.unlock()
+
+	## Los errores recogidos desde la última vez.
+	func take() -> PackedStringArray:
+		_mutex.lock()
+		var lines: PackedStringArray = _lines.duplicate()
+		_lines.clear()
+		_mutex.unlock()
+		return lines
+
 
 func _initialize() -> void:
+	OS.add_logger(_errors)
 	_run.call_deferred()
 
 
@@ -29,9 +65,11 @@ func _run() -> void:
 			var test_case: Node = script.new()
 			test_case.current_test = test_name
 			root.add_child(test_case)
+			_errors.take()
 			await test_case.before_each()
 			await test_case.call(test_name)
 			await test_case.after_each()
+			test_case.failures.append_array(_errors.take())
 			if test_case.failures.is_empty():
 				print("  ok    %s › %s" % [file_name, test_name])
 			else:

@@ -227,6 +227,7 @@ Lo que se mueve o se enciende en el juego es un nodo propio dentro del modelo, c
 | `reloj_bolsillo` | `tapa` | `rotation.z` sobre la bisagra de las nueve: a 0° está cerrada (viene abierta, a 125°) |
 | `medalla` | `tapa` | `rotation.x` sobre la bisagra de atrás: a 0° está cerrada (viene abierta, a -104°) |
 | `quinque` | `foco` | Punto donde colgar la luz de la llama |
+| `mochila` | `tapa` | `rotation.x` sobre la bisagra de arriba: a 0° está cerrada; abierta, a -202° (pasa por encima y cae hacia atrás, hasta el suelo) |
 
 Las herramientas que se empuñan (`martillo`, `palanca`, `navaja`, `llave_inglesa`, `alicates`) llevan un nodo vacío `agarre` en el punto por donde las coge la mano. La `cizalla`, que es de dos manos, lleva `agarre` y `agarre_2`.
 
@@ -245,6 +246,10 @@ Lo que se puede juntar arriba, de lo común a lo muy raro: 35 modelos en cuatro 
 - **Para verlos**: `scenes/style/diorama_botin.tscn` (F6), la mesa del botín. Hay una fila por rareza, con su cartel, y cada objeto lleva su etiqueta con el nombre de la ficha. La mesa se reparte sola según lo que mide cada objeto y crea una cámara de cerca por cada cuatro objetos (`CamaraComun1`… `CamaraMuyRaro1`), además de la de la mesa entera (`CamaraMesa`). También está en el visor de estilo (← → para llegar a ella y C para cambiar de cámara).
 - **Una sola cámara**: `CAPTURE_ARGS="--call=MesaBotin:only:CamaraRaro2" tools/capture.sh res://scenes/style/diorama_botin.tscn salida.png`.
 - **Para añadir un objeto**: su función en la receta que le toque (y en su `models()`), su ficha en `data/items/` y su línea en la fila de su rareza (`ROWS`, en `scripts/debug/loot_diorama.gd`).
+
+### La mochila (F3-03)
+
+`tools/blender/recipes/mochila.py` hace la mochila tumbada boca arriba, con la tapa (`tapa`) y el fondo cosido en la cuadrícula del juego: 6 × 5 casillas de 7,5 cm. Esas medidas son las de `Backpack.CELL` y `Backpack.GRID_CORNER` (`scripts/depot/backpack.gd`): si cambia una, hay que cambiar la otra. Lo de dentro se dibuja con copias de sus modelos sin física (`Backpack.visual_copy`), giradas y encogidas para que quepan en sus casillas. Para llenar una mochila desde código (en el anfitrión): `Backpack.of(cuerpo).stash(ItemState.create(&"lata_conserva"))`. Cómo se juega, en [DEPOSITO.md](DEPOSITO.md#411-la-mochila-f3-03).
 
 ### Personajes
 

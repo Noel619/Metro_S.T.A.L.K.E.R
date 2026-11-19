@@ -15,4 +15,5 @@ base_value = 10
 sold_by_weight = false
 tool = &"comida"
 nutrition = 0.35
+rattles = true
 found_in = Array[StringName]([&"tienda", &"quiosco", &"piso"])

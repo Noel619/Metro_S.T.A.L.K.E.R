@@ -42,7 +42,7 @@ func weight() -> float:
 	for body: Node3D in _area.get_overlapping_bodies():
 		var item: Carryable = body.get_node_or_null(^"Carryable") as Carryable
 		if item != null and not item.is_held():
-			total += item.state.data.weight
+			total += item.state.weight()
 	return total
 
 

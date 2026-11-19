@@ -136,6 +136,8 @@ var _focus: Interactable
 ## Cuánto del recorrido entre el pecho y el sitio de lo que lleva está libre
 ## (la última vez que se miró si había una pared delante).
 var _reach_share: float = 1.0
+## La mochila abierta a la que apunta con algo en la mano (donde lo metería).
+var _stash: Backpack
 ## Lo que se trabaja ahora (o se trabajaría al pulsar), dónde y de cara a dónde.
 var _work_target: Workable
 var _work_point: Vector3 = Vector3.ZERO
@@ -306,6 +308,7 @@ func _physics_process(delta: float) -> void:
 	_push_objects()
 	_update_focus()
 	_update_work_target()
+	_update_stash()
 
 
 func is_local() -> bool:
@@ -330,9 +333,13 @@ func turn_held(amount: Vector2) -> void:
 	hold_rotation = (spin * hold_rotation).normalized()
 
 
-## Usa lo que tiene delante, o suelta lo que lleva.
+## Usa lo que tiene delante, o suelta lo que lleva (si apunta a una mochila
+## abierta, lo mete en ella).
 func interact() -> void:
 	if _held != null:
+		var ray: Array[Vector3] = aim_ray()
+		if _stash != null and is_instance_valid(_stash) and _stash.try_put(_held, ray[0], ray[1]):
+			return
 		_held.request_drop.rpc_id(Carryable.HOST_PEER)
 	elif _focus != null:
 		if _arms != null:
@@ -342,6 +349,13 @@ func interact() -> void:
 
 func eye_position() -> Vector3:
 	return _head.global_position
+
+
+## Por dónde mira: desde los ojos y hacia delante, en el mundo.
+func aim_ray() -> Array[Vector3]:
+	if _camera == null:
+		return [eye_position(), -global_basis.z]
+	return [_camera.global_position, -_camera.global_basis.z]
 
 
 func can_carry() -> bool:
@@ -498,7 +512,7 @@ func set_held_item(item: Carryable) -> void:
 	inspecting = false
 	if _arms != null:
 		if item != null:
-			_arms.hold(item.visual(), item.state.data.weight, item.in_hands)
+			_arms.hold(item.visual(), item.state.weight(), item.in_hands)
 		else:
 			_arms.hold(null)
 
@@ -507,7 +521,7 @@ func set_held_item(item: Carryable) -> void:
 func carry_slowdown() -> float:
 	if _held == null:
 		return 1.0
-	return 1.0 / (1.0 + _held.state.data.weight / HALF_SPEED_WEIGHT)
+	return 1.0 / (1.0 + _held.state.weight() / HALF_SPEED_WEIGHT)
 
 
 ## Lo más que puede bajar la mirada ahora: sin nada en las manos, el límite de
@@ -516,7 +530,7 @@ func carry_slowdown() -> float:
 func lowest_pitch() -> float:
 	if _held == null:
 		return -LOOK_LIMIT
-	var hold: Dictionary = _placement(_held.state.data.weight, _held.bounds())
+	var hold: Dictionary = _placement(_held.state.weight(), _held.bounds())
 	return clampf(hold["lowest_pitch"], -LOOK_LIMIT, 0.0)
 
 
@@ -537,7 +551,7 @@ func hold_transform(mass: float, bounds: AABB = AABB()) -> Transform3D:
 ## vio la última vez (sirve fuera de la física, para dibujarlo).
 func carry_target(item: Carryable, cast: bool = true) -> Transform3D:
 	var bounds: AABB = item.bounds()
-	var hold: Dictionary = _placement(item.state.data.weight, bounds)
+	var hold: Dictionary = _placement(item.state.weight(), bounds)
 	var turn: Basis = hold["turn"]
 	var start: Vector3 = hold["start"]
 	var direction: Vector3 = hold["direction"]
@@ -646,7 +660,7 @@ func _stopped_by_held(planar: Vector3, delta: float) -> Vector3:
 	carry_target(_held)
 	if planar == Vector3.ZERO:
 		return planar
-	var hold: Dictionary = _placement(_held.state.data.weight, _held.bounds())
+	var hold: Dictionary = _placement(_held.state.weight(), _held.bounds())
 	var nearest: Vector3 = hold["start"] + (hold["direction"] as Vector3) * float(hold["near"])
 	var query: PhysicsShapeQueryParameters3D = _carry_query(_held)
 	query.transform = Transform3D(hold["turn"], nearest + planar * delta)
@@ -739,6 +753,25 @@ func _update_work_target() -> void:
 	_refresh_reticle()
 
 
+## Con algo en la mano, ¿apunta a una mochila abierta donde meterlo?
+func _update_stash() -> void:
+	var found: Backpack = null
+	if _held != null and _camera != null:
+		var from: Vector3 = _camera.global_position
+		var to: Vector3 = from - _camera.global_basis.z * REACH
+		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+			from, to, MASK_REACH, [get_rid(), _held.body_rid()]
+		)
+		var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
+		if not hit.is_empty():
+			found = Backpack.of(hit["collider"] as Node)
+			if found != null and not found.is_open():
+				found = null
+	if found != _stash:
+		_stash = found
+		_refresh_reticle()
+
+
 ## Mantener el botón principal sobre algo que se puede trabajar es trabajarlo:
 ## lo medido se manda al anfitrión a ratos.
 func _update_work(delta: float, pressing: bool) -> void:
@@ -767,7 +800,7 @@ func _refresh_reticle() -> void:
 		return
 	if _focus != null:
 		_reticle.show_target(_focus)
-	elif _work_target != null:
+	elif _work_target != null or _stash != null:
 		_reticle.show_icon(Interactable.ICONS[&"usar"])
 	else:
 		_reticle.show_target(null)
