@@ -92,6 +92,7 @@ const SYNCED: PackedStringArray = [
 	".:lean",
 	".:flashlight_on",
 	".:panting",
+	".:climbing",
 ]
 ## Saltar: la velocidad hacia arriba (un saltito de medio metro).
 const JUMP_SPEED: float = 3.1
@@ -151,6 +152,8 @@ var lean: float = 0.0
 var flashlight_on: bool = false
 ## Se ha quedado sin aliento: jadea.
 var panting: bool = false
+## Está trepando (y [member move_speed] es lo que sube o baja).
+var climbing: bool = false
 ## Postura y aliento (solo cuenta en el equipo de quien lo controla).
 var body: PlayerBody
 ## Sus pasos (en todos los equipos).
@@ -397,6 +400,7 @@ func _process(delta: float) -> void:
 	_avatar.look_pitch = head_pitch
 	_avatar.carrying = _held != null
 	_avatar.crouch = crouch
+	_avatar.climbing = climbing
 	_avatar.lean = lean
 
 
@@ -422,7 +426,8 @@ func _physics_process(delta: float) -> void:
 	# En una escalera o una cuerda se trepa (saltar es soltarse).
 	var letting_go: bool = _jump_queued and _moves.climbing()
 	_jump_queued = _jump_queued and not letting_go
-	if _moves.step_climb(self, input, letting_go, _capsule.radius, delta):
+	climbing = _moves.step_climb(self, input, letting_go, _capsule.radius, delta)
+	if climbing:
 		return
 	var lean_input: float = 0.0
 	if keys:
@@ -627,7 +632,7 @@ func _open_backpack() -> void:
 	_backpack_view.closed.connect(func() -> void: _backpack_view = null)
 
 
-## Está trepando por una escalera o una cuerda.
+## Está trepando por una escalera o una cuerda (en el equipo de quien lo controla).
 func is_climbing() -> bool:
 	return _moves.climbing()
 

@@ -23,6 +23,11 @@ func test_up_the_ladder_and_onto_the_roof() -> void:
 	await _seconds(1.0)
 	assert_true(_player.is_climbing(), "empujando hacia ella se agarra")
 	assert_true(_player.global_position.y > 0.5, "y sube")
+	assert_true(_player.climbing, "los demás lo ven trepar")
+	var avatar: PlayerAvatar = _player.get("_avatar")
+	var animation: AnimationPlayer = avatar.get("_player") if avatar != null else null
+	if animation != null:
+		assert_eq(animation.current_animation, &"trepar", "con su animación")
 	await _seconds(4.0)
 	_player.scripted_input = Vector2.ZERO
 	await _seconds(0.5)
@@ -46,6 +51,10 @@ func test_down_from_the_roof() -> void:
 	assert_false(_player.is_climbing(), "abajo la suelta")
 	assert_true(_player.global_position.y < 0.2, "en el suelo")
 	assert_true(_player.is_on_floor())
+	await _seconds(0.2)
+	assert_true(
+		_player.footsteps.last_fall < 0.5, "bajar no es caerse (%.2f)" % _player.footsteps.last_fall
+	)
 
 
 func test_letting_go_falls() -> void:

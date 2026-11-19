@@ -106,12 +106,14 @@ func _sheds(player: Player) -> void:
 	if open_door != null:
 		level.world.set_values(open_door.fixture_id, {"cierre": "rota", "abierta": true})
 	var hinge: Transform3D = row.global_transform * (first["bisagra"] as Transform3D)
-	var spot: Vector3 = hinge * Vector3(-2.5, 0.0, 6.5)
+	var spot: Vector3 = hinge * Vector3(-0.9, 0.0, 3.0)
 	player.global_position = spot + Vector3.UP * 0.1
-	var target: Vector3 = hinge * Vector3(0.4, 1.0, 0.0)
+	var target: Vector3 = hinge * Vector3(0.4, 1.0, -1.5)
 	var flat: Vector3 = Vector3(target.x - spot.x, 0.0, target.z - spot.z)
 	player.rotation.y = atan2(-flat.x, -flat.z)
-	player.head_pitch = -0.08
+	player.head_pitch = -0.16
+	# En el patio, a la sombra de las casas: con la linterna se ve dentro de la caseta.
+	player.flashlight_on = true
 
 
 func _door(id: String) -> SurfaceDoor:

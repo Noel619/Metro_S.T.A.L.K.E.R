@@ -94,6 +94,38 @@ func _build_surface() -> void:
 		avatar.lean = pose[4]
 		avatar.expression = &"esfuerzo" if String(pose[1]).begins_with("correr") else &"miedo"
 	_camera("Sigilo", Vector3(-2.9, 1.2, 4.6), Vector3(-2.9, 0.7, -1.4), 42.0)
+	# Trepando (F3-06): por una escalera de pates, en dos momentos del ciclo.
+	for index: int in 2:
+		var climber: PlayerAvatar = _avatar("chico" if index == 0 else "chica", index)
+		climber.position = Vector3(12.0 + index * 1.7, 0.4 + index * 0.5, -3.0)
+		climber.rotation_degrees.y = 180.0 + (35.0 if index == 0 else -35.0)
+		climber.preview(&"trepar", 0.1 + index * 0.45)
+		climber.expression = &"esfuerzo"
+		climber.add_child(_ladder())
+	_camera("Trepar", Vector3(12.85, 1.9, 2.6), Vector3(12.85, 1.4, -3.0), 40.0)
+
+
+## Una escalera de pates delante de quien trepa (en su marco: +z es su frente).
+static func _ladder() -> Node3D:
+	var ladder: Node3D = Node3D.new()
+	ladder.name = "Escalera"
+	var steel: StandardMaterial3D = StandardMaterial3D.new()
+	steel.albedo_color = Color("#4a4e50")
+	for x: float in [-0.24, 0.24]:
+		ladder.add_child(_bar(Vector3(0.05, 4.0, 0.03), Vector3(x, 1.0, 0.36), steel))
+	for k: int in 14:
+		ladder.add_child(_bar(Vector3(0.5, 0.03, 0.03), Vector3(0.0, -0.6 + k * 0.28, 0.36), steel))
+	return ladder
+
+
+static func _bar(size: Vector3, at: Vector3, material: Material) -> MeshInstance3D:
+	var bar: MeshInstance3D = MeshInstance3D.new()
+	var box: BoxMesh = BoxMesh.new()
+	box.size = size
+	bar.mesh = box
+	bar.material_override = material
+	bar.position = at
+	return bar
 
 
 func _build_depot() -> void:

@@ -4,17 +4,21 @@ extends SceneTree
 ##
 ## 1. En el depósito, el anfitrión abre la reja y los dos suben por las escaleras.
 ## 2. Arriba, el invitado ve a su compañero y a los seis perros de la Jauría (que el
-##    anfitrión deja quietos). El anfitrión abre la compuerta y le da una palanca.
-## 3. El invitado revienta la puerta del quiosco Q2 (o la abre, si no estaba cerrada),
-##    suelta la palanca, entra y coge algo de lo que hay dentro.
+##    anfitrión deja quietos) y va a la puerta del quiosco Q2. El anfitrión abre la
+##    compuerta y, cuando el invitado está en la puerta, le da una palanca.
+## 3. El invitado revienta la puerta (o la abre, si no estaba cerrada), suelta la
+##    palanca, entra, coge algo de lo que hay dentro y lo guarda en la mochila.
 ## 4. Los dos entran en la esclusa; el anfitrión cierra la compuerta y se baja.
-## 5. Abajo, el invitado sigue con lo que cogió en las manos.
+## 5. Abajo, lo que cogió sigue en su mochila.
+##
+## Los jugadores se ponen en su sitio de golpe, pero nunca con algo en las manos: lo
+## que se lleva lo mueve la física del anfitrión y, lejos de las manos, se suelta.
 ##
 ## No se lanza a mano: lo hace tools/test_net.sh. Este guion no nombra las clases del
 ## juego: se compila antes de que existan las autocargas.
 
 const DEPOT_PATH: String = "res://scenes/depot/deposito.tscn"
-const TIMEOUT: float = 200.0
+const TIMEOUT: float = 330.0
 const KIOSK_DOOR: String = "PLZ-Q2_puerta_0"
 const KIOSK: String = "PLZ-Q2"
 const DOGS: int = 6
@@ -91,15 +95,21 @@ func _host_surface() -> void:
 	_level.world.set_values("compuerta", {"abierta": true})
 	_level.hatch.snap()
 	var guest: Node = _guest_player()
+	var door: Node = _door()
+	var at_door: Callable = func() -> bool:
+		return guest.global_position.distance_to(door.global_position) < 2.5
+	if not await _until(at_door, "el invitado no llega a la puerta del quiosco"):
+		return
+	await _frames(20)
 	_level.items.give(guest, &"palanca")
 	print("[host] arriba: la compuerta abierta y una palanca para el invitado")
-	var door: Node = _door()
+	var state: Node = root.get_node("GameState")
 	var looted: Callable = func() -> bool:
-		var held: Node = guest.held_item()
-		return door.is_open() and held != null and held.state.data.id != &"palanca"
-	if not await _until(looted, "el invitado no abre el quiosco ni coge nada"):
+		return door.is_open() and not state.call("pack", guest.slot).entries.is_empty()
+	if not await _until(looted, "el invitado no abre el quiosco ni guarda nada", 90.0):
 		return
-	print("[host] el invitado ha abierto el quiosco y lleva %s" % guest.held_item().state.data.id)
+	var saved: Dictionary = state.call("pack", guest.slot).entries[0]["estado"]
+	print("[host] el invitado ha abierto el quiosco y guarda %s" % saved.get("id", "?"))
 	var me: Node = _level.local_player()
 	me.global_position = _level.vestibule_point(2.7, -1.5, HALL_FLOOR + 0.05)
 	var both_in: Callable = func() -> bool:
@@ -117,9 +127,10 @@ func _host_return() -> void:
 		return
 	_level = _current_scene()
 	_stage = "vuelta"
+	var state: Node = root.get_node("GameState")
 	var guest_back: Callable = func() -> bool:
 		for player: Node in _level.players():
-			if player.peer_id != 1 and player.held_item() != null:
+			if player.peer_id != 1 and not state.call("pack", player.slot).entries.is_empty():
 				return true
 		return false
 	if not await _until(guest_back, "abajo el invitado no trae nada"):
@@ -155,16 +166,14 @@ func _guest_surface() -> void:
 	if not await _until(company, "no ve a su compañero y a los seis perros"):
 		return
 	print("[client] arriba, con su compañero y los %d perros de la Jauría" % DOGS)
-	var crowbar: Callable = func() -> bool:
-		return me.held_item() != null and me.held_item().state.data.id == &"palanca"
-	if not await _until(crowbar, "no le llega la palanca"):
-		return
 	if not await _open_kiosk(me):
 		return
 	if not await _take_loot(me):
 		return
+	if not await _stash(me):
+		return
 	me.global_position = _level.vestibule_point(2.7, 1.5, HALL_FLOOR + 0.05)
-	print("[client] en la esclusa con %s" % _taken)
+	print("[client] en la esclusa con %s en la mochila" % _taken)
 	_guest_return()
 
 
@@ -175,16 +184,19 @@ func _guest_return() -> void:
 		return
 	_level = _current_scene()
 	_stage = "vuelta"
+	var state: Node = root.get_node("GameState")
 	var still: Callable = func() -> bool:
-		var held: Node = _level.local_player().held_item()
-		return held != null and held.state.data.id == _taken
+		for entry: Dictionary in state.call("pack", _level.local_player().slot).entries:
+			if StringName(entry["estado"].get("id", "")) == _taken:
+				return true
+		return false
 	if not await _until(still, "abajo no trae %s" % _taken):
 		return
-	_finish(true, "abajo, con %s en las manos" % _taken)
+	_finish(true, "abajo, con %s en la mochila" % _taken)
 
 
-## Revienta la puerta del quiosco con la palanca (o la abre, si no estaba cerrada) y
-## suelta la palanca.
+## Va a la puerta del quiosco, recibe la palanca, la revienta (o la abre, si no estaba
+## cerrada) y suelta la palanca.
 func _open_kiosk(me: Node) -> bool:
 	var door: Node = _door()
 	if door == null:
@@ -195,7 +207,11 @@ func _open_kiosk(me: Node) -> bool:
 	me.global_position = hinge * Vector3(size.x * 0.5, 0.05, 0.9)
 	var target: Vector3 = hinge * Vector3(size.x * 0.5, 1.0, 0.0)
 	_face(me, target)
-	await _frames(5)
+	var crowbar: Callable = func() -> bool:
+		return me.held_item() != null and me.held_item().state.data.id == &"palanca"
+	if not await _until(crowbar, "no le llega la palanca"):
+		return false
+	await _frames(20)
 	var body: Node = door.get_node("Bisagra/Cuerpo")
 	for _pull in 8:
 		if door.is_open() or not door.is_locked():
@@ -224,16 +240,19 @@ func _take_loot(me: Node) -> bool:
 	var center: Vector3 = Vector3(
 		building["centro"][0], float(building["cota"]), -building["centro"][1]
 	)
-	var loot: Node = null
+	# Las lambdas copian lo que capturan: lo encontrado se deja en una lista.
+	var found: Array = [null]
 	var settled: Callable = func() -> bool:
 		for item: Node in _level.items.items():
 			var body: Node3D = item.get_parent()
 			if body.global_position.distance_to(center) < 3.5 and item.state.data.id != &"palanca":
-				loot = item
+				found[0] = item
 				return true
 		return false
 	if not await _until(settled, "no hay nada en el quiosco"):
 		return false
+	var loot: Node = found[0]
+	print("[client] dentro del quiosco hay %s (%.0f s)" % [loot.state.data.id, _elapsed])
 	var body: Node3D = loot.get_parent()
 	var spot: Vector3 = center + (body.global_position - center).normalized() * 0.2
 	me.global_position = Vector3(spot.x, center.y + 0.05, spot.z)
@@ -249,6 +268,18 @@ func _take_loot(me: Node) -> bool:
 		return false
 	_taken = loot.state.data.id
 	print("[client] ha cogido %s del quiosco" % _taken)
+	return true
+
+
+## Guarda lo que ha cogido en la mochila (arrodillándose).
+func _stash(me: Node) -> bool:
+	me.get("pack").call("store_held")
+	var state: Node = root.get_node("GameState")
+	var stored: Callable = func() -> bool:
+		return me.held_item() == null and not state.call("pack", me.slot).entries.is_empty()
+	if not await _until(stored, "no guarda %s en la mochila" % _taken):
+		return false
+	print("[client] ha guardado %s en la mochila" % _taken)
 	return true
 
 
@@ -325,5 +356,5 @@ func _finish(ok: bool, message: String) -> void:
 	if _finished:
 		return
 	_finished = true
-	print("[%s] %s: %s" % [_role, "OK" if ok else "FALLO", message])
+	print("[%s] %s: %s (%.0f s)" % [_role, "OK" if ok else "FALLO", message, _elapsed])
 	quit(0 if ok else 1)

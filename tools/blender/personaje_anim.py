@@ -266,6 +266,47 @@ def _run(character, t: float, carrying: bool) -> Pose:
     return pose
 
 
+# Trepar (F3-06): por una escalera de pates o una cuerda. Cada ciclo sube dos peldaños
+# (CLIMB_DISTANCE metros); la mano agarrada y el pie apoyado bajan respecto al cuerpo
+# mientras sube y luego se adelantan al siguiente peldaño, como los pies al andar.
+CLIMB_DISTANCE = 0.56
+CLIMB_GRIP = 0.72
+
+
+def _climb_path(phase: float, top: float) -> float:
+    """La altura de una mano o de un pie en el ciclo de trepar: agarrado, baja con el
+    cuerpo que sube; suelto, sube al peldaño siguiente."""
+    if phase < CLIMB_GRIP:
+        return top - CLIMB_DISTANCE * phase
+    u = (phase - CLIMB_GRIP) / (1.0 - CLIMB_GRIP)
+    return top - CLIMB_DISTANCE * CLIMB_GRIP * (1.0 - smooth(u))
+
+
+def _climb(character, t: float) -> Pose:
+    pose = Pose(character_rig(character))
+    j = character.j
+    _slouch(pose, 0.3)
+    # Pegado a la escalera, la cabeza un poco atrás para mirar arriba.
+    pose.move("Hips", Vector((0.0, -0.06, -0.02)))
+    pose.turn("Spine", LEFT, 6.0)
+    pose.turn("Head", LEFT, 14.0)
+    for sign, side in SIDES:
+        # Mano izquierda con pie derecho, y al revés (medio ciclo después).
+        phase = (t + (0.0 if side == "Left" else 0.5)) % 1.0
+        top = j.head_top.z + 0.18
+        hand = Vector((sign * 0.17, -0.3, _climb_path(phase, top)))
+        pose.reach(f"{side}UpperArm", f"{side}LowerArm", hand, Vector((sign * 0.8, 0.4, -0.6)))
+        frame = character.hand_frames[side]
+        pose.hold(f"{side}Hand", pb.aim(frame.y, frame.z, UP + FRONT * 0.6, -FRONT))
+    feet = {}
+    for sign, side in SIDES:
+        phase = (t + (0.5 if side == "Left" else 0.0)) % 1.0
+        lift = _climb_path(phase, 0.42)
+        feet[side] = (Vector((0.0, -0.12, lift)), -10.0)
+    _plant_feet(pose, character, feet)
+    return pose
+
+
 _RIGS: dict[int, pb.Rig] = {}
 
 
@@ -288,6 +329,7 @@ def body_animations(rig: pb.Rig, character) -> None:
     )
     pb.bake_action(rig, "correr-loop", 0.6, lambda t: _run(character, t, False), moving=moving)
     pb.bake_action(rig, "correr_cargando-loop", 0.6, lambda t: _run(character, t, True), moving=moving)
+    pb.bake_action(rig, "trepar-loop", 1.0, lambda t: _climb(character, t), moving=moving)
     del _RIGS[id(character)]
 
 

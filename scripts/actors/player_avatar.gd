@@ -40,6 +40,8 @@ const BLINKING: Array[StringName] = [&"neutro", &"esfuerzo", &"cansado"]
 const WALK_DISTANCE: float = 0.9
 const CROUCH_DISTANCE: float = 0.75
 const RUN_DISTANCE: float = 2.6
+## Lo que sube cada ciclo de trepar (dos peldaños).
+const CLIMB_DISTANCE: float = 0.56
 ## Por encima de esta velocidad (m/s) se corre.
 const RUN_THRESHOLD: float = 3.4
 const WALK_THRESHOLD: float = 0.15
@@ -89,6 +91,8 @@ const LOOSE_CHAINS: Array[PackedStringArray] = [["Bufanda1", "Bufanda2"], ["Tren
 var speed: float = 0.0
 ## De 0 (de pie) a 1 (agachado).
 var crouch: float = 0.0
+## Está trepando por una escalera o una cuerda ([member speed] es entonces lo que sube).
+var climbing: bool = false
 ## De -1 (asomado a la izquierda) a 1 (a la derecha).
 var lean: float = 0.0:
 	set(value):
@@ -213,6 +217,12 @@ func _add_loose_chains() -> void:
 
 
 func _choose_animation() -> void:
+	if climbing and _player.has_animation(&"trepar"):
+		# Colgado y quieto, la animación se para; subiendo o bajando, va a su paso.
+		_player.speed_scale = speed / CLIMB_DISTANCE
+		if _player.current_animation != &"trepar":
+			_player.play(&"trepar", BLEND_TIME)
+		return
 	var walking: bool = speed > WALK_THRESHOLD
 	var base: String = "caminar" if walking else "reposo"
 	var distance: float = WALK_DISTANCE

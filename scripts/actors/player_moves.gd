@@ -161,7 +161,8 @@ func step_climb(player: Player, input: Vector2, jump: bool, radius: float, delta
 	player.move_and_slide()
 	player.body.update(delta, false, false, player.carried_weight(), 0.0, true)
 	player.crouch = player.body.crouch
-	player.move_speed = 0.0
+	# Lo que sube o baja (lo usa la animación de trepar).
+	player.move_speed = absf(player.velocity.y)
 	return true
 
 

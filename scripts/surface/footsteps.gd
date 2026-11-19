@@ -68,6 +68,11 @@ func _physics_process(delta: float) -> void:
 		return
 	var space: PhysicsDirectSpaceState3D = _player.get_world_3d().direct_space_state
 	var hit: Dictionary = Ground.below(space, position, GROUND_CHECK, [_player.get_rid()])
+	if _player.climbing:
+		# Trepando no se cae: si se suelta, la caída cuenta desde donde se soltó.
+		_airborne = true
+		_air_top = position.y
+		return
 	if hit.is_empty():
 		if not _airborne:
 			_airborne = true

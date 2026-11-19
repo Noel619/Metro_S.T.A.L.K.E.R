@@ -35,5 +35,5 @@ run_pair() {
 
 run_pair "caja" tests/net/net_smoke.gd "" ""
 run_pair "deposito" tests/net/net_depot.gd "--host" "--join=127.0.0.1 --chica"
-run_pair "superficie" tests/net/net_surface.gd "--host" "--join=127.0.0.1 --chica" 240
+run_pair "superficie" tests/net/net_surface.gd "--host" "--join=127.0.0.1 --chica" 360
 exit "$FAILED"
