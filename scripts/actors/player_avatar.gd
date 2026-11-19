@@ -35,8 +35,13 @@ const FACE_COLUMNS: int = 4
 const FACE_ROWS: int = 2
 ## Expresiones con los ojos abiertos: las únicas en las que se parpadea.
 const BLINKING: Array[StringName] = [&"neutro", &"esfuerzo", &"cansado"]
-## Metros que avanza el ciclo de caminar (tools/blender/personaje_anim.py).
+## Metros que avanza cada ciclo (tools/blender/personaje_anim.py): caminar,
+## andar agachado y correr.
 const WALK_DISTANCE: float = 0.9
+const CROUCH_DISTANCE: float = 0.75
+const RUN_DISTANCE: float = 2.6
+## Por encima de esta velocidad (m/s) se corre.
+const RUN_THRESHOLD: float = 3.4
 const WALK_THRESHOLD: float = 0.15
 const BLEND_TIME: float = 0.25
 const BLINK_TIME: float = 0.13
@@ -82,6 +87,14 @@ const LOOSE_CHAINS: Array[PackedStringArray] = [["Bufanda1", "Bufanda2"], ["Tren
 
 ## Velocidad a la que anda, en m/s.
 var speed: float = 0.0
+## De 0 (de pie) a 1 (agachado).
+var crouch: float = 0.0
+## De -1 (asomado a la izquierda) a 1 (a la derecha).
+var lean: float = 0.0:
+	set(value):
+		lean = value
+		if _look != null:
+			_look.lean = value
 ## Lleva algo entre las manos.
 var carrying: bool = false
 ## Hacia dónde mira, en radianes: positivo hacia arriba.
@@ -201,10 +214,21 @@ func _add_loose_chains() -> void:
 
 func _choose_animation() -> void:
 	var walking: bool = speed > WALK_THRESHOLD
-	var animation: StringName = &"caminar" if walking else &"reposo"
-	if carrying:
-		animation = StringName(String(animation) + "_cargando")
-	_player.speed_scale = speed / WALK_DISTANCE if walking else 1.0
+	var base: String = "caminar" if walking else "reposo"
+	var distance: float = WALK_DISTANCE
+	if crouch >= 0.5:
+		base = "agachado_andar" if walking else "agachado"
+		distance = CROUCH_DISTANCE
+	elif speed >= RUN_THRESHOLD:
+		base = "correr"
+		distance = RUN_DISTANCE
+	var animation: StringName = StringName(base + ("_cargando" if carrying else ""))
+	if not _player.has_animation(animation):
+		animation = StringName(base)
+	if not _player.has_animation(animation):
+		animation = &"caminar" if walking else &"reposo"
+		distance = WALK_DISTANCE
+	_player.speed_scale = speed / distance if walking else 1.0
 	if _player.current_animation != animation:
 		_player.play(animation, BLEND_TIME)
 

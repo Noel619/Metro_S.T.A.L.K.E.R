@@ -40,7 +40,9 @@ var workshop: DepotWorkshop
 var counter: DepotCounter
 var services: DepotStation
 var day: DepotDay
+var exit: DepotExit
 var _fresh: bool = false
+var _sync: LevelSync
 var _players: Node3D
 var _player_spawner: MultiplayerSpawner
 var _variant: String = "chico"
@@ -48,6 +50,9 @@ var _label: Label
 
 
 func _ready() -> void:
+	_sync = LevelSync.new()
+	_sync.name = "Sincronia"
+	add_child(_sync)
 	StyleDirector.set_zone(StyleDirector.ZONE_DEPOT, true)
 	_variant = GameState.protagonist
 	var join_address: String = ""
@@ -61,6 +66,7 @@ func _ready() -> void:
 			join_address = arg.get_slice("=", 1)
 		elif arg == "--nueva":
 			_fresh = true
+	Sortie.local_variant = _variant
 	world = DepotWorld.new()
 	world.name = "Mundo"
 	add_child(world)
@@ -87,10 +93,14 @@ func _ready() -> void:
 	NetSession.joined.connect(_on_joined)
 	NetSession.peer_left.connect(_on_peer_left)
 	NetSession.ended.connect(_on_session_ended)
+	if NetSession.mode == NetSession.Mode.CLIENT:
+		# Ya estaba conectado: se vuelve de la superficie con el anfitrión.
+		_sync.report({"variant": _variant})
+		return
 	if not join_address.is_empty():
 		NetSession.join(join_address)
 		return
-	if open_to_others:
+	if open_to_others and NetSession.mode == NetSession.Mode.SOLO:
 		NetSession.host()
 	_start_as_host()
 
@@ -131,14 +141,41 @@ func request_player(variant: String) -> void:
 
 
 func _start_as_host() -> void:
+	await _sync.wait()
+	var returning: bool = Sortie.arriving == Sortie.DOWN
 	var loaded: bool = false
-	if continue_saved and not _fresh and SaveSystem.has_save():
+	if returning:
+		# Se vuelve de la superficie: el depósito como se dejó al subir.
+		loaded = not SaveSystem.restore_parked().is_empty()
+	if not loaded and continue_saved and not _fresh and SaveSystem.has_save():
 		loaded = SaveSystem.load_game() == OK
 	if not loaded:
 		_new_game()
 	GameState.clock_running = true
 	GameState.push()
-	_spawn_player(multiplayer.get_unique_id(), _variant)
+	_spawn_player(multiplayer.get_unique_id(), _variant, returning)
+	for peer: int in _sync.infos:
+		_spawn_player(
+			peer, String((_sync.infos[peer] as Dictionary).get("variant", "chico")), returning
+		)
+	if not _sync.peer_ready.is_connected(_on_peer_ready):
+		_sync.peer_ready.connect(_on_peer_ready)
+	if returning:
+		_give_back_what_they_carried.call_deferred()
+	Sortie.arrived()
+
+
+func _on_peer_ready(peer: int, info: Dictionary) -> void:
+	_spawn_player(peer, String(info.get("variant", "chico")), true)
+
+
+## Lo que cada uno traía en las manos al bajar, de vuelta a sus manos.
+func _give_back_what_they_carried() -> void:
+	await get_tree().create_timer(0.3).timeout
+	for player: Player in players():
+		var state: ItemState = Sortie.take_held(player.peer_id)
+		if state != null:
+			items.give_state(player, state)
 
 
 ## Se ha perdido la partida (muerte permanente): el depósito vuelve a estar como
@@ -157,6 +194,7 @@ func _on_game_over() -> void:
 
 ## El primer día: el local como lo dejó el antiguo dueño.
 func _new_game() -> void:
+	SaveSystem.clear_parked()
 	GameState.reset_for_new_game(GameState.player_name, _variant)
 	_stock()
 	EventBus.day_started.emit(GameState.day)
@@ -200,13 +238,19 @@ func _build_systems() -> void:
 	day.room = room
 	day.counter = counter
 	systems.add_child(day)
+	exit = DepotExit.new()
+	exit.name = "Subida"
+	exit.station = station
+	systems.add_child(exit)
 
 
-func _spawn_player(peer: int, variant: String) -> void:
+func _spawn_player(peer: int, variant: String, at_the_stairs: bool = false) -> void:
 	if Player.find(get_tree(), peer) != null or players().size() >= NetSession.MAX_PLAYERS:
 		return
 	var slot: int = _free_slot()
-	_player_spawner.spawn({"peer": peer, "variant": variant, "slot": slot})
+	_player_spawner.spawn(
+		{"peer": peer, "variant": variant, "slot": slot, "escalera": at_the_stairs}
+	)
 
 
 func _free_slot() -> int:
@@ -222,6 +266,10 @@ func _free_slot() -> int:
 func _build_player(values: Dictionary) -> Node:
 	var player: Player = Player.new()
 	player.setup(values["peer"], values["variant"], values["slot"])
+	if bool(values.get("escalera", false)):
+		player.position = DepotExit.arrival(int(values["slot"]))
+		player.rotation.y = DepotExit.ARRIVAL_YAW
+		return player
 	var point: Vector3 = SPAWN_POINTS[int(values["slot"]) % SPAWN_POINTS.size()]
 	player.position = point
 	player.rotation.y = DepotDay.WAKE_YAW

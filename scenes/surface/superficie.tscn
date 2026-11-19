@@ -1,0 +1,20 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/surface/surface_level.gd" id="1_level"]
+[ext_resource type="PackedScene" path="res://scenes/style/ink_post.tscn" id="2_post"]
+
+[sub_resource type="Environment" id="Environment_superficie"]
+tonemap_mode = 2
+
+[node name="Superficie" type="Node3D"]
+script = ExtResource("1_level")
+
+[node name="Ambiente" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_superficie")
+
+[node name="Sol" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.82, 0.25, -0.51, 0, 0.9, 0.44, 0.57, -0.36, 0.73, 0, 60, 0)
+shadow_enabled = true
+directional_shadow_max_distance = 160.0
+
+[node name="InkPost" parent="." instance=ExtResource("2_post")]

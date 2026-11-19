@@ -3,6 +3,7 @@ extends SceneTree
 ## Sale con código 1 si alguno falla.
 ##
 ## Uso: godot --headless --path . -s tests/run_tests.gd
+## Solo algunos archivos: ... -s tests/run_tests.gd -- test_surface (los que lo contienen).
 
 const UNIT_DIR: String = "res://tests/unit/"
 
@@ -51,8 +52,14 @@ func _run() -> void:
 
 func _test_files() -> PackedStringArray:
 	var files: PackedStringArray = []
+	var wanted: PackedStringArray = OS.get_cmdline_user_args()
 	for file_name: String in DirAccess.get_files_at(UNIT_DIR):
-		if file_name.begins_with("test_") and file_name.ends_with(".gd"):
+		if not (file_name.begins_with("test_") and file_name.ends_with(".gd")):
+			continue
+		if (
+			wanted.is_empty()
+			or Array(wanted).any(func(part: String) -> bool: return part in file_name)
+		):
 			files.append(file_name)
 	files.sort()
 	return files

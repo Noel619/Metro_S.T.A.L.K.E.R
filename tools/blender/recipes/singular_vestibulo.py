@@ -1153,9 +1153,9 @@ def _drum_walls(mb: tb.MeshBuilder, holes_of) -> None:
 
 def _collision(mb: tb.MeshBuilder, solids: list) -> None:
     """Lo que se pisa y lo que para: el basamento (los escalones, una rampa), el suelo de la
-    sala, el tambor con la puerta de salida abierta y su hoja, las columnas, la esclusa con
-    la compuerta, el rellano y las escaleras (otra rampa, entre sus balaustradas), el túnel
-    y las cosas sueltas de dentro y de fuera."""
+    sala, el tambor con la puerta de salida abierta y su hoja, las columnas, la esclusa (sin
+    la hoja de la compuerta, que se mueve en el juego), el rellano y las escaleras (otra
+    rampa, entre sus balaustradas), el túnel y las cosas sueltas de dentro y de fuera."""
     mb.lathe([(PODIUM + 0.05, -0.4), (PODIUM + 0.05, 0.0), (PODIUM - 0.7, FLOOR), (APOTHEM_IN - 0.1, FLOOR)], (0.0, 0.0, 0.0), GRANITE, segments=48)
     for polygon, _, _ in _floor_tiles((0.0, 3.0, 6.0, R_IN + 0.05), lambda i: BAYS):
         for piece in _outside_lock(polygon):
@@ -1170,7 +1170,7 @@ def _collision(mb: tb.MeshBuilder, solids: list) -> None:
         phi = _column_angle(k)
         mb.cylinder(0.5, COL_TOP - FLOOR, (R_COL * math.cos(phi), R_COL * math.sin(phi), (COL_TOP + FLOOR) / 2.0), DETAIL, segments=8)
     _lock_shell(mb, CONCRETE)
-    _placed(mb, _hatch_frame(), lambda b: b.box((0.14, 1.6, 2.2), (-0.07, 0.8, FLOOR + 1.1), STEEL))
+    # La compuerta no: se abre y se cierra en el juego, con su propia colisión (F3-14).
     inner = LOCK_HALF - LOCK_WALL
     mb.box((STAIR_TOP + 0.2 - LOCK_X, 2.0 * inner, 0.3), ((LOCK_X + STAIR_TOP + 0.2) / 2.0, 0.0, FLOOR - 0.15), CONCRETE)
     length = STAIR_RUN / math.cos(SLOPE)

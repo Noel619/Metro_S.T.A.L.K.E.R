@@ -20,17 +20,20 @@ const SAVE_KEY: String = "objetos"
 ## las manos a alguien.
 const GIVE_DELAY: float = 0.15
 
+## Con qué clave se guarda (lo suelto de la superficie: "objetos_superficie").
+var save_key: String = SAVE_KEY
+
 var _spawner: MultiplayerSpawner
 var _next_uid: int = 1
 
 
 func _enter_tree() -> void:
 	add_to_group(GROUP)
-	SaveSystem.register_provider(SAVE_KEY, self)
+	SaveSystem.register_provider(save_key, self)
 
 
 func _exit_tree() -> void:
-	SaveSystem.unregister_provider(SAVE_KEY)
+	SaveSystem.unregister_provider(save_key)
 
 
 func _ready() -> void:
@@ -78,6 +81,26 @@ func give(player: Player, item_id: StringName, extra: Dictionary = {}) -> Carrya
 	state.extra = extra.duplicate(true)
 	var where: Transform3D = player.hold_transform(state.data.weight)
 	var holder: Node3D = spawn_state(state, where)
+	var item: Carryable = holder.find_child("Carryable", true, false) as Carryable
+	var peer: int = player.peer_id
+	get_tree().create_timer(GIVE_DELAY).timeout.connect(
+		func() -> void:
+			if is_instance_valid(item):
+				item.give_to(peer)
+	)
+	return item
+
+
+## Pone en las manos de [param player] un objeto que ya existía en otro sitio (lo
+## que traía de la otra escena). Solo el anfitrión.
+func give_state(player: Player, state: ItemState) -> Carryable:
+	if not multiplayer.is_server() or player == null or state == null or state.data == null:
+		return null
+	if player.held_item() != null:
+		return null
+	var holder: Node3D = spawn_state(state, player.hold_transform(state.data.weight))
+	if holder == null:
+		return null
 	var item: Carryable = holder.find_child("Carryable", true, false) as Carryable
 	var peer: int = player.peer_id
 	get_tree().create_timer(GIVE_DELAY).timeout.connect(

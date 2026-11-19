@@ -141,6 +141,131 @@ def _walk(character, t: float, carrying: bool) -> Pose:
     return pose
 
 
+# Agachado (F3-01): las caderas bajan, el cuerpo se inclina y la cabeza sigue mirando al
+# frente. Metros por ciclo al andar agachado y al correr (PlayerAvatar los usa igual).
+CROUCH_DISTANCE = 0.75
+CROUCH_DROP = 0.40
+RUN_DISTANCE = 2.6
+# Parte del ciclo que cada pie pasa apoyado al correr: menos de la mitad, así que hay vuelo.
+RUN_STANCE = 0.34
+
+
+def _stride_path(phase: float, distance: float, stance: float, lift: float, kick: float) -> tuple[Vector, float]:
+    """Como ``_foot_path``, para cualquier paso: ``distance`` metros por ciclo, la parte
+    apoyada ``stance``, lo que sube el pie al pasar ``lift`` y lo que se echa atrás el
+    talón al despegar ``kick`` (correr)."""
+    reach = distance * stance / 2.0
+    if phase < stance:
+        u = phase / stance
+        y = -reach + 2.0 * reach * u
+        pitch = -10.0 * (1.0 - smooth(u / 0.2)) + 24.0 * smooth((u - 0.7) / 0.3)
+        return Vector((0.0, y, 0.0)), pitch
+    u = (phase - stance) / (1.0 - stance)
+    y = reach - 2.0 * reach * smooth(u)
+    # Al correr, el talón sube hacia atrás al empezar el vuelo.
+    back = kick * math.sin(math.pi * min(1.0, u * 1.6)) * (1.0 - u)
+    up = lift * math.sin(math.pi * u) + back * 0.9
+    return Vector((0.0, y + back, up)), lerp(30.0, -10.0, smooth(u))
+
+
+def _crouch_body(pose: Pose, carrying: bool, breath: float, bob: float = 0.0) -> None:
+    """El cuerpo agachado: caderas abajo y atrás, la espalda inclinada y la cabeza al frente."""
+    pose.move("Hips", Vector((0.0, 0.07, -CROUCH_DROP + 0.01 * bob - 0.004 * breath)))
+    pose.turn("Hips", LEFT, 24.0)
+    pose.turn("Spine", LEFT, 11.0 + (0.0 if carrying else 2.0))
+    pose.turn("Chest", LEFT, 7.0 - 1.2 * breath - (6.0 if carrying else 0.0))
+    pose.turn("Neck", LEFT, -16.0 + (3.0 if carrying else 0.0))
+    pose.turn("Head", LEFT, -24.0)
+    for sign, side in SIDES:
+        pose.turn(f"{side}Shoulder", UP, -6.0 * sign)
+
+
+def _crouch_arms(pose: Pose, character, carrying: bool, swing: float) -> None:
+    """Agachado, las manos van por delante, cerca de las rodillas (o sujetando lo que se lleva)."""
+    if carrying:
+        chest = pose.head("Chest")
+        for sign, side in SIDES:
+            target = chest + Vector((sign * 0.15, -0.3, -0.06))
+            pose.reach(f"{side}UpperArm", f"{side}LowerArm", target, Vector((sign * 0.55, 0.45, -1.0)))
+            frame = character.hand_frames[side]
+            pose.hold(f"{side}Hand", pb.aim(frame.y, frame.z, FRONT + UP * 0.25, LEFT * sign))
+        return
+    for sign, side in SIDES:
+        amount = swing * sign
+        pose.turn(f"{side}UpperArm", FRONT, -20.0 * sign)
+        pose.turn(f"{side}UpperArm", LEFT, 28.0 - amount)
+        pose.turn(f"{side}LowerArm", LEFT, -38.0 - max(0.0, amount) * 0.6)
+
+
+def _crouch(character, t: float, carrying: bool) -> Pose:
+    pose = Pose(character_rig(character))
+    breath = _wave(t * 2.0)
+    _crouch_body(pose, carrying, breath)
+    pose.turn("Head", UP, 3.0 * _wave(t, 0.2))
+    _crouch_arms(pose, character, carrying, 2.0 * _wave(t, 0.1))
+    # Un pie algo adelantado y separados: listo para moverse.
+    _plant_feet(
+        pose,
+        character,
+        {"Left": (Vector((0.03, -0.09, 0.0)), 0.0), "Right": (Vector((-0.03, 0.08, 0.0)), 6.0)},
+    )
+    return pose
+
+
+def _crouch_walk(character, t: float, carrying: bool) -> Pose:
+    pose = Pose(character_rig(character))
+    stride = math.cos(2.0 * math.pi * t)
+    bob = math.cos(4.0 * math.pi * (t - 0.3))
+    _crouch_body(pose, carrying, 0.0, bob)
+    pose.turn("Hips", UP, -5.0 * stride)
+    pose.turn("Spine", UP, 3.0 * stride)
+    pose.turn("Chest", UP, 3.0 * stride)
+    pose.turn("Neck", UP, -2.0 * stride)
+    _crouch_arms(pose, character, carrying, -10.0 * stride)
+    left = _stride_path(t % 1.0, CROUCH_DISTANCE, 0.62, 0.06, 0.0)
+    right = _stride_path((t + 0.5) % 1.0, CROUCH_DISTANCE, 0.62, 0.06, 0.0)
+    _plant_feet(
+        pose,
+        character,
+        {
+            "Left": (left[0] + Vector((0.03, 0.0, 0.0)), left[1]),
+            "Right": (right[0] + Vector((-0.03, 0.0, 0.0)), right[1]),
+        },
+    )
+    return pose
+
+
+def _run(character, t: float, carrying: bool) -> Pose:
+    pose = Pose(character_rig(character))
+    stride = math.cos(2.0 * math.pi * t)
+    # Dos botes por ciclo: abajo al apoyar, arriba en el vuelo.
+    bounce = math.cos(4.0 * math.pi * (t - RUN_STANCE / 2.0))
+    side_shift = math.cos(2.0 * math.pi * (t - 0.2))
+    _slouch(pose, 0.4)
+    pose.move("Hips", Vector((0.01 * side_shift, 0.0, -0.075 - 0.03 * bounce)))
+    pose.turn("Hips", LEFT, 8.0)
+    pose.turn("Hips", UP, -9.0 * stride)
+    pose.turn("Spine", LEFT, 6.0)
+    pose.turn("Spine", UP, 5.0 * stride)
+    pose.turn("Chest", UP, 7.0 * stride)
+    pose.turn("Neck", LEFT, -5.0)
+    pose.turn("Neck", UP, -4.0 * stride)
+    pose.turn("Head", LEFT, -6.0 + 1.5 * bounce)
+    if carrying:
+        _arms_carrying(pose, character, 0.015 * bounce)
+    else:
+        # Los brazos doblados en ángulo recto, a contratiempo de las piernas.
+        for sign, side in SIDES:
+            amount = -38.0 * stride * sign
+            pose.turn(f"{side}UpperArm", FRONT, -16.0 * sign)
+            pose.turn(f"{side}UpperArm", LEFT, 8.0 - amount)
+            pose.turn(f"{side}LowerArm", LEFT, -78.0 - max(0.0, amount) * 0.3)
+    left = _stride_path(t % 1.0, RUN_DISTANCE, RUN_STANCE, 0.12, 0.28)
+    right = _stride_path((t + 0.5) % 1.0, RUN_DISTANCE, RUN_STANCE, 0.12, 0.28)
+    _plant_feet(pose, character, {"Left": left, "Right": right})
+    return pose
+
+
 _RIGS: dict[int, pb.Rig] = {}
 
 
@@ -155,6 +280,14 @@ def body_animations(rig: pb.Rig, character) -> None:
     pb.bake_action(rig, "caminar-loop", 1.0, lambda t: _walk(character, t, False), moving=moving)
     pb.bake_action(rig, "reposo_cargando-loop", 4.0, lambda t: _idle(character, t, True), moving=moving)
     pb.bake_action(rig, "caminar_cargando-loop", 1.0, lambda t: _walk(character, t, True), moving=moving)
+    pb.bake_action(rig, "agachado-loop", 4.0, lambda t: _crouch(character, t, False), moving=moving)
+    pb.bake_action(rig, "agachado_cargando-loop", 4.0, lambda t: _crouch(character, t, True), moving=moving)
+    pb.bake_action(rig, "agachado_andar-loop", 1.0, lambda t: _crouch_walk(character, t, False), moving=moving)
+    pb.bake_action(
+        rig, "agachado_andar_cargando-loop", 1.0, lambda t: _crouch_walk(character, t, True), moving=moving
+    )
+    pb.bake_action(rig, "correr-loop", 0.6, lambda t: _run(character, t, False), moving=moving)
+    pb.bake_action(rig, "correr_cargando-loop", 0.6, lambda t: _run(character, t, True), moving=moving)
     del _RIGS[id(character)]
 
 

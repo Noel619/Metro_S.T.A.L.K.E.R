@@ -1,6 +1,9 @@
 class_name Player
 extends CharacterBody3D
-## Un jugador en primera persona. Versión del depósito: tranquila, sin estamina.
+## Un jugador en primera persona. En el depósito, tranquilo: se agacha y se asoma,
+## pero no corre. En la superficie ([member surface_rules]) corre mientras tiene
+## aliento, salta y se encarama, y cada paso suena según lo que pisa ([PlayerBody],
+## [Footsteps], docs/SUPERFICIE.md).
 ##
 ## Cada jugador manda sobre su propio movimiento (no hay retraso al andar ni al
 ## mirar) y lo replica a los demás; el anfitrión manda sobre el mundo. Los demás
@@ -84,7 +87,13 @@ const SYNCED: PackedStringArray = [
 	".:hold_rotation",
 	".:inspecting",
 	".:working",
+	".:crouch",
+	".:lean",
+	".:flashlight_on",
+	".:panting",
 ]
+## Saltar: la velocidad hacia arriba (un saltito de medio metro).
+const JUMP_SPEED: float = 3.1
 ## Píxeles de ratón que hacen una unidad de cada gesto: una pasada de escoba, un
 ## frote, un tirón de palanca. Los círculos se miden en vueltas y mantener, en
 ## segundos.
@@ -125,9 +134,37 @@ var inspecting: bool = false
 var working: bool = false
 ## Para pruebas y bots: sustituye a las teclas de movimiento.
 var scripted_input: Vector2 = Vector2.ZERO
+## Para pruebas y bots: correr (sustituye a la tecla).
+var scripted_run: bool = false
+## Las reglas de la superficie: correr con aliento, saltar y encaramarse.
+var surface_rules: bool = false:
+	set(value):
+		surface_rules = value
+		if body != null:
+			body.can_run = value
+## De 0 (de pie) a 1 (agachado); lo replica quien lo controla.
+var crouch: float = 0.0
+## De -1 (asomado a la izquierda) a 1 (a la derecha), ya contando con las paredes.
+var lean: float = 0.0
+## Lleva la linterna encendida.
+var flashlight_on: bool = false
+## Se ha quedado sin aliento: jadea.
+var panting: bool = false
+## Postura y aliento (solo cuenta en el equipo de quien lo controla).
+var body: PlayerBody
+## Sus pasos (en todos los equipos).
+var footsteps: Footsteps
+## Cómo está: si sangra, si ha muerto (lo decide el anfitrión; F3-12).
+var condition: PlayerCondition
 
 var _head: Node3D
 var _camera: Camera3D
+var _capsule: CapsuleShape3D
+var _shape: CollisionShape3D
+var _moves: PlayerMoves = PlayerMoves.new()
+## La linterna que ven los demás (en el jugador de los otros equipos).
+var _torch: SpotLight3D
+var _jump_queued: bool = false
 var _avatar: PlayerAvatar
 var _arms: FirstPersonArms
 var _reticle: Reticle
@@ -170,14 +207,22 @@ func setup(new_peer: int, new_variant: String, new_slot: int) -> void:
 	process_physics_priority = -1
 	collision_layer = LAYER_PLAYERS
 	collision_mask = MASK_PLAYERS
-	var capsule: CapsuleShape3D = CapsuleShape3D.new()
-	capsule.radius = 0.27
-	capsule.height = 1.7
-	var shape: CollisionShape3D = CollisionShape3D.new()
-	shape.name = "Cuerpo"
-	shape.shape = capsule
-	shape.position.y = 0.85
-	add_child(shape)
+	body = PlayerBody.new()
+	body.can_run = surface_rules
+	_capsule = CapsuleShape3D.new()
+	_capsule.radius = 0.27
+	_capsule.height = PlayerBody.STAND_HEIGHT
+	_shape = CollisionShape3D.new()
+	_shape.name = "Cuerpo"
+	_shape.shape = _capsule
+	_shape.position.y = PlayerBody.STAND_HEIGHT * 0.5
+	add_child(_shape)
+	footsteps = Footsteps.new()
+	footsteps.setup(self)
+	add_child(footsteps)
+	condition = PlayerCondition.new()
+	condition.name = "Estado"
+	add_child(condition)
 	_head = Node3D.new()
 	_head.name = "Cabeza"
 	_head.position.y = EYE_HEIGHTS[variant]
@@ -203,6 +248,16 @@ func setup(new_peer: int, new_variant: String, new_slot: int) -> void:
 
 func _ready() -> void:
 	if not is_local():
+		_torch = SpotLight3D.new()
+		_torch.name = "Linterna"
+		_torch.position = Vector3(0.22, -0.18, 0.0)
+		_torch.light_color = Color(1.0, 0.93, 0.8)
+		_torch.light_energy = 7.0
+		_torch.spot_range = 30.0
+		_torch.spot_angle = 24.0
+		_torch.spot_angle_attenuation = 1.6
+		_torch.visible = false
+		_head.add_child(_torch)
 		return
 	_avatar.shadow_only = true
 	_camera = Camera3D.new()
@@ -254,6 +309,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			look(-motion.relative.x * sensitivity, -motion.relative.y * sensitivity)
 	elif event.is_action_pressed(&"interact"):
 		interact()
+	elif event.is_action_pressed(&"crouch"):
+		body.crouch_wanted = not body.crouch_wanted
+	elif event.is_action_pressed(&"flashlight"):
+		flashlight_on = not flashlight_on
+	elif event.is_action_pressed(&"jump") and surface_rules:
+		_jump_queued = true
 	elif event.is_action_pressed(&"pause") and DisplayServer.get_name() != "headless":
 		var captured: bool = Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if captured else Input.MOUSE_MODE_CAPTURED
@@ -277,30 +338,64 @@ func _process(delta: float) -> void:
 		if head_pitch < lowest:
 			head_pitch = move_toward(head_pitch, lowest, PITCH_RECOVERY * delta)
 	_head.rotation.x = head_pitch
+	_head.position = Vector3(
+		lean * PlayerBody.LEAN_DISTANCE,
+		EYE_HEIGHTS[variant] * lerpf(1.0, PlayerBody.CROUCH_EYES, crouch),
+		0.0
+	)
+	_capsule.height = lerpf(PlayerBody.STAND_HEIGHT, PlayerBody.CROUCH_HEIGHT, crouch)
+	_shape.position.y = _capsule.height * 0.5
+	if _camera != null:
+		_camera.rotation.z = -lean * PlayerBody.LEAN_ROLL
+		Flashlight.attach(_camera).visible = flashlight_on
+	elif _torch != null:
+		_torch.visible = flashlight_on
 	_avatar.speed = move_speed
 	_avatar.look_pitch = head_pitch
 	_avatar.carrying = _held != null
+	_avatar.crouch = crouch
+	_avatar.lean = lean
 
 
 func _physics_process(delta: float) -> void:
 	if not is_local():
 		return
+	if _moves.mantling():
+		_moves.step_mantle(self, delta)
+		return
 	var input: Vector2 = scripted_input
-	if (
-		input == Vector2.ZERO
-		and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
-		and not CloseUp.is_open()
-	):
+	var keys: bool = Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not CloseUp.is_open()
+	if input == Vector2.ZERO and keys:
 		input = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
+	var lean_input: float = 0.0
+	if keys:
+		lean_input = Input.get_axis(&"lean_left", &"lean_right")
+	var wants_run: bool = scripted_run or (keys and Input.is_action_pressed(&"sprint"))
+	body.update(
+		delta,
+		wants_run and input.y < -0.3,
+		input != Vector2.ZERO,
+		carried_weight(),
+		lean_input,
+		PlayerMoves.can_stand(self, _capsule.height)
+	)
+	crouch = body.crouch
+	lean = PlayerMoves.free_lean(self, body.lean)
+	panting = body.is_panting()
 	var wish: Vector3 = (basis * Vector3(input.x, 0.0, input.y)).limit_length(1.0)
-	var target: Vector3 = wish * WALK_SPEED * carry_slowdown() * hunger_slowdown()
+	var target: Vector3 = wish * body.target_speed() * carry_slowdown() * hunger_slowdown()
 	var planar: Vector3 = Vector3(velocity.x, 0.0, velocity.z).move_toward(
 		target, ACCELERATION * delta
 	)
 	planar = _stopped_by_held(planar, delta)
-	velocity = Vector3(
-		planar.x, velocity.y - GRAVITY * delta if not is_on_floor() else 0.0, planar.z
-	)
+	var vertical: float = velocity.y - GRAVITY * delta if not is_on_floor() else 0.0
+	if _jump_queued:
+		_jump_queued = false
+		if is_on_floor() and not _moves.try_mantle(self, _capsule.radius):
+			vertical = JUMP_SPEED
+		if _moves.mantling():
+			return
+	velocity = Vector3(planar.x, vertical, planar.z)
 	move_and_slide()
 	move_speed = Vector2(velocity.x, velocity.z).length()
 	_push_objects()
@@ -444,6 +539,21 @@ func move_to(where: Vector3, yaw: float) -> void:
 ## Lo que frena el hambre: de 1 (nada) a [constant HUNGRY_SPEED].
 func hunger_slowdown() -> float:
 	return HUNGRY_SPEED if GameState.hungry_days >= GameState.HUNGRY_SHAKE else 1.0
+
+
+## Los kilos que lleva encima: lo de las manos (y, con la mochila, lo de dentro).
+func carried_weight() -> float:
+	return _held.state.data.weight if _held != null else 0.0
+
+
+## Lo alto que es ahora (agachado, menos).
+func body_height() -> float:
+	return lerpf(PlayerBody.STAND_HEIGHT, PlayerBody.CROUCH_HEIGHT, crouch)
+
+
+## Hacia dónde mira (de largo 1), con la inclinación de la cabeza.
+func look_direction() -> Vector3:
+	return -_head.global_basis.z.normalized()
 
 
 ## Dónde se dibuja [param item] mientras se trabaja con él: lo largo (la escoba)
