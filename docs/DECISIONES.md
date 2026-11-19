@@ -295,3 +295,7 @@ Abrir una cerradura es un gesto fino (subir cada pin despacio hasta su punto, co
 ## D-069 · Las cintas del botín, del derecho
 
 `MeshBuilder.ribbon` deja las cintas del revés: la cara de fuera mira hacia dentro, así que lo que se ve es la de dentro, a unos milímetros por debajo, y con sombras la de fuera la deja a oscuras (la faja de papel de las velas salía negra). Las recetas del botín usan `botin_bpy.strap`, que es la misma cinta con las caras vueltas. `ribbon` se queda como está porque cambiarla cambiaría modelos ya revisados (las correas de la máscara, la brújula y los prismáticos, las cintas del cuaderno), donde apenas se nota porque son oscuras; si algún día se arregla, hay que regenerar esos modelos y repasar sus capturas.
+
+## D-070 · Los personajes, también deterministas
+
+La receta de los personajes daba un archivo distinto en cada ejecución (siempre la misma forma, con los vértices en otro orden), así que `make models` cambiaba seis modelos sin haber tocado nada. Tenía dos causas: unas aristas que se recogían en un conjunto (`set`), cuyo orden depende de las direcciones de memoria, y el biselado de Blender, que no devuelve las caras siempre en el mismo orden; con la subdivisión, cualquier cambio de orden se multiplica. Ahora `Sculpt` recoge sin conjuntos y ordena la malla por posición antes de subdividirla (`tumansk_bpy._sort_geometry`, lo mismo que hacen las demás recetas). Los modelos cambian de bytes, no de aspecto: las capturas de antes y de después difieren tanto como dos capturas seguidas del mismo modelo.
