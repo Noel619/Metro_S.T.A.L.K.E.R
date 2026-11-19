@@ -167,7 +167,7 @@ Tienen su colisión hecha a mano (los escalones y las escaleras son rampas) y di
 |---|---|
 | ![Desde el mirador: la azotea del peristilo del vestíbulo, con la argolla para la cuerda, y la plaza](docs/capturas/fase3_mirador.jpg) | ![El cuaderno abierto: La Plaza dibujada a mano, los sellos y las notas](docs/capturas/fase3_cuaderno.jpg) |
 | ![Las ganzúas en la cerradura del quiosco: los pines, la ganzúa y la llave de tensión](docs/capturas/fase3_ganzuas.jpg) | ![La escalera de servicio de la sala, hasta el ventanal alto](docs/capturas/fase3_escalera.jpg) |
-| ![Los trasteros del primer patio, con una caseta abierta](docs/capturas/fase3_trasteros.jpg) | ![El palomar y los trasteros del patio](docs/capturas/fase3_palomar.jpg) |
+| ![Los trasteros del primer patio, a la sombra de las casas: con la linterna, una caseta abierta](docs/capturas/fase3_trasteros.jpg) | ![El palomar y los trasteros del patio](docs/capturas/fase3_palomar.jpg) |
 | ![Las tiendas de la evacuación en la plaza de la Estación](docs/capturas/fase3_tiendas.jpg) | ![El centro de transformación: el refugio](docs/capturas/fase3_transformador.jpg) |
 
 Se sube por las escaleras mecánicas del depósito hasta la esclusa del vestíbulo, se abre la compuerta girando el volante y se sale a La Plaza; se vuelve entrando en la esclusa y cerrando la compuerta. Todo en primera persona y sin marcadores: lo que sabes de la ciudad es lo que ves, lo que oyes (que aún se ve en ondas de tinta: el sonido está aplazado, [D-061](docs/DECISIONES.md)) y lo que dibujas.
