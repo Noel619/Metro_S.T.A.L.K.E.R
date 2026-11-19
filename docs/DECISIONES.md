@@ -267,3 +267,15 @@ Cada jugador manda sobre su movimiento, pero no sobre lo que se oye de él: el a
 ## D-063 · Al cambiar de escena, lo que se deja queda aparcado y los invitados avisan de que han cargado
 
 Subir a la superficie y volver cambia de escena, y la partida tiene un solo guardado. El estado de la escena que se deja (el depósito mientras se está arriba; la superficie mientras se está abajo) queda aparcado en `SaveSystem` (`park_all`), se escribe igual en el archivo y la escena lo recupera al volver (`restore_parked`); lo que se lleva en las manos cambia de escena con su dueño (`Sortie`). Como cada equipo tarda lo suyo en cargar (la ciudad son unos segundos), el anfitrión no hace aparecer jugadores ni objetos hasta que todos los invitados avisan de que tienen la escena (`LevelSync`).
+
+## D-064 · Los perros se mueven por una rejilla sacada del plano, no por la física
+
+Para ir de un sitio a otro, la Jauría usa una rejilla de 1 m sobre el plano de la ciudad (`CityNav`, con el A* de Godot): los edificios, el tambor del vestíbulo, los vehículos, las vallas, los escombros altos y los terraplenes del ferrocarril son obstáculo. Se levanta en unas decenas de milisegundos desde los mismos datos que la maqueta, sin depender de la física ni de hornear una malla de navegación de cientos de miles de triángulos; lo pequeño (troncos, farolas, placas sueltas) lo esquiva el propio cuerpo del perro al moverse. Que un sitio no esté en la rejilla tiene sentido de juego: encima de un coche, dentro de un edificio o en la esclusa, los perros no llegan, y la manada acaba por irse. Cuando haya interiores que se recorran, cada uno será otra capa unida a la calle por sus puertas y sus escaleras.
+
+## D-065 · La manada decide junta y con lo que percibe cada perro
+
+Cada perro tiene sus sentidos y su memoria (`Perception`, `Knowledge`), pero lo que hacen lo decide la manada (`Pack`): la Vieja delante, los demás según el modo (ronda, investigar, rastreo, tanteo, rodeo, persecución, ataque, comer, retirada). Lo que percibe un perro lo sabe la manada; si es una presa que no esperaban, ladra, y los que lo oyen se lo apuntan como un aviso que cita la percepción del que ladró. Así la prueba de justicia vale para la manada entera: cada decisión con sitio sale de algo que percibió alguno de ellos. Las animaciones de los perros, como las de los protagonistas, son ciclos generados por código en Blender (`perro_anim.py`) que Godot reproduce "a saltos"; la cabeza que sigue lo que oye y el hocico al suelo los pone Godot encima (`DogLook`).
+
+## D-066 · La mochila de cada jugador vive en el estado de la partida
+
+La mochila y el cinturón de cada jugador (`Backpack`) se guardan dentro de `GameState`, por el puesto del jugador. Así se guardan con la partida, pasan de una escena a otra sin hacer nada y llegan a todos los equipos con lo demás del estado. Lo que hay dentro son estados de objeto (como los que se guardan del depósito), no objetos del mundo: al guardar algo, el objeto sale del mundo; al sacarlo, vuelve a las manos con su estado. Lo cambia siempre el anfitrión, cuando el dueño lo pide (`PlayerPack`).

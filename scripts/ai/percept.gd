@@ -47,6 +47,23 @@ static func create(
 	return percept
 
 
+## Una copia con el mismo número (para otra memoria: la de la manada). La certeza de
+## cada memoria se olvida por su cuenta.
+func copy() -> Percept:
+	var twin: Percept = Percept.new()
+	twin.id = id
+	twin.sense = sense
+	twin.subject = subject
+	twin.truth = truth
+	twin.position = position
+	twin.time = time
+	twin.certainty = certainty
+	twin.kind = kind
+	twin.stimulus = stimulus
+	twin.source = source
+	return twin
+
+
 ## La percepción original de la que sale esta (siguiendo los avisos hacia atrás).
 func origin() -> Percept:
 	var current: Percept = self

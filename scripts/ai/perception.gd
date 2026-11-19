@@ -63,6 +63,7 @@ var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
 func _ready() -> void:
+	add_to_group(PerceptionDebug.GROUP)
 	_rng.seed = hash(get_path())
 	var stimuli: Stimuli = Stimuli.find(get_tree())
 	if stimuli != null:

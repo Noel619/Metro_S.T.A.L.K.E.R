@@ -23,6 +23,8 @@ const FORGET_BELOW: float = 0.05
 const ASSOCIATE_RADIUS: float = 10.0
 ## Lo que se guarda (las percepciones y las decisiones más recientes).
 const KEEP: int = 400
+## Lo que es alguien concreto (una presa): lo que se percibe cerca sigue siéndolo.
+const TARGET_KINDS: Array[StringName] = [&"presa", &"sangre"]
 
 ## Lo que sabe de cada cosa: clave -> la percepción más reciente que la sostiene.
 var facts: Dictionary = {}
@@ -49,9 +51,12 @@ func remember(percept: Percept) -> String:
 			_next_clue += 1
 	var old: Percept = facts.get(key)
 	if old == null or _replaces(old, percept):
-		if old != null and percept.subject == 0 and old.subject != 0:
-			# Lo que oye cerca de lo que vio sigue siendo lo que vio.
-			percept.subject = old.subject
+		if old != null and percept.sense != Percept.SIGHT:
+			# Lo que oye o huele cerca de lo que vio sigue siendo lo que vio.
+			if percept.subject == 0 and old.subject != 0:
+				percept.subject = old.subject
+			if TARGET_KINDS.has(old.kind) and not TARGET_KINDS.has(percept.kind):
+				percept.kind = old.kind
 		facts[key] = percept
 	return key
 

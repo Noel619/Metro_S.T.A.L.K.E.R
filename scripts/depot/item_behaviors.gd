@@ -23,7 +23,10 @@ static func attach(items: WorldItems, body: RigidBody3D, item: Carryable) -> voi
 	for entry: Array in COMMON:
 		_add(items, body, item, entry[0], [entry[1]], entry[2])
 	if data.nutrition > 0.0:
-		_add(items, body, item, "Comer", [&"comida"], Workable.Gesture.HOLD).self_use = true
+		# El cebo (el salo) también se come: es comida.
+		_add(items, body, item, "Comer", [&"comida", &"cebo"], Workable.Gesture.HOLD).self_use = true
+	if data.tool == &"vendas" or data.tool == &"botiquin":
+		_add(items, body, item, "Vendarse", [data.tool], Workable.Gesture.HOLD).self_use = true
 	if item.state.extra.has("contenido"):
 		_add(items, body, item, "Abrir", [Workable.HANDS], Workable.Gesture.PULL)
 	var recipe: RepairRecipe = RepairRecipe.for_item(data.id)

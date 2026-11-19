@@ -11,6 +11,8 @@ extends Node3D
 const GROUP: StringName = &"rastros"
 const BOOT_TEXTURE: String = "res://assets/textures/huella_bota.png"
 const PAW_TEXTURE: String = "res://assets/textures/huella_perro.png"
+const BLOOD_TEXTURE: String = "res://assets/textures/gotas_sangre.png"
+const BLOOD_SIZE: Vector2 = Vector2(0.28, 0.28)
 ## La sangre dura el triple.
 const BLOOD_FACTOR: float = 3.0
 ## Como mucho, tantas marcas de olor y tantas huellas (las más viejas se van).
@@ -30,6 +32,7 @@ var _print_times: Array[float] = []
 var _prune: float = 0.0
 var _boot: Texture2D
 var _paw: Texture2D
+var _blood: Texture2D
 
 
 ## Los rastros de la escena, si los hay.
@@ -41,6 +44,7 @@ func _ready() -> void:
 	add_to_group(GROUP)
 	_boot = load(BOOT_TEXTURE)
 	_paw = load(PAW_TEXTURE)
+	_blood = load(BLOOD_TEXTURE)
 
 
 func _process(delta: float) -> void:
@@ -98,6 +102,15 @@ func age_of(mark: Dictionary) -> float:
 
 ## Marca una huella en la nieve (de bota o de pata), mirando hacia [param yaw].
 func print_step(position: Vector3, yaw: float, paw: bool = false) -> void:
+	_mark(position, yaw, _paw if paw else _boot, PAW_SIZE if paw else BOOT_SIZE)
+
+
+## Unas gotas de sangre en el suelo.
+func print_blood(position: Vector3) -> void:
+	_mark(position, randf() * TAU, _blood, BLOOD_SIZE)
+
+
+func _mark(position: Vector3, yaw: float, texture: Texture2D, size: Vector2) -> void:
 	var decal: Decal
 	if _prints.size() >= MAX_PRINTS:
 		decal = _prints.pop_front()
@@ -109,8 +122,7 @@ func print_step(position: Vector3, yaw: float, paw: bool = false) -> void:
 		decal.lower_fade = 0.2
 		decal.cull_mask = 1
 		add_child(decal)
-	var size: Vector2 = PAW_SIZE if paw else BOOT_SIZE
-	decal.texture_albedo = _paw if paw else _boot
+	decal.texture_albedo = texture
 	decal.size = Vector3(size.x, 1.2, size.y)
 	decal.global_position = position + Vector3.UP * 0.3
 	decal.rotation = Vector3(0.0, yaw, 0.0)

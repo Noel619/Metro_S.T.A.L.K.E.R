@@ -36,6 +36,9 @@ var loose_items: int = 0
 
 var _player: Player
 var _last: Vector3 = Vector3.INF
+## Hacia dónde iba (para las huellas) y qué pie toca.
+var _heading: float = 0.0
+var _left: bool = false
 var _stride_left: float = 0.0
 var _airborne: bool = false
 var _air_top: float = 0.0
@@ -54,7 +57,10 @@ func _physics_process(delta: float) -> void:
 	if _last == Vector3.INF:
 		_last = position
 		return
-	var moved: float = Vector2(position.x - _last.x, position.z - _last.z).length()
+	var flat: Vector2 = Vector2(position.x - _last.x, position.z - _last.z)
+	var moved: float = flat.length()
+	if moved > 0.001:
+		_heading = atan2(flat.x, flat.y)
 	var teleported: bool = position.distance_to(_last) > TELEPORT
 	_last = position
 	if teleported:
@@ -93,9 +99,23 @@ func _step(gait: PlayerBody.Gait, space: PhysicsDirectSpaceState3D, hit: Diction
 	last_radius = NoiseRules.step_radius(gait, last_ground, load_kg)
 	var feet: Vector3 = hit["position"]
 	_make(feet, last_radius, NoiseRules.STEP, RIPPLE_STRENGTH.get(gait, 0.5))
+	_leave_tracks(feet)
 	var rattle: float = NoiseRules.rattle_radius(gait, loose_items)
 	if rattle > 0.0:
 		_make(feet + Vector3.UP * 0.9, rattle, NoiseRules.RATTLE, 0.4)
+
+
+## El olor (para la IA, en el anfitrión) y, en la nieve, la huella de la bota.
+func _leave_tracks(feet: Vector3) -> void:
+	var tracks: Tracks = Tracks.find(get_tree())
+	if tracks == null:
+		return
+	var bleeding: bool = _player.condition != null and _player.condition.bleeding
+	tracks.drop(feet, _player.peer_id, bleeding)
+	_left = not _left
+	if last_ground == NoiseRules.DEFAULT_GROUND:
+		var side: Vector3 = Vector3(cos(_heading), 0.0, -sin(_heading)) * (0.11 if _left else -0.11)
+		tracks.print_step(feet + side, _heading)
 
 
 func _landed(fall: float, space: PhysicsDirectSpaceState3D, hit: Dictionary) -> void:

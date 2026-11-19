@@ -28,6 +28,8 @@ from __future__ import annotations
 import math
 from pathlib import Path
 
+import sys
+
 import numpy as np
 from PIL import Image, ImageDraw
 
@@ -236,6 +238,34 @@ def paw_print() -> Image.Image:
     return _footprint((w, h), shapes, seed=302, tread=False)
 
 
+def blood_drops(size: int = 128) -> Image.Image:
+    """Gotas de sangre en la nieve: unas manchas redondas y salpicadas, rojo oscuro, con alfa."""
+    from PIL import ImageFilter
+
+    rng = np.random.default_rng(331)
+    mask = Image.new("L", (size, size), 0)
+    draw = ImageDraw.Draw(mask)
+    for _ in range(7):
+        cx, cy = rng.uniform(0.25, 0.75, 2) * size
+        r = rng.uniform(0.04, 0.12) * size
+        draw.ellipse((cx - r, cy - r * rng.uniform(0.7, 1.0), cx + r, cy + r), fill=255)
+        # Salpicaduras alrededor.
+        for _ in range(rng.integers(2, 6)):
+            angle = rng.uniform(0, 2 * np.pi)
+            far = r * rng.uniform(1.3, 2.4)
+            sr = r * rng.uniform(0.12, 0.3)
+            sx, sy = cx + np.cos(angle) * far, cy + np.sin(angle) * far
+            draw.ellipse((sx - sr, sy - sr, sx + sr, sy + sr), fill=255)
+    alpha = np.asarray(mask.filter(ImageFilter.GaussianBlur(1.2))).astype(np.float32) / 255.0
+    noise = fft_noise(size, 1.4, seed=332)
+    color = np.zeros((size, size, 4), np.float32)
+    color[..., 0] = 0.36 + 0.12 * noise
+    color[..., 1] = 0.05 + 0.03 * noise
+    color[..., 2] = 0.04 + 0.02 * noise
+    color[..., 3] = np.clip(alpha * (0.8 + 0.25 * noise), 0, 1)
+    return Image.fromarray((color * 255).astype(np.uint8), "RGBA")
+
+
 def grid_page(width: int = 544, height: int = 808) -> Image.Image:
     """Página cuadriculada (136 × 202 mm a 4 px/mm). Casi blanca: el color del papel lo pone el modelo."""
     rng = np.random.default_rng(31)
@@ -275,12 +305,20 @@ def main() -> None:
         "huella_bota.png": boot_print,
         "huella_perro.png": paw_print,
         "pagina_cuadriculada.png": grid_page,
+        "gotas_sangre.png": blood_drops,
     }
+    # Con nombres de archivo como argumentos, solo esos.
+    wanted = [arg for arg in sys.argv[1:] if arg.endswith(".png")]
+    if wanted:
+        outputs = {name: build for name, build in outputs.items() if name in wanted}
     for name, build in outputs.items():
         image = build()
         path = OUT_DIR / name
         image.save(path, optimize=True)
         print(f"  {path.relative_to(ROOT)}  {image.size[0]}x{image.size[1]} {image.mode}")
+    if wanted:
+        print(f"{len(outputs)} texturas generadas.")
+        return
     from pavimentos import TEXTURAS
 
     folder = OUT_DIR / "pavimentos"

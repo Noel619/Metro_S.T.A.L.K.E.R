@@ -48,6 +48,7 @@ func _ready() -> void:
 		)
 		if torch:
 			Flashlight.attach(camera).visible = true
+	_stage_pack()
 	_stage.call_deferred()
 
 
@@ -94,3 +95,30 @@ func _ground(from: Vector3) -> Vector3:
 	)
 	var hit: Dictionary = get_world_3d().direct_space_state.intersect_ray(query)
 	return hit["position"] if not hit.is_empty() else from + Vector3.DOWN * 2.0
+
+
+## La manada, de ronda en la plaza, junto al vestíbulo; y una cámara para verla.
+func _stage_pack() -> void:
+	var jauria: SurfacePack = level.jauria
+	if jauria == null or jauria.dogs.is_empty():
+		return
+	var spot: Vector2 = Vector2(300.0, 262.0)
+	var center: Vector3 = CityPlan.to_world(spot, level.city.surface_height(spot))
+	var poses: Array[StringName] = [
+		&"vigilar", &"olfatear", &"quieto", &"grunir", &"echado", &"quieto"
+	]
+	jauria.pack.paused = true
+	for index: int in jauria.dogs.size():
+		var dog: Dog = jauria.dogs[index]
+		dog.global_position = center + Pack.ring_offset(index, 2.6) + Vector3.UP * 0.5
+		dog.rotation.y = PI * 0.6 + index * 0.5
+		dog.stop(poses[index])
+	var camera: Camera3D = Camera3D.new()
+	camera.name = "Camara_jauria"
+	camera.fov = 55.0
+	add_child(camera)
+	camera.add_to_group(&"capture_camera")
+	var eye: Vector2 = Vector2(318.0, 270.0)
+	camera.look_at_from_position(
+		CityPlan.to_world(eye, level.city.surface_height(eye) + 1.6), center + Vector3.UP * 0.6
+	)

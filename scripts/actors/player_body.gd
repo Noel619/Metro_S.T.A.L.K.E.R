@@ -48,6 +48,8 @@ var can_run: bool = false
 var crouch: float = 0.0
 ## Lo que quiere el jugador: agacharse (o levantarse, si no hay techo encima).
 var crouch_wanted: bool = false
+## Arrodillado por otra cosa (abriendo la mochila): agachado sin tocar lo que quiere.
+var forced_crouch: bool = false
 ## De -1 (asomado a la izquierda) a 1 (a la derecha).
 var lean: float = 0.0
 ## De 0 (sin aliento) a 1.
@@ -70,7 +72,7 @@ func update(
 	lean_input: float,
 	can_stand: bool = true
 ) -> void:
-	var wants_crouch: bool = crouch_wanted or (crouch > 0.0 and not can_stand)
+	var wants_crouch: bool = crouch_wanted or forced_crouch or (crouch > 0.0 and not can_stand)
 	crouch = move_toward(crouch, 1.0 if wants_crouch else 0.0, delta / CROUCH_TIME)
 	var leaning: float = clampf(lean_input, -1.0, 1.0)
 	lean = move_toward(lean, leaning, delta * LEAN_SPEED)

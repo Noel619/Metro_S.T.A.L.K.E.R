@@ -85,7 +85,7 @@ func _on_item_worked(
 		&"etiqueta":
 			if _held_long(who, item, amount, TAG_HOLD):
 				tie_tag(item, who)
-		&"comida":
+		&"comida", &"cebo":
 			if item == who.held_item() and _held_long(who, item, amount, EAT_HOLD):
 				eat(item, who)
 	var recipe: RepairRecipe = RepairRecipe.for_item(item.state.data.id)

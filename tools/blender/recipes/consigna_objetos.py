@@ -465,6 +465,26 @@ def build_bread() -> bpy.types.Object:
     return root
 
 
+def build_salo() -> bpy.types.Object:
+    """Un trozo de salo (tocino salado) envuelto en papel de estraza atado con cordel: el
+    cebo para la Jauría (F3-07, F3-10). Es comida: quien lo da, se queda sin ella."""
+    root = tb.empty("salo-fisico")
+    mb = tb.MeshBuilder(seed=505)
+    # El tocino: blanco amarillento con la corteza parda y la sal por encima.
+    mb.box((0.12, 0.07, 0.045), (0.0, 0.0, 0.0225), "#D9CBB0", bevel=0.01, jitter=0.03)
+    mb.box((0.122, 0.072, 0.008), (0.0, 0.0, 0.004), "#7A5236", bevel=0.003)
+    mb.box((0.11, 0.004, 0.02), (0.0, -0.036, 0.03), "#B98A6A")
+    salo = mb.finish("salo", tb.material("pan", "#D9CBB0"), root)
+    paper = tb.MeshBuilder(seed=506)
+    paper.box((0.13, 0.08, 0.004), (-0.01, 0.01, 0.047), "#9C8466", rotation=(0.0, 4.0, -6.0), jitter=0.05)
+    paper.box((0.004, 0.084, 0.05), (0.066, 0.0, 0.025), "#9C8466", rotation=(0.0, 0.0, -4.0), jitter=0.05)
+    paper.bar((0.0, -0.045, 0.05), (0.0, 0.045, 0.05), 0.0025, "#6B5A40", 6)
+    wrap = paper.finish("salo_papel", tb.material("papel", "#9C8466"), root)
+    tb.collision_box("salo", (0.13, 0.08, 0.055), (0.0, 0.0, 0.0275), root)
+    tb.paint({salo: None, wrap: None}, samples=8, ao=0.3, seed=505)
+    return root
+
+
 # --------------------------------------------------------------------------
 # Mercancía
 # --------------------------------------------------------------------------
@@ -541,6 +561,7 @@ def models() -> dict:
         "etiqueta": build_tag,
         "sopa": build_soup,
         "pan": build_bread,
+        "salo": build_salo,
         "botiquin": build_first_aid,
         "vendas": build_bandages,
         "chatarra_cobre": build_copper,

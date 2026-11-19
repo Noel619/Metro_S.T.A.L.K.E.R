@@ -37,10 +37,13 @@ const LEAVE_SECONDS: float = 2.0
 ## Cada cuánto se rehace el cielo con la hora (segundos reales).
 const SKY_SECONDS: float = 10.0
 const DEFAULT_HOUR: float = 10.0
+## Lo que se queda la imagen al morir todos antes de volver al depósito.
+const GAME_OVER_SECONDS: float = 4.0
 const HELP: String = (
 	"WASD andar · Mayús correr · C agacharse · Q/E asomarse · Espacio saltar o encaramarse"
 	+ " · T linterna · F usar · botón izquierdo (mantener): trabajar (el volante de la compuerta)"
-	+ "\nPara volver: todos en la esclusa y la compuerta cerrada · F1 ocultar · Esc soltar el ratón"
+	+ "\nPara volver: todos en la esclusa y la compuerta cerrada · F3 lo que perciben los perros"
+	+ " · F1 ocultar · Esc soltar el ratón"
 )
 
 var plan: CityPlan
@@ -48,9 +51,12 @@ var city: City
 var env: SurfaceEnv
 var stimuli: Stimuli
 var ripples: InkRipples
+var tracks: Tracks
 var world: DepotWorld
 var items: WorldItems
 var hatch: Hatch
+var jauria: SurfacePack
+var wounds: Wounds
 
 var _sync: LevelSync
 var _players: Node3D
@@ -97,6 +103,12 @@ func _ready() -> void:
 	ripples = InkRipples.new()
 	ripples.name = "Ondas"
 	add_child(ripples)
+	tracks = Tracks.new()
+	tracks.name = "Rastros"
+	add_child(tracks)
+	var debug: PerceptionDebug = PerceptionDebug.new()
+	debug.name = "DepuracionPercepcion"
+	add_child(debug)
 	world = DepotWorld.new()
 	world.name = "Mundo"
 	world.save_key = "superficie"
@@ -105,6 +117,12 @@ func _ready() -> void:
 	items.name = "Objetos"
 	items.save_key = "objetos_superficie"
 	add_child(items)
+	wounds = Wounds.new()
+	wounds.name = "Heridas"
+	add_child(wounds)
+	jauria = SurfacePack.new()
+	jauria.setup(plan, city)
+	add_child(jauria)
 	_build_vestibule()
 	_players = Node3D.new()
 	_players.name = "Jugadores"
@@ -188,7 +206,23 @@ func _start_as_host() -> void:
 			_spawn_player(peer, String(info.get("variant", "chico")))
 	)
 	_give_back_what_they_carried.call_deferred()
+	jauria.start()
+	EventBus.game_over.connect(_on_game_over)
 	Sortie.arrived()
+
+
+## Han muerto todos: la partida se pierde y se vuelve al depósito, como el primer día.
+func _on_game_over() -> void:
+	if not multiplayer.is_server():
+		return
+	SaveSystem.delete_save()
+	Sortie.carried.clear()
+	await get_tree().create_timer(GAME_OVER_SECONDS).timeout
+	Sortie.arriving = &""
+	if Sortie.scene_changer.is_valid():
+		Sortie.scene_changer.call(Sortie.DEPOT_SCENE)
+	else:
+		SceneRouter.go_to(Sortie.DEPOT_SCENE)
 
 
 func _spawn_player(peer: int, variant: String) -> void:
@@ -210,6 +244,10 @@ func _build_player(values: Dictionary) -> Node:
 	var spot: Vector2 = ARRIVALS[int(values["slot"]) % ARRIVALS.size()]
 	player.position = vestibule_point(spot.x, spot.y, HALL_FLOOR + 0.05)
 	player.rotation.y = yaw_towards(Vector2(-1.0, 0.0))
+	if int(values["peer"]) == multiplayer.get_unique_id():
+		var fear: Fear = Fear.new()
+		fear.setup(player)
+		player.add_child(fear)
 	return player
 
 

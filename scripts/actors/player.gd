@@ -75,7 +75,8 @@ const HEAVY_WEIGHT: float = 15.0
 ## Rapidez con la que sube la mirada si lo que se coge no deja mirar tan abajo.
 const PITCH_RECOVERY: float = 2.5
 const LAYER_PLAYERS: int = 1 << 1
-const MASK_PLAYERS: int = (1 << 0) | (1 << 2)
+## Lo que para al jugador: el mundo, los objetos y los perros.
+const MASK_PLAYERS: int = (1 << 0) | (1 << 2) | (1 << 3)
 const MASK_REACH: int = (1 << 0) | (1 << 2) | (1 << 4)
 ## Lo que para a lo que se lleva: el mundo y los demás jugadores.
 const MASK_CARRY: int = (1 << 0) | (1 << 1)
@@ -156,6 +157,10 @@ var body: PlayerBody
 var footsteps: Footsteps
 ## Cómo está: si sangra, si ha muerto (lo decide el anfitrión; F3-12).
 var condition: PlayerCondition
+## Su mochila y su cinturón (F3-03).
+var pack: PlayerPack
+## Lo que tiemblan las manos por el miedo (metros; lo pone [Fear], en su equipo).
+var tremble: float = 0.0
 
 var _head: Node3D
 var _camera: Camera3D
@@ -165,6 +170,7 @@ var _moves: PlayerMoves = PlayerMoves.new()
 ## La linterna que ven los demás (en el jugador de los otros equipos).
 var _torch: SpotLight3D
 var _jump_queued: bool = false
+var _backpack_view: BackpackView
 var _avatar: PlayerAvatar
 var _arms: FirstPersonArms
 var _reticle: Reticle
@@ -223,6 +229,10 @@ func setup(new_peer: int, new_variant: String, new_slot: int) -> void:
 	condition = PlayerCondition.new()
 	condition.name = "Estado"
 	add_child(condition)
+	pack = PlayerPack.new()
+	pack.setup(self)
+	add_child(pack)
+	pack.changed.connect(func() -> void: footsteps.loose_items = pack.contents().loose_items())
 	_head = Node3D.new()
 	_head.name = "Cabeza"
 	_head.position.y = EYE_HEIGHTS[variant]
@@ -315,9 +325,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		flashlight_on = not flashlight_on
 	elif event.is_action_pressed(&"jump") and surface_rules:
 		_jump_queued = true
+	elif event.is_action_pressed(&"backpack"):
+		_use_backpack()
 	elif event.is_action_pressed(&"pause") and DisplayServer.get_name() != "headless":
 		var captured: bool = Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if captured else Input.MOUSE_MODE_CAPTURED
+	else:
+		for slot: int in Backpack.BELT_SLOTS:
+			if event.is_action_pressed(StringName("belt_%d" % (slot + 1))):
+				pack.belt_key(slot)
 
 
 func _process(delta: float) -> void:
@@ -364,7 +380,14 @@ func _physics_process(delta: float) -> void:
 		_moves.step_mantle(self, delta)
 		return
 	var input: Vector2 = scripted_input
-	var keys: bool = Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not CloseUp.is_open()
+	var keys: bool = (
+		Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+		and not CloseUp.is_open()
+		and not pack.is_busy()
+	)
+	body.forced_crouch = pack.is_busy() or _backpack_view != null
+	if pack.is_busy() or _backpack_view != null:
+		input = Vector2.ZERO
 	if input == Vector2.ZERO and keys:
 		input = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
 	var lean_input: float = 0.0
@@ -541,9 +564,33 @@ func hunger_slowdown() -> float:
 	return HUNGRY_SPEED if GameState.hungry_days >= GameState.HUNGRY_SHAKE else 1.0
 
 
-## Los kilos que lleva encima: lo de las manos (y, con la mochila, lo de dentro).
+## Los kilos que lleva encima: lo de las manos, la mochila y el cinturón.
 func carried_weight() -> float:
-	return _held.state.data.weight if _held != null else 0.0
+	var hands: float = _held.state.data.weight if _held != null else 0.0
+	return hands + (pack.weight() if pack != null else 0.0)
+
+
+## I: con algo en la mano, se guarda; si no, se abre la mochila (en la superficie,
+## arrodillándose primero).
+func _use_backpack() -> void:
+	if _backpack_view != null:
+		return
+	if _held != null:
+		pack.store_held()
+		return
+	if pack.is_busy() or _camera == null:
+		return
+	var seconds: float = PlayerPack.OPEN_SECONDS if surface_rules else 0.0
+	if seconds <= 0.0:
+		_open_backpack()
+	else:
+		pack.after_kneeling(seconds, _open_backpack)
+
+
+func _open_backpack() -> void:
+	_backpack_view = BackpackView.new()
+	_backpack_view.open(pack, _camera)
+	_backpack_view.closed.connect(func() -> void: _backpack_view = null)
 
 
 ## Lo alto que es ahora (agachado, menos).
@@ -613,11 +660,9 @@ func set_held_item(item: Carryable) -> void:
 			_arms.hold(null)
 
 
-## Cuánto frena lo que lleva: de 1 (nada) hacia 0.
+## Cuánto frena lo que lleva (en las manos y a la espalda): de 1 (nada) hacia 0.
 func carry_slowdown() -> float:
-	if _held == null:
-		return 1.0
-	return 1.0 / (1.0 + _held.state.data.weight / HALF_SPEED_WEIGHT)
+	return 1.0 / (1.0 + carried_weight() / HALF_SPEED_WEIGHT)
 
 
 ## Lo más que puede bajar la mirada ahora: sin nada en las manos, el límite de
@@ -656,11 +701,12 @@ func carry_target(item: Carryable, cast: bool = true) -> Transform3D:
 	if cast and is_inside_tree():
 		_reach_share = _free_share(item, turn, start + direction * near, direction, far - near)
 	var center: Vector3 = start + direction * lerpf(near, far, _reach_share)
-	if GameState.hungry_days >= GameState.HUNGRY_SHAKE:
+	var shake: float = (
+		tremble + (HUNGRY_TREMBLE if GameState.hungry_days >= GameState.HUNGRY_SHAKE else 0.0)
+	)
+	if shake > 0.0:
 		var t: float = Time.get_ticks_msec() / 1000.0
-		center += (
-			Vector3(sin(t * 23.0) + sin(t * 37.0) * 0.5, sin(t * 29.0 + 1.3), 0.0) * HUNGRY_TREMBLE
-		)
+		center += Vector3(sin(t * 23.0) + sin(t * 37.0) * 0.5, sin(t * 29.0 + 1.3), 0.0) * shake
 	return Transform3D(turn, center - turn * bounds.get_center())
 
 
