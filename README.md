@@ -45,7 +45,7 @@ Gestión acogedora bajo tierra · Exploración de terror en la superficie · 3D 
 
 | | |
 |---|---|
-| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) completa, a falta de tu aprobación · Fase 2 (*El Depósito jugable*) en curso · Fase 3 empezada: la maqueta de la ciudad (F3-15), su red de tránsito (F3-17) y los edificios de la superficie (F3-16) |
+| **Fase actual** | Fase 0 terminada · Fase 1 (*Prueba de Tinta*) completa, a falta de tu aprobación · Fase 2 (*El Depósito jugable*) en curso · Fase 3 (*La Superficie jugable*) casi completa: se sube por la escalera, se saquea La Plaza con la Jauría al acecho y se vuelve; falta el sonido (aplazado) y recorrer las casas grandes |
 | **Motor** | Godot 4.7.2 |
 | **Plataforma** | PC (Windows; la build de Linux sale casi gratis) |
 | **Idioma** | Solo español |
@@ -161,6 +161,26 @@ Los hitos y los sitios clave no salen del kit: son modelos enteros, hechos uno a
 
 Tienen su colisión hecha a mano (los escalones y las escaleras son rampas) y dicen dónde quitar el terreno cuando bajan bajo la calle. Se ven en `diorama_vestibulo.tscn`, `diorama_partido.tscn` y `diorama_soviets.tscn` ([DESARROLLO.md](docs/DESARROLLO.md#los-edificios-singulares)), y ya están en la maqueta.
 
+### La superficie jugable (Fase 3)
+
+| | |
+|---|---|
+| ![Desde el mirador: la azotea del peristilo del vestíbulo, con la argolla para la cuerda, y la plaza](docs/capturas/fase3_mirador.jpg) | ![El cuaderno abierto: La Plaza dibujada a mano, los sellos y las notas](docs/capturas/fase3_cuaderno.jpg) |
+| ![Las ganzúas en la cerradura del quiosco: los pines, la ganzúa y la llave de tensión](docs/capturas/fase3_ganzuas.jpg) | ![La escalera de servicio de la sala, hasta el ventanal alto](docs/capturas/fase3_escalera.jpg) |
+| ![Los trasteros del primer patio, a la sombra de las casas: con la linterna, una caseta abierta](docs/capturas/fase3_trasteros.jpg) | ![El palomar y los trasteros del patio](docs/capturas/fase3_palomar.jpg) |
+| ![Las tiendas de la evacuación en la plaza de la Estación](docs/capturas/fase3_tiendas.jpg) | ![El centro de transformación: el refugio](docs/capturas/fase3_transformador.jpg) |
+
+Se sube por las escaleras mecánicas del depósito hasta la esclusa del vestíbulo, se abre la compuerta girando el volante y se sale a La Plaza; se vuelve entrando en la esclusa y cerrando la compuerta. Todo en primera persona y sin marcadores: lo que sabes de la ciudad es lo que ves, lo que oyes (que aún se ve en ondas de tinta: el sonido está aplazado, [D-061](docs/DECISIONES.md)) y lo que dibujas.
+
+- **El cuerpo:** agacharse, asomarse, correr con aliento, saltar, encaramarse y trepar por escaleras y cuerdas. Cada paso suena según el suelo, la postura y el peso, y lo suelto de la mochila tintinea. Cuánto se te ve depende de la luz de la hora, la sombra, el techo, la silueta contra el cielo y el movimiento.
+- **Lo que llevas:** la mochila en cuadrícula (abrirla es arrodillarse) y el cinturón; la brújula, el reloj (R), el podómetro y los prismáticos; lo que se lanza para distraer, el despertador y la tiza.
+- **Entrar:** las puertas de quioscos, trasteros y del transformador están cerradas con cerradura, candado, cadena o atrancadas: las ganzúas (pin a pin, y el miedo hace temblar la mano), la palanca (se oye en toda la plaza) y la cizalla. En la caja de tu padre, junto a la mesa de planificación del depósito, hay ganzúas, cizalla, tiza y un podómetro.
+- **La Jauría:** seis perros con su guía, su rutina de día y de noche y sus modos (ronda, investigar, rastreo, tanteo, rodeo, persecución, ataque). Ven, oyen y huelen con el viento, y solo saben lo que perciben. Entran por las puertas abiertas; las cerradas los dejan fuera; arriba no suben.
+- **El miedo y las heridas:** el miedo no tiene barra, se nota en las manos, la linterna, la respiración y el dibujo; una mordedura sangra hasta que la vendas, y si mueres se pierde la partida (y tu cuaderno contigo).
+- **El cuaderno** (Tab): dibujas tu mapa a mano con lápiz, goma, regla, colores, siete sellos (el del reloj escribe la hora) y notas. Se guarda con la partida.
+- **La Plaza:** los quioscos, las tiendas de la evacuación, los trasteros de los patios, el palomar y el transformador se recorren por dentro, con su botín la primera vez; el mirador del vestíbulo se sube por una escalera de servicio y se baja por una cuerda que se queda atada; y hay rastros: los huesos donde come la Jauría y una flecha de tiza azulada de tu padre.
+- **Cómo es por dentro**, en [docs/SUPERFICIE.md](docs/SUPERFICIE.md). Se juega con dos o más equipos (`make test-net` sube, saquea y vuelve con dos).
+
 ### Decisiones tomadas
 
 | Tema | Decisión |
@@ -196,7 +216,8 @@ Tienen su colisión hecha a mano (los escalones y las escaleras son rampas) y di
 2. **Fase 2**: jugar el depósito en tu PC, del primer día a la primera venta y a dormir, y contarme qué falla, qué sobra o qué no se entiende sin textos. Pendiente: el sonido (cuando lo decidas).
 3. **La maqueta** (F3-15): abrirla en tu PC, recorrerla y medir el rendimiento con la tecla B (aquí no hay gráfica, solo puedo contar llamadas de dibujo y triángulos). Ahora, con los edificios del kit, las calles residenciales cuestan entre 900 y 1.250 llamadas: es la medida que más interesa.
 4. **Los edificios** (F3-16): revisar las capturas, recorrer con F6 los dioramas de edificios y los de los tres singulares, y verlos en la maqueta (Ctrl+4 y Ctrl+5: el vestíbulo y la Casa de los Sóviets). Lo siguiente serían los interiores de serie, el resto de los sitios clave y, si el rendimiento lo pide, juntar las piezas iguales de cada manzana.
-5. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
+5. **La superficie** (Fase 3): subir desde el depósito (de 7 a 20 h la reja está abierta; la caja de tu padre tiene las ganzúas y la cizalla), saquear un quiosco y un trastero, subir al mirador, dibujar La Plaza en el cuaderno y volver, solo y con alguien. Y decirme si la Jauría asusta y si alguna muerte se siente injusta: es el criterio de la fase.
+6. Responder las [preguntas abiertas](#17-preguntas-abiertas) que quedan: dos son nuevas y salen de la maqueta.
 
 ---
 
@@ -1014,27 +1035,27 @@ Cada fase tiene un **objetivo**, unas **tareas** (con un ID para seguirlas en la
 
 **Objetivo**: una salida corta en la que planificar sirva y la Jauría dé miedo de verdad.
 
-- [ ] **F3-01** Controlador de superficie: agacharse, asomarse, correr con aliento; ruido según el suelo, la postura y el peso.
-- [ ] **F3-02** Visibilidad: luz, sombra, silueta y movimiento determinan cuánto se te ve.
-- [ ] **F3-03** Mochila en cuadrícula y cinturón de 3 huecos. Abrirla en la superficie es lento.
-- [ ] **F3-04** **El cuaderno**: dibujar a mano (lápiz, goma, regla, colores, símbolos, notas), con trazos vectoriales que se guardan.
-- [ ] **F3-05** Instrumentos: brújula, podómetro, reloj y prismáticos.
-- [ ] **F3-06** Herramientas de acceso: ganzúas, palanca, cuerda y cizalla.
-- [ ] **F3-07** Distracciones: lanzables y despertador.
-- [ ] **F3-08** Tiza: marcas persistentes.
-- [ ] **F3-09** Percepción común (vista, oído, olfato con viento) con su herramienta de depuración.
-- [ ] **F3-10** **La Jauría**, completa: manada, líder, tanteo, rodeo, persecución, rastro de olor y de sangre, cebo.
-- [ ] **F3-11** Miedo: manos, linterna y trazo que tiemblan; respiración; estilo que reacciona.
-- [ ] **F3-12** Heridas básicas: mordeduras y sangrado.
-- [ ] **F3-13** Audio: oclusión, reverberación, ambiente dinámico, nieve.
-- [ ] **F3-14** **Zona 1, La Plaza**: primero con geometría provisional y después estilizada, con al menos 3 rutas a cada objetivo.
+- [x] **F3-01** Controlador de superficie: agacharse, asomarse, correr con aliento; ruido según el suelo, la postura y el peso. *(Y saltar, encaramarse y trepar por escaleras y cuerdas.)*
+- [x] **F3-02** Visibilidad: luz, sombra, silueta y movimiento determinan cuánto se te ve.
+- [x] **F3-03** Mochila en cuadrícula y cinturón de 3 huecos. Abrirla en la superficie es lento.
+- [x] **F3-04** **El cuaderno**: dibujar a mano (lápiz, goma, regla, colores, símbolos, notas), con trazos vectoriales que se guardan.
+- [x] **F3-05** Instrumentos: brújula, podómetro, reloj y prismáticos.
+- [x] **F3-06** Herramientas de acceso: ganzúas, palanca, cuerda y cizalla.
+- [x] **F3-07** Distracciones: lanzables y despertador.
+- [x] **F3-08** Tiza: marcas persistentes.
+- [x] **F3-09** Percepción común (vista, oído, olfato con viento) con su herramienta de depuración.
+- [x] **F3-10** **La Jauría**, completa: manada, líder, tanteo, rodeo, persecución, rastro de olor y de sangre, cebo.
+- [x] **F3-11** Miedo: manos, linterna y trazo que tiemblan; respiración; estilo que reacciona.
+- [x] **F3-12** Heridas básicas: mordeduras y sangrado.
+- [ ] **F3-13** Audio: oclusión, reverberación, ambiente dinámico, nieve. *(Aplazado por decisión: el ruido existe para la IA y se ve en ondas de tinta, [D-061](docs/DECISIONES.md).)*
+- [x] **F3-14** **Zona 1, La Plaza**: primero con geometría provisional y después estilizada, con al menos 3 rutas a cada objetivo. *(Con los edificios menores enteros y por dentro, el mirador, el refugio y las señales de la Jauría; Correos, el Gastronom, el Banco y el paso subterráneo esperan a que se recorran las casas grandes, [D-067](docs/DECISIONES.md).)*
 - [x] **F3-15** **Maqueta automática de la ciudad**: un generador en Godot lee `data/ciudad/plano.json` y levanta la ciudad entera en volúmenes sencillos (relieve, calles, edificios a su altura, escombros). Sirve para probar recorridos, vistas, sectores de carga y rendimiento antes de construir. *(Hecha: `scenes/debug/maqueta_ciudad.tscn`, con recorridos de las rutas, hitos a la vista, prueba de rendimiento y 48 sectores con dos niveles de detalle; ver [CIUDAD.md](docs/CIUDAD.md#15-la-maqueta).)*
 - [ ] **F3-16** Kit modular de arquitectura soviética para los tipos del plano (jrushchovka, bloque de 9 plantas, casa estalinista), con daños por nivel e interiores de serie. *(Hechos los exteriores de las 138 viviendas del plano, en cuatro familias, con sus daños y los falsos interiores que se ven por las ventanas, y los tres primeros edificios singulares: el vestíbulo del metro y el Edificio Partido, con su interior, y la Casa de los Sóviets con su torre; ver [DESARROLLO.md](docs/DESARROLLO.md#el-kit-de-arquitectura-f3-16). Faltan los interiores de serie que se recorren, el resto de los sitios clave y llevarlos a la maqueta.)*
 - [ ] **F3-17** **Red de tránsito de la ciudad** en 3D: calzadas, aceras, bordillos, plazas, sendas, camino, escaleras y el tablero del puente, con muros, pretiles, pasos de cebra, tapas y sumideros, encajados en el relieve y con colisión que se sube andando. *(Hecho en la maqueta todo lo que se pisa y las vías del tren y del tranvía, con la estación, la playa de vías, los desvíos, los topes y los pasos a nivel, y los modelos de detalle de las tapas, los sumideros y las traviesas: ver [CIUDAD.md](docs/CIUDAD.md#16-la-red-de-tránsito). Todo roto como debe estar (el firme levantado en placas, socavones sobre lo que reventó debajo, escombros, basura y farolas caídas, grietas, baches, tapas abiertas o robadas, bordillos que faltan o se han movido, pintura a trozos, óxido y matojos): ver [CIUDAD.md](docs/CIUDAD.md#17-la-superficie-rota). Falta el cruce del tranvía con el apartadero de la fábrica.)*
 
 **Entregable**: una salida de 10 a 20 minutos: subir por la escalera, llegar a un objetivo y volver.
 **Criterio de salida**: en las pruebas, los jugadores planifican antes de salir, dibujan su mapa, usan al menos dos rutas distintas y ninguna muerte se siente injusta.
-**Estado**: 🟨 empezada por la ciudad: F3-15 hecha, F3-16 con los exteriores de las viviendas hechos y F3-17 (la red de tránsito) casi, a falta de tu revisión. La maqueta es geometría provisional y no depende del estilo, así que se ha adelantado mientras se aprueba la Fase 1; los edificios del kit siguen el estilo de la Fase 1 tal como está.
+**Estado**: 🟨 casi completa: la salida se juega entera (subir, saquear La Plaza con la Jauría y volver, en solitario y en red), con el cuaderno, los instrumentos, las herramientas, el miedo y las heridas ([SUPERFICIE.md](docs/SUPERFICIE.md)). Quedan el sonido (aplazado, D-061), los interiores de las casas grandes (D-067) y tu prueba con el criterio de la fase. La ciudad: F3-15 hecha, F3-16 con los exteriores de las viviendas, los singulares y los menores, y F3-17 casi.
 
 ### Fase 4: El mundo vivo · tamaño L
 

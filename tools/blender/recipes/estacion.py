@@ -408,7 +408,12 @@ def build_corridor() -> bpy.types.Object:
     tb.collision_box("locales_der", (HALF_L - DEPOT_HALF, WALL_T, SPRING), ((HALF_L + DEPOT_HALF) / 2.0, WALL_T / 2.0, SPRING / 2.0), root)
     tb.collision_box("arqueria", (2 * HALF_L, ARCADE_T + 0.6, SPRING), (0.0, ARCADE - (ARCADE_T + 0.6) / 2.0 + 0.0, SPRING / 2.0), root)
     tb.collision_box("extremo_izq", (WALL_T + 0.8, DEPTH + 1.0, SPRING), (-HALF_L - (WALL_T + 0.8) / 2.0 + 0.3, ARCADE / 2.0, SPRING / 2.0), root)
-    tb.collision_box("extremo_der", (WALL_T, DEPTH + 1.0, SPRING), (HALF_L + WALL_T / 2.0 + 0.3, ARCADE / 2.0, SPRING / 2.0), root)
+    # El extremo de la derecha deja libre la boca de las escaleras mecánicas (se sube por ellas).
+    x_right = HALF_L + WALL_T / 2.0 + 0.3
+    y0, y1 = ESCALATOR_Y
+    tb.collision_box("extremo_der", (WALL_T, y0 - (ARCADE - 0.5), SPRING), (x_right, (y0 + ARCADE - 0.5) / 2.0, SPRING / 2.0), root)
+    tb.collision_box("extremo_der_fachada", (WALL_T, 0.5 - y1, SPRING), (x_right, (0.5 + y1) / 2.0, SPRING / 2.0), root)
+    tb.collision_box("extremo_der_dintel", (WALL_T, y1 - y0, SPRING - ESCALATOR_H), (x_right, (y0 + y1) / 2.0, (SPRING + ESCALATOR_H) / 2.0), root)
     tb.collision_box("techo", (2 * HALF_L, DEPTH, 0.3), (0.0, ARCADE / 2.0, CROWN + 0.15), root)
     tb.paint({p: None for p in pieces}, samples=12, ao=0.45, ao_distance=0.4, seed=7)
     return root

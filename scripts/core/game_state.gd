@@ -50,6 +50,12 @@ var ledger: Array = []
 var jobs: Array = []
 ## La hora corre (en el depósito sí; en los menús, no).
 var clock_running: bool = false
+## La mochila y el cinturón de cada jugador, por su puesto ("0" el anfitrión): lo que
+## guarda [method Backpack.to_dict]. Lo cambia el anfitrión ([PlayerPack]).
+var packs: Dictionary = {}
+## El cuaderno de cada jugador, por su puesto: lo que guarda [method Notebook.to_dict].
+## Lo cambia el anfitrión ([PlayerNotebook]).
+var notebooks: Dictionary = {}
 
 var _push_pending: bool = false
 var _clock_sync: float = 0.0
@@ -81,11 +87,50 @@ func reset_for_new_game(new_player_name: String, new_protagonist: String = "chic
 	debt = 0
 	flags.clear()
 	minute = WAKE_MINUTE
+	# El reloj echa a andar cuando se entra en el local (DepotLevel).
+	clock_running = false
 	fed_today = 0.0
 	hungry_days = 0
 	dose = 0.0
 	ledger.clear()
 	jobs.clear()
+	packs.clear()
+	notebooks.clear()
+	push()
+
+
+## La mochila del jugador del puesto [param slot] (una copia: para cambiarla, [method set_pack]).
+func pack(slot: int) -> Backpack:
+	return Backpack.from_dict(packs.get(str(slot), {}))
+
+
+## Cambia la mochila del puesto [param slot]. Solo el anfitrión: la manda a todos.
+func set_pack(slot: int, value: Backpack) -> void:
+	if not multiplayer.is_server():
+		return
+	packs[str(slot)] = value.to_dict()
+	push()
+
+
+## El cuaderno del jugador del puesto [param slot] (una copia: para cambiarlo,
+## [method set_notebook]).
+func notebook(slot: int) -> Notebook:
+	return Notebook.from_dict(notebooks.get(str(slot), {}))
+
+
+## Cambia el cuaderno del puesto [param slot]. Solo el anfitrión: lo manda a todos.
+func set_notebook(slot: int, value: Notebook) -> void:
+	if not multiplayer.is_server():
+		return
+	notebooks[str(slot)] = value.to_dict()
+	push()
+
+
+## El cuaderno del puesto [param slot] se pierde (su dueño ha muerto). Solo el anfitrión.
+func lose_notebook(slot: int) -> void:
+	if not multiplayer.is_server() or not notebooks.has(str(slot)):
+		return
+	notebooks.erase(str(slot))
 	push()
 
 
@@ -225,6 +270,8 @@ func save_state() -> Dictionary:
 		"dose": dose,
 		"ledger": ledger.duplicate(true),
 		"jobs": jobs.duplicate(true),
+		"packs": packs.duplicate(true),
+		"notebooks": notebooks.duplicate(true),
 	}
 
 
@@ -242,6 +289,12 @@ func load_state(data: Dictionary) -> void:
 	dose = float(data.get("dose", 0.0))
 	ledger = _array(data.get("ledger", []))
 	jobs = _array(data.get("jobs", []))
+	var loaded_packs: Variant = data.get("packs", {})
+	packs = (loaded_packs as Dictionary).duplicate(true) if loaded_packs is Dictionary else {}
+	var loaded_notebooks: Variant = data.get("notebooks", {})
+	notebooks = (
+		(loaded_notebooks as Dictionary).duplicate(true) if loaded_notebooks is Dictionary else {}
+	)
 	push()
 
 

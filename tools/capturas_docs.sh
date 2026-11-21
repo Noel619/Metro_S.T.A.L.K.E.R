@@ -5,7 +5,7 @@
 #
 # Uso: tools/capturas_docs.sh [filtro]
 #   filtro: solo los grupos cuyo nombre lo contenga (deposito, consigna, equipo, patio,
-#   interfaz, maqueta, kit, singulares).
+#   interfaz, maqueta, kit, singulares, superficie).
 set -eu
 cd "$(dirname "$0")/.."
 FILTER="${1:-}"
@@ -178,4 +178,21 @@ if want singulares; then
     keep soviets_camara_avenida fase3_singular_soviets
     keep soviets_camara_escombro fase3_singular_soviets_escombro
     keep soviets_camara_cuarto fase3_singular_soviets_cuarto
+fi
+if want superficie; then
+    # La superficie jugable (Fase 3): el mirador, las ganzúas, la escalera de servicio y
+    # los trasteros, en la superficie entera; el cuaderno, en el depósito; los menores, en
+    # sus dioramas.
+    for toma in mirador ganzuas escalera trasteros; do
+        capture debug/revision_plaza "$toma" "--toma=$toma" 150
+        keep "$toma" "fase3_$toma"
+    done
+    capture style/primera_persona_cuaderno cuaderno "" 80
+    keep cuaderno fase3_cuaderno
+    capture style/diorama_tiendas tiendas "" 20
+    keep tiendas_camara_tiendas fase3_tiendas
+    capture style/diorama_menores menores "" 20
+    keep menores_camara_patio fase3_palomar
+    capture style/diorama_transformador transformador "" 20
+    keep transformador_camara_transformador fase3_transformador
 fi

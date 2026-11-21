@@ -9,6 +9,7 @@ display_name = "Despertador"
 category = 3
 model = "despertador"
 weight = 0.4
+tool = &"despertador"
 grid_shape = Array[Vector2i]([Vector2i(0, 0)])
 fragility = 0.4
 base_value = 20

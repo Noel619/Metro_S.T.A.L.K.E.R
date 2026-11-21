@@ -79,6 +79,14 @@ MAIN_SWING = 84.0
 WELDED = (0, 5, 10)  # las otras puertas, soldadas desde abajo
 WALLED = (1, 19)  # las ventanas que daban a la esclusa
 BURNT = (7, 8)  # las ventanas quemadas
+# El mirador (F3-14): una escalera de servicio sube por dentro, apartada del muro para
+# salvar la cornisa, hasta el ventanal alto de su lado (roto: por él se sale a la azotea
+# del peristilo). En el antepecho, sobre la plaza, una argolla para atar una cuerda.
+LADDER_BAY = 12
+LADDER_OFF = 0.42  # de la cara de dentro del muro a los peldaños
+LADDER_HALF = 0.24
+RUNG = 0.28
+ROPE_BAY = 19
 
 # La esclusa, las escaleras y el túnel (en el marco de la rotonda).
 LOCK_X = 1.6  # la cara del muro de la compuerta, hacia la sala
@@ -423,6 +431,8 @@ def _openings(builder: tb.MeshBuilder, k: int, door: bool, lower: tuple, rng: ra
         state = "quemada" if k in BURNT else rng.choice(("rota", "rota", "vacia", "intacta", "tapiada", "rota"))
         kit.window(builder, lower, "alta", state, rng, depth=0.16, wall=WALL, frame_color=FRAME_LIGHT, sill=False)
     high = "quemada" if k in BURNT else rng.choice(("rota", "intacta", "rota", "vacia"))
+    if k == LADDER_BAY:
+        high = "vacia"  # por aquí se sale a la azotea
     kit.window(builder, CLERESTORY, "escalera", high, rng, depth=0.12, wall=WALL, frame_color=FRAME_LIGHT, sill=False)
 
 
@@ -450,6 +460,18 @@ def _entablature(mb: tb.MeshBuilder) -> None:
         (c + 0.05, ROOF + 0.12), (w, ROOF),
     ]
     mb.lathe(profile, (0.0, 0.0, 0.0), DETAIL, segments=96, sharp_angle=30.0, jitter=0.02)
+
+
+def _rope_ring(mb: tb.MeshBuilder) -> None:
+    """La argolla del antepecho, sobre la plaza: un perno con su anilla, para atar una
+    cuerda (F3-06)."""
+    phi = _bay_angle(ROPE_BAY)
+    radial = Vector((math.cos(phi), math.sin(phi), 0.0))
+    lateral = Vector((-math.sin(phi), math.cos(phi), 0.0))
+    base = radial * (R_COL + 0.3) + Vector((0.0, 0.0, ROOF + 0.84))
+    mb.cylinder(0.03, 0.12, base + Vector((0.0, 0.0, 0.03)), STEEL, segments=8)
+    ring = [base + Vector((0.0, 0.0, 0.08)) + (lateral * math.cos(t) + Vector((0.0, 0.0, 1.0)) * math.sin(t)) * 0.07 for t in (math.pi * i / 6.0 for i in range(13))]
+    mb.tube(ring, 0.012, RUST, segments=6)
 
 
 def _vases(mb: tb.MeshBuilder) -> None:
@@ -847,6 +869,29 @@ def _fittings(mb: tb.MeshBuilder, rng: random.Random, solids: list) -> None:
     _machines(mb, solids)
     _pram(mb, solids)
     _luggage(mb, rng, solids)
+    _service_ladder(mb)
+
+
+def _service_ladder(mb: tb.MeshBuilder) -> None:
+    """La escalera de pates de servicio, de la sala al ventanal alto: dos largueros y sus
+    peldaños, apartados del muro con escuadras (la cornisa de dentro queda detrás), y los
+    largueros pasan del alféizar para agarrarse al salir."""
+    top = CLERESTORY[1]
+
+    def build(builder: tb.MeshBuilder) -> None:
+        y = -LADDER_OFF
+        with builder.material(3):
+            for x in (-LADDER_HALF, LADDER_HALF):
+                builder.box((0.06, 0.02, top + 0.9 - FLOOR), (x, y, (FLOOR + top + 0.9) / 2.0), STEEL, jitter=0.05)
+            z = FLOOR + 0.3
+            while z < top - 0.05:
+                builder.bar((-LADDER_HALF, y, z), (LADDER_HALF, y, z), 0.014, RUST, segments=6)
+                z += RUNG
+            for z in (FLOOR + 1.6, FLOOR + 4.4, FLOOR + 7.2, 10.48):
+                for x in (-LADDER_HALF, LADDER_HALF):
+                    builder.box((0.04, LADDER_OFF + 0.02, 0.04), (x, y / 2.0, z), STEEL)
+
+    _placed(mb, _inner(_bay_angle(LADDER_BAY)), build)
 
 
 # --------------------------------------------------------------------------
@@ -1153,14 +1198,18 @@ def _drum_walls(mb: tb.MeshBuilder, holes_of) -> None:
 
 def _collision(mb: tb.MeshBuilder, solids: list) -> None:
     """Lo que se pisa y lo que para: el basamento (los escalones, una rampa), el suelo de la
-    sala, el tambor con la puerta de salida abierta y su hoja, las columnas, la esclusa con
-    la compuerta, el rellano y las escaleras (otra rampa, entre sus balaustradas), el túnel
-    y las cosas sueltas de dentro y de fuera."""
+    sala, el tambor con la puerta de salida abierta y su hoja, las columnas, la esclusa (sin
+    la hoja de la compuerta, que se mueve en el juego), el rellano y las escaleras (otra
+    rampa, entre sus balaustradas), el túnel y las cosas sueltas de dentro y de fuera."""
     mb.lathe([(PODIUM + 0.05, -0.4), (PODIUM + 0.05, 0.0), (PODIUM - 0.7, FLOOR), (APOTHEM_IN - 0.1, FLOOR)], (0.0, 0.0, 0.0), GRANITE, segments=48)
     for polygon, _, _ in _floor_tiles((0.0, 3.0, 6.0, R_IN + 0.05), lambda i: BAYS):
         for piece in _outside_lock(polygon):
             mb.polygon([(x, y, FLOOR) for x, y in piece], GRANITE)
-    _drum_walls(mb, lambda k: [(DOOR[0], FLOOR, 0.05, DOOR[3])] if k == MAIN else [])
+    _drum_walls(mb, lambda k: [(DOOR[0], FLOOR, 0.05, DOOR[3])] if k == MAIN else ([CLERESTORY] if k == LADDER_BAY else []))
+    # La azotea del peristilo y su antepecho (el mirador, F3-14), de una pieza.
+    c, w = R_COL, APOTHEM_OUT - 0.2
+    roof = [(w, COL_TOP), (c + 0.5, COL_TOP), (c + 0.5, ROOF + 0.84), (c + 0.05, ROOF + 0.84), (c + 0.05, ROOF), (w, ROOF), (w, COL_TOP)]
+    mb.lathe(roof, (0.0, 0.0, 0.0), DETAIL, segments=48)
     # La hoja abierta de la puerta de salida: gira sobre su canto izquierdo (x0 + marco).
     hinge = Vector((DOOR[0] + 0.06, 0.18))
     tip = hinge + Vector((math.cos(math.radians(-MAIN_SWING)), math.sin(math.radians(-MAIN_SWING)))) * 0.94
@@ -1170,7 +1219,7 @@ def _collision(mb: tb.MeshBuilder, solids: list) -> None:
         phi = _column_angle(k)
         mb.cylinder(0.5, COL_TOP - FLOOR, (R_COL * math.cos(phi), R_COL * math.sin(phi), (COL_TOP + FLOOR) / 2.0), DETAIL, segments=8)
     _lock_shell(mb, CONCRETE)
-    _placed(mb, _hatch_frame(), lambda b: b.box((0.14, 1.6, 2.2), (-0.07, 0.8, FLOOR + 1.1), STEEL))
+    # La compuerta no: se abre y se cierra en el juego, con su propia colisión (F3-14).
     inner = LOCK_HALF - LOCK_WALL
     mb.box((STAIR_TOP + 0.2 - LOCK_X, 2.0 * inner, 0.3), ((LOCK_X + STAIR_TOP + 0.2) / 2.0, 0.0, FLOOR - 0.15), CONCRETE)
     length = STAIR_RUN / math.cos(SLOPE)
@@ -1236,6 +1285,8 @@ def build_kit() -> object:
         _entablature(mb)
         _vases(mb)
         _tablet(mb)
+    with mb.material(4):
+        _rope_ring(mb)
     _to_plan(mb)
     piece = mb.finish("vestibulo", kit.materials("nevado", "vidrio", "interior", "estuco", "metal"))
     tb.stain(piece, "#2A2522", amount=0.5, scale=0.9, coverage=0.35, seed=601, stretch_z=0.35)

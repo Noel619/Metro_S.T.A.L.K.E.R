@@ -23,7 +23,12 @@ static func attach(items: WorldItems, body: RigidBody3D, item: Carryable) -> voi
 	for entry: Array in COMMON:
 		_add(items, body, item, entry[0], [entry[1]], entry[2])
 	if data.nutrition > 0.0:
-		_add(items, body, item, "Comer", [&"comida"], Workable.Gesture.HOLD).self_use = true
+		# El cebo (el salo) también se come: es comida.
+		_add(items, body, item, "Comer", [&"comida", &"cebo"], Workable.Gesture.HOLD).self_use = true
+	if data.tool == &"vendas" or data.tool == &"botiquin":
+		_add(items, body, item, "Vendarse", [data.tool], Workable.Gesture.HOLD).self_use = true
+	if data.tool == &"despertador":
+		_add(items, body, item, "Dar cuerda", [data.tool], Workable.Gesture.CIRCLE).self_use = true
 	if item.state.extra.has("contenido"):
 		_add(items, body, item, "Abrir", [Workable.HANDS], Workable.Gesture.PULL)
 	var recipe: RepairRecipe = RepairRecipe.for_item(data.id)
@@ -38,12 +43,20 @@ static func attach(items: WorldItems, body: RigidBody3D, item: Carryable) -> voi
 			var amount: float = clampf(item.state.data.weight / 6.0 + speed / 6.0, 0.0, 1.2)
 			if amount > 0.35:
 				items.puff.rpc(item.body().global_position, amount)
+			items.item_landed.emit(item, speed)
 	)
 	var view: ItemView = ItemView.new()
 	view.name = "Vista"
 	view.item = item
 	view.items = items
 	body.get_node(^"Visual").add_child(view)
+	if data.tool == &"brujula" or data.tool == &"podometro":
+		var instrument: InstrumentView = InstrumentView.new()
+		instrument.name = "Instrumento"
+		instrument.item = item
+		body.get_node(^"Visual").add_child(instrument)
+	if data.tool == &"podometro":
+		_add(items, body, item, "Poner a cero", [data.tool], Workable.Gesture.HOLD).self_use = true
 
 
 static func _add(

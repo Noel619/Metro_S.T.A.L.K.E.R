@@ -22,7 +22,9 @@ extends RefCounted
 ##
 ## Las casas de madera (la isba y el barracón) no se montan por vanos: el kit las tiene
 ## enteras y se escoge la de su estado (KitWhole). Los edificios singulares (los hitos y los
-## sitios clave) son un modelo entero cada uno, por su id del plano (KitSingular).
+## sitios clave) son un modelo entero cada uno, por su id del plano (KitSingular). Los
+## menores en los que se entra (el quiosco, las tiendas, los trasteros, el palomar y el
+## transformador) se escogen por su tipo y su nombre ("nombre" en la ficha: KitMinor).
 ##
 ## Cada pieza se repite con una MultiMesh: una llamada de dibujo por pieza y edificio.
 ## Algunos tipos visten las mismas piezas con otro material (sus "pieles"): los bloques
@@ -33,6 +35,7 @@ const LIBRARIES: PackedStringArray = [
 	"res://assets/models/kit_estalinka.glb",
 	"res://assets/models/kit_ladrillo.glb",
 	"res://assets/models/kit_madera.glb",
+	"res://assets/models/kit_menores.glb",
 	"res://assets/models/singular_vestibulo.glb",
 	"res://assets/models/singular_partido.glb",
 	"res://assets/models/singular_soviets.glb",
@@ -73,7 +76,11 @@ static func supports(kind: String) -> bool:
 ## singulares, que van por su id.
 static func supports_building(building: Dictionary) -> bool:
 	var key: String = String(building.get("id", building.get("clave", "")))
-	return supports(String(building.get("tipo", ""))) or KitSingular.MODELS.has(key)
+	return (
+		supports(String(building.get("tipo", "")))
+		or KitSingular.MODELS.has(key)
+		or not KitMinor.model_for(building).is_empty()
+	)
 
 
 ## Los nombres de todas las piezas del kit.
@@ -102,6 +109,8 @@ func build(spec: Dictionary) -> Node3D:
 	var family: String = FAMILIES.get(kind, "")
 	if KitSingular.MODELS.has(String(spec.get("clave", ""))):
 		family = "singular"
+	elif not KitMinor.model_for(spec).is_empty():
+		family = "menor"
 	match family:
 		"paneles":
 			KitPanelBlock.new(spec, assembly).build(node)
@@ -111,6 +120,8 @@ func build(spec: Dictionary) -> Node3D:
 			KitWhole.new(spec, assembly).build(node)
 		"singular":
 			KitSingular.new(spec, assembly).build(node)
+		"menor":
+			KitMinor.new(spec, assembly).build(node)
 		_:
 			push_error("El kit no sabe montar el tipo '%s'." % kind)
 	assembly.flush(node)

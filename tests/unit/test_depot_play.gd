@@ -77,7 +77,7 @@ func test_first_day_checklist() -> void:
 		if item.state.extra.has("contenido"):
 			chores.open_box(item)
 			opened += 1
-	assert_eq(opened, 4, "había cuatro cajas")
+	assert_eq(opened, 5, "las cuatro del antiguo dueño y la de tu padre")
 	await _frames(10)
 	assert_true(_find(&"bombilla_fundida") != null, "la bombilla fundida está por ahí")
 	assert_true(_find(&"radio_bolsillo") != null, "de las cajas sale lo que había")
@@ -291,7 +291,7 @@ func test_starving_starts_over() -> void:
 	assert_eq(GameState.day, 1, "vuelve a ser el primer día")
 	assert_eq(GameState.hungry_days, 0)
 	assert_almost(chores.dirt[0].dirt(), 1.0, 0.001, "el local, sucio otra vez")
-	assert_eq(_items.items().size(), 28, "con lo que dejó el antiguo dueño")
+	assert_eq(_items.items().size(), 29, "con lo que dejó el antiguo dueño (y tu padre)")
 	assert_true(GameState.clock_running, "y la hora corre")
 
 

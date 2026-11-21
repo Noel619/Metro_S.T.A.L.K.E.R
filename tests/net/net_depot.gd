@@ -19,7 +19,7 @@ extends SceneTree
 
 const SCENE_PATH: String = "res://scenes/depot/deposito.tscn"
 const TIMEOUT: float = 75.0
-const EXPECTED_ITEMS: int = 28
+const EXPECTED_ITEMS: int = 29
 ## La mancha de polvo que barre el invitado (DepotChores.DIRT[1]).
 const DUST_INDEX: int = 1
 const SALE_PRICE: int = 20

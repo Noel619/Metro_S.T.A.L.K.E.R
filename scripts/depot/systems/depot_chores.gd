@@ -169,7 +169,8 @@ func _is_done(chore: String) -> bool:
 			result = dumpster.bags() > 0 and bin.count() == 0 and _loose_trash() == 0
 		"cajas":
 			result = items.items().all(
-				func(item: Carryable) -> bool: return not item.state.extra.has("contenido")
+				func(item: Carryable) -> bool:
+					return not item.state.extra.has("contenido") or item.state.extra.has("padre")
 			)
 		"bombilla":
 			result = lamp.is_lit()

@@ -133,6 +133,15 @@ Los hitos y los sitios clave no se montan con piezas: cada uno es un modelo ente
 
 **Para añadir uno:** escribe `tools/blender/recipes/singular_<nombre>.py` con su `models()`, añade su biblioteca a `BuildingKit.LIBRARIES` y su id a `KitSingular.MODELS`, y genera el modelo. El test (`test_singular_buildings_are_whole`) comprueba que no falte ninguna pieza, que tenga colisión, que las piezas ocultas no se dibujen y que quepa en su parcela. Las reglas de modelado son las del kit ([ESTILO.md](ESTILO.md#reglas-de-modelado-para-la-tinta)).
 
+### Los edificios menores
+
+Lo pequeño en lo que se entra y se saquea (F3-14, [D-067](DECISIONES.md)) es la biblioteca `kit_menores` (`tools/blender/recipes/kit_menores.py`): el quiosco de prensa (entero y destrozado), la tienda de la evacuación (en pie, caída y de la Cruz Roja), la caseta de trastero (y hundida), el palomar y el centro de transformación, más el candado, la cadena y los huesos de la Jauría. `KitMinor` escoge el modelo por el tipo, el nombre y el daño del plano y lo pone sobre la huella como las casas de madera (a lo largo del lado largo, estirado lo justo); los trasteros son una hilera de casetas con las puertas hacia el patio más cercano.
+
+- **Lo que no se dibuja:** `<modelo>_colision` (la colisión hecha a mano, con los estantes donde se apoya el botín) y las hojas de las puertas (`<modelo>_puerta`), hechas en el marco de su bisagra (x a lo largo de la hoja, z arriba, se abren hacia -y de Blender).
+- **Lo que dejan en sus metadatos**, en el marco de su nodo: sus puertas (`kit_puertas`), sus escaleras (`kit_trepables`), dónde puede haber botín (`kit_botin`) y lo que pisan los perros (`kit_interiores` y `kit_pasos`). Las medidas que dicen dónde va cada cosa están en `KitMinor` y tienen que casar con las de la receta.
+- **En la superficie** (`SurfaceSites`): pone las puertas (`SurfaceDoor`) con su cierre (que sale de su nombre), las escaleras (`Climbable`), los huesos y, la primera vez, el botín de los de La Plaza; y abre a la rejilla de los perros el interior de cada uno y el paso de sus puertas abiertas.
+- **Para verlos**, con **F6**: `scenes/style/diorama_menores.tscn` (los quioscos del norte, los trasteros y el palomar del primer patio), `diorama_tiendas.tscn` (las tiendas y los quioscos de la Estación) y `diorama_transformador.tscn`. Y en la superficie entera, `scenes/debug/revision_plaza.tscn` con `CAPTURE_ARGS="--toma=mirador|ganzuas|escalera|trasteros"`.
+
 ## Herramientas para generar los assets
 
 Solo hacen falta para cambiar recetas o generadores.

@@ -24,6 +24,8 @@ var mouse_sensitivity: float = 0.25
 var invert_y: bool = false
 ## Accesibilidad: trazo vivo más suave.
 var reduce_line_boil: bool = false
+## Lo que suena se ve: ondas de tinta en el suelo (mientras no hay sonido, siempre).
+var sound_ripples: bool = true
 var volumes: Dictionary = {
 	"Master": 1.0,
 	"Musica": 0.8,
@@ -52,6 +54,7 @@ func load_settings() -> void:
 	mouse_sensitivity = float(config.get_value("controles", "mouse_sensitivity", mouse_sensitivity))
 	invert_y = bool(config.get_value("controles", "invert_y", invert_y))
 	reduce_line_boil = bool(config.get_value("accesibilidad", "reduce_line_boil", reduce_line_boil))
+	sound_ripples = bool(config.get_value("accesibilidad", "sound_ripples", sound_ripples))
 	for bus_name: String in volumes:
 		volumes[bus_name] = clampf(
 			float(config.get_value("audio", bus_name, volumes[bus_name])), 0.0, 1.0
@@ -67,6 +70,7 @@ func save_settings() -> Error:
 	config.set_value("controles", "mouse_sensitivity", mouse_sensitivity)
 	config.set_value("controles", "invert_y", invert_y)
 	config.set_value("accesibilidad", "reduce_line_boil", reduce_line_boil)
+	config.set_value("accesibilidad", "sound_ripples", sound_ripples)
 	for bus_name: String in volumes:
 		config.set_value("audio", bus_name, volumes[bus_name])
 	return config.save(settings_path)

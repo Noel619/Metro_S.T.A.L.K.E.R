@@ -14,6 +14,9 @@ signal state_changed(id: String)
 const GROUP: StringName = &"depot_world"
 const SAVE_KEY: String = "deposito"
 
+## Con qué clave se guarda (la superficie tiene el suyo: "superficie").
+var save_key: String = SAVE_KEY
+
 var _states: Dictionary = {}
 
 
@@ -26,7 +29,7 @@ static func find(node: Node) -> DepotWorld:
 
 func _enter_tree() -> void:
 	add_to_group(GROUP)
-	SaveSystem.register_provider(SAVE_KEY, self)
+	SaveSystem.register_provider(save_key, self)
 
 
 func _ready() -> void:
@@ -34,7 +37,7 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
-	SaveSystem.unregister_provider(SAVE_KEY)
+	SaveSystem.unregister_provider(save_key)
 
 
 func state_of(id: String) -> Dictionary:

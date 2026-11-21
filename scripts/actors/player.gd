@@ -1,6 +1,9 @@
 class_name Player
 extends CharacterBody3D
-## Un jugador en primera persona. Versión del depósito: tranquila, sin estamina.
+## Un jugador en primera persona. En el depósito, tranquilo: se agacha y se asoma,
+## pero no corre. En la superficie ([member surface_rules]) corre mientras tiene
+## aliento, salta y se encarama, y cada paso suena según lo que pisa ([PlayerBody],
+## [Footsteps], docs/SUPERFICIE.md).
 ##
 ## Cada jugador manda sobre su propio movimiento (no hay retraso al andar ni al
 ## mirar) y lo replica a los demás; el anfitrión manda sobre el mundo. Los demás
@@ -72,7 +75,8 @@ const HEAVY_WEIGHT: float = 15.0
 ## Rapidez con la que sube la mirada si lo que se coge no deja mirar tan abajo.
 const PITCH_RECOVERY: float = 2.5
 const LAYER_PLAYERS: int = 1 << 1
-const MASK_PLAYERS: int = (1 << 0) | (1 << 2)
+## Lo que para al jugador: el mundo, los objetos y los perros.
+const MASK_PLAYERS: int = (1 << 0) | (1 << 2) | (1 << 3)
 const MASK_REACH: int = (1 << 0) | (1 << 2) | (1 << 4)
 ## Lo que para a lo que se lleva: el mundo y los demás jugadores.
 const MASK_CARRY: int = (1 << 0) | (1 << 1)
@@ -84,7 +88,14 @@ const SYNCED: PackedStringArray = [
 	".:hold_rotation",
 	".:inspecting",
 	".:working",
+	".:crouch",
+	".:lean",
+	".:flashlight_on",
+	".:panting",
+	".:climbing",
 ]
+## Saltar: la velocidad hacia arriba (un saltito de medio metro).
+const JUMP_SPEED: float = 3.1
 ## Píxeles de ratón que hacen una unidad de cada gesto: una pasada de escoba, un
 ## frote, un tirón de palanca. Los círculos se miden en vueltas y mantener, en
 ## segundos.
@@ -105,7 +116,7 @@ const SWAY_RETURN: float = 6.0
 const LONG_TOOL: float = 0.6
 ## Lo que se puede ajustar con la rueda mientras se lleva (el precio de una
 ## etiqueta, los billetes de un fajo).
-const ADJUSTABLE: Array[StringName] = [&"etiqueta", &"billetes"]
+const ADJUSTABLE: Array[StringName] = [&"etiqueta", &"billetes", &"tiza"]
 ## Con hambre se anda más despacio y tiembla lo que se lleva.
 const HUNGRY_SPEED: float = 0.8
 const HUNGRY_TREMBLE: float = 0.006
@@ -125,9 +136,52 @@ var inspecting: bool = false
 var working: bool = false
 ## Para pruebas y bots: sustituye a las teclas de movimiento.
 var scripted_input: Vector2 = Vector2.ZERO
+## Para pruebas y bots: correr (sustituye a la tecla).
+var scripted_run: bool = false
+## Las reglas de la superficie: correr con aliento, saltar y encaramarse.
+var surface_rules: bool = false:
+	set(value):
+		surface_rules = value
+		if body != null:
+			body.can_run = value
+## De 0 (de pie) a 1 (agachado); lo replica quien lo controla.
+var crouch: float = 0.0
+## De -1 (asomado a la izquierda) a 1 (a la derecha), ya contando con las paredes.
+var lean: float = 0.0
+## Lleva la linterna encendida.
+var flashlight_on: bool = false
+## Se ha quedado sin aliento: jadea.
+var panting: bool = false
+## Está trepando (y [member move_speed] es lo que sube o baja).
+var climbing: bool = false
+## Postura y aliento (solo cuenta en el equipo de quien lo controla).
+var body: PlayerBody
+## Sus pasos (en todos los equipos).
+var footsteps: Footsteps
+## Cómo está: si sangra, si ha muerto (lo decide el anfitrión; F3-12).
+var condition: PlayerCondition
+## Su mochila y su cinturón (F3-03).
+var pack: PlayerPack
+## Su cuaderno (F3-04).
+var notebook: PlayerNotebook
+## El reloj de pulsera y los prismáticos (F3-05; solo en su equipo).
+var optics: PlayerOptics
+## Lo que tiemblan las manos por el miedo (metros; lo pone [Fear], en su equipo).
+var tremble: float = 0.0
+## Lo cargado para lanzar (de 0 a 1): lo que se lleva se echa atrás.
+var throw_charge: float = 0.0
 
 var _head: Node3D
 var _camera: Camera3D
+var _capsule: CapsuleShape3D
+var _shape: CollisionShape3D
+var _moves: PlayerMoves = PlayerMoves.new()
+## La linterna que ven los demás (en el jugador de los otros equipos).
+var _torch: SpotLight3D
+var _jump_queued: bool = false
+var _backpack_view: BackpackView
+var _throw: PlayerThrow = PlayerThrow.new()
+var _chalk: PlayerChalk = PlayerChalk.new()
 var _avatar: PlayerAvatar
 var _arms: FirstPersonArms
 var _reticle: Reticle
@@ -170,14 +224,29 @@ func setup(new_peer: int, new_variant: String, new_slot: int) -> void:
 	process_physics_priority = -1
 	collision_layer = LAYER_PLAYERS
 	collision_mask = MASK_PLAYERS
-	var capsule: CapsuleShape3D = CapsuleShape3D.new()
-	capsule.radius = 0.27
-	capsule.height = 1.7
-	var shape: CollisionShape3D = CollisionShape3D.new()
-	shape.name = "Cuerpo"
-	shape.shape = capsule
-	shape.position.y = 0.85
-	add_child(shape)
+	body = PlayerBody.new()
+	body.can_run = surface_rules
+	_capsule = CapsuleShape3D.new()
+	_capsule.radius = 0.27
+	_capsule.height = PlayerBody.STAND_HEIGHT
+	_shape = CollisionShape3D.new()
+	_shape.name = "Cuerpo"
+	_shape.shape = _capsule
+	_shape.position.y = PlayerBody.STAND_HEIGHT * 0.5
+	add_child(_shape)
+	footsteps = Footsteps.new()
+	footsteps.setup(self)
+	add_child(footsteps)
+	condition = PlayerCondition.new()
+	condition.name = "Estado"
+	add_child(condition)
+	pack = PlayerPack.new()
+	pack.setup(self)
+	notebook = PlayerNotebook.new()
+	notebook.setup(self)
+	add_child(pack)
+	add_child(notebook)
+	pack.changed.connect(func() -> void: footsteps.loose_items = pack.contents().loose_items())
 	_head = Node3D.new()
 	_head.name = "Cabeza"
 	_head.position.y = EYE_HEIGHTS[variant]
@@ -203,6 +272,16 @@ func setup(new_peer: int, new_variant: String, new_slot: int) -> void:
 
 func _ready() -> void:
 	if not is_local():
+		_torch = SpotLight3D.new()
+		_torch.name = "Linterna"
+		_torch.position = Vector3(0.22, -0.18, 0.0)
+		_torch.light_color = Color(1.0, 0.93, 0.8)
+		_torch.light_energy = 7.0
+		_torch.spot_range = 30.0
+		_torch.spot_angle = 24.0
+		_torch.spot_angle_attenuation = 1.6
+		_torch.visible = false
+		_head.add_child(_torch)
 		return
 	_avatar.shadow_only = true
 	_camera = Camera3D.new()
@@ -218,6 +297,9 @@ func _ready() -> void:
 	_reticle = Reticle.new()
 	_reticle.name = "PuntoDeMira"
 	add_child(_reticle)
+	optics = PlayerOptics.new()
+	optics.setup(self)
+	add_child(optics)
 	if DisplayServer.get_name() != "headless":
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -230,7 +312,7 @@ func _exit_tree() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not is_local() or CloseUp.is_open():
+	if not is_local() or CloseUp.is_open() or LockpickView.is_open() or NotebookView.is_open():
 		return
 	var wheel: InputEventMouseButton = event as InputEventMouseButton
 	if wheel != null and wheel.pressed and _held != null:
@@ -251,24 +333,49 @@ func _unhandled_input(event: InputEvent) -> void:
 			turn_held(motion.relative * INSPECT_TURN_SPEED)
 		else:
 			var sensitivity: float = deg_to_rad(Settings.mouse_sensitivity)
+			if optics != null:
+				sensitivity *= optics.look_scale()
 			look(-motion.relative.x * sensitivity, -motion.relative.y * sensitivity)
 	elif event.is_action_pressed(&"interact"):
 		interact()
+	elif event.is_action_pressed(&"crouch"):
+		body.crouch_wanted = not body.crouch_wanted
+	elif event.is_action_pressed(&"flashlight"):
+		flashlight_on = not flashlight_on
+	elif event.is_action_pressed(&"jump") and surface_rules:
+		_jump_queued = true
+	elif event.is_action_pressed(&"backpack"):
+		_use_backpack()
+	elif event.is_action_pressed(&"notebook"):
+		notebook.toggle(_camera)
 	elif event.is_action_pressed(&"pause") and DisplayServer.get_name() != "headless":
 		var captured: bool = Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if captured else Input.MOUSE_MODE_CAPTURED
+	else:
+		for slot: int in Backpack.BELT_SLOTS:
+			if event.is_action_pressed(StringName("belt_%d" % (slot + 1))):
+				pack.belt_key(slot)
 
 
 func _process(delta: float) -> void:
 	if is_local():
-		var reading: bool = CloseUp.is_open()
-		inspecting = (_held != null and not reading and Input.is_action_pressed(&"use_secondary"))
+		var reading: bool = CloseUp.is_open() or NotebookView.is_open()
+		var looking: bool = optics != null and optics.looking_through()
+		inspecting = (
+			_held != null
+			and not reading
+			and not looking
+			and _held.state.data.tool != &"prismaticos"
+			and Input.is_action_pressed(&"use_secondary")
+		)
 		var pressing: bool = (
 			Input.is_action_pressed(&"use_primary")
 			and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 			and not reading
 		)
 		_update_work(delta, pressing)
+		_chalk.update(self, delta, pressing and _backpack_view == null)
+		_throw.update(self, delta, pressing and _backpack_view == null and not _chalk.aiming)
 		var pad: Vector2 = Input.get_vector(&"look_left", &"look_right", &"look_up", &"look_down")
 		if pad != Vector2.ZERO:
 			look(-pad.x * PAD_LOOK_SPEED * delta, -pad.y * PAD_LOOK_SPEED * delta)
@@ -277,30 +384,80 @@ func _process(delta: float) -> void:
 		if head_pitch < lowest:
 			head_pitch = move_toward(head_pitch, lowest, PITCH_RECOVERY * delta)
 	_head.rotation.x = head_pitch
+	_head.position = Vector3(
+		lean * PlayerBody.LEAN_DISTANCE,
+		EYE_HEIGHTS[variant] * lerpf(1.0, PlayerBody.CROUCH_EYES, crouch),
+		0.0
+	)
+	_capsule.height = lerpf(PlayerBody.STAND_HEIGHT, PlayerBody.CROUCH_HEIGHT, crouch)
+	_shape.position.y = _capsule.height * 0.5
+	if _camera != null:
+		_camera.rotation.z = -lean * PlayerBody.LEAN_ROLL
+		Flashlight.attach(_camera).visible = flashlight_on
+	elif _torch != null:
+		_torch.visible = flashlight_on
 	_avatar.speed = move_speed
 	_avatar.look_pitch = head_pitch
 	_avatar.carrying = _held != null
+	_avatar.crouch = crouch
+	_avatar.climbing = climbing
+	_avatar.lean = lean
 
 
 func _physics_process(delta: float) -> void:
 	if not is_local():
 		return
+	if _moves.mantling():
+		_moves.step_mantle(self, delta)
+		return
 	var input: Vector2 = scripted_input
-	if (
-		input == Vector2.ZERO
-		and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	var keys: bool = (
+		Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 		and not CloseUp.is_open()
-	):
+		and not LockpickView.is_open()
+		and not NotebookView.is_open()
+		and not pack.is_busy()
+	)
+	body.forced_crouch = pack.is_busy() or _backpack_view != null
+	if pack.is_busy() or _backpack_view != null:
+		input = Vector2.ZERO
+	if input == Vector2.ZERO and keys:
 		input = Input.get_vector(&"move_left", &"move_right", &"move_forward", &"move_back")
+	# En una escalera o una cuerda se trepa (saltar es soltarse).
+	var letting_go: bool = _jump_queued and _moves.climbing()
+	_jump_queued = _jump_queued and not letting_go
+	climbing = _moves.step_climb(self, input, letting_go, _capsule.radius, delta)
+	if climbing:
+		return
+	var lean_input: float = 0.0
+	if keys:
+		lean_input = Input.get_axis(&"lean_left", &"lean_right")
+	var wants_run: bool = scripted_run or (keys and Input.is_action_pressed(&"sprint"))
+	body.update(
+		delta,
+		wants_run and input.y < -0.3,
+		input != Vector2.ZERO,
+		carried_weight(),
+		lean_input,
+		PlayerMoves.can_stand(self, _capsule.height)
+	)
+	crouch = body.crouch
+	lean = PlayerMoves.free_lean(self, body.lean)
+	panting = body.is_panting()
 	var wish: Vector3 = (basis * Vector3(input.x, 0.0, input.y)).limit_length(1.0)
-	var target: Vector3 = wish * WALK_SPEED * carry_slowdown() * hunger_slowdown()
+	var target: Vector3 = wish * body.target_speed() * carry_slowdown() * hunger_slowdown()
 	var planar: Vector3 = Vector3(velocity.x, 0.0, velocity.z).move_toward(
 		target, ACCELERATION * delta
 	)
 	planar = _stopped_by_held(planar, delta)
-	velocity = Vector3(
-		planar.x, velocity.y - GRAVITY * delta if not is_on_floor() else 0.0, planar.z
-	)
+	var vertical: float = velocity.y - GRAVITY * delta if not is_on_floor() else 0.0
+	if _jump_queued:
+		_jump_queued = false
+		if is_on_floor() and not _moves.try_mantle(self, _capsule.radius):
+			vertical = JUMP_SPEED
+		if _moves.mantling():
+			return
+	velocity = Vector3(planar.x, vertical, planar.z)
 	move_and_slide()
 	move_speed = Vector2(velocity.x, velocity.z).length()
 	_push_objects()
@@ -446,6 +603,50 @@ func hunger_slowdown() -> float:
 	return HUNGRY_SPEED if GameState.hungry_days >= GameState.HUNGRY_SHAKE else 1.0
 
 
+## Los kilos que lleva encima: lo de las manos, la mochila y el cinturón.
+func carried_weight() -> float:
+	var hands: float = _held.state.data.weight if _held != null else 0.0
+	return hands + (pack.weight() if pack != null else 0.0)
+
+
+## I: con algo en la mano, se guarda; si no, se abre la mochila (en la superficie,
+## arrodillándose primero).
+func _use_backpack() -> void:
+	if _backpack_view != null:
+		return
+	if _held != null:
+		pack.store_held()
+		return
+	if pack.is_busy() or _camera == null:
+		return
+	var seconds: float = PlayerPack.OPEN_SECONDS if surface_rules else 0.0
+	if seconds <= 0.0:
+		_open_backpack()
+	else:
+		pack.after_kneeling(seconds, _open_backpack)
+
+
+func _open_backpack() -> void:
+	_backpack_view = BackpackView.new()
+	_backpack_view.open(pack, _camera)
+	_backpack_view.closed.connect(func() -> void: _backpack_view = null)
+
+
+## Está trepando por una escalera o una cuerda (en el equipo de quien lo controla).
+func is_climbing() -> bool:
+	return _moves.climbing()
+
+
+## Lo alto que es ahora (agachado, menos).
+func body_height() -> float:
+	return lerpf(PlayerBody.STAND_HEIGHT, PlayerBody.CROUCH_HEIGHT, crouch)
+
+
+## Hacia dónde mira (de largo 1), con la inclinación de la cabeza.
+func look_direction() -> Vector3:
+	return -_head.global_basis.z.normalized()
+
+
 ## Dónde se dibuja [param item] mientras se trabaja con él: lo largo (la escoba)
 ## gira en las manos hasta apoyar la punta en lo que se trabaja; lo corto se
 ## acerca entero. El gesto lo mueve un poco sobre la superficie.
@@ -503,11 +704,9 @@ func set_held_item(item: Carryable) -> void:
 			_arms.hold(null)
 
 
-## Cuánto frena lo que lleva: de 1 (nada) hacia 0.
+## Cuánto frena lo que lleva (en las manos y a la espalda): de 1 (nada) hacia 0.
 func carry_slowdown() -> float:
-	if _held == null:
-		return 1.0
-	return 1.0 / (1.0 + _held.state.data.weight / HALF_SPEED_WEIGHT)
+	return 1.0 / (1.0 + carried_weight() / HALF_SPEED_WEIGHT)
 
 
 ## Lo más que puede bajar la mirada ahora: sin nada en las manos, el límite de
@@ -546,11 +745,15 @@ func carry_target(item: Carryable, cast: bool = true) -> Transform3D:
 	if cast and is_inside_tree():
 		_reach_share = _free_share(item, turn, start + direction * near, direction, far - near)
 	var center: Vector3 = start + direction * lerpf(near, far, _reach_share)
-	if GameState.hungry_days >= GameState.HUNGRY_SHAKE:
+	var shake: float = (
+		tremble + (HUNGRY_TREMBLE if GameState.hungry_days >= GameState.HUNGRY_SHAKE else 0.0)
+	)
+	if shake > 0.0:
 		var t: float = Time.get_ticks_msec() / 1000.0
-		center += (
-			Vector3(sin(t * 23.0) + sin(t * 37.0) * 0.5, sin(t * 29.0 + 1.3), 0.0) * HUNGRY_TREMBLE
-		)
+		center += Vector3(sin(t * 23.0) + sin(t * 37.0) * 0.5, sin(t * 29.0 + 1.3), 0.0) * shake
+	if throw_charge > 0.0:
+		# Cargando el brazo: atrás y algo arriba.
+		center += (-direction * 0.16 + Vector3.UP * 0.06) * throw_charge
 	return Transform3D(turn, center - turn * bounds.get_center())
 
 
@@ -744,6 +947,8 @@ func _update_work_target() -> void:
 func _update_work(delta: float, pressing: bool) -> void:
 	var was_working: bool = working
 	working = pressing and _work_target != null and is_instance_valid(_work_target)
+	if working and not was_working:
+		_work_target.begin(self)
 	if working and _work_target.gesture == Workable.Gesture.HOLD:
 		_work_pending += delta / HOLD_SECONDS
 	if not working:

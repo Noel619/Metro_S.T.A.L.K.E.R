@@ -38,6 +38,7 @@ const ACTIONS: Array[Dictionary] = [
 	{"name": "belt_1", "keys": [KEY_1], "buttons": [JOY_BUTTON_DPAD_LEFT]},
 	{"name": "belt_2", "keys": [KEY_2], "buttons": [JOY_BUTTON_DPAD_DOWN]},
 	{"name": "belt_3", "keys": [KEY_3], "buttons": [JOY_BUTTON_DPAD_RIGHT]},
+	{"name": "watch", "keys": [KEY_R], "buttons": [JOY_BUTTON_RIGHT_STICK]},
 	{"name": "pause", "keys": [KEY_ESCAPE], "buttons": [JOY_BUTTON_START]},
 ]
 

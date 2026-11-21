@@ -14,11 +14,15 @@ extends Node
 ## [constant Gesture.CIRCLE] lleva signo: positivo es en el sentido del reloj
 ## (apretar).
 signal worked(player: Node, tool: StringName, amount: float, point: Vector3)
+## Alguien ha empezado a trabajarlo (en su equipo, no en el anfitrión): lo usa lo que
+## se trabaja de otra manera, con una vista propia (las ganzúas en una cerradura).
+signal begun(player: Node)
 
 ## Pasadas largas (barrer, fregar), frotar corto (cepillar, limpiar contactos),
-## círculos (atornillar, enroscar), tirar hacia abajo (la palanca) o mantener
-## pulsado (comer, encender).
-enum Gesture { STROKE, SCRUB, CIRCLE, PULL, HOLD }
+## círculos (atornillar, enroscar), tirar hacia abajo (la palanca), mantener
+## pulsado (comer, encender) o lo que tiene su propia vista ([signal begun]: las
+## ganzúas).
+enum Gesture { STROKE, SCRUB, CIRCLE, PULL, HOLD, PICK }
 
 ## La "herramienta" de quien no lleva nada.
 const HANDS: StringName = &"manos"
@@ -46,6 +50,12 @@ static func find(body: Node, tool: StringName) -> Workable:
 
 func accepts(tool: StringName) -> bool:
 	return enabled and tools.has(tool)
+
+
+## Empieza a trabajarlo [param player] (en su equipo).
+func begin(player: Node) -> void:
+	if enabled:
+		begun.emit(player)
 
 
 ## Aplica trabajo. Solo cuenta en el anfitrión.
