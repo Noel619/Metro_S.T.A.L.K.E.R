@@ -2,9 +2,10 @@
 colina del parque y el cráter.
 
 Alturas en metros sobre la cota 0, que es el nivel de la calle en la orilla sur
-junto al río. El hielo del río está a -6 m. La orilla norte es alta y empinada
-(la ciudad vieja creció encima, como en tantas ciudades rusas) y la orilla sur es
-baja y llana (la vega: el puerto, la industria y los microdistritos).
+junto al río. El hielo del río está a -6 m y su lecho, debajo (el hielo y el agua los
+pone rio.py). La orilla norte es alta y empinada (la ciudad vieja creció encima, como en
+tantas ciudades rusas) y la orilla sur es baja y llana (la vega: el puerto, la industria
+y los microdistritos).
 """
 
 from __future__ import annotations
@@ -27,6 +28,11 @@ RIO_EJE = [
     (1660, 648),
 ]
 NIVEL_HIELO = -6.0
+# El lecho del río, bajo el hielo y el agua (rio.py): junto a las orillas, LECHO_ORILLA bajo
+# el hielo; en el centro, LECHO_HONDO.
+LECHO_ORILLA = 0.75
+LECHO_HONDO = 3.5
+LECHO_TALUD = 35.0
 
 # Muros de contención: donde la orilla es un muelle de granito u hormigón y no un talud.
 MURO_SUR = (560.0, 1545.0)
@@ -101,6 +107,13 @@ def distancia_polilinea(x, y, puntos):
     return _distancia_polilinea(np.asarray(x, float), np.asarray(y, float), puntos)[0]
 
 
+def lecho_rio(desde_sur, desde_norte):
+    """El fondo del río a tantos metros de cada orilla: baja de LECHO_ORILLA a LECHO_HONDO bajo
+    el hielo en LECHO_TALUD metros."""
+    dentro = np.minimum(desde_sur, desde_norte)
+    return NIVEL_HIELO - LECHO_ORILLA - (LECHO_HONDO - LECHO_ORILLA) * _smooth(0.0, LECHO_TALUD, dentro)
+
+
 def altura_natural(x, y):
     """Relieve sin obras humanas (sin terraplenes ni escombros)."""
     x = np.asarray(x, dtype=float)
@@ -131,7 +144,7 @@ def altura_natural(x, y):
     h_norte = np.where(tierra_norte < pie, np.minimum(orilla_n, 1.0), loma)
 
     h = np.where(y < centro, h_sur, h_norte)
-    h = np.where((y >= sur) & (y <= norte), NIVEL_HIELO, h)
+    h = np.where((y >= sur) & (y <= norte), lecho_rio(y - sur, norte - y), h)
 
     # --- La colina del parque ---
     r = np.hypot(x - COLINA[0], y - COLINA[1])

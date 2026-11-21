@@ -104,8 +104,8 @@ func _init(city_plan: CityPlan) -> void:
 	_prepare_decks()
 
 
-## Altura de lo que se pisa en un punto: el tablero de un puente si lo hay; si no, el
-## terreno.
+## Altura de lo que se pisa en un punto: el tablero de un puente si lo hay; si no, el hielo
+## del río o el terreno.
 func surface_height(point: Vector2) -> float:
 	for deck: Dictionary in _decks:
 		var a: Vector2 = deck["from"]
@@ -115,6 +115,9 @@ func surface_height(point: Vector2) -> float:
 		var across: float = absf((point - a).cross(along)) / along.length()
 		if f >= 0.0 and f <= 1.0 and across <= deck["half_width"]:
 			return lerpf(deck["height_from"], deck["height_to"], f)
+	# Sobre el río se pisa el hielo (o se está en el agua): el lecho queda debajo.
+	if plan.is_on_river(point):
+		return maxf(plan.height_at(point), float(plan.data["rio"]["hielo"]))
 	return plan.height_at(point)
 
 

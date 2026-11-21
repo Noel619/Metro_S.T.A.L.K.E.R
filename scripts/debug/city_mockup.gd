@@ -221,6 +221,20 @@ const VIEWS: Array[Dictionary] = [
 		"to": Vector3(930.0, 765.0, 3.0),
 		"fov": 62.0,
 	},
+	{
+		"name": "canal",
+		"title": "El canal de la corriente: agua abierta entre el hielo del Tumán",
+		"from": Vector3(515.0, 742.0, 1.7),
+		"to": Vector3(600.0, 715.0, 0.3),
+		"fov": 62.0,
+	},
+	{
+		"name": "central",
+		"title": "El agua templada de la central no deja helarse el río",
+		"from": Vector3(1330.0, 636.0, 2.0),
+		"to": Vector3(1420.0, 668.0, 1.0),
+		"fov": 62.0,
+	},
 ]
 ## Niebla: la del juego, una ligera (para ver lejos) o ninguna (todo detallado).
 const FOG_MODES: PackedStringArray = ["juego", "ligera", "sin"]

@@ -45,7 +45,8 @@ Tumansk entera, levantada desde el plano en volúmenes sencillos para probar rec
 | Tab | Andar (con colisión, a 1,4 m/s) o volar (sin colisión) |
 | 1-9 y 0 | Las vistas fijas: la salida, la avenida, Los Bloques, el río, el puente, la Escalinata, la zona industrial, la Zona Cero, la ciudad desde el aire y las rutas desde el aire |
 | Mayús+1-0 | Las vistas de la red de tránsito: la Escalinata desde abajo, un cruce del Barrio Obrero, el vano hundido del puente, las escaleras de la loma, los andenes de la estación, la playa de vías, un paso a nivel, un desvío del escape de la playa, un tope y el tranvía por la mediana de la Avenida |
-| Ctrl+1-9 | Las vistas del deterioro (el socavón de la avenida, la galería de la calefacción hundida frente a la fábrica y una tubería del agua reventada en la calle de la Juventud), dos de los edificios singulares (el vestíbulo del metro desde la plaza y la Casa de los Sóviets al final de la avenida), la calle de la Planta con el firme levantado en placas, el atasco de la avenida Soviética, el tendido roto de la calle de los Mineros y los barcos atrapados en el hielo frente a la Estación Fluvial |
+| Ctrl+1-0 | Las vistas del deterioro (el socavón de la avenida, la galería de la calefacción hundida frente a la fábrica y una tubería del agua reventada en la calle de la Juventud), dos de los edificios singulares (el vestíbulo del metro desde la plaza y la Casa de los Sóviets al final de la avenida), la calle de la Planta con el firme levantado en placas, el atasco de la avenida Soviética, el tendido roto de la calle de los Mineros, los barcos atrapados en el hielo frente a la Estación Fluvial y el canal de agua abierta entre el hielo del Tumán |
+| Ctrl+Mayús+1 | El agua templada de la central, que no deja helarse el río |
 | R / Mayús+R | Recorre la ruta siguiente / anterior del plano a paso de persona, con cronómetro. **+** y **-** la aceleran (×4, ×16); Retroceso la para |
 | F2 / F3 / F4 | Capas: las rutas; la rejilla de sectores y las zonas; los hitos que se ven desde donde estás |
 | V | Comprueba en toda la ciudad la regla «desde cualquier punto se ven al menos dos hitos» y marca los puntos ciegos (rosa: ninguno; amarillo: uno) |
@@ -65,6 +66,7 @@ Es una herramienta de desarrollo: lee `data/ciudad/` directamente (ver [D-024](D
 | `scripts/surface/city.gd` | `City`: levanta los 48 sectores, cada uno con su versión lejana y la detallada, colisión y oclusores |
 | `scripts/surface/city_kit.gd` | `CityKit`: los edificios del kit en la maqueta: su ficha, el zócalo en ladera, el foso del vestíbulo en el terreno y qué piezas no proyectan sombra ([D-052](DECISIONES.md)) |
 | `scripts/surface/city_terrain.gd` | El relieve por sectores (cada 2 m y cada 8 m) y su colisión |
+| `scripts/surface/city_river.gd` | El río: la superficie del agua abierta (con `assets/shaders/agua.gdshader`) y las placas de hielo con su grosor y su colisión, por sectores; de lejos, una lámina al nivel del hielo |
 | `scripts/surface/city_buildings.gd` | Cada edificio a su altura, con su cubierta y lo que queda en pie según su daño |
 | `scripts/surface/city_props.gd` | Vehículos (cada uno, su modelo a la medida del plano: `tools/blender/recipes/vehiculos.py`), árboles, puentes, tuberías, vallas, la línea eléctrica y los muros del borde |
 | `scripts/surface/city_geometry.gd`, `mesh_buffer.gd` | Cuentas con polígonos y construcción de mallas |
@@ -285,7 +287,7 @@ Si cambias un material de `assets/materials/` después de importar un modelo, bo
 | `datos.py` | Los datos: zonas, calles, edificios, patios, vehículos, hitos, subsuelo, amenazas, peligros y rutas |
 | `geo.py` | Marcos de referencia (el eje monumental) y figuras |
 | `relieve.py` | El terreno: río, loma, barranco, colina y cráter |
-| `plano.py` | Valida, calcula daños, escombros, relieve y cotas, y exporta el plano (`plano.json`), el relieve (`relieve.png`), el suelo de la maqueta (`suelo.png`) y la red de tránsito (`transito.json`, `rasante.png`, `rejilla.png` y `rebaje.png`) |
+| `plano.py` | Valida, calcula daños, escombros, relieve y cotas, y exporta el plano (`plano.json`), el relieve (`relieve.png`), el suelo de la maqueta (`suelo.png`) y la red de tránsito (`transito.json`, `rasante.png`, `rejilla.png` y `rebaje.png`) y el río (`rio.json`) |
 | `transito.py` | Traza la red de tránsito (calles, aceras, plazas, sendas, escaleras, el puente, los andenes, los pasos a nivel y la cama del tranvía) con sus alturas, aristas, marcas y detalles |
 | `vias.py` | El trazado de la red de vías: los desvíos y sus curvas de enlace, los topes, los vagones de la playa y, con las rasantes, cada desvío en 3D para la maqueta |
 | `ferrocarril.py` | Las rasantes de las vías del tren, los andenes, los pasos a nivel (la calle y el terreno suben al carril), los tramos de vía que se exportan y las vías del tranvía con sus curvas |
@@ -294,6 +296,7 @@ Si cambias un material de `assets/materials/` después de importar un modelo, bo
 | `firmes.py` | El firme roto: las zonas de calle levantada en placas, con su base y sus placas |
 | `restos.py` | Lo tirado por la calle (cascotes, montones de escombros, basura, contenedores) y las farolas, en pie o rotas |
 | `tendido.py` | El tendido aéreo del tranvía y del trolebús: los apoyos (postes, tirantes y ménsulas), los hilos y lo que les pasó (postes torcidos, caídos o partidos; hilos rotos o en el suelo) |
+| `rio.py` | El río en invierno: el agua abierta (el canal de la corriente y las bolsas del hielo fino), el hielo de orilla, el hielo fino, los témpanos rotos y los sueltos; el lecho lo pone `relieve.py` |
 | `dibujo.py` | Dibuja las cuatro hojas de desarrollo |
 
 Para dibujar una sola hoja: `python3 tools/ciudad/plano.py --plano=general` (también `subsuelo`, `peligros` o `rutas`).
